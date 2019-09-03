@@ -9,6 +9,8 @@ file(GLOB source_files
         "src/*.cpp"
         "src/parser/*.h"
         "src/parser/*.cpp"
+        "src/tokenizer/*.h"
+        "src/tokenizer/*.cpp"
         )
 
 add_executable(BestPack ${source_files})

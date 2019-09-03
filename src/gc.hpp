@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <utility>
 #include <list>
+#include <functional>
 
 class GarbageCollector final {
 public:
@@ -15,6 +16,10 @@ public:
     GarbageCollector(const GarbageCollector&) = delete;
     GarbageCollector(GarbageCollector&&) = delete;
 
+    class ObjectHeader;
+
+    typedef std::function<void(ObjectHeader*)> MarkFunction;
+
     class ObjectHeader {
     public:
         std::uint8_t gc_mark_;
@@ -22,6 +27,10 @@ public:
         inline void ClearMark();
         inline void Mark();
         inline bool HasMark() const;
+
+        virtual void MarkChildren(MarkFunction marker) {};
+
+        virtual ~ObjectHeader() = default;
     };
 
     template <typename DT>
@@ -56,10 +65,15 @@ public:
 
     void MarkAndSweep();
 
-    ~GarbageCollector();
+    ~GarbageCollector() {
+        for (auto obj : data_) {
+            delete obj;
+        }
+    }
 
 private:
     std::list<ObjectHeader*> data_;
+    std::uint32_t allocated_space_ = 0u;
 
 };
 
@@ -75,24 +89,21 @@ inline bool GarbageCollector::ObjectHeader::HasMark() const {
     return gc_mark_ & 1u;
 }
 
-//template<typename T, typename ...Args>
-//T* GarbageCollector::Alloc(Args &&... args) {
-//    static_assert(std::is_base_of<ObjectHeader, T>::value, "T not derived from ObjectHeader");
-//
-//    T* result = new T(std::forward<Args>(args)...);
-//    data_.push_back(result);
-//    return result;
-//}
-//
-//template<typename T, typename ...Args>
-//GarbageCollector::Ptr<T> GarbageCollector::MakePtr(Args &&... args) {
-//    BoxPtr<T>* box_ptr = Alloc<BoxPtr>(std::forward<Args>(args)...);
-//    return Ptr(box_ptr);
-//}
-//
-//GarbageCollector::~GarbageCollector() {
-//    for (auto obj : data_) {
-//        delete obj;
-//    }
-//    data_.clear();
-//}
+template<typename T, typename ...Args>
+T* GarbageCollector::Alloc(Args &&... args) {
+    static_assert(std::is_base_of<ObjectHeader, T>::value, "T not derived from ObjectHeader");
+
+    T* result = new T(std::forward<Args>(args)...);
+
+    std::uint32_t size_ = sizeof(T);
+    allocated_space_ += size_;
+
+    data_.push_back(result);
+    return result;
+}
+
+template<typename T, typename ...Args>
+GarbageCollector::Ptr<T> GarbageCollector::MakePtr(Args &&... args) {
+    BoxPtr<T>* box_ptr = Alloc<BoxPtr>(std::forward<Args>(args)...);
+    return Ptr(box_ptr);
+}
