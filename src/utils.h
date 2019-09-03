@@ -27,6 +27,20 @@ namespace utils {
         return conv.to_bytes(s);
     }
 
+    inline void AddU32ToUtf16(std::u16string& target, char32_t code) {
+        if (code < 0x10000) {
+            target.push_back(code);
+        }
+
+        std::u32string tmp;
+        tmp.push_back(code);
+
+        auto utf8 = To_UTF8(tmp);
+        auto utf16 = To_UTF16(utf8);
+
+        target.insert(target.end(), utf16.begin(), utf16.end());
+    }
+
     inline bool IsLineTerminator(char32_t cp) {
         return (cp == 0x0A) || (cp == 0x0D) || (cp == 0x2028) || (cp == 0x2029);
     }

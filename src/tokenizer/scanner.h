@@ -52,11 +52,11 @@ public:
     static bool IsStrictModeReservedWord(const UString& str_);
     static bool IsRestrictedWord(const UString& str_);
     static bool IsKeyword(const UString& str_);
-    bool ScanHexEscape(const UString& str_, char32_t& result);
+    bool ScanHexEscape(char16_t ch, char32_t& result);
     bool ScanUnicodeCodePointEscape(char32_t& ch);
     bool GetIdentifier(UString& result);
     bool GetComplexIdentifier(UString& result);
-    bool OctalToDecimal(char16_t ch, std::int64_t& result);
+    bool OctalToDecimal(char16_t ch, std::uint32_t& result);
 
     bool ScanIdentifier(Token& tok);
     bool ScanPunctuator(Token& tok);
@@ -76,7 +76,7 @@ public:
     char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
 
 private:
-    std::stack<char16_t> curly_stack_;
+    std::stack<UString> curly_stack_;
 
     std::uint32_t index_ = 0u;
     std::uint32_t line_number_ = 0u;

@@ -61,5 +61,8 @@ public:
     std::uint32_t line_start_;
     std::pair<std::int32_t, std::int32_t> range_;
     bool octal_ = false;
+    bool head_ = false;
+    bool tail_ = false;
+    char16_t cooked_;
 
 };

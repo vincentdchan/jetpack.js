@@ -329,8 +329,8 @@ bool Scanner::IsKeyword(const UString &str_) {
 
 #undef MAYBE_WORD
 
-bool Scanner::ScanHexEscape(const UString &str_, char32_t& code) {
-    std::uint32_t len = (str_[0] == 'u') ? 4 : 2;
+bool Scanner::ScanHexEscape(char16_t ch, char32_t& code) {
+    std::uint32_t len = (ch == 'u') ? 4 : 2;
 
     for (std::uint32_t i = 0; i < len; ++i) {
         if (!IsEnd() && utils::IsHexDigit(CodePointAt(index_))) {
@@ -409,7 +409,7 @@ bool Scanner::GetComplexIdentifier(UString &result) {
             ++index_;
             DO(ScanUnicodeCodePointEscape(ch))
         } else {
-            if (!ScanHexEscape(utils::To_UTF16("u"), ch) || ch == '\\' || !utils::IsIdentifierStart(ch)) {
+            if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierStart(ch)) {
                 this->UnexpectedToken();
                 return false;
             }
@@ -445,7 +445,7 @@ bool Scanner::GetComplexIdentifier(UString &result) {
                 ++index_;
                 DO(ScanUnicodeCodePointEscape(ch))
             } else {
-                if (!ScanHexEscape(utils::To_UTF16("u"), ch) || ch == '\\' || !utils::IsIdentifierPart(ch)) {
+                if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierPart(ch)) {
                     this->UnexpectedToken();
                     return false;
                 }
@@ -457,7 +457,7 @@ bool Scanner::GetComplexIdentifier(UString &result) {
     return true;
 }
 
-bool Scanner::OctalToDecimal(char16_t ch, std::int64_t &result) {
+bool Scanner::OctalToDecimal(char16_t ch, std::uint32_t &result) {
     bool octal = (ch != '0');
     result = ch - '0';
 
@@ -521,7 +521,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
         case '(':
         case '{':
             if (ch == '{') {
-                curly_stack_.push('{');
+                curly_stack_.push(utils::To_UTF16("{"));
             }
             ++index_;
             break;
@@ -807,4 +807,304 @@ bool Scanner::ScanNumericLiteral(Token &tok) {
     tok.range_ = make_pair(start, index_);
 
     return true;
+}
+
+bool Scanner::ScanStringLiteral(Token &tok) {
+    auto start = index_;
+    char16_t quote = source_->at(start);
+
+    if (!(quote == '\'' || quote == '"')) {
+        CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
+        return false;
+    }
+
+    ++index_;
+    bool octal = false;
+    UString str;
+
+    while (!IsEnd()) {
+        char16_t ch = source_->at(index_++);
+
+        if (ch == quote) {
+            quote = 0;
+            break;
+        } else if (ch == '\\') {
+            ch = source_->at(index_++);
+            if (!ch || !utils::IsLineTerminator(ch)) {
+                char32_t unescaped = 0;
+                switch (ch) {
+                    case 'u':
+                        if (source_->at(index_) == '{') {
+                            ++index_;
+                            char32_t tmp;
+                            DO(ScanUnicodeCodePointEscape(tmp))
+
+                            utils::AddU32ToUtf16(str, tmp);
+                        } else {
+                            char32_t unescapedChar;
+                            if (!ScanHexEscape(ch, unescapedChar)) {
+                                UnexpectedToken();
+                                return false;
+                            }
+
+                            utils::AddU32ToUtf16(str, unescapedChar);
+                        }
+                        break;
+
+                    case 'x':
+                        if (!ScanHexEscape(ch, unescaped)) {
+                            UnexpectedToken();
+                            return false;
+                        }
+                        utils::AddU32ToUtf16(str, unescaped);
+                        break;
+
+                    case 'n':
+                        str += '\n';
+                        break;
+                    case 'r':
+                        str += '\r';
+                        break;
+                    case 't':
+                        str += '\t';
+                        break;
+                    case 'b':
+                        str += '\b';
+                        break;
+                    case 'f':
+                        str += '\f';
+                        break;
+                    case 'v':
+                        str += '\x0B';
+                        break;
+                    case '8':
+                    case '9':
+                        str += ch;
+                        UnexpectedToken();
+                        break;
+
+                    default:
+                        if (ch && utils::IsOctalDigit(ch)) {
+                            std::uint32_t octToDec;
+                            octal = OctalToDecimal(ch, octToDec);
+
+                            utils::AddU32ToUtf16(str, octToDec);
+                        } else {
+                            str += ch;
+                        }
+                        break;
+                }
+            } else {
+                ++line_number_;
+                if (ch == '\r' && source_->at(index_) == '\n') {
+                    ++index_;
+                }
+                line_start_ = index_;
+            }
+        } else if (utils::IsLineTerminator(ch)) {
+            break;
+        } else {
+            str += ch;
+        }
+    }
+
+    if (quote != 0) {
+        index_ = start;
+        UnexpectedToken();
+        return false;
+    }
+
+    tok.type_ = JsTokenType::StringLiteral;
+    tok.value_ = str;
+    tok.octal_ = octal;
+    tok.line_number_ = line_number_;
+    tok.line_start_ = line_start_;
+    tok.range_ = make_pair(start, index_);
+
+    return true;
+}
+
+bool Scanner::ScanTemplate(Token &tok) {
+    char16_t cooked;
+    bool terminated = false;
+    std::uint32_t start = index_;
+
+    bool head = ((*source_)[start] == '`');
+    bool tail = false;
+    std::uint32_t rawOffset = 2;
+
+    ++index_;
+
+    while (!IsEnd()) {
+        char16_t ch = (*source_)[index_];
+        if (ch == '`') {
+            rawOffset = 1;
+            tail = true;
+            terminated = true;
+            break;
+        } else if (ch == '$') {
+            if ((*source_)[index_]== '{') {
+                curly_stack_.push(utils::To_UTF16("${"));
+                ++index_;
+                terminated = true;
+                break;
+            }
+            cooked += ch;
+        } else if (ch == '\\') {
+            ch = (*source_)[index_++];
+            if (!utils::IsLineTerminator(ch)) {
+                switch (ch) {
+                    case 'n':
+                        cooked += '\n';
+                        break;
+                    case 'r':
+                        cooked += '\r';
+                        break;
+                    case 't':
+                        cooked += '\t';
+                        break;
+                    case 'u':
+                        if ((*source_)[index_] == '{') {
+                            ++index_;
+                            char32_t tmp;
+                            DO(ScanUnicodeCodePointEscape(tmp))
+                            cooked = tmp;
+                        } else {
+                            auto restore = index_;
+                            char32_t unescapedChar;
+                            if (ScanHexEscape(ch, unescapedChar)) {
+                                cooked = unescapedChar;
+                            } else {
+                                index_= restore;
+                                cooked = ch;
+                            }
+                        }
+                        break;
+                    case 'x':
+                        char32_t unescaped;
+                        if (!ScanHexEscape(ch, unescaped)) {
+                            UnexpectedToken();
+                            return false;
+                        }
+                        cooked = unescaped;
+                        break;
+                    case 'b':
+                        cooked += '\b';
+                        break;
+                    case 'f':
+                        cooked += '\f';
+                        break;
+                    case 'v':
+                        cooked += '\v';
+                        break;
+
+                    default:
+                        if (ch == '0') {
+                            if (utils::IsDecimalDigit(source_->at(index_))) {
+                                // Illegal: \01 \02 and so on
+                                UnexpectedToken();
+                                return false;
+                            }
+                            cooked += '\0';
+                        } else if (utils::IsOctalDigit(ch)) {
+                            // Illegal: \1 \2
+                            UnexpectedToken();
+                            return false;
+                        } else {
+                            cooked = ch;
+                        }
+                        break;
+                }
+            } else {
+                ++line_number_;
+                if (ch == '\r' && source_->at(index_) == '\n') {
+                    ++index_;
+                }
+                line_start_ = index_;
+            }
+        } else if (utils::IsLineTerminator(ch)) {
+            ++line_number_;
+            if (ch == '\r' && source_->at(index_) == '\n') {
+                ++index_;
+            }
+            line_start_  = index_;
+            cooked = '\n';
+        } else {
+            cooked = ch;
+        }
+    }
+
+    if (!terminated) {
+        UnexpectedToken();
+        return false;
+    }
+
+    if (!head) {
+        curly_stack_.pop();
+    }
+
+    tok.type_ = JsTokenType::Template;
+    tok.value_ = source_->substr(start + 1, index_ - rawOffset);
+    tok.line_number_ = line_number_;
+    tok.line_start_ = line_start_;
+    tok.range_ = make_pair(start, index_);
+    tok.cooked_ = cooked;
+    tok.head_ = head;
+    tok.tail_ = tail;
+
+    return true;
+}
+
+bool Scanner::Lex(Token &tok) {
+    if (IsEnd()) {
+        tok.type_ = JsTokenType::EOF_;
+        tok.line_number_ = line_number_;
+        tok.line_start_ = line_start_;
+        tok.range_ = make_pair(index_, index_);
+        return true;
+    }
+
+    char16_t cp = (*source_)[index_];
+
+    if (utils::IsIdentifierStart(cp)) {
+        return ScanIdentifier(tok);
+    }
+    // Very common: ( and ) and ;
+    if (cp == 0x28 || cp == 0x29 || cp == 0x3B) {
+        return ScanPunctuator(tok);
+    }
+
+    // String literal starts with single quote (U+0027) or double quote (U+0022).
+    if (cp == 0x27 || cp == 0x22) {
+        return ScanStringLiteral(tok);
+    }
+
+    // Dot (.) U+002E can also start a floating-point number, hence the need
+    // to check the next character.
+    if (cp == 0x2E) {
+        if (utils::IsDecimalDigit((*source_)[index_ + 1])) {
+            return ScanNumericLiteral(tok);
+        }
+        return ScanPunctuator(tok);
+    }
+
+    if (utils::IsDecimalDigit(cp)) {
+        return ScanNumericLiteral(tok);
+    }
+
+    // Template literals start with ` (U+0060) for template head
+    // or } (U+007D) for template middle or template tail.
+    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == utils::To_UTF16("${"))) {
+        return ScanTemplate(tok);
+    }
+
+    // Possible identifier start in a surrogate pair.
+    if (cp >= 0xD800 && cp < 0xDFFF) {
+        if (utils::IsIdentifierStart(CodePointAt(index_))) {
+            return ScanIdentifier(tok);
+        }
+    }
+
+
+    return ScanPunctuator(tok);
 }
