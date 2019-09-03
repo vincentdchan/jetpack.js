@@ -33,20 +33,21 @@ enum class JsTokenType {
 static const char* TokenTypeToCString(JsTokenType tt);
 
 struct Position {
-    std::int32_t line_;
-    std::int32_t column_;
+    std::uint32_t line_;
+    std::uint32_t column_;
 
-    Position(): line_(-1), column_(-1) {}
-    Position(std::int32_t line, std::int32_t column):
+    Position(): line_(0u), column_(0u) {}
+    Position(std::uint32_t line, std::uint32_t column):
     line_(line), column_(column) {}
 };
 
-struct Location {
+struct SourceLocation {
 public:
     Position start_;
     Position end_;
 
-    Location(Position start, Position end):
+    SourceLocation() = default;
+    SourceLocation(Position start, Position end):
     start_(start), end_(end) {}
 };
 
@@ -54,7 +55,7 @@ class Token {
 public:
     JsTokenType type_ = JsTokenType::Invalid;
     std::string value_;
-    Location loc_;
+    SourceLocation loc_;
     std::pair<std::int32_t, std::int32_t> range_;
 
 };
