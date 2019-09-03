@@ -778,6 +778,8 @@ public:
 
 class TemplateElementValue {
 public:
+    TemplateElementValue() : raw_(JS_String()) {}
+
     JS_String cooked_;
     JS_String raw_;
 
