@@ -5,6 +5,7 @@
 
 #include <string>
 #include <utility>
+#include "../utils.h"
 
 #define DEF_TOKEN(D) \
     D(BooleanLiteral) \
@@ -54,8 +55,11 @@ public:
 class Token {
 public:
     JsTokenType type_ = JsTokenType::Invalid;
-    std::string value_;
+    UString value_;
     SourceLocation loc_;
+    std::uint32_t line_number_;
+    std::uint32_t line_start_;
     std::pair<std::int32_t, std::int32_t> range_;
+    bool octal_ = false;
 
 };

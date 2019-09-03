@@ -7,6 +7,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "utils.h"
+
 class JS_String;
 
 class StringContext {
@@ -15,12 +17,12 @@ public:
     class StringNode {
     public:
         std::int32_t ref_count_ = 0;
-        std::u32string content_;
+        UString content_;
     };
 
     static StringContext* Instance();
     static JS_String MakeString(const std::string& str_);
-    static JS_String MakeString(const std::u32string& str_);
+    static JS_String MakeString(const UString& str_);
     static void ReleaseString(JS_String& str_);
 
     inline std::size_t Size() {
@@ -30,10 +32,10 @@ public:
 private:
     static StringContext* instance_;
 
-    JS_String MakeString_(const std::u32string& str_);
+    JS_String MakeString_(const UString& str_);
     void ReleaseString_(JS_String& str_);
 
-    std::unordered_map<std::u32string, std::unique_ptr<StringNode>> data_map_;
+    std::unordered_map<UString, std::unique_ptr<StringNode>> data_map_;
 
 };
 

@@ -11,11 +11,11 @@ StringContext* StringContext::Instance() {
 }
 
 JS_String StringContext::MakeString(const std::string &str_) {
-    auto w_str = utils::To_UTF32(str_);
+    auto w_str = utils::To_UTF16(str_);
     return Instance()->MakeString_(w_str);
 }
 
-JS_String StringContext::MakeString(const std::u32string &str_) {
+JS_String StringContext::MakeString(const UString& str_) {
     return Instance()->MakeString_(str_);
 }
 
@@ -79,7 +79,7 @@ std::string JS_String::ToUTF8String() const {
 }
 
 JS_String JS_String::operator+(const JS_String &that_) {
-    std::u32string content;
+    UString content;
 
     if (node_data_) {
         for (auto ch : node_data_->content_) {
@@ -107,7 +107,7 @@ JS_String::~JS_String() {
     StringContext::ReleaseString(*this);
 }
 
-JS_String StringContext::MakeString_(const std::u32string &str_) {
+JS_String StringContext::MakeString_(const UString &str_) {
     JS_String value;
 
     if (str_.empty()) {

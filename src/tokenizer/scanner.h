@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <vector>
+#include <stack>
 #include "../parse_error_handler.h"
 #include "../utils.h"
 #include "token.h"
@@ -18,7 +19,7 @@ struct Comment {
 
 class Scanner final: ParseErrorHandler {
 public:
-    Scanner(std::shared_ptr<std::u32string> source);
+    Scanner(std::shared_ptr<std::u16string> source);
     Scanner(const Scanner&) = delete;
     Scanner(Scanner&&) = delete;
 
@@ -51,17 +52,17 @@ public:
     static bool IsStrictModeReservedWord(const UString& str_);
     static bool IsRestrictedWord(const UString& str_);
     static bool IsKeyword(const UString& str_);
-    bool ScanHexEscape(const UString& str_, UString& result);
-    bool ScanUnicodeCodePointEscape(UString& result);
+    bool ScanHexEscape(const UString& str_, char32_t& result);
+    bool ScanUnicodeCodePointEscape(char32_t& ch);
     bool GetIdentifier(UString& result);
     bool GetComplexIdentifier(UString& result);
-    static bool OctalToDecimal(const UString& str_, std::int32_t& result);
+    bool OctalToDecimal(char16_t ch, std::int64_t& result);
 
     bool ScanIdentifier(Token& tok);
     bool ScanPunctuator(Token& tok);
     bool ScanHexLiteral(std::uint32_t index, Token& tok);
     bool ScanBinaryLiteral(std::uint32_t index, Token& tok);
-    bool ScanOctalLiteral(const UString& prefix, std::uint32_t index, Token& tok);
+    bool ScanOctalLiteral(char16_t prefix, std::uint32_t index, Token& tok);
     bool IsImplicitOctalLiteral();
     bool ScanNumericLiteral(Token& tok);
     bool ScanStringLiteral(Token& tok);
@@ -72,12 +73,16 @@ public:
     bool ScanRegExp(Token& tok);
     bool Lex(Token& tok);
 
+    char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
+
 private:
+    std::stack<char16_t> curly_stack_;
+
     std::uint32_t index_ = 0u;
     std::uint32_t line_number_ = 0u;
     std::uint32_t line_start_ = 0u;
 
-    std::shared_ptr<std::u32string> source_;
+    std::shared_ptr<std::u16string> source_;
     bool track_comment_ = false;
     bool is_module_ = false;
 
