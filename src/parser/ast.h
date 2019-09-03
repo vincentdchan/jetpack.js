@@ -1,73 +1,149 @@
 //
 // Created by Duzhong Chen on 2019/9/3.
 //
-
-#ifndef BESTPACK_AST_H
-#define BESTPACK_AST_H
+#pragma once
 
 #include <vector>
 #include <string>
 #include <variant>
 #include <optional>
+#include "../gc.hpp"
 
 typedef double JSNumber;
 typedef std::string JSRegExp;
 
-class ArrayExpression;
-class ArrayPattern;
-class ArrayPatternElement;
-class AssignmentPattern;
-class AsyncFunctionExpression;
-class BindingPattern;
-class BlockStatement;
-class ClassBody;
-class Expression;
-class ExportableNamedDeclaration;
-class ExportSpecifier;
-class ExportAllDeclaration;
-class ExportDefaultDeclaration;
-class ExportNamedDeclaration;
-class FunctionExpression;
-class Identifier;
-class Import;
-class ImportSpecifier;
-class ImportDefaultSpecifier;
-class ImportNamespaceSpecifier;
-class Property;
-class RestElement;
-class Statement;
-class StatementListItem;
-class SpreadElement;
-class TemplateLiteral;
-class VariableDeclarator;
+#define DEF_AST_NODE_TYPE(D) \
+    D(ArrayExpression) \
+    D(ArrayPattern) \
+    D(ArrowFunctionExpression) \
+    D(AssignmentExpression) \
+    D(AssignmentPattern) \
+    D(AsyncArrowFunctionExpression) \
+    D(AsyncFunctionDeclaration) \
+    D(AsyncFunctionExpression) \
+    D(AwaitExpression) \
+    D(BinaryExpression) \
+    D(BlockStatement) \
+    D(BreakStatement) \
+    D(CallExpression) \
+    D(CatchClause) \
+    D(ClassBody) \
+    D(ClassDeclaration) \
+    D(ClassExpression) \
+    D(ComputedMemberExpression) \
+    D(ConditionalExpression) \
+    D(ContinueStatement) \
+    D(DebuggerStatement) \
+    D(Directive) \
+    D(DoWhileStatement) \
+    D(EmptyStatement) \
+    D(ExportAllDeclaration) \
+    D(ExportDefaultDeclaration) \
+    D(ExportNamedDeclaration) \
+    D(ExportSpecifier) \
+    D(ExpressionStatement) \
+    D(ForInStatement) \
+    D(ForOfStatement) \
+    D(ForStatement) \
+    D(FunctionDeclaration) \
+    D(FunctionExpression) \
+    D(Identifier) \
+    D(IfStatement) \
+    D(Import) \
+    D(ImportDeclaration) \
+    D(ImportDefaultSpecifier) \
+    D(ImportNamespaceSpecifier) \
+    D(ImportSpecifier) \
+    D(LabeledStatement) \
+    D(Literal) \
+    D(MetaProperty) \
+    D(MethodDefinition) \
+    D(Module) \
+    D(NewExpression) \
+    D(ObjectExpression) \
+    D(ObjectPattern) \
+    D(Property) \
+    D(RegexLiteral) \
+    D(RestElement) \
+    D(ReturnStatement) \
+    D(Script) \
+    D(SequenceExpression) \
+    D(SpreadElement) \
+    D(StaticMemberExpression) \
+    D(Super) \
+    D(SwitchCase) \
+    D(SwitchStatement) \
+    D(TaggedTemplateExpression) \
+    D(TemplateElement) \
+    D(TemplateLiteral) \
+    D(ThisExpression) \
+    D(ThrowStatement) \
+    D(TryStatement) \
+    D(UnaryExpression) \
+    D(UpdateExpression) \
+    D(VariableDeclaration) \
+    D(VariableDeclarator) \
+    D(WhileStatement) \
+    D(WithStatement) \
+    D(YieldExpression)
 
-class Literal;
-class ExportableDefaultDeclaration;
+
+#define DD(name) \
+    class name;
+
+
+DEF_AST_NODE_TYPE(DD)
+
+#undef DD
+
+class Expression;
 
 typedef Identifier BindingIdentifier;
-typedef std::variant<Expression*, SpreadElement*> ArgumentListElement;
-typedef std::variant<Expression*, SpreadElement*, void> ArrayExpressionElement;
-typedef std::variant<Identifier*, Literal*> PropertyKey;
-typedef std::variant<
-    AssignmentPattern*,
-    AsyncFunctionExpression*,
-    BindingIdentifier*,
-    BindingPattern*,
-    FunctionExpression*
-> PropertyValue;
-typedef std::variant<Property*, RestElement*> ObjectPatternProperty;
-typedef std::variant<Property*, SpreadElement*> ObjectExpressionProperty;
-typedef std::variant<ImportDefaultSpecifier*, ImportNamespaceSpecifier*, ImportSpecifier*> ImportDeclarationSpecifier;
-typedef std::variant<AssignmentPattern*, BindingIdentifier*, BindingPattern> FunctionParameter;
 
-class AstNode {
+class ArgumentListElement;
+
+#define DD(name) name,
+
+enum class AstNodeType: std::uint8_t {
+    Invalid,
+
+    DEF_AST_NODE_TYPE(DD)
+};
+
+#undef DD
+
+static const char* AstNodeTypeToCString(AstNodeType t);
+
+class AstNode: public GarbageCollector::ObjectHeader {
 public:
+
+    AstNodeType type_;
+
+//    AstNode(): type_(AstNodeType::Invalid) {}
+
+    virtual bool IsArgumentListElement() const;
+    virtual bool IsArrayExpressionElement() const;
+    virtual bool IsArrayPatternElement() const;
+    virtual bool IsBindingPattern() const;
+    virtual bool IsBindingIdentifier() const;
+    virtual bool IsExportableDefaultDeclaration() const;
+    virtual bool IsExportableNamedDeclaration() const;
+    virtual bool IsExportDeclaration() const;
+    virtual bool IsFunctionParameter() const;
+    virtual bool IsImportDeclarationSpecifier() const;
+    virtual bool IsObjectExpressionProperty() const;
+    virtual bool IsObjectPatternProperty() const;
+    virtual bool IsPropertyKey() const;
+    virtual bool IsPropertyValue() const;
+    virtual bool IsStatementListItem() const;
 
     virtual bool IsDeclaration() const { return false; }
     virtual bool IsExpression() const { return false; }
     virtual bool IsStatement() const { return false; }
 
-    ~AstNode() = delete;
+    const char* TypeName() const;
+
+    ~AstNode() = default;
 };
 
 class Expression: public AstNode {
@@ -84,471 +160,676 @@ public:
 class Declaration: public AstNode {
 public:
     bool IsDeclaration() const override { return true; }
+
 };
 
 class ArrayExpression: public Expression {
 public:
-    std::vector<ArrayExpressionElement> elements_;
+
+    ArrayExpression();
+
+    std::vector<AstNode*> elements_;
 
 };
 
 class ArrayPattern: public AstNode {
 public:
-    std::vector<ArrayPatternElement> elements_;
+    ArrayPattern();
+
+    std::vector<AstNode*> elements_;
 
 };
 
 class ArrowFunctionExpression: public Expression {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter> params_;
+    ArrowFunctionExpression();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params_;
     std::variant<BlockStatement*, Expression*> body_;
     // TODO: flags
-    bool generator_;
-    bool expression_;
-    bool async_;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
 };
 
 class AssignmentExpression: public Expression {
 public:
+    AssignmentExpression();
+
     std::string operator_;
-    Expression* left_;
-    Expression* right_;
+    Expression* left_ = nullptr;
+    Expression* right_ = nullptr;
 };
 
 class AssignmentPattern: public AstNode {
 public:
-    std::variant<BindingIdentifier*, BindingPattern*> left_;
-    Expression* right_;
+    AssignmentPattern();
+
+    AstNode* left_;
+    Expression* right_ = nullptr;
 };
 
 class AsyncArrowFunctionExpression: public Expression {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter*> params_;
+    AsyncArrowFunctionExpression();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params_;
     std::variant<BlockStatement*, Expression*> body_;
-    bool generator_;
-    bool expression_;
-    bool async_;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
 };
 
 class AsyncFunctionDeclaration: public Declaration {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter*> params_;
-    BlockStatement* body_;
-    bool generator_;
-    bool expression_;
-    bool async_;
+    AsyncFunctionDeclaration();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params_;
+    BlockStatement* body_ = nullptr;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
 };
 
 class AsyncFunctionExpression: public Expression {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter> params;
-    BlockStatement* body_;
-    bool generator_;
-    bool expression_;
-    bool async_;
+    AsyncFunctionExpression();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params;
+    BlockStatement* body_ = nullptr;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
 };
 
 class AwaitExpression: public Expression {
 public:
-    Expression* arguments_;
+    AwaitExpression();
+
+    Expression* arguments_ = nullptr;
 };
 
 class BinaryExpression: public Expression {
 public:
+    BinaryExpression();
+
     std::string operator_;
-    Expression* left_;
-    Expression* right_;
+    Expression* left_ = nullptr;
+    Expression* right_ = nullptr;
 };
 
 class BlockStatement: public AstNode {
 public:
+    BlockStatement();
+
     std::vector<Statement*> body_;
+
 };
 
 class BreakStatement: public Statement {
 public:
-    Identifier* label_;
+    BreakStatement();
+
+    Identifier* label_ = nullptr;
+
 };
 
 class CallExpression: public Expression {
 public:
+    CallExpression();
+
     std::variant<Expression*, Import*> callee_;
     std::vector<ArgumentListElement*> arguments_;
+
 };
 
 class CatchClause: public AstNode {
 public:
-    std::variant<BindingIdentifier*, BindingPattern*> param_;
-    BlockStatement* body_;
+    CatchClause();
+
+    AstNode* param_;
+    BlockStatement* body_ = nullptr;
+
+};
+
+class ClassBody: public AstNode {
+public:
+    ClassBody();
+
+    std::vector<Property*> body_;
+
 };
 
 class ClassDeclaration: public Declaration {
 public:
-    Identifier* id_;
-    Identifier* superClass_;
-    ClassBody* body_;
+    ClassDeclaration();
+
+    Identifier* id_ = nullptr;
+    Identifier* superClass_ = nullptr;
+    ClassBody* body_ = nullptr;
+
 };
 
 class ClassExpression: public Expression {
 public:
-    Identifier* id_;
-    Identifier* superClass_;
-    ClassBody* body_;
+    ClassExpression();
+
+    Identifier* id_ = nullptr;
+    Identifier* superClass_ = nullptr;
+    ClassBody* body_ = nullptr;
+
 };
 
 class ComputedMemberExpression: public Expression {
 public:
-    bool computed_;
-    Expression* object_;
-    Expression* property_;
+    ComputedMemberExpression();
+
+    bool computed_ = false;
+    Expression* object_ = nullptr;
+    Expression* property_ = nullptr;
+
 };
 
 class ConditionalExpression: public Expression {
 public:
-    Expression* test_;
-    Expression* consequent_;
-    Expression* alternate_;
+    ConditionalExpression();
+
+    Expression* test_ = nullptr;
+    Expression* consequent_ = nullptr;
+    Expression* alternate_ = nullptr;
+
 };
 
 class ContinueStatement: public Statement {
 public:
-    Identifier* label_;
+    ContinueStatement();
+
+    Identifier* label_ = nullptr;
+
 };
 
 class DebuggerStatement: public Statement {
+public:
+    DebuggerStatement();
 
 };
 
 class Directive: public Statement {
 public:
-    Expression* expression_;
+    Directive();
+
+    Expression* expression_ = nullptr;
     std::string directive_;
+
 };
 
 class DoWhileStatement: public Statement {
 public:
-    Statement* body_;
-    Expression* test_;
+    DoWhileStatement();
+
+    Statement* body_ = nullptr;
+    Expression* test_ = nullptr;
+
 };
 
 class EmptyStatement: public Statement {
+public:
+    EmptyStatement();
 
 };
 
 class ExportAllDeclaration: public Declaration {
 public:
-    Literal* source_;
+    ExportAllDeclaration();
+
+    Literal* source_ = nullptr;
+
 };
 
 class ExportDefaultDeclaration: public Declaration {
 public:
-    ExportableDefaultDeclaration* declaration_;
+    ExportDefaultDeclaration();
+
+    AstNode* declaration_ = nullptr;
+
 };
 
 class ExportNamedDeclaration: public Declaration {
 public:
-    std::vector<ExportableNamedDeclaration*> declaration_;
+    ExportNamedDeclaration();
+
+    std::vector<AstNode*> declaration_;
     std::vector<ExportSpecifier*> specifiers_;
-    Literal* source_;
+    Literal* source_ = nullptr;
+
 };
 
 class ExportSpecifier: public AstNode {
 public:
-    Identifier* exported_;
-    Identifier* local_;
+    ExportSpecifier();
+
+    Identifier* exported_ = nullptr;
+    Identifier* local_ = nullptr;
+
 };
 
 class ExpressionStatement: public Statement {
 public:
-    Expression* expression_;
+    ExpressionStatement();
+
+    Expression* expression_ = nullptr;
+
 };
 
 class ForInStatement: public Statement {
 public:
-    Expression* left_;
-    Expression* right_;
-    Statement* body_;
-    bool each;
+    ForInStatement();
+
+    Expression* left_ = nullptr;
+    Expression* right_ = nullptr;
+    Statement* body_ = nullptr;
+    bool each_ = false;
+
 };
 
 class ForOfStatement: public Statement {
 public:
-    Expression* left_;
-    Expression* right_;
-    Statement* body_;
+    ForOfStatement();
+
+    Expression* left_ = nullptr;
+    Expression* right_ = nullptr;
+    Statement* body_ = nullptr;
+
 };
 
 class ForStatement: public Statement {
 public:
-    Expression* init_;
-    Expression* test_;
-    Expression* update_;
-    Statement* body_;
+    ForStatement();
+
+    Expression* init_ = nullptr;
+    Expression* test_ = nullptr;
+    Expression* update_ = nullptr;
+    Statement* body_ = nullptr;
+
 };
 
 class FunctionDeclaration: public Declaration {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter*> params_;
-    BlockStatement* body_;
-    bool generator_;
-    bool expression_;
-    bool async_;
+    FunctionDeclaration();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params_;
+    BlockStatement* body_ = nullptr;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
+
 };
 
 class FunctionExpression: public Expression {
 public:
-    Identifier* id_;
-    std::vector<FunctionParameter*> params_;
-    BlockStatement* body_;
-    bool generator_;
-    bool expression_;
-    bool async_;
+    FunctionExpression();
+
+    Identifier* id_ = nullptr;
+    std::vector<AstNode*> params_;
+    BlockStatement* body_ = nullptr;
+    bool generator_ = false;
+    bool expression_ = false;
+    bool async_ = false;
+
 };
 
 class Identifier: public Expression {
 public:
+    Identifier();
+
     std::string name_;
+
 };
 
 class IfStatement: public Statement {
 public:
-    Expression* test_;
-    Statement* consequent_;
-    Statement* alternate_;
+    IfStatement();
+
+    Expression* test_ = nullptr;
+    Statement* consequent_ = nullptr;
+    Statement* alternate_ = nullptr;
+
 };
 
 class Import: public AstNode {
+public:
+    Import();
 
 };
 
 class ImportDeclaration: public Declaration {
 public:
-    std::vector<ImportDeclarationSpecifier> specifiers_;
-    Literal* source;
+    ImportDeclaration();
+
+    std::vector<AstNode*> specifiers_;
+    Literal* source = nullptr;
+
 };
 
 class ImportDefaultSpecifier: public AstNode {
 public:
-    Identifier* local_;
+    ImportDefaultSpecifier();
+
+    Identifier* local_ = nullptr;
+
 };
 
 class ImportNamespaceSpecifier: public AstNode {
 public:
-    Identifier* local_;
+    ImportNamespaceSpecifier();
+
+    Identifier* local_ = nullptr;
+
 };
 
 class ImportSpecifier: public AstNode {
 public:
-    Identifier* local_;
-    Identifier* imported_;
+    ImportSpecifier();
+
+    Identifier* local_ = nullptr;
+    Identifier* imported_ = nullptr;
 
 };
 
 class LabeledStatement: AstNode {
 public:
-    Identifier* label_;
-    Statement* body_;
+    LabeledStatement();
+
+    Identifier* label_ = nullptr;
+    Statement* body_ = nullptr;
 
 };
 
 class Literal: Expression {
 public:
+    Literal();
+
     std::optional<std::variant<bool, JSNumber, std::string>> value_;
     std::string raw_;
+
 };
 
 class MetaProperty: AstNode {
 public:
-    Identifier* meta_;
-    Identifier* property_;
+    MetaProperty();
+
+    Identifier* meta_ = nullptr;
+    Identifier* property_ = nullptr;
+
 };
 
 class MethodDefinition: public AstNode {
 public:
-    Expression* key_;
-    bool computed_;
+    MethodDefinition();
+
+    Expression* key_ = nullptr;
+    bool computed_ = false;
     std::optional<std::variant<AsyncFunctionExpression*, FunctionExpression*>> value_;
     std::string kind_;
-    bool static_;
+    bool static_ = false;
+
 };
 
 class Module: public AstNode {
 public:
-    std::vector<StatementListItem*> body_;
+    Module();
+
+    std::vector<AstNode*> body_;
     std::string sourceType_;
 
 };
 
 class NewExpression: public Expression {
 public:
-    Expression* callee_;
+    NewExpression();
+
+    Expression* callee_ = nullptr;
     std::vector<ArgumentListElement*> arguments_;
+
 };
 
 class ObjectExpression: public Expression {
 public:
-    std::vector<ObjectExpressionProperty> properties_;
+    ObjectExpression();
+
+    std::vector<AstNode*> properties_;
+
 };
 
 class ObjectPattern: public AstNode {
 public:
-    std::vector<ObjectPatternProperty> properties_;
+    ObjectPattern();
+
+    std::vector<AstNode*> properties_;
+
 };
 
 class Property: public AstNode {
 public:
-    PropertyKey key_;
+    Property();
+
+    AstNode* key_ = nullptr;
     bool computed_;
-    PropertyValue value;
+    AstNode* value_ = nullptr;
     std::string kind_;
     bool method_;
     bool shorthand_;
+
 };
 
 class RegexLiteral: public Expression {
 public:
+    RegexLiteral();
+
     JSRegExp value_;
     std::string raw_;
+
 };
 
 class RestElement: public AstNode {
 public:
-    std::variant<BindingIdentifier*, BindingPattern*> argument_;
+    RestElement();
+
+    std::variant<BindingIdentifier*, AstNode*> argument_;
+
 };
 
 class ReturnStatement: public Statement {
 public:
-    Expression* argument_;
+    ReturnStatement();
+
+    Expression* argument_ = nullptr;
+
 };
 
 class Script: public AstNode {
 public:
-    std::vector<StatementListItem*> body_;
+    Script();
+
+    std::vector<AstNode*> body_;
     std::string sourceType_;
 
 };
 
 class SequenceExpression: public Expression {
 public:
+    SequenceExpression();
+
     std::vector<Expression*> expressions_;
+
 };
 
 class SpreadElement: public AstNode {
 public:
-    Expression* argument_;
+    SpreadElement();
+
+    Expression* argument_ = nullptr;
+
 };
 
 class StaticMemberExpression: public Expression {
 public:
-    bool computed_;
-    Expression* object_;
-    Expression* property_;
+    StaticMemberExpression();
+
+    bool computed_ = false;
+    Expression* object_ = nullptr;
+    Expression* property_ = nullptr;
+
 };
 
 class Super: public AstNode {
+public:
+    Super();
 
 };
 
 class SwitchCase: public AstNode {
 public:
-    Expression *test;
+    SwitchCase();
+
+    Expression *test = nullptr;
     std::vector<Statement *> consequent_;
+
 };
 
 class SwitchStatement: public Statement {
 public:
-    Expression* discriminant_;
+    SwitchStatement();
+
+    Expression* discriminant_ = nullptr;
     std::vector<SwitchCase*> cases_;
+
 };
 
 class TaggedTemplateExpression: public Expression {
 public:
-    Expression* tag_;
-    TemplateLiteral* quasi_;
+    TaggedTemplateExpression();
+
+    Expression* tag_ = nullptr;
+    TemplateLiteral* quasi_ = nullptr;
+
 };
 
 class TemplateElementValue {
 public:
     std::string cooked_;
     std::string raw_;
+
 };
 
 class TemplateElement: public AstNode {
 public:
+    TemplateElement();
+
     TemplateElementValue value_;
-    bool tail_;
+    bool tail_ = false;
+
 };
 
 class TemplateLiteral: public AstNode {
 public:
+    TemplateLiteral();
+
     std::vector<TemplateElement*> quasis_;
     std::vector<Expression*> expressions_;
+
 };
 
 class ThisExpression: public Expression {
+public:
+    ThisExpression();
 
 };
 
 class ThrowStatement: public Statement {
 public:
-    Expression* argument_;
+    ThrowStatement();
+
+    Expression* argument_ = nullptr;
 
 };
 
 class TryStatement: public Statement {
 public:
-    BlockStatement* block_;
-    CatchClause* handler_;
-    BlockStatement* finalizer_;
+    TryStatement();
+
+    BlockStatement* block_ = nullptr;
+    CatchClause* handler_ = nullptr;
+    BlockStatement* finalizer_ = nullptr;
+
 };
 
 class UnaryExpression: public Expression {
 public:
+    UnaryExpression();
+
     std::string operator_;
-    Expression* argument_;
-    bool prefix_;
+    Expression* argument_ = nullptr;
+    bool prefix_ = false;
+
 };
 
 class UpdateExpression: public Expression {
 public:
+    UpdateExpression();
+
     std::string operator_;
-    Expression* argument_;
-    bool prefix_;
+    Expression* argument_ = nullptr;
+    bool prefix_ = false;
+
 };
 
 class VariableDeclaration: public Declaration {
 public:
+    VariableDeclaration();
+
     std::vector<VariableDeclarator*> declarations_;
     std::string kind_;
+
 };
 
 class VariableDeclarator: public AstNode {
 public:
-    std::variant<BindingIdentifier*, BindingPattern*> id_;
-    Expression* init_;
+    VariableDeclarator();
+
+    std::variant<BindingIdentifier*, AstNode*> id_;
+    Expression* init_ = nullptr;
+
 };
 
 class WhileStatement: public Statement {
 public:
-    Expression* test_;
-    Statement* body_;
+    WhileStatement();
+
+    Expression* test_ = nullptr;
+    Statement* body_ = nullptr;
+
 };
 
 class WithStatement: public Statement {
 public:
-    Expression* object_;
-    Statement* body_;
+    WithStatement();
+
+    Expression* object_ = nullptr;
+    Statement* body_ = nullptr;
+
 };
 
 class YieldExpression: public Expression {
 public:
-    Expression* argument_;
-    bool delegate_;
-};
+    YieldExpression();
 
-#endif //BESTPACK_AST_H
+    Expression* argument_ = nullptr;
+    bool delegate_ = false;
+
+};
