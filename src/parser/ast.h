@@ -9,9 +9,10 @@
 #include <optional>
 #include "../tokenizer/token.h"
 #include "../gc.hpp"
+#include "../js_string.h"
 
-typedef double JSNumber;
-typedef std::string JSRegExp;
+typedef double JS_Number;
+typedef JS_String JS_RegExp;
 
 #define DEF_AST_NODE_TYPE(D) \
     D(ArrayExpression) \
@@ -201,7 +202,7 @@ public:
     AssignmentExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::string operator_;
+    JS_String operator_;
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 
@@ -268,7 +269,7 @@ public:
     BinaryExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::string operator_;
+    JS_String operator_;
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 };
@@ -385,7 +386,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     Expression* expression_ = nullptr;
-    std::string directive_;
+    JS_String directive_;
 
 };
 
@@ -520,7 +521,7 @@ class Identifier: public Expression {
 public:
     Identifier();
 
-    std::string name_;
+    JS_String name_;
 
 };
 
@@ -593,8 +594,8 @@ class Literal: public Expression {
 public:
     Literal();
 
-    std::optional<std::variant<bool, JSNumber, std::string>> value_;
-    std::string raw_;
+    std::optional<std::variant<bool, JS_Number, JS_String>> value_;
+    JS_String raw_;
 
 };
 
@@ -616,7 +617,7 @@ public:
     Expression* key_ = nullptr;
     bool computed_ = false;
     AstNode* value_ = nullptr;
-    std::string kind_;
+    JS_String kind_;
     bool static_ = false;
 
 };
@@ -627,7 +628,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<AstNode*> body_;
-    std::string sourceType_;
+    JS_String sourceType_;
 
 };
 
@@ -667,7 +668,7 @@ public:
     AstNode* key_ = nullptr;
     bool computed_ = false;
     AstNode* value_ = nullptr;
-    std::string kind_;
+    JS_String kind_;
     bool method_ = false;
     bool shorthand_ = false;
 
@@ -677,8 +678,8 @@ class RegexLiteral: public Expression {
 public:
     RegexLiteral();
 
-    JSRegExp value_;
-    std::string raw_;
+    JS_RegExp value_;
+    JS_String raw_;
 
 };
 
@@ -706,7 +707,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<AstNode*> body_;
-    std::string sourceType_;
+    JS_String sourceType_;
 
 };
 
@@ -777,8 +778,8 @@ public:
 
 class TemplateElementValue {
 public:
-    std::string cooked_;
-    std::string raw_;
+    JS_String cooked_;
+    JS_String raw_;
 
 };
 
@@ -832,7 +833,7 @@ public:
     UnaryExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::string operator_;
+    JS_String operator_;
     Expression* argument_ = nullptr;
     bool prefix_ = false;
 
@@ -843,7 +844,7 @@ public:
     UpdateExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::string operator_;
+    JS_String operator_;
     Expression* argument_ = nullptr;
     bool prefix_ = false;
 
@@ -855,7 +856,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<VariableDeclarator*> declarations_;
-    std::string kind_;
+    JS_String kind_;
 
 };
 
