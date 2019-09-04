@@ -17,9 +17,9 @@ struct Comment {
     SourceLocation loc_;
 };
 
-class Scanner final: ParseErrorHandler {
+class Scanner final {
 public:
-    Scanner(std::shared_ptr<std::u16string> source);
+    Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<ParseErrorHandler> error_handler);
     Scanner(const Scanner&) = delete;
     Scanner(Scanner&&) = delete;
 
@@ -36,6 +36,10 @@ public:
         return source_->size();
     }
 
+    inline void SetTrackComment(bool tc) {
+        track_comment_ = tc;
+    }
+
     ScannerState SaveState();
     void RestoreState(const ScannerState& state);
 
@@ -43,6 +47,26 @@ public:
 
     inline bool IsEnd() const {
         return index_ >= Length();
+    }
+
+    inline std::uint32_t LineNumber() const {
+        return line_number_;
+    }
+
+    inline std::uint32_t Index() const {
+        return index_;
+    }
+
+    inline void SetIndex(std::uint32_t index) {
+        index_ = index;
+    }
+
+    inline std::uint32_t Column() const {
+        return index_ - line_start_;
+    }
+
+    inline std::uint32_t LineStart() const {
+        return line_start_;
     }
 
     bool SkipSingleLineComment(std::uint32_t offset, std::vector<Comment>& result);
@@ -82,6 +106,7 @@ private:
     std::uint32_t line_number_ = 0u;
     std::uint32_t line_start_ = 0u;
 
+    std::shared_ptr<ParseErrorHandler> error_handler_;
     std::shared_ptr<std::u16string> source_;
     bool track_comment_ = false;
     bool is_module_ = false;

@@ -3,13 +3,15 @@
 //
 
 #include "scanner.h"
+#include "../macros.h"
 
 using namespace std;
 
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-Scanner::Scanner(std::shared_ptr<std::u16string> source): source_(std::move(source)) {
+Scanner::Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<ParseErrorHandler> error_handler):
+source_(std::move(source)), error_handler_(std::move(error_handler)) {
 
 }
 
@@ -27,7 +29,7 @@ void Scanner::RestoreState(const Scanner::ScannerState &state) {
 }
 
 void Scanner::UnexpectedToken() {
-    CreateError("<Unexpected Token>", "", index_, line_number_, index_ - line_start_ + 1);
+    error_handler_->CreateError("<Unexpected Token>", "", index_, line_number_, index_ - line_start_ + 1);
 }
 
 bool Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &result) {
@@ -190,7 +192,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
                     break;
                 }
             } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
-                if (source_->substr(index_ + 1, index_ + 4) == utils::To_UTF16("!--")) {
+                if (source_->substr(index_ + 1, index_ + 4) == U("!--")) {
                     index_ += 4; // `<!--`
                     vector<Comment> comments;
                     DO(SkipSingleLineComment(4, comments))
@@ -489,9 +491,9 @@ bool Scanner::ScanIdentifier(Token &tok) {
         tok.type_ = JsTokenType::Identifier;
     } else if (IsKeyword(id)) {
         tok.type_ = JsTokenType::Keyword;
-    } else if (id == utils::To_UTF16("null")) {
+    } else if (id == U("null")) {
         tok.type_ = JsTokenType::NullLiteral;
-    } else if (id == utils::To_UTF16("true") || id == utils::To_UTF16("false")) {
+    } else if (id == U("true") || id == U("false")) {
         tok.type_ = JsTokenType::BooleanLiteral;
     } else {
         tok.type_ = JsTokenType::Identifier;
@@ -500,7 +502,7 @@ bool Scanner::ScanIdentifier(Token &tok) {
     if (tok.type_ != JsTokenType::Identifier && (start + id.size() != index_)) {
         auto restore = index_;
         index_ = start;
-        CreateError("InvalidEscapedReservedWord", index_, line_number_, index_ - line_start_);
+        error_handler_->CreateError("InvalidEscapedReservedWord", index_, line_number_, index_ - line_start_);
         index_ = restore;
     }
 
@@ -521,7 +523,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
         case '(':
         case '{':
             if (ch == '{') {
-                curly_stack_.push(utils::To_UTF16("{"));
+                curly_stack_.push(U("{"));
             }
             ++index_;
             break;
@@ -531,7 +533,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
             if ((*source_)[index_] == '.' && (*source_)[index_ + 1] == '.') {
                 // Spread operator: ...
                 index_ += 2;
-                str = utils::To_UTF16("...");
+                str = U("...");
             }
             break;
 
@@ -554,37 +556,37 @@ bool Scanner::ScanPunctuator(Token &tok) {
         default:
             // 4-character punctuator.
             str = source_->substr(index_, 4);
-            if (str == utils::To_UTF16(">>>=")) {
+            if (str == U(">>>=")) {
                 index_ += 4;
             } else {
 
                 // 3-character punctuators.
                 str = str.substr(0, 3);
-                if (str == utils::To_UTF16("===") || str == utils::To_UTF16("!==") || str == utils::To_UTF16(">>>") ||
-                                                              str == utils::To_UTF16("<<=") || str == utils::To_UTF16(">>=") || str == utils::To_UTF16("**=")) {
+                if (str == U("===") || str == U("!==") || str == U(">>>") ||
+                                                              str == U("<<=") || str == U(">>=") || str == U("**=")) {
                     index_ += 3;
                 } else {
 
                     // 2-character punctuators.
                     str = str.substr(0, 2);
-                    if (str == utils::To_UTF16("&&") || str == utils::To_UTF16("||") || str == utils::To_UTF16("==") || str == utils::To_UTF16("!=") ||
-                        str == utils::To_UTF16("+=") || str == utils::To_UTF16("-=") || str == utils::To_UTF16("*=") || str == utils::To_UTF16("/=") ||
-                        str == utils::To_UTF16("++") || str == utils::To_UTF16("--") ||
-                        str == utils::To_UTF16("<<") || str == utils::To_UTF16(">>") ||
-                        str == utils::To_UTF16("&=") ||
-                        str == utils::To_UTF16("|=") ||
-                        str == utils::To_UTF16("^=") ||
-                        str == utils::To_UTF16("%=") ||
-                        str == utils::To_UTF16("<=") ||
-                        str == utils::To_UTF16(">=") ||
-                        str == utils::To_UTF16("=>") ||
-                        str == utils::To_UTF16("**")) {
+                    if (str == U("&&") || str == U("||") || str == U("==") || str == U("!=") ||
+                        str == U("+=") || str == U("-=") || str == U("*=") || str == U("/=") ||
+                        str == U("++") || str == U("--") ||
+                        str == U("<<") || str == U(">>") ||
+                        str == U("&=") ||
+                        str == U("|=") ||
+                        str == U("^=") ||
+                        str == U("%=") ||
+                        str == U("<=") ||
+                        str == U(">=") ||
+                        str == U("=>") ||
+                        str == U("**")) {
                         index_ += 2;
                     } else {
 
                         // 1-character punctuators.
                         ch = (*source_)[index_];
-                        if (utils::To_UTF16("<>=!+-*%&|^/").find(ch) >= 0) {
+                        if (U("<>=!+-*%&|^/").find(ch) >= 0) {
                             ++index_;
                         }
                         str.push_back(ch);
@@ -628,7 +630,7 @@ bool Scanner::ScanHexLiteral(std::uint32_t start, Token &tok) {
     }
 
     tok.type_ = JsTokenType::Punctuator;
-    tok.value_ = utils::To_UTF16("0x") + num;
+    tok.value_ = U("0x") + num;
     tok.line_start_ = line_start_;
     tok.line_number_ = line_number_;
     tok.range_ = make_pair(start, index_);
@@ -731,7 +733,7 @@ bool Scanner::ScanNumericLiteral(Token &tok) {
     auto start = index_;
     char16_t ch = (*source_)[start];
     if (!(utils::IsDecimalDigit(ch) || (ch == '.'))) {
-        CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
+        error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
         return false;
     }
 
@@ -814,7 +816,7 @@ bool Scanner::ScanStringLiteral(Token &tok) {
     char16_t quote = source_->at(start);
 
     if (!(quote == '\'' || quote == '"')) {
-        CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
+        error_handler_->CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
         return false;
     }
 
@@ -944,7 +946,7 @@ bool Scanner::ScanTemplate(Token &tok) {
             break;
         } else if (ch == '$') {
             if ((*source_)[index_]== '{') {
-                curly_stack_.push(utils::To_UTF16("${"));
+                curly_stack_.push(U("${"));
                 ++index_;
                 terminated = true;
                 break;
@@ -1094,7 +1096,7 @@ bool Scanner::Lex(Token &tok) {
 
     // Template literals start with ` (U+0060) for template head
     // or } (U+007D) for template middle or template tail.
-    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == utils::To_UTF16("${"))) {
+    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == U("${"))) {
         return ScanTemplate(tok);
     }
 

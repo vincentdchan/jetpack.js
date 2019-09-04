@@ -112,12 +112,21 @@ enum class AstNodeType: std::uint8_t {
 
 #undef DD
 
+enum class VarKind {
+    Invalid = 0,
+    Var,
+    Let,
+    Const,
+};
+
 static const char* AstNodeTypeToCString(AstNodeType t);
 
 class AstNode: public GarbageCollector::ObjectHeader {
 public:
 
     AstNodeType type_;
+    std::pair<std::uint32_t, std::uint32_t> range_;
+    SourceLocation loc_;
 
 //    AstNode(): type_(AstNodeType::Invalid) {}
 
@@ -617,7 +626,7 @@ public:
     Expression* key_ = nullptr;
     bool computed_ = false;
     AstNode* value_ = nullptr;
-    JS_String kind_;
+    VarKind kind_;
     bool static_ = false;
 
 };
@@ -668,7 +677,7 @@ public:
     AstNode* key_ = nullptr;
     bool computed_ = false;
     AstNode* value_ = nullptr;
-    JS_String kind_;
+    VarKind kind_;
     bool method_ = false;
     bool shorthand_ = false;
 
@@ -858,7 +867,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<VariableDeclarator*> declarations_;
-    JS_String kind_;
+    VarKind kind_;
 
 };
 

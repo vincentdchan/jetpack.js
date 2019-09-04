@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parser/ast.h"
+#include "parser/parser.hpp"
 #include "tokenizer/scanner.h"
 
 int main() {
