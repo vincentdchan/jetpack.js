@@ -8,10 +8,12 @@
 #include <variant>
 #include <optional>
 #include "../tokenizer/token.h"
-#include "../gc.hpp"
 
 typedef double JS_Number;
 typedef UString JS_RegExp;
+
+template <typename T>
+using Sp = std::shared_ptr<T>;
 
 #define DEF_AST_NODE_TYPE(D) \
     D(ArrayExpression) \
@@ -120,7 +122,7 @@ enum class VarKind {
 
 static const char* AstNodeTypeToCString(AstNodeType t);
 
-class AstNode: public GarbageCollector::ObjectHeader {
+class AstNode {
 public:
 
     AstNodeType type_;
@@ -175,29 +177,26 @@ class ArrayExpression: public Expression {
 public:
 
     ArrayExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> elements_;
+    std::vector<Sp<AstNode>> elements_;
 
 };
 
 class ArrayPattern: public AstNode {
 public:
     ArrayPattern();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> elements_;
+    std::vector<Sp<AstNode>> elements_;
 
 };
 
 class ArrowFunctionExpression: public Expression {
 public:
     ArrowFunctionExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    AstNode* body_;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<AstNode> body_;
     // TODO: flags
     bool generator_ = false;
     bool expression_ = false;
@@ -208,31 +207,28 @@ public:
 class AssignmentExpression: public Expression {
 public:
     AssignmentExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     UString operator_;
-    Expression* left_ = nullptr;
-    Expression* right_ = nullptr;
+    Sp<Expression> left_;
+    Sp<Expression> right_;
 
 };
 
 class AssignmentPattern: public AstNode {
 public:
     AssignmentPattern();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* left_ = nullptr;
-    Expression* right_ = nullptr;
+    Sp<AstNode> left_;
+    Sp<Expression> right_;
 };
 
 class AsyncArrowFunctionExpression: public Expression {
 public:
     AsyncArrowFunctionExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    AstNode* body_;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<AstNode> body_;
     bool generator_ = false;
     bool expression_ = false;
     bool async_ = false;
@@ -241,11 +237,10 @@ public:
 class AsyncFunctionDeclaration: public Declaration {
 public:
     AsyncFunctionDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    BlockStatement* body_ = nullptr;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<BlockStatement> body_;
     bool generator_ = false;
     bool expression_ = false;
     bool async_ = false;
@@ -254,131 +249,121 @@ public:
 class AsyncFunctionExpression: public Expression {
 public:
     AsyncFunctionExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    BlockStatement* body_ = nullptr;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<BlockStatement> body_;
     bool generator_ = false;
     bool expression_ = false;
     bool async_ = false;
+
 };
 
 class AwaitExpression: public Expression {
 public:
     AwaitExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* arguments_ = nullptr;
+    Sp<Expression> arguments_;
+
 };
 
 class BinaryExpression: public Expression {
 public:
     BinaryExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     UString operator_;
-    Expression* left_ = nullptr;
-    Expression* right_ = nullptr;
+    Sp<Expression> left_;
+    Sp<Expression> right_;
+
 };
 
 class BlockStatement: public AstNode {
 public:
     BlockStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<Statement*> body_;
+    std::vector<Sp<Statement>> body_;
 
 };
 
 class BreakStatement: public Statement {
 public:
     BreakStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* label_ = nullptr;
+    Sp<Identifier> label_;
 
 };
 
 class CallExpression: public Expression {
 public:
     CallExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* callee_ = nullptr;
-    std::vector<AstNode*> arguments_;
+    Sp<AstNode> callee_;
+    std::vector<Sp<AstNode>> arguments_;
 
 };
 
 class CatchClause: public AstNode {
 public:
     CatchClause();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* param_ = nullptr;
-    BlockStatement* body_ = nullptr;
+    Sp<AstNode> param_;
+    Sp<BlockStatement> body_;
 
 };
 
 class ClassBody: public AstNode {
 public:
     ClassBody();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<Property*> body_;
+    std::vector<Sp<Property>> body_;
 
 };
 
 class ClassDeclaration: public Declaration {
 public:
     ClassDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    Identifier* superClass_ = nullptr;
-    ClassBody* body_ = nullptr;
+    Sp<Identifier> id_;
+    Sp<Identifier> superClass_;
+    Sp<ClassBody> body_;
 
 };
 
 class ClassExpression: public Expression {
 public:
     ClassExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    Identifier* superClass_ = nullptr;
-    ClassBody* body_ = nullptr;
+    Sp<Identifier> id_;
+    Sp<Identifier> superClass_;
+    Sp<ClassBody> body_;
 
 };
 
 class ComputedMemberExpression: public Expression {
 public:
     ComputedMemberExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     bool computed_ = false;
-    Expression* object_ = nullptr;
-    Expression* property_ = nullptr;
+    Sp<Expression> object_;
+    Sp<Expression> property_;
 
 };
 
 class ConditionalExpression: public Expression {
 public:
     ConditionalExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* test_ = nullptr;
-    Expression* consequent_ = nullptr;
-    Expression* alternate_ = nullptr;
+    Sp<Expression> test_;
+    Sp<Expression> consequent_;
+    Sp<Expression> alternate_;
 
 };
 
 class ContinueStatement: public Statement {
 public:
     ContinueStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* label_ = nullptr;
+    Sp<Identifier> label_ = nullptr;
 
 };
 
@@ -391,9 +376,8 @@ public:
 class Directive: public Statement {
 public:
     Directive();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* expression_ = nullptr;
+    Sp<Expression> expression_;
     UString directive_;
 
 };
@@ -401,10 +385,9 @@ public:
 class DoWhileStatement: public Statement {
 public:
     DoWhileStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Statement* body_ = nullptr;
-    Expression* test_ = nullptr;
+    Sp<Statement> body_;
+    Sp<Expression> test_;
 
 };
 
@@ -417,59 +400,53 @@ public:
 class ExportAllDeclaration: public Declaration {
 public:
     ExportAllDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Literal* source_ = nullptr;
+    Sp<Literal> source_;
 
 };
 
 class ExportDefaultDeclaration: public Declaration {
 public:
     ExportDefaultDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* declaration_ = nullptr;
+    Sp<AstNode> declaration_;
 
 };
 
 class ExportNamedDeclaration: public Declaration {
 public:
     ExportNamedDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> declaration_;
-    std::vector<ExportSpecifier*> specifiers_;
-    Literal* source_ = nullptr;
+    std::vector<Sp<AstNode>> declaration_;
+    std::vector<Sp<ExportSpecifier>> specifiers_;
+    Sp<Literal> source_;
 
 };
 
 class ExportSpecifier: public AstNode {
 public:
     ExportSpecifier();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* exported_ = nullptr;
-    Identifier* local_ = nullptr;
+    Sp<Identifier> exported_;
+    Sp<Identifier> local_;
 
 };
 
 class ExpressionStatement: public Statement {
 public:
     ExpressionStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* expression_ = nullptr;
+    Sp<Expression> expression_;
 
 };
 
 class ForInStatement: public Statement {
 public:
     ForInStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* left_ = nullptr;
-    Expression* right_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Expression> left_;
+    Sp<Expression> right_;
+    Sp<Statement> body_;
     bool each_ = false;
 
 };
@@ -477,34 +454,31 @@ public:
 class ForOfStatement: public Statement {
 public:
     ForOfStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* left_ = nullptr;
-    Expression* right_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Expression> left_;
+    Sp<Expression> right_;
+    Sp<Statement> body_;
 
 };
 
 class ForStatement: public Statement {
 public:
     ForStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* init_ = nullptr;
-    Expression* test_ = nullptr;
-    Expression* update_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Expression> init_;
+    Sp<Expression> test_;
+    Sp<Expression> update_;
+    Sp<Statement> body_;
 
 };
 
 class FunctionDeclaration: public Declaration {
 public:
     FunctionDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    BlockStatement* body_ = nullptr;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<BlockStatement> body_;
     bool generator_ = false;
     bool expression_ = false;
     bool async_ = false;
@@ -514,11 +488,10 @@ public:
 class FunctionExpression: public Expression {
 public:
     FunctionExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* id_ = nullptr;
-    std::vector<AstNode*> params_;
-    BlockStatement* body_ = nullptr;
+    Sp<Identifier> id_;
+    std::vector<Sp<AstNode>> params_;
+    Sp<BlockStatement> body_;
     bool generator_ = false;
     bool expression_ = false;
     bool async_ = false;
@@ -536,11 +509,10 @@ public:
 class IfStatement: public Statement {
 public:
     IfStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* test_ = nullptr;
-    Statement* consequent_ = nullptr;
-    Statement* alternate_ = nullptr;
+    Sp<Expression> test_;
+    Sp<Statement> consequent_;
+    Sp<Statement> alternate_;
 
 };
 
@@ -553,48 +525,43 @@ public:
 class ImportDeclaration: public Declaration {
 public:
     ImportDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> specifiers_;
-    Literal* source_ = nullptr;
+    std::vector<Sp<AstNode>> specifiers_;
+    Sp<Literal> source_;
 
 };
 
 class ImportDefaultSpecifier: public AstNode {
 public:
     ImportDefaultSpecifier();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* local_ = nullptr;
+    Sp<Identifier> local_;
 
 };
 
 class ImportNamespaceSpecifier: public AstNode {
 public:
     ImportNamespaceSpecifier();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* local_ = nullptr;
+    Sp<Identifier> local_;
 
 };
 
 class ImportSpecifier: public AstNode {
 public:
     ImportSpecifier();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* local_ = nullptr;
-    Identifier* imported_ = nullptr;
+    Sp<Identifier> local_;
+    Sp<Identifier> imported_;
 
 };
 
 class LabeledStatement: public AstNode {
 public:
     LabeledStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* label_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Identifier> label_;
+    Sp<Statement> body_;
 
 };
 
@@ -610,22 +577,20 @@ public:
 class MetaProperty: public AstNode {
 public:
     MetaProperty();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Identifier* meta_ = nullptr;
-    Identifier* property_ = nullptr;
+    Sp<Identifier> meta_;
+    Sp<Identifier> property_;
 
 };
 
 class MethodDefinition: public AstNode {
 public:
     MethodDefinition();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* key_ = nullptr;
+    Sp<Expression> key_;
     bool computed_ = false;
-    AstNode* value_ = nullptr;
-    VarKind kind_;
+    Sp<AstNode> value_;
+    VarKind kind_ = VarKind::Invalid;
     bool static_ = false;
 
 };
@@ -633,9 +598,8 @@ public:
 class Module: public AstNode {
 public:
     Module();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> body_;
+    std::vector<Sp<AstNode>> body_;
     UString sourceType_;
 
 };
@@ -643,39 +607,35 @@ public:
 class NewExpression: public Expression {
 public:
     NewExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* callee_ = nullptr;
-    std::vector<AstNode*> arguments_;
+    Sp<Expression> callee_;
+    std::vector<Sp<AstNode>> arguments_;
 
 };
 
 class ObjectExpression: public Expression {
 public:
     ObjectExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> properties_;
+    std::vector<Sp<AstNode>> properties_;
 
 };
 
 class ObjectPattern: public AstNode {
 public:
     ObjectPattern();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> properties_;
+    std::vector<Sp<AstNode>> properties_;
 
 };
 
 class Property: public AstNode {
 public:
     Property();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* key_ = nullptr;
+    Sp<AstNode> key_;
     bool computed_ = false;
-    AstNode* value_ = nullptr;
+    Sp<AstNode> value_;
     VarKind kind_;
     bool method_ = false;
     bool shorthand_ = false;
@@ -694,27 +654,24 @@ public:
 class RestElement: public AstNode {
 public:
     RestElement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* argument_ = nullptr;
+    Sp<AstNode> argument_;
 
 };
 
 class ReturnStatement: public Statement {
 public:
     ReturnStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
 
 };
 
 class Script: public AstNode {
 public:
     Script();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<AstNode*> body_;
+    std::vector<Sp<AstNode>> body_;
     UString sourceType_;
 
 };
@@ -722,29 +679,26 @@ public:
 class SequenceExpression: public Expression {
 public:
     SequenceExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<Expression*> expressions_;
+    std::vector<Sp<Expression>> expressions_;
 
 };
 
 class SpreadElement: public AstNode {
 public:
     SpreadElement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
 
 };
 
 class StaticMemberExpression: public Expression {
 public:
     StaticMemberExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     bool computed_ = false;
-    Expression* object_ = nullptr;
-    Expression* property_ = nullptr;
+    Sp<Expression> object_;
+    Sp<Expression> property_;
 
 };
 
@@ -757,30 +711,27 @@ public:
 class SwitchCase: public AstNode {
 public:
     SwitchCase();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression *test_ = nullptr;
-    std::vector<Statement *> consequent_;
+    Sp<Expression> test_;
+    std::vector<Sp<Statement>> consequent_;
 
 };
 
 class SwitchStatement: public Statement {
 public:
     SwitchStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* discriminant_ = nullptr;
-    std::vector<SwitchCase*> cases_;
+    Sp<Expression> discriminant_;
+    std::vector<Sp<SwitchCase>> cases_;
 
 };
 
 class TaggedTemplateExpression: public Expression {
 public:
     TaggedTemplateExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* tag_ = nullptr;
-    TemplateLiteral* quasi_ = nullptr;
+    Sp<Expression> tag_;
+    Sp<TemplateLiteral> quasi_;
 
 };
 
@@ -805,10 +756,9 @@ public:
 class TemplateLiteral: public AstNode {
 public:
     TemplateLiteral();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<TemplateElement*> quasis_;
-    std::vector<Expression*> expressions_;
+    std::vector<Sp<TemplateElement>> quasis_;
+    std::vector<Sp<Expression>> expressions_;
 
 };
 
@@ -821,30 +771,27 @@ public:
 class ThrowStatement: public Statement {
 public:
     ThrowStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
 
 };
 
 class TryStatement: public Statement {
 public:
     TryStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    BlockStatement* block_ = nullptr;
-    CatchClause* handler_ = nullptr;
-    BlockStatement* finalizer_ = nullptr;
+    Sp<BlockStatement> block_;
+    Sp<CatchClause> handler_;
+    Sp<BlockStatement> finalizer_;
 
 };
 
 class UnaryExpression: public Expression {
 public:
     UnaryExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     UString operator_;
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
     bool prefix_ = false;
 
 };
@@ -852,10 +799,9 @@ public:
 class UpdateExpression: public Expression {
 public:
     UpdateExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     UString operator_;
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
     bool prefix_ = false;
 
 };
@@ -863,9 +809,8 @@ public:
 class VariableDeclaration: public Declaration {
 public:
     VariableDeclaration();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    std::vector<VariableDeclarator*> declarations_;
+    std::vector<Sp<VariableDeclarator>> declarations_;
     VarKind kind_;
 
 };
@@ -873,39 +818,35 @@ public:
 class VariableDeclarator: public AstNode {
 public:
     VariableDeclarator();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    AstNode* id_ = nullptr;
-    Expression* init_ = nullptr;
+    Sp<AstNode> id_;
+    Sp<Expression> init_;
 
 };
 
 class WhileStatement: public Statement {
 public:
     WhileStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* test_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Expression> test_;
+    Sp<Statement> body_;
 
 };
 
 class WithStatement: public Statement {
 public:
     WithStatement();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* object_ = nullptr;
-    Statement* body_ = nullptr;
+    Sp<Expression> object_;
+    Sp<Statement> body_;
 
 };
 
 class YieldExpression: public Expression {
 public:
     YieldExpression();
-    void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    Expression* argument_ = nullptr;
+    Sp<Expression> argument_;
     bool delegate_ = false;
 
 };

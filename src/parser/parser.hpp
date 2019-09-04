@@ -7,7 +7,6 @@
 #include <memory>
 #include <stack>
 #include <functional>
-#include "../gc.hpp"
 #include "../tokenizer/token.h"
 #include "../tokenizer/scanner.h"
 #include "../parse_error_handler.h"
@@ -71,9 +70,8 @@ namespace parser {
         Marker start_marker_;
         Marker last_marker_;
 
-        shared_ptr<ParseErrorHandler> error_handler_;
-        shared_ptr<std::u16string> source_;
-        shared_ptr<GarbageCollector> gc_;
+        Sp<ParseErrorHandler> error_handler_;
+        Sp<std::u16string> source_;
         bool has_line_terminator_;
 
         stack<Token> tokens_;
@@ -83,14 +81,20 @@ namespace parser {
     public:
         Parser(
             shared_ptr<u16string> source,
-            const Config& config,
-            shared_ptr<GarbageCollector> gc
+            const Config& config
         );
         Parser(const Parser&) = delete;
         Parser(Parser&&) = delete;
 
         Parser& operator=(const Parser&) = delete;
         Parser& operator=(Parser&&) = delete;
+
+        template<typename T, typename ...Args>
+        Sp<T> Alloc(Args && ...args) {
+            static_assert(std::is_base_of<AstNode, T>::value, "T not derived from AstNode");
+
+            return Sp<T>(new T);
+        }
 
         void DecorateToken(Token& );
 
@@ -171,8 +175,8 @@ namespace parser {
 
     };
 
-    Parser::Parser(shared_ptr <std::u16string> source, const Parser::Config& config, std::shared_ptr<GarbageCollector> gc):
-        source_(source), config_(config), gc_(gc) {
+    Parser::Parser(shared_ptr <std::u16string> source, const Parser::Config& config):
+        source_(source), config_(config) {
 
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
@@ -510,7 +514,7 @@ namespace parser {
                 if (MatchAsyncFunction()) {
                     return ParseFunctionExpression(expr);
                 } else {
-                    auto node = gc_->Alloc<Identifier>();
+                    auto node = Alloc<Identifier>();
                     Token next;
                     DO(NextToken(&next))
                     node->name_ = next.value_;
@@ -528,7 +532,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = gc_->Alloc<Literal>();
+                auto node = Alloc<Literal>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -539,7 +543,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = gc_->Alloc<Literal>();
+                auto node = Alloc<Literal>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -550,7 +554,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = gc_->Alloc<Literal>();
+                auto node = Alloc<Literal>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -604,7 +608,7 @@ namespace parser {
                     return ParseIdentifierName(expr);
                 } else if (!context_.strict_ && MatchKeyword(U("let"))) {
                     DO(NextToken(&token));
-                    auto id = gc_->Alloc<Identifier>();
+                    auto id = Alloc<Identifier>();
                     id->name_ = token.value_;
                     return Finalize(marker, id, expr);
                 } else {
@@ -614,7 +618,7 @@ namespace parser {
                         ParseFunctionExpression(expr);
                     } else if (MatchKeyword(U("this"))) {
                         DO(NextToken(&token))
-                        auto th = gc_->Alloc<ThisExpression>();
+                        auto th = Alloc<ThisExpression>();
                         return Finalize(marker, th, expr);
                     } else if (MatchKeyword(U("class"))) {
                         return ParseClassExpression(expr);
@@ -646,7 +650,7 @@ namespace parser {
 
         DO(Expect(U("...")))
 
-        auto node = gc_->Alloc<SpreadElement>();
+        auto node = Alloc<SpreadElement>();
 
         DO(InheritCoverGrammar([this, &node]() {
             return ParseAssignmentExpression(node->argument_);
@@ -659,8 +663,8 @@ namespace parser {
     bool Parser::ParseArrayInitializer(NodePtr &expr) {
         static_assert(std::is_convertible<ArrayExpression*, NodePtr>::value, "NodePtr can not accept ArrayExpression*");
         auto marker = CreateNode();
-        auto node = gc_->Alloc<ArrayExpression>();
-        Expression* element = nullptr;
+        auto node = Alloc<ArrayExpression>();
+        Sp<Expression> element = nullptr;
 
         DO(Expect('['))
         while (!Match(']')) {
@@ -694,7 +698,7 @@ namespace parser {
     bool Parser::ParsePropertyMethodFunction(NodePtr &ptr) {
         static_assert(std::is_convertible<FunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
         auto marker = CreateNode();
-        auto node = gc_->Alloc<FunctionExpression>();
+        auto node = Alloc<FunctionExpression>();
 
         bool isGenerator = false;
 
@@ -713,7 +717,7 @@ namespace parser {
     bool Parser::ParsePropertyMethodAsyncFunction(NodePtr& ptr) {
         static_assert(std::is_convertible<AsyncFunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
         auto marker = CreateNode();
-        auto node = gc_->Alloc<AsyncFunctionExpression>();
+        auto node = Alloc<AsyncFunctionExpression>();
 
         bool isGenerator = false;
 
@@ -742,7 +746,7 @@ namespace parser {
                 if (context_.strict_ && token.octal_) {
                     LogError("StrictOctalLiteral");
                 }
-                auto node = gc_->Alloc<Literal>();
+                auto node = Alloc<Literal>();
                 node->value_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
@@ -751,7 +755,7 @@ namespace parser {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::Keyword: {
-                auto node = gc_->Alloc<Identifier>();
+                auto node = Alloc<Identifier>();
                 node->name_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
@@ -786,7 +790,7 @@ namespace parser {
         bool shorthand = false;
         bool is_async = false;
 
-        AstNode* key = nullptr;
+        Sp<AstNode> key = nullptr;
 
         if (token.type_ == JsTokenType::Identifier) {
             auto id = token.value_;
@@ -797,7 +801,7 @@ namespace parser {
             if (is_async) {
                 DO(ParseObjectPropertyKey(key))
             } else {
-                auto node = gc_->Alloc<Identifier>();
+                auto node = Alloc<Identifier>();
                 node->name_ = id;
                 DO(Finalize(marker, node, key));
             }
@@ -847,7 +851,7 @@ namespace parser {
     template <typename NodePtr>
     bool Parser::ParseRestElement(std::vector<AstNode*>& params, NodePtr &ptr) {
         auto marker = CreateNode();
-        auto node = gc_->Alloc<RestElement>();
+        auto node = Alloc<RestElement>();
 
         DO(Expect(U("...")))
         DO(ParsePattern(params, VarKind::Invalid, node->argument_))
