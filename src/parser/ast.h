@@ -9,10 +9,9 @@
 #include <optional>
 #include "../tokenizer/token.h"
 #include "../gc.hpp"
-#include "../js_string.h"
 
 typedef double JS_Number;
-typedef JS_String JS_RegExp;
+typedef UString JS_RegExp;
 
 #define DEF_AST_NODE_TYPE(D) \
     D(ArrayExpression) \
@@ -211,7 +210,7 @@ public:
     AssignmentExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    JS_String operator_;
+    UString operator_;
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 
@@ -278,7 +277,7 @@ public:
     BinaryExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    JS_String operator_;
+    UString operator_;
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 };
@@ -395,7 +394,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     Expression* expression_ = nullptr;
-    JS_String directive_;
+    UString directive_;
 
 };
 
@@ -530,7 +529,7 @@ class Identifier: public Expression {
 public:
     Identifier();
 
-    JS_String name_;
+    UString name_;
 
 };
 
@@ -603,8 +602,8 @@ class Literal: public Expression {
 public:
     Literal();
 
-    std::optional<std::variant<bool, JS_Number, JS_String>> value_;
-    JS_String raw_;
+    std::optional<std::variant<bool, JS_Number, UString>> value_;
+    UString raw_;
 
 };
 
@@ -637,7 +636,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<AstNode*> body_;
-    JS_String sourceType_;
+    UString sourceType_;
 
 };
 
@@ -688,7 +687,7 @@ public:
     RegexLiteral();
 
     JS_RegExp value_;
-    JS_String raw_;
+    UString raw_;
 
 };
 
@@ -716,7 +715,7 @@ public:
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
     std::vector<AstNode*> body_;
-    JS_String sourceType_;
+    UString sourceType_;
 
 };
 
@@ -787,10 +786,10 @@ public:
 
 class TemplateElementValue {
 public:
-    TemplateElementValue() : raw_(JS_String()) {}
+    TemplateElementValue() : raw_(UString()) {}
 
-    JS_String cooked_;
-    JS_String raw_;
+    UString cooked_;
+    UString raw_;
 
 };
 
@@ -844,7 +843,7 @@ public:
     UnaryExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    JS_String operator_;
+    UString operator_;
     Expression* argument_ = nullptr;
     bool prefix_ = false;
 
@@ -855,7 +854,7 @@ public:
     UpdateExpression();
     void MarkChildren(GarbageCollector::MarkFunction marker) override;
 
-    JS_String operator_;
+    UString operator_;
     Expression* argument_ = nullptr;
     bool prefix_ = false;
 

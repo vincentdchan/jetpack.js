@@ -13,7 +13,6 @@
 #include "../parse_error_handler.h"
 #include "../utils.h"
 #include "../macros.h"
-#include "../js_string.h"
 #include "ast.h"
 
 namespace parser {
@@ -514,7 +513,7 @@ namespace parser {
                     auto node = gc_->Alloc<Identifier>();
                     Token next;
                     DO(NextToken(&next))
-                    node->name_ = StringContext::MakeString(next.value_);
+                    node->name_ = next.value_;
                     return Finalize(marker, node, expr);
                 }
             }
@@ -530,7 +529,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = gc_->Alloc<Literal>();
-                node->value_ = StringContext::MakeString(token.value_);
+                node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -541,7 +540,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = gc_->Alloc<Literal>();
-                node->value_ = StringContext::MakeString(token.value_);
+                node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -552,7 +551,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = gc_->Alloc<Literal>();
-                node->value_ = StringContext::MakeString(token.value_);
+                node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -606,7 +605,7 @@ namespace parser {
                 } else if (!context_.strict_ && MatchKeyword(U("let"))) {
                     DO(NextToken(&token));
                     auto id = gc_->Alloc<Identifier>();
-                    id->name_ = StringContext::MakeString(token.value_);
+                    id->name_ = token.value_;
                     return Finalize(marker, id, expr);
                 } else {
                     context_.is_assignment_target = false;
@@ -744,7 +743,7 @@ namespace parser {
                     LogError("StrictOctalLiteral");
                 }
                 auto node = gc_->Alloc<Literal>();
-                node->value_ = StringContext::MakeString(token.value_);
+                node->value_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
 
@@ -753,7 +752,7 @@ namespace parser {
             case JsTokenType::NullLiteral:
             case JsTokenType::Keyword: {
                 auto node = gc_->Alloc<Identifier>();
-                node->name_ = StringContext::MakeString(token.value_);
+                node->name_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
 
@@ -799,7 +798,7 @@ namespace parser {
                 DO(ParseObjectPropertyKey(key))
             } else {
                 auto node = gc_->Alloc<Identifier>();
-                node->name_ = StringContext::MakeString(id);
+                node->name_ = id;
                 DO(Finalize(marker, node, key));
             }
         } else if (Match('*')) {
