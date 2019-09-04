@@ -6,6 +6,7 @@
 
 #include <cinttypes>
 #include <utility>
+#include <vector>
 #include <list>
 #include <functional>
 
@@ -18,15 +19,29 @@ public:
 
     class ObjectHeader;
 
-    typedef std::function<void(ObjectHeader*)> MarkFunction;
+    class MarkFunction {
+    public:
+        inline void operator()(ObjectHeader* ptr) {
+            if (ptr == nullptr || ptr->GcHasMark()) return;
+            ptr->GcMark();
+        }
+
+        template <typename T>
+        inline void operator()(std::vector<T>& vec) {
+            for (auto &i : vec) {
+                (*this)(i);
+            }
+        }
+
+    };
 
     class ObjectHeader {
     public:
         std::uint8_t gc_mark_;
 
-        inline void ClearMark();
-        inline void Mark();
-        inline bool HasMark() const;
+        inline void GcClearMark();
+        inline void GcMark();
+        inline bool GcHasMark() const;
 
         virtual void MarkChildren(MarkFunction marker) {};
 
@@ -77,15 +92,15 @@ private:
 
 };
 
-inline void GarbageCollector::ObjectHeader::ClearMark() {
+inline void GarbageCollector::ObjectHeader::GcClearMark() {
     gc_mark_ &= ((~ 0u) << 1u);
 }
 
-inline void GarbageCollector::ObjectHeader::Mark() {
+inline void GarbageCollector::ObjectHeader::GcMark() {
     gc_mark_ |= 1u;
 }
 
-inline bool GarbageCollector::ObjectHeader::HasMark() const {
+inline bool GarbageCollector::ObjectHeader::GcHasMark() const {
     return gc_mark_ & 1u;
 }
 
