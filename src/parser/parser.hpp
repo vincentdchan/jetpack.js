@@ -12,7 +12,7 @@
 #include "../parse_error_handler.h"
 #include "../utils.h"
 #include "../macros.h"
-#include "ast.h"
+#include "ast.hpp"
 
 namespace parser {
 
@@ -23,28 +23,45 @@ namespace parser {
     class Parser final {
     public:
         struct Config {
-            bool range;
-            bool loc;
+        private:
+            Config() = default;
+
+        public:
+            bool range = false;
+            bool loc = false;
             optional<UString> source;
-            bool tokens;
-            bool comment;
-            bool tolerant;
+            bool tokens = false;
+            bool comment = false;
+            bool tolerant = false;
+
+            static Config Default() {
+                return Config {
+                    true,
+                    true,
+                    optional<UString>(),
+                    true,
+                    true,
+                    false,
+                };
+            }
+
+
         };
 
         struct Context {
-            bool is_module;
-            bool allow_in;
-            bool allow_strict_directive;
-            bool allow_yield;
-            bool await;
+            bool is_module = false;
+            bool allow_in = false;
+            bool allow_strict_directive = false;
+            bool allow_yield = false;
+            bool await = false;
             optional<Token> first_cover_initialized_name_error;
-            bool is_assignment_target;
-            bool is_binding_element;
-            bool in_function_body;
-            bool in_iteration;
-            bool in_switch;
-            bool label_set;
-            bool strict_;
+            bool is_assignment_target = false;
+            bool is_binding_element = false;
+            bool in_function_body = false;
+            bool in_iteration = false;
+            bool in_switch = false;
+            bool label_set = false;
+            bool strict_ = false;
         };
 
         struct Marker {
@@ -53,11 +70,16 @@ namespace parser {
             uint32_t column = 0;
         };
 
+        struct LocAnnot {
+            std::pair<std::uint32_t, std::uint32_t> range_;
+            SourceLocation loc_;
+        };
+
         struct FormalParameterOptions {
             bool simple = true;
-            vector<AstNode*> params;
-            bool stricted;
-            bool first_restricted;
+            vector<Sp<AstNode<LocAnnot>>> params;
+            bool stricted = false;
+            bool first_restricted = false;
             string message;
         };
 
@@ -72,7 +94,7 @@ namespace parser {
 
         Sp<ParseErrorHandler> error_handler_;
         Sp<std::u16string> source_;
-        bool has_line_terminator_;
+        bool has_line_terminator_ = false;
 
         stack<Token> tokens_;
 
@@ -91,7 +113,6 @@ namespace parser {
 
         template<typename T, typename ...Args>
         Sp<T> Alloc(Args && ...args) {
-            static_assert(std::is_base_of<AstNode, T>::value, "T not derived from AstNode");
 
             return Sp<T>(new T);
         }
@@ -148,24 +169,38 @@ namespace parser {
         bool ParseArrayInitializer(NodePtr& expr);
 
         bool ParseFormalParameters(bool first_restricted, FormalParameterOptions& option);
+
         bool ParseFormalParameter(FormalParameterOptions& option);
 
         template <typename NodePtr>
-        bool ParseRestElement(std::vector<AstNode*>& params, NodePtr& ptr);
+        bool ParseRestElement(std::vector<Sp<AstNode<LocAnnot>>>& params, NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParsePattern(std::vector<AstNode*>& params, VarKind  kind, NodePtr& ptr);
+        bool ParsePattern(std::vector<Sp<AstNode<LocAnnot>>>& params, VarKind  kind, NodePtr& ptr);
 
-        bool ParseFunctionExpression(Expression*& expr);
-        bool ParseTemplateLiteral(Expression*& expr);
-        bool ParseGroupExpression(Expression*& expr);
+        template <typename NodePtr>
+        bool ParseFunctionExpression(NodePtr& expr);
+
+        template <typename NodePtr>
+        bool ParseTemplateLiteral(NodePtr& expr);
+
+        template <typename NodePtr>
+        bool ParseGroupExpression(NodePtr& expr);
 
 
-        bool ParseObjectInitializer(Expression*& expr);
-        bool ParseIdentifierName(Expression*& expr);
-        bool ParseClassExpression(Expression*& expr);
+        template <typename NodePtr>
+        bool ParseObjectInitializer(NodePtr& expr);
+
+        template <typename NodePtr>
+        bool ParseIdentifierName(NodePtr& expr);
+
+        template <typename NodePtr>
+        bool ParseClassExpression(NodePtr& expr);
+
         bool MatchImportCall();
-        bool ParseImportCall(Expression*& expr);
+
+        template <typename NodePtr>
+        bool ParseImportCall(NodePtr& expr);
 
         bool MatchAsyncFunction();
 
@@ -266,18 +301,17 @@ namespace parser {
 //    bool Finalize(const Marker& marker, FromT from, ToT& to);
     template<typename FromT, typename ToT>
     bool Parser::Finalize(const Parser::Marker &marker, FromT from, ToT& to) {
-        static_assert(std::is_convertible<FromT, ToT>::value, "FromT can not convert to ToT");
 
         if (config_.range) {
-            from->range_ = std::make_pair(marker.index, last_marker_.index);
+            from->annot_->range_ = std::make_pair(marker.index, last_marker_.index);
         }
 
         if (config_.loc) {
-            from->loc_.start_ = Position {
+            from->annot_->loc_.start_ = Position {
                 marker.line,
                 marker.column,
             };
-            from->loc_.end_ = Position {
+            from->annot_->loc_.end_ = Position {
                 last_marker_.line,
                 last_marker_.column,
             };
@@ -426,19 +460,19 @@ namespace parser {
             return false;
         }
         auto& op = lookahead_.value_;
-        return op == U("=") ||
-               op == U("*=") ||
-               op == U("**=") ||
-               op == U("/=") ||
-               op == U("%=") ||
-               op == U("+=") ||
-               op == U("-=") ||
-               op == U("<<=") ||
-               op == U(">>=") ||
-               op == U(">>>=") ||
-               op == U("&=") ||
-               op == U("^=") ||
-               op == U("|=");
+        return op == u"=" ||
+               op == u"*=" ||
+               op == u"**=" ||
+               op == u"/=" ||
+               op == u"%=" ||
+               op == u"+=" ||
+               op == u"-=" ||
+               op == u"<<=" ||
+               op == u">>=" ||
+               op == u">>>=" ||
+               op == u"&=" ||
+               op == u"^=" ||
+               op == u"|=";
     }
 
     bool Parser::IsolateCoverGrammar(std::function<bool()> cb) {
@@ -500,7 +534,6 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParsePrimaryExpression(NodePtr& expr) {
-        static_assert(std::is_convertible<Expression*, NodePtr>::value, "NodePtr can not convert to AstNode*");
 
         expr = nullptr;
         auto marker = CreateNode();
@@ -508,13 +541,13 @@ namespace parser {
 
         switch (lookahead_.type_) {
             case JsTokenType::Identifier: {
-                if ((context_.is_module || context_.await) && lookahead_.value_ == U("await")) {
+                if ((context_.is_module || context_.await) && lookahead_.value_ == u"await") {
                     UnexpectedToken(&lookahead_);
                 }
                 if (MatchAsyncFunction()) {
                     return ParseFunctionExpression(expr);
                 } else {
-                    auto node = Alloc<Identifier>();
+                    auto node = Alloc<Identifier<LocAnnot>>();
                     Token next;
                     DO(NextToken(&next))
                     node->name_ = next.value_;
@@ -532,7 +565,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = Alloc<Literal>();
+                auto node = Alloc<Literal<LocAnnot>>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -543,7 +576,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = Alloc<Literal>();
+                auto node = Alloc<Literal<LocAnnot>>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -554,7 +587,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
-                auto node = Alloc<Literal>();
+                auto node = Alloc<Literal<LocAnnot>>();
                 node->value_ = token.value_;
                 Finalize(marker, node, expr);
                 break;
@@ -604,23 +637,23 @@ namespace parser {
             }
 
             case JsTokenType::Keyword:
-                if (!context_.strict_ && context_.allow_yield && MatchKeyword(U("yield"))) {
+                if (!context_.strict_ && context_.allow_yield && MatchKeyword(u"yield")) {
                     return ParseIdentifierName(expr);
-                } else if (!context_.strict_ && MatchKeyword(U("let"))) {
+                } else if (!context_.strict_ && MatchKeyword(u"let")) {
                     DO(NextToken(&token));
-                    auto id = Alloc<Identifier>();
+                    auto id = Alloc<Identifier<LocAnnot>>();
                     id->name_ = token.value_;
                     return Finalize(marker, id, expr);
                 } else {
                     context_.is_assignment_target = false;
                     context_.is_binding_element = false;
-                    if (MatchKeyword(U("function"))) {
+                    if (MatchKeyword(u"function")) {
                         ParseFunctionExpression(expr);
-                    } else if (MatchKeyword(U("this"))) {
+                    } else if (MatchKeyword(u"this")) {
                         DO(NextToken(&token))
-                        auto th = Alloc<ThisExpression>();
+                        auto th = Alloc<ThisExpression<LocAnnot>>();
                         return Finalize(marker, th, expr);
-                    } else if (MatchKeyword(U("class"))) {
+                    } else if (MatchKeyword(u"class")) {
                         return ParseClassExpression(expr);
                     } else if (MatchImportCall()) {
                         return ParseImportCall(expr);
@@ -645,12 +678,12 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseSpreadElement(NodePtr& expr) {
-        static_assert(std::is_convertible<SpreadElement*, NodePtr>::value, "NodePtr can not accept SpreadElement*");
+//        static_assert(std::is_convertible<SpreadElement<LocAnnot>, NodePtr>::value, "NodePtr can not accept SpreadElement*");
         auto marker = CreateNode();
 
-        DO(Expect(U("...")))
+        DO(Expect(u"..."))
 
-        auto node = Alloc<SpreadElement>();
+        auto node = Alloc<SpreadElement<LocAnnot>>();
 
         DO(InheritCoverGrammar([this, &node]() {
             return ParseAssignmentExpression(node->argument_);
@@ -661,17 +694,17 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseArrayInitializer(NodePtr &expr) {
-        static_assert(std::is_convertible<ArrayExpression*, NodePtr>::value, "NodePtr can not accept ArrayExpression*");
+//        static_assert(std::is_convertible<ArrayExpression*, NodePtr>::value, "NodePtr can not accept ArrayExpression*");
         auto marker = CreateNode();
-        auto node = Alloc<ArrayExpression>();
-        Sp<Expression> element = nullptr;
+        auto node = Alloc<ArrayExpression<LocAnnot>>();
+        Sp<Expression<LocAnnot>> element = nullptr;
 
         DO(Expect('['))
         while (!Match(']')) {
             if (Match(',')) {
                 NextToken();
                 node->elements_.push_back(nullptr);
-            } else if (Match(U("..."))) {
+            } else if (Match(u"...")) {
                 DO(ParseSpreadElement(element))
                 if (!Match(']')) {
                     context_.is_assignment_target = false;
@@ -696,9 +729,9 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParsePropertyMethodFunction(NodePtr &ptr) {
-        static_assert(std::is_convertible<FunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
+//        static_assert(std::is_convertible<FunctionExpression<LocAnnot>, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
         auto marker = CreateNode();
-        auto node = Alloc<FunctionExpression>();
+        auto node = Alloc<FunctionExpression<LocAnnot>>();
 
         bool isGenerator = false;
 
@@ -715,9 +748,9 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParsePropertyMethodAsyncFunction(NodePtr& ptr) {
-        static_assert(std::is_convertible<AsyncFunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
+//        static_assert(std::is_convertible<AsyncFunctionExpression<LocAnnot>, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
         auto marker = CreateNode();
-        auto node = Alloc<AsyncFunctionExpression>();
+        auto node = Alloc<AsyncFunctionExpression<LocAnnot>>();
 
         bool isGenerator = false;
 
@@ -746,7 +779,7 @@ namespace parser {
                 if (context_.strict_ && token.octal_) {
                     LogError("StrictOctalLiteral");
                 }
-                auto node = Alloc<Literal>();
+                auto node = Alloc<Literal<LocAnnot>>();
                 node->value_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
@@ -755,13 +788,13 @@ namespace parser {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::Keyword: {
-                auto node = Alloc<Identifier>();
+                auto node = Alloc<Identifier<LocAnnot>>();
                 node->name_ = token.value_;
                 return Finalize(marker, node, ptr);
             }
 
             case JsTokenType::Punctuator:
-                if (token.value_ == U("[")) {
+                if (token.value_ == u"[") {
                     DO(IsolateCoverGrammar([this, &ptr]() {
                         return ParseAssignmentExpression(ptr);
                     }));
@@ -790,18 +823,18 @@ namespace parser {
         bool shorthand = false;
         bool is_async = false;
 
-        Sp<AstNode> key = nullptr;
+        Sp<AstNode<LocAnnot>> key = nullptr;
 
         if (token.type_ == JsTokenType::Identifier) {
             auto id = token.value_;
             DO(NextToken())
             computed = Match('[');
-            is_async = !has_line_terminator_ && (id == U("async")) &&
+            is_async = !has_line_terminator_ && (id == u"async") &&
                       !Match(':') && !Match('(') && !Match('*') && !Match(',');
             if (is_async) {
                 DO(ParseObjectPropertyKey(key))
             } else {
-                auto node = Alloc<Identifier>();
+                auto node = Alloc<Identifier<LocAnnot>>();
                 node->name_ = id;
                 DO(Finalize(marker, node, key));
             }
@@ -841,7 +874,7 @@ namespace parser {
     }
 
     bool Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
-        if (Match(U("..."))) {
+        if (Match(u"...")) {
 
         }
 
@@ -849,11 +882,11 @@ namespace parser {
     }
 
     template <typename NodePtr>
-    bool Parser::ParseRestElement(std::vector<AstNode*>& params, NodePtr &ptr) {
+    bool Parser::ParseRestElement(std::vector<Sp<AstNode<LocAnnot>>>& params, NodePtr &ptr) {
         auto marker = CreateNode();
-        auto node = Alloc<RestElement>();
+        auto node = Alloc<RestElement<LocAnnot>>();
 
-        DO(Expect(U("...")))
+        DO(Expect(u"..."))
         DO(ParsePattern(params, VarKind::Invalid, node->argument_))
         if (Match('=')) {
             LogError("DefaultRestParameter");

@@ -6,8 +6,8 @@
 #include <locale>
 #include <codecvt>
 #include <string>
+#include "macros.h"
 
-typedef std::u16string UString;
 
 namespace utils {
 
