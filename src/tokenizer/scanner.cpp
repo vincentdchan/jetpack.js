@@ -192,7 +192,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
                     break;
                 }
             } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
-                if (source_->substr(index_ + 1, index_ + 4) == u"!--") {
+                if (source_->substr(index_ + 1, index_ + 4) == U("!--")) {
                     index_ += 4; // `<!--`
                     vector<Comment> comments;
                     DO(SkipSingleLineComment(4, comments))
@@ -491,9 +491,9 @@ bool Scanner::ScanIdentifier(Token &tok) {
         tok.type_ = JsTokenType::Identifier;
     } else if (IsKeyword(id)) {
         tok.type_ = JsTokenType::Keyword;
-    } else if (id == u"null") {
+    } else if (id == U("null")) {
         tok.type_ = JsTokenType::NullLiteral;
-    } else if (id == u"true" || id == u"false") {
+    } else if (id == U("true") || id == U("false")) {
         tok.type_ = JsTokenType::BooleanLiteral;
     } else {
         tok.type_ = JsTokenType::Identifier;
@@ -523,7 +523,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
         case '(':
         case '{':
             if (ch == '{') {
-                curly_stack_.push(u"{");
+                curly_stack_.push(U("{"));
             }
             ++index_;
             break;
@@ -533,7 +533,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
             if ((*source_)[index_] == '.' && (*source_)[index_ + 1] == '.') {
                 // Spread operator: ...
                 index_ += 2;
-                str = u"...";
+                str = U("...");
             }
             break;
 
@@ -556,37 +556,37 @@ bool Scanner::ScanPunctuator(Token &tok) {
         default:
             // 4-character punctuator.
             str = source_->substr(index_, 4);
-            if (str == u">>>=") {
+            if (str == U(">>>=")) {
                 index_ += 4;
             } else {
 
                 // 3-character punctuators.
                 str = str.substr(0, 3);
-                if (str == u"===" || str == u"!==" || str == u">>>" ||
-                                                              str == u"<<=" || str == u">>=" || str == u"**=") {
+                if (str == U("===") || str == U("!==") || str == U(">>>") ||
+                                                              str == U("<<=") || str == U(">>=") || str == U("**=")) {
                     index_ += 3;
                 } else {
 
                     // 2-character punctuators.
                     str = str.substr(0, 2);
-                    if (str == u"&&" || str == u"||" || str == u"==" || str == u"!=" ||
-                        str == u"+=" || str == u"-=" || str == u"*=" || str == u"/=" ||
-                        str == u"++" || str == u"--" ||
-                        str == u"<<" || str == u">>" ||
-                        str == u"&=" ||
-                        str == u"|=" ||
-                        str == u"^=" ||
-                        str == u"%=" ||
-                        str == u"<=" ||
-                        str == u">=" ||
-                        str == u"=>" ||
-                        str == u"**") {
+                    if (str == U("&&") || str == U("||") || str == U("==") || str == U("!=") ||
+                        str == U("+=") || str == U("-=") || str == U("*=") || str == U("/=") ||
+                        str == U("++") || str == U("--") ||
+                        str == U("<<") || str == U(">>") ||
+                        str == U("&=") ||
+                        str == U("|=") ||
+                        str == U("^=") ||
+                        str == U("%=") ||
+                        str == U("<=") ||
+                        str == U(">=") ||
+                        str == U("=>") ||
+                        str == U("**")) {
                         index_ += 2;
                     } else {
 
                         // 1-character punctuators.
                         ch = (*source_)[index_];
-                        if (UString(u"<>=!+-*%&|^/").find(ch) >= 0) {
+                        if (U("<>=!+-*%&|^/").find(ch) >= 0) {
                             ++index_;
                         }
                         str.push_back(ch);
@@ -630,7 +630,7 @@ bool Scanner::ScanHexLiteral(std::uint32_t start, Token &tok) {
     }
 
     tok.type_ = JsTokenType::Punctuator;
-    tok.value_ = UString(u"0x") + num;
+    tok.value_ = U("0x") + num;
     tok.line_start_ = line_start_;
     tok.line_number_ = line_number_;
     tok.range_ = make_pair(start, index_);
@@ -946,7 +946,7 @@ bool Scanner::ScanTemplate(Token &tok) {
             break;
         } else if (ch == '$') {
             if ((*source_)[index_]== '{') {
-                curly_stack_.push(u"${");
+                curly_stack_.push(U("${"));
                 ++index_;
                 terminated = true;
                 break;
@@ -1096,7 +1096,7 @@ bool Scanner::Lex(Token &tok) {
 
     // Template literals start with ` (U+0060) for template head
     // or } (U+007D) for template middle or template tail.
-    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == u"${")) {
+    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == U("${"))) {
         return ScanTemplate(tok);
     }
 

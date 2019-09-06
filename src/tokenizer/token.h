@@ -40,7 +40,6 @@ struct Position {
     Position(): line_(0u), column_(0u) {}
     Position(std::uint32_t line, std::uint32_t column):
     line_(line), column_(column) {}
-
 };
 
 struct SourceLocation {
@@ -51,7 +50,6 @@ public:
     SourceLocation() = default;
     SourceLocation(Position start, Position end):
     start_(start), end_(end) {}
-
 };
 
 class Token {
