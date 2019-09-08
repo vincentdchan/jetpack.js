@@ -126,6 +126,7 @@ namespace parser {
         bool ParseBindingList(NodePtr& ptr);
 
         bool IsLexicalDeclaration();
+        bool IsIdentifierName(Token&);
 
         template <typename NodePtr>
         bool ParseLexicalDeclaration(NodePtr& ptr);
@@ -164,7 +165,7 @@ namespace parser {
         bool ParsePatternWithDefault(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseVariableIdentifier(NodePtr& ptr);
+        bool ParseVariableIdentifier(VarKind kind, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseVariableDeclaration(NodePtr& ptr);
@@ -353,6 +354,21 @@ namespace parser {
         return true;
     }
 
+    bool Parser::MatchAsyncFunction() {
+        bool match = MatchContextualKeyword(u"async");
+        if (match) {
+            auto state = scanner_->SaveState();
+            std::vector<Comment> comments;
+            scanner_->ScanComments(comments);
+            Token next;
+            scanner_->Lex(next);
+            scanner_->RestoreState(state);
+
+            match = (state.line_number_ == next.line_number_) && (next.type_ == JsTokenType::Keyword) && (next.value_ == u"function");
+        }
+
+        return match;
+    }
 
     template <typename NodePtr>
     bool Parser::ParsePrimaryExpression(NodePtr& expr) {
@@ -672,6 +688,21 @@ namespace parser {
         return true;
     }
 
+    bool Parser::IsLexicalDeclaration() {
+        auto state = scanner_->SaveState();
+        std::vector<Comment> comments;
+        scanner_->ScanComments(comments);
+        Token next;
+        DO(scanner_->Lex(next))
+        scanner_->RestoreState(state);
+
+        return (next.type_ == JsTokenType::Identifier) ||
+            (next.type_ == JsTokenType::Punctuator && next.value_ == u"[") ||
+            (next.type_ == JsTokenType::Punctuator && next.value_ == u"{") ||
+            (next.type_ == JsTokenType::Keyword && next.value_ == u"let") ||
+            (next.type_ == JsTokenType::Keyword && next.value_ == u"yield");
+    }
+
     bool Parser::ParseFormalParameters(bool first_restricted, parser::Parser::FormalParameterOptions &options) {
 
         options.simple = true;
@@ -702,6 +733,59 @@ namespace parser {
         }
 
         return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseContinueStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(!ExpectKeyword(u"continue"))
+        auto node = Alloc<ContinueStatement>();
+
+        if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
+            DO(ParseVariableIdentifier(VarKind::Invalid, node->label))
+        }
+
+        DO(ConsumeSemicolon())
+
+        if (!node->label && !context_.in_iteration) {
+            LogError("IllegalContinue");
+            return false;
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseVariableIdentifier(VarKind kind, NodePtr &ptr) {
+        auto marker = CreateNode();
+
+        Token token;
+        DO(NextToken(&token))
+        if (token.type_ == JsTokenType::Keyword && token.value_ == u"yield") {
+            if (context_.strict_) {
+                string message = "StrictReservedWord";
+                UnexpectedToken(&token, &message);
+            } else if (!context_.allow_yield) {
+                UnexpectedToken(&token);
+                return false;
+            }
+        } else if (token.type_ == JsTokenType::Identifier) {
+            if (context_.strict_ && token.type_ == JsTokenType::Keyword && scanner_->IsStrictModeReservedWord(token.value_)) {
+                string message = "StrictReservedWord";
+                UnexpectedToken(&token, &message);
+            } else {
+                if (context_.strict_ || token.value_ != u"let" || kind != VarKind::Var) {
+                    UnexpectedToken(&token);
+                    return false;
+                }
+            }
+        } else if ((context_.is_module || context_.await) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {
+            UnexpectedToken(&token);
+        }
+
+        auto node = Alloc<Identifier>();
+        node->name = token.value_;
+        return Finalize(marker, node, ptr);
     }
 
     template <typename NodePtr>
@@ -926,6 +1010,121 @@ namespace parser {
             DO(ParseStatement(node->body))
             context_.in_iteration = prev_in_interation;
         }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseBreakStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"break"))
+
+        std::optional<Sp<Identifier>> label;
+        if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
+            Sp<Identifier> id;
+            DO(ParseVariableIdentifier(VarKind::Invalid, id))
+
+            UString key = UString(u"$") + id->name;
+            // TODO: labelSet
+            label = id;
+        }
+
+        DO(ConsumeSemicolon())
+
+        if (!label && !context_.in_iteration && !context_.in_switch) {
+            LogError("IllegalBreak");
+            return false;
+        }
+
+        auto node = Alloc<BreakStatement>();
+        node->label = label;
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseEmptyStatement(NodePtr &ptr) {
+        auto node = Alloc<EmptyStatement>();
+        auto marker = CreateNode();
+        DO(Expect(u';'));
+        return Finalize(marker, node, ptr);
+    }
+
+    bool Parser::IsIdentifierName(Token& token) {
+        return token.type_ == JsTokenType::Identifier ||
+            token.type_ == JsTokenType::Keyword ||
+            token.type_ == JsTokenType::BooleanLiteral ||
+            token.type_ == JsTokenType::NullLiteral;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseIdentifierName(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<Identifier>();
+        Token token;
+        DO(NextToken(&token))
+        if (IsIdentifierName(token)) {
+            UnexpectedToken(&token);
+            return false;
+        }
+        node->name = token.value_;
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseReturnStatement(NodePtr &ptr) {
+        if (!context_.in_function_body) {
+            LogError("IllegalReturn");
+        }
+
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"return"))
+
+        bool has_arg = (!Match(u';') && !Match(u'}') &&
+            !has_line_terminator_ && lookahead_.type_ != JsTokenType::EOF_) ||
+            lookahead_.type_ == JsTokenType::StringLiteral ||
+            lookahead_.type_ == JsTokenType::Template;
+
+        auto node = Alloc<ReturnStatement>();
+        if (has_arg) {
+            DO(ParseExpression(*node->argument))
+        }
+
+        DO(ConsumeSemicolon())
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseDebuggerStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"keyword"))
+        DO(ConsumeSemicolon())
+        auto node = Alloc<DebuggerStatement>();
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseClassExpression(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<ClassExpression>();
+
+        bool prev_strict = context_.strict_;
+        context_.strict_ = true;
+        DO(ExpectKeyword(u"class"))
+
+        if (lookahead_.type_ == JsTokenType::Identifier) {
+            DO(ParseVariableIdentifier(VarKind::Invalid, *node->id))
+        }
+
+        if (MatchKeyword(u"extends")) {
+            DO(NextToken());
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseLeftHandSideExpressionAllowCall(node->super_class);
+            }))
+        }
+
+        DO(ParseClassBody(*node->body))
+        context_.strict_ = prev_strict;
 
         return Finalize(marker, node, ptr);
     }
@@ -1186,6 +1385,23 @@ namespace parser {
             node->body = body;
             return Finalize(marker, node, ptr);
         }
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseTryStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"try"))
+        auto node = Alloc<TryStatement>();
+
+        DO(ParseBlock(node->block))
+        if (MatchKeyword(u"catch")) {
+            DO(ParseCatchClause(*node->handler))
+        }
+        if (MatchKeyword(u"finally")) {
+            DO(ParseFinallyClause(*node->finalizer))
+        }
+
+        return Finalize(marker, node, ptr);
     }
 
     template <typename NodePtr>

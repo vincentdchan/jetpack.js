@@ -82,7 +82,7 @@ ContinueStatement::ContinueStatement(): Statement() {
     type = SyntaxNodeType::ContinueStatement;
 }
 
-DebuggerStatement::DebuggerStatement(): SyntaxNode() {
+DebuggerStatement::DebuggerStatement(): Statement() {
     type = SyntaxNodeType::DebuggerStatement;
 }
 

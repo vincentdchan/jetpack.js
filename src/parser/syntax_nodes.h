@@ -202,7 +202,7 @@ public:
 
 };
 
-class DebuggerStatement: public SyntaxNode {
+class DebuggerStatement: public Statement {
 public:
     DebuggerStatement();
 

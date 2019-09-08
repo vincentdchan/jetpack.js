@@ -205,7 +205,7 @@
     )
   )
 
-  (syntax-node 'DebuggerStatement 'SyntaxNode
+  (syntax-node 'DebuggerStatement 'Statement
     (list)
   )
 
