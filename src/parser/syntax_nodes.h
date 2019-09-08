@@ -227,7 +227,7 @@ public:
 
 };
 
-class EmptyStatement: public SyntaxNode {
+class EmptyStatement: public Statement {
 public:
     EmptyStatement();
 

@@ -223,7 +223,7 @@
     )
   )
 
-  (syntax-node 'EmptyStatement 'SyntaxNode
+  (syntax-node 'EmptyStatement 'Statement
     (list)
   )
 

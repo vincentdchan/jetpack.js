@@ -94,7 +94,7 @@ DoWhileStatement::DoWhileStatement(): Statement() {
     type = SyntaxNodeType::DoWhileStatement;
 }
 
-EmptyStatement::EmptyStatement(): SyntaxNode() {
+EmptyStatement::EmptyStatement(): Statement() {
     type = SyntaxNodeType::EmptyStatement;
 }
 

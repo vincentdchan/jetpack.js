@@ -179,6 +179,9 @@ namespace parser {
         bool ParseExpressionStatement(NodePtr& ptr);
 
         template <typename NodePtr>
+        bool ParseExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
         bool ParseIfClause(NodePtr& ptr);
 
         template <typename NodePtr>
@@ -814,6 +817,87 @@ namespace parser {
 
         ptr = statement;
         return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseIfStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<IfStatement>();
+
+        DO(ExpectKeyword(u"if"))
+        DO(Expect('('))
+        DO(ParseExpression(node->test))
+
+        if (!Match(u')') && config_.tolerant) {
+            Token token;
+            NextToken(&token);
+            UnexpectedToken(&token);
+            Finalize(CreateNode(), Alloc<EmptyStatement>(), node->consequent);
+        } else {
+            DO(Expect(u')'))
+            DO(ParseIfClause(node->consequent))
+            if (MatchKeyword(u"else")) {
+                NextToken();
+                DO(ParseIfClause(node->alternate))
+            }
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseDoWhileStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<DoWhileStatement>();
+        DO(ExpectKeyword(u"do"))
+
+        auto previous_in_interation = context_.in_iteration;
+        context_.in_iteration = true;
+        DO(ParseStatement(node->body))
+        context_.in_iteration = previous_in_interation;
+
+        DO(ExpectKeyword(u"while"))
+        DO(Expect(u'('))
+        DO(ParseExpression(node->test))
+
+        if (!Match(u')') && config_.tolerant) {
+            Token token;
+            NextToken(&token);
+            UnexpectedToken(&token);
+        } else {
+            DO(Expect(u'('))
+            if (Match(u';')) {
+                NextToken();
+            }
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseWhileStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<WhileStatement>();
+
+        DO(ExpectKeyword(u"while"))
+        DO(Expect(u'('));
+        DO(ParseExpression(node->test))
+
+        if (!Match(u')') && config_.tolerant) {
+            Token token;
+            NextToken(&token);
+            UnexpectedToken(&token);
+            Finalize(CreateNode(), Alloc<EmptyStatement>(), node->body);
+        } else {
+            DO(Expect(u')'));
+
+            auto prev_in_interation = context_.in_iteration;
+            context_.in_iteration = true;
+            DO(ParseStatement(node->body))
+            context_.in_iteration = prev_in_interation;
+        }
+        
+        return Finalize(marker, node, ptr);
     }
 
     template <typename NodePtr>
