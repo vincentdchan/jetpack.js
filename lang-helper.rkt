@@ -24,6 +24,7 @@
   ['String "UString"]
   ['Boolean "bool"]
   ['Number "double"]
+  ['VarKind "VarKind"]
   [(cons type-prefix pair-value) (match type-prefix
     ['Vec (string-append "std::vector<" (type->string pair-value) ">")]
     ['Option (string-append "std::optional<" (type->string pair-value) ">")]

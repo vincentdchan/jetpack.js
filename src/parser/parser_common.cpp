@@ -296,6 +296,10 @@ namespace parser {
         return true;
     }
 
+    bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
+        return lookahead_.type_ == JsTokenType::Identifier && lookahead_.value_ == keyword;
+    }
+
     bool ParserCommon::CollectComments() {
         DO(scanner_->ScanComments(comments_))
 

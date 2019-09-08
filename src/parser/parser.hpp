@@ -148,6 +148,9 @@ namespace parser {
         template <typename NodePtr>
         bool ParseArrayInitializer(NodePtr& expr);
 
+        template <typename NodePtr>
+        bool PeinterpretExpressionAsPattern(NodePtr& ptr);
+
         bool ParseFormalParameters(bool first_restricted, FormalParameterOptions& option);
         bool ParseFormalParameter(FormalParameterOptions& option);
 
@@ -820,6 +823,25 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseBlock(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<BlockStatement>();
+
+        DO(Expect(u'{'))
+        while (true) {
+            if (Match(u'}')) {
+                break;
+            }
+            Sp<SyntaxNode> stmt;
+            DO(ParseStatementListItem(stmt))
+            node->body.push_back(std::move(stmt));
+        }
+        DO(Expect(u'}'))
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseIfStatement(NodePtr &ptr) {
         auto marker = CreateNode();
         auto node = Alloc<IfStatement>();
@@ -896,7 +918,7 @@ namespace parser {
             DO(ParseStatement(node->body))
             context_.in_iteration = prev_in_interation;
         }
-        
+
         return Finalize(marker, node, ptr);
     }
 
@@ -944,6 +966,218 @@ namespace parser {
 
         ptr = statement;
         return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseForStatement(NodePtr &ptr) {
+        bool for_in = true;
+
+        std::optional<Sp<SyntaxNode>> init;
+        std::optional<Sp<Expression>> test;
+        std::optional<Sp<Expression>> update;
+        Sp<SyntaxNode> left;
+        Sp<SyntaxNode> right;
+        auto marker = CreateNode();
+
+        DO(ExpectKeyword(u"for"))
+        DO(Expect(u'('))
+
+        if (Match(u';')) {
+            NextToken();
+        } else {
+            if (MatchKeyword(u"var")) {
+                auto marker = CreateNode();
+                NextToken();
+
+                auto prev_allow_in = context_.allow_in;
+                context_.allow_in = true;
+                std::vector<Sp<VariableDeclarator>> declarations;
+                DO(ParseVariableDeclarationList(declarations))
+                context_.allow_in = prev_allow_in;
+
+                if (declarations.size() == 1 && MatchKeyword(u"in")) {
+                    auto decl = declarations[0];
+                    if (decl->init && (decl->id->type == SyntaxNodeType::ArrayPattern || decl->id->type == SyntaxNodeType::ObjectPattern || context_.strict_)) {
+                        LogError("ForInOfLoopInitializer");
+                    }
+                    auto node = Alloc<VariableDeclaration>();
+                    node->kind = VarKind::Var;
+                    Finalize(marker, node, init);
+                    NextToken();
+                    left = *init;
+                    DO(ParseExpression(right))
+                    init.reset();
+                } else if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(u"of")) {
+                    auto node = Alloc<VariableDeclaration>();
+                    node->declarations = declarations;
+                    node->kind = VarKind::Var;
+                    Finalize(marker, node, init);
+                    NextToken();
+                    left = *init;
+                    DO(ParseAssignmentExpression(right))
+                    init.reset();
+                    for_in = false;
+                } else {
+                    auto node = Alloc<VariableDeclaration>();
+                    node->declarations = declarations;
+                    node->kind = VarKind::Var;
+                    Finalize(marker, node, init);
+                    DO(Expect(u';'))
+                }
+            } else if (MatchKeyword(u"const") || MatchKeyword(u"let")) {
+                auto marker = CreateNode();
+                Token token;
+                NextToken(&token);
+                VarKind kind;
+                if (token.value_ == u"const") {
+                    kind = VarKind::Const;
+                } else if (token.value_ == u"let") {
+                    kind = VarKind::Let;
+                }
+
+                if (!context_.strict_ && lookahead_.value_ == u"in") {
+                    auto node = Alloc<Identifier>();
+                    node->name = token.value_;
+                    Finalize(marker, node, init);
+                    NextToken();
+                    left = *init;
+                    DO(ParseExpression(right))
+                    init.reset();
+                } else {
+                    auto prev_allow_in = context_.allow_in;
+                    context_.allow_in = false;
+                    std::vector<Sp<VariableDeclarator>> declarations;
+                    DO(ParseBindingList(declarations))
+                    context_.allow_in = prev_allow_in;
+
+                    if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(u"in")) {
+                        auto node = Alloc<VariableDeclaration>();
+                        node->declarations = declarations;
+                        node->kind = kind;
+                        Finalize(marker, node, init);
+                        NextToken();
+                        left = *init;
+                        DO(ParseExpression(right))
+                        init.reset();
+                    } else if (declarations.size() == 1 && !declarations[0]->init && MatchContextualKeyword(u"of")) {
+                        auto node = Alloc<VariableDeclaration>();
+                        node->declarations = declarations;
+                        node->kind = kind;
+                        Finalize(marker, node, init);
+                        NextToken();
+                        left = *init;
+                        DO(ParseAssignmentExpression(right))
+                        init.reset();
+                        for_in = false;
+                    } else {
+                        DO(ConsumeSemicolon())
+                        auto node = Alloc<VariableDeclaration>();
+                        node->declarations = declarations;
+                        node->kind = kind;
+                        Finalize(marker, node, init);
+                    }
+                }
+            } else {
+                auto init_start_token = lookahead_;
+                auto start_node = CreateNode();
+                auto prev_allow_in = context_.allow_in;
+                context_.allow_in = false;
+                DO(InheritCoverGrammar([this, &init] {
+                    return ParseAssignmentExpression(init);
+                }));
+                context_.allow_in = prev_allow_in;
+
+                if (MatchKeyword(u"in")) {
+                    if (!context_.is_assignment_target || (*init)->type == SyntaxNodeType::AssignmentExpression) {
+                        LogError("InvalidLHSInForIn");
+                    }
+
+                    NextToken();
+                    DO(ReinterpretExpressionAsPattern(*init))
+                    left = *init;
+                    DO(ParseExpression(right))
+                    init.reset();
+                } else if (MatchContextualKeyword(u"of")) {
+                    if (!context_.is_assignment_target || (*init)->type == SyntaxNodeType::AssignmentExpression) {
+                        LogError("InvalidLHSInForIn");
+                    }
+
+                    NextToken();
+                    DO(ReinterpretExpressionAsPattern(*init))
+                    left = *init;
+                    DO(ParseAssignmentExpression(right))
+                    init.reset();
+                    for_in = false;
+                } else {
+                    if (Match(u',')) {
+                        std::vector<Sp<SyntaxNode>> init_seq;
+                        init_seq.push_back(*init);
+
+                        while (Match(u',')) {
+                            NextToken();
+                            Sp<AssignmentExpression> node;
+                            DO(IsolateCoverGrammar([this, &node] {
+                                return ParseAssignmentExpression(node);
+                            }));
+                            init_seq.push_back(node);
+                        }
+
+                        Sp<SequenceExpression> node;
+                        Finalize(start_marker_, node, *init);
+                    }
+                    DO(Expect(u';'))
+                }
+            }
+        }
+
+        if (!left) {
+            if (!Match(u';')) {
+                DO(ParseExpression(test))
+            }
+            DO(Expect(u';'))
+            if (!Match(u')')) {
+                DO(ParseExpression(update))
+            }
+        }
+
+        Sp<Statement> body;
+        if (!Match(u')') && config_.tolerant) {
+            Token tok;
+            NextToken(&tok);
+            UnexpectedToken(&tok);
+            auto node = Alloc<EmptyStatement>();
+            Finalize(CreateNode(), node, body);
+        } else {
+            DO(Expect(u')'))
+
+            auto prev_in_iter = context_.in_iteration;
+            context_.in_iteration = true;
+            DO(IsolateCoverGrammar([this, &body] {
+                return ParseStatement(body);
+            }))
+            context_.in_iteration = prev_in_iter;
+        }
+
+        if (!left) {
+            auto node = Alloc<ForStatement>();
+            node->init = init;
+            node->test = test;
+            node->update = update;
+            node->body = body;
+            return Finalize(marker, node, ptr);
+        } else if (for_in) {
+            auto node = Alloc<ForInStatement>();
+            node->left = left;
+            node->right = right;
+            node->body = body;
+            return Finalize(marker, node, ptr);
+        } else {
+            auto node = Alloc<ForOfStatement>();
+            node->left = left;
+            node->right = right;
+            node->body = body;
+            return Finalize(marker, node, ptr);
+        }
     }
 
     template <typename NodePtr>

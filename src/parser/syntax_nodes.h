@@ -116,7 +116,7 @@ class BlockStatement: public Statement {
 public:
     BlockStatement();
 
-    std::vector<Sp<Statement>> body;
+    std::vector<Sp<SyntaxNode>> body;
 
 };
 
@@ -281,8 +281,8 @@ class ForInStatement: public Statement {
 public:
     ForInStatement();
 
-    Sp<Expression> left;
-    Sp<Expression> right;
+    Sp<SyntaxNode> left;
+    Sp<SyntaxNode> right;
     Sp<Statement> body;
     bool each = false;
 
@@ -292,8 +292,8 @@ class ForOfStatement: public Statement {
 public:
     ForOfStatement();
 
-    Sp<Expression> left;
-    Sp<Expression> right;
+    Sp<SyntaxNode> left;
+    Sp<SyntaxNode> right;
     Sp<Statement> body;
 
 };
@@ -302,9 +302,9 @@ class ForStatement: public Statement {
 public:
     ForStatement();
 
-    std::optional<Sp<Expression>> init;
-    std::optional<Sp<Expression>> test;
-    std::optional<Sp<Expression>> update;
+    std::optional<Sp<SyntaxNode>> init;
+    std::optional<Sp<SyntaxNode>> test;
+    std::optional<Sp<SyntaxNode>> update;
     Sp<Statement> body;
 
 };
@@ -428,7 +428,7 @@ public:
     std::optional<Sp<Expression>> key;
     bool computed = false;
     std::optional<Sp<Expression>> value;
-    UString kind;
+    VarKind kind;
     bool static_ = false;
 
 };
@@ -474,7 +474,7 @@ public:
     Sp<SyntaxNode> key;
     bool computed = false;
     std::optional<Sp<SyntaxNode>> value;
-    UString kind;
+    VarKind kind;
     bool method = false;
     bool shorthand = false;
 
@@ -633,7 +633,7 @@ public:
     VariableDeclaration();
 
     std::vector<Sp<VariableDeclarator>> declarations;
-    UString kind;
+    VarKind kind;
 
 };
 

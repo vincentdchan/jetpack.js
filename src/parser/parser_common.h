@@ -89,6 +89,7 @@ namespace parser {
         bool Match(char16_t t);
         bool Match(const UString& str);
         bool MatchKeyword(const UString& keyword);
+        bool MatchContextualKeyword(const UString& keyword);
         bool MatchAssign();
 
         bool IsolateCoverGrammar(std::function<bool()> cb);

@@ -137,7 +137,7 @@
 
   (syntax-node 'BlockStatement 'Statement
     (list
-      (cons (Vec 'Statement) "body")
+      (cons (Vec 'SyntaxNode) "body")
     )
   )
 
@@ -262,8 +262,8 @@
 
   (syntax-node 'ForInStatement 'Statement
     (list
-      (cons 'Expression "left")
-      (cons 'Expression "right")
+      (cons 'SyntaxNode "left")
+      (cons 'SyntaxNode "right")
       (cons 'Statement "body")
       (cons 'Boolean "each")
     )
@@ -271,17 +271,17 @@
 
   (syntax-node 'ForOfStatement 'Statement
     (list
-      (cons 'Expression "left")
-      (cons 'Expression "right")
+      (cons 'SyntaxNode "left")
+      (cons 'SyntaxNode "right")
       (cons 'Statement "body")
     )
   )
 
   (syntax-node 'ForStatement 'Statement
     (list
-      (cons (Option 'Expression) "init")
-      (cons (Option 'Expression) "test")
-      (cons (Option 'Expression) "update")
+      (cons (Option 'SyntaxNode) "init")
+      (cons (Option 'SyntaxNode) "test")
+      (cons (Option 'SyntaxNode) "update")
       (cons 'Statement "body")
     )
   )
@@ -378,7 +378,7 @@
       (cons (Option 'Expression) "key")
       (cons 'Boolean "computed")
       (cons (Option 'Expression) "value")
-      (cons 'String "kind")
+      (cons 'VarKind "kind")
       (cons 'Boolean "static")
     )
   )
@@ -414,7 +414,7 @@
       (cons 'SyntaxNode "key")
       (cons 'Boolean "computed")
       (cons (Option 'SyntaxNode) "value")
-      (cons 'String "kind")
+      (cons 'VarKind "kind")
       (cons 'Boolean "method")
       (cons 'Boolean "shorthand")
     )
@@ -535,7 +535,7 @@
   (syntax-node 'VariableDeclaration 'Declaration
     (list
       (cons (Vec 'VariableDeclarator) "declarations")
-      (cons 'String "kind")
+      (cons 'VarKind "kind")
     )
   )
 
