@@ -13,7 +13,7 @@
 #include "../utils.h"
 #include "../macros.h"
 #include "../tokenizer/scanner.h"
-#include "ast.h"
+#include "syntax_nodes.h"
 
 namespace parser {
     using namespace std;
@@ -55,7 +55,7 @@ namespace parser {
 
         struct FormalParameterOptions {
             bool simple = true;
-            vector<AstNode*> params;
+            vector<Sp<SyntaxNode>> params;
             bool stricted;
             bool first_restricted;
             string message;

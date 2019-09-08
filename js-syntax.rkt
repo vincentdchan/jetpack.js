@@ -52,20 +52,20 @@
 
   (syntax-node 'ArrayExpression 'Expression
     (list
-      (cons (Vec 'ArrayExpressionElement) "elements")
+      (cons (Vec 'SyntaxNode) "elements")
     )
   )
 
   (syntax-node 'ArrayPattern 'SyntaxNode
     (list
-      (cons (Vec 'ArrayPatternElement) "elements")
+      (cons (Vec 'SyntaxNode) "elements")
     )
   )
 
   (syntax-node 'ArrowFunctionExpression 'Expression
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'Expression "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -91,7 +91,7 @@
   (syntax-node 'AsyncArrowFunctionExpression 'Expression
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'Expression "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -102,7 +102,7 @@
   (syntax-node 'AsyncFunctionDeclaration 'Declaration
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'BlockStatement "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -113,7 +113,7 @@
   (syntax-node 'AsyncFunctionExpression 'Expression
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'Expression "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -150,7 +150,7 @@
   (syntax-node 'CallExpression 'Expression
     (list
       (cons 'Expression "callee")
-      (cons (Vec 'ArgumentListElement) "arguments")
+      (cons (Vec 'SyntaxNode) "arguments")
     )
   )
 
@@ -289,7 +289,7 @@
   (syntax-node 'FunctionDeclaration 'Declaration
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'BlockStatement "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -300,7 +300,7 @@
   (syntax-node 'FunctionExpression 'Expression
     (list
       (cons (Option 'Identifier) "id")
-      (cons (Vec 'FunctionParameter) "params")
+      (cons (Vec 'SyntaxNode) "params")
       (cons 'BlockStatement "body")
       (cons 'Boolean "generator")
       (cons 'Boolean "expression")
@@ -328,7 +328,7 @@
 
   (syntax-node 'ImportDeclaration 'Declaration
     (list
-      (cons (Vec 'ImportDeclarationSpecifier) "specifiers")
+      (cons (Vec 'SyntaxNode) "specifiers")
       (cons 'Literal "source")
     )
   )
@@ -385,7 +385,7 @@
 
   (syntax-node 'Module 'SyntaxNode
     (list
-      (cons (Vec 'StatementListItem) "body")
+      (cons (Vec 'SyntaxNode) "body")
       (cons 'String "sourceType")
     )
   )
@@ -393,27 +393,27 @@
   (syntax-node 'NewExpression 'Expression
     (list
       (cons 'Expression "callee")
-      (cons (Vec 'ArgumentListElement) "arguments")
+      (cons (Vec 'SyntaxNode) "arguments")
     )
   )
 
   (syntax-node 'ObjectExpression 'Expression
     (list
-      (cons (Vec 'ObjectExpressionProperty) "properties")
+      (cons (Vec 'SyntaxNode) "properties")
     )
   )
 
   (syntax-node 'ObjectPattern 'Pattern
     (list
-      (cons (Vec 'ObjectPatternProperty) "properties")
+      (cons (Vec 'SyntaxNode) "properties")
     )
   )
 
   (syntax-node 'Property 'SyntaxNode
     (list
-      (cons 'PropertyKey "key")
+      (cons 'SyntaxNode "key")
       (cons 'Boolean "computed")
-      (cons (Option 'PropertyValue) "value")
+      (cons (Option 'SyntaxNode) "value")
       (cons 'String "kind")
       (cons 'Boolean "method")
       (cons 'Boolean "shorthand")
@@ -441,14 +441,14 @@
 
   (syntax-node 'Script 'SyntaxNode
     (list
-      (cons (Vec 'StatementListItem) "body")
+      (cons (Vec 'SyntaxNode) "body")
       (cons 'String "sourceType")
     )
   )
 
   (syntax-node 'SequenceExpression 'Expression
     (list
-      (cons (Vec 'Expresssion) "expressions")
+      (cons (Vec 'Expression) "expressions")
     )
   )
 
@@ -484,7 +484,7 @@
     )
   )
 
-  (syntax-node 'TaggedTemplateExpression 'Expresssion
+  (syntax-node 'TaggedTemplateExpression 'Expression
     (list
       (cons 'Expression "tag")
       (cons 'TemplateElement "quasi")

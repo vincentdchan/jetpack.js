@@ -12,7 +12,7 @@ namespace parser {
 
         template<typename T, typename ...Args>
         Sp<T> Alloc(Args && ...args) {
-            static_assert(std::is_base_of<AstNode, T>::value, "T not derived from AstNode");
+            static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
 
             return Sp<T>(new T);
         }
@@ -145,10 +145,10 @@ namespace parser {
         bool ParseFormalParameter(FormalParameterOptions& option);
 
         template <typename NodePtr>
-        bool ParseRestElement(std::vector<AstNode*>& params, NodePtr& ptr);
+        bool ParseRestElement(std::vector<Sp<SyntaxNode>>& params, NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParsePattern(std::vector<AstNode*>& params, VarKind  kind, NodePtr& ptr);
+        bool ParsePattern(std::vector<Sp<SyntaxNode>>& params, VarKind  kind, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParsePatternWithDefault(NodePtr& ptr);
@@ -360,7 +360,7 @@ namespace parser {
                     auto node = Alloc<Identifier>();
                     Token next;
                     DO(NextToken(&next))
-                    node->name_ = next.value_;
+                    node->name = next.value_;
                     return Finalize(marker, node, expr);
                 }
             }
@@ -376,7 +376,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
-                node->value_ = token.value_;
+                node->value = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -387,7 +387,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
-                node->value_ = token.value_;
+                node->value = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -398,7 +398,7 @@ namespace parser {
                 DO(NextToken(&token))
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
-                node->value_ = token.value_;
+                node->value = token.value_;
                 Finalize(marker, node, expr);
                 break;
             }
@@ -452,7 +452,7 @@ namespace parser {
                 } else if (!context_.strict_ && MatchKeyword(U("let"))) {
                     DO(NextToken(&token));
                     auto id = Alloc<Identifier>();
-                    id->name_ = token.value_;
+                    id->name = token.value_;
                     return Finalize(marker, id, expr);
                 } else {
                     context_.is_assignment_target = false;
@@ -496,7 +496,7 @@ namespace parser {
         auto node = Alloc<SpreadElement>();
 
         DO(InheritCoverGrammar([this, &node]() {
-            return ParseAssignmentExpression(node->argument_);
+            return ParseAssignmentExpression(node->argument);
         }));
 
         return Finalize(marker, node, expr);
@@ -513,7 +513,7 @@ namespace parser {
         while (!Match(']')) {
             if (Match(',')) {
                 NextToken();
-                node->elements_.push_back(nullptr);
+                node->elements.push_back(nullptr);
             } else if (Match(U("..."))) {
                 DO(ParseSpreadElement(element))
                 if (!Match(']')) {
@@ -521,12 +521,12 @@ namespace parser {
                     context_.is_binding_element = false;
                     Expect(',');
                 }
-                node->elements_.push_back(element);
+                node->elements.push_back(element);
             } else {
                 DO(InheritCoverGrammar([this, &element]() {
                     return ParseAssignmentExpression(element);
                 }))
-                node->elements_.push_back(element);
+                node->elements.push_back(element);
                 if (!Match(']')) {
                     DO(Expect(','))
                 }
@@ -590,7 +590,7 @@ namespace parser {
                     LogError("StrictOctalLiteral");
                 }
                 auto node = Alloc<Literal>();
-                node->value_ = token.value_;
+                node->value = token.value_;
                 return Finalize(marker, node, ptr);
             }
 
@@ -599,7 +599,7 @@ namespace parser {
             case JsTokenType::NullLiteral:
             case JsTokenType::Keyword: {
                 auto node = Alloc<Identifier>();
-                node->name_ = token.value_;
+                node->name = token.value_;
                 return Finalize(marker, node, ptr);
             }
 
@@ -633,7 +633,7 @@ namespace parser {
         bool shorthand = false;
         bool is_async = false;
 
-        Sp<AstNode> key = nullptr;
+        Sp<SyntaxNode> key = nullptr;
 
         if (token.type_ == JsTokenType::Identifier) {
             auto id = token.value_;
@@ -645,7 +645,7 @@ namespace parser {
                 DO(ParseObjectPropertyKey(key))
             } else {
                 auto node = Alloc<Identifier>();
-                node->name_ = id;
+                node->name = id;
                 DO(Finalize(marker, node, key));
             }
         } else if (Match('*')) {
@@ -692,12 +692,12 @@ namespace parser {
     }
 
     template <typename NodePtr>
-    bool Parser::ParseRestElement(std::vector<AstNode*>& params, NodePtr &ptr) {
+    bool Parser::ParseRestElement(std::vector<Sp<SyntaxNode>>& params, NodePtr &ptr) {
         auto marker = CreateNode();
         auto node = Alloc<RestElement>();
 
         DO(Expect(U("...")))
-        DO(ParsePattern(params, VarKind::Invalid, node->argument_))
+        DO(ParsePattern(params, VarKind::Invalid, node->argument))
         if (Match('=')) {
             LogError("DefaultRestParameter");
             return false;
