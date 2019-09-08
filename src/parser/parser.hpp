@@ -842,6 +842,14 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseIfClause(NodePtr &ptr) {
+        if (context_.strict_ && MatchKeyword(u"function")) {
+            LogError("StrictFunction");
+        }
+        return ParseStatement(ptr);
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseIfStatement(NodePtr &ptr) {
         auto marker = CreateNode();
         auto node = Alloc<IfStatement>();
@@ -1217,6 +1225,53 @@ namespace parser {
         }
 
         return true;
+    }
+
+    bool Parser::MatchImportCall() {
+        bool match = MatchKeyword(u"import");
+        if (match) {
+            auto state = scanner_->SaveState();
+            std::vector<Comment> comments;
+            Token next;
+            scanner_->Lex(next);
+            scanner_->ScanComments(comments);
+            scanner_->RestoreState(state);
+            match = (next.type_ == JsTokenType::Punctuator) && (next.value_ == u"(");
+        }
+        return match;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseImportCall(NodePtr& ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<Import>();
+        DO(ExpectKeyword(u"import"))
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseDirective(NodePtr &ptr) {
+        auto token = lookahead_;
+
+        auto marker = CreateNode();
+        Sp<Expression> expr;
+        DO(ParseExpression(expr))
+        UString directive;
+        if (expr->type == SyntaxNodeType::Literal) {
+            directive = token.value_.substr(1, token.value_.size() - 1);
+        }
+        DO(ConsumeSemicolon())
+
+        if (!directive.empty()) {
+            auto node = Alloc<Directive>();
+            node->expression = expr;
+            node->directive = directive;
+            return Finalize(marker, node, ptr);
+        } else {
+            auto node = Alloc<ExpressionStatement>();
+            node->expression = expr;
+            return Finalize(marker, node, ptr);
+        }
     }
 
 }

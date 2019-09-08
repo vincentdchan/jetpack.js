@@ -86,7 +86,7 @@ DebuggerStatement::DebuggerStatement(): SyntaxNode() {
     type = SyntaxNodeType::DebuggerStatement;
 }
 
-Directive::Directive(): SyntaxNode() {
+Directive::Directive(): Statement() {
     type = SyntaxNodeType::Directive;
 }
 

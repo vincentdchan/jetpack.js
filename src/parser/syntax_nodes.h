@@ -209,7 +209,7 @@ public:
 
 };
 
-class Directive: public SyntaxNode {
+class Directive: public Statement {
 public:
     Directive();
 

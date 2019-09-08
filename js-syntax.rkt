@@ -209,7 +209,7 @@
     (list)
   )
 
-  (syntax-node 'Directive 'SyntaxNode
+  (syntax-node 'Directive 'Statement
     (list
       (cons 'Expression "expression")
       (cons 'String "directive")
