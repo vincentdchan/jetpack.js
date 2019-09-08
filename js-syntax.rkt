@@ -322,7 +322,7 @@
     )
   )
 
-  (syntax-node 'Import 'SyntaxNode
+  (syntax-node 'Import 'Expression
     (list)
   )
 
@@ -359,7 +359,7 @@
     )
   )
 
-  (syntax-node 'Literal 'SyntaxNode
+  (syntax-node 'Literal 'Expression
     (list
       (cons (Variant (list 'Boolean 'Number 'String)) "value")
       (cons 'String "raw")

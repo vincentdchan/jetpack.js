@@ -353,7 +353,7 @@ public:
 
 };
 
-class Import: public SyntaxNode {
+class Import: public Expression {
 public:
     Import();
 
@@ -403,7 +403,7 @@ public:
 
 };
 
-class Literal: public SyntaxNode {
+class Literal: public Expression {
 public:
     Literal();
 

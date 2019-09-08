@@ -146,7 +146,7 @@ IfStatement::IfStatement(): Statement() {
     type = SyntaxNodeType::IfStatement;
 }
 
-Import::Import(): SyntaxNode() {
+Import::Import(): Expression() {
     type = SyntaxNodeType::Import;
 }
 
@@ -170,7 +170,7 @@ LabeledStatement::LabeledStatement(): Statement() {
     type = SyntaxNodeType::LabeledStatement;
 }
 
-Literal::Literal(): SyntaxNode() {
+Literal::Literal(): Expression() {
     type = SyntaxNodeType::Literal;
 }
 

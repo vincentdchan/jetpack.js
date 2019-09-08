@@ -356,7 +356,7 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParsePrimaryExpression(NodePtr& expr) {
-        static_assert(std::is_convertible<Expression*, NodePtr>::value, "NodePtr can not convert to AstNode*");
+        static_assert(std::is_convertible<Sp<Expression>, NodePtr>::value, "NodePtr can not convert to AstNode*");
 
         expr = nullptr;
         auto marker = CreateNode();
@@ -501,7 +501,7 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseSpreadElement(NodePtr& expr) {
-        static_assert(std::is_convertible<SpreadElement*, NodePtr>::value, "NodePtr can not accept SpreadElement*");
+        static_assert(std::is_convertible<Sp<SpreadElement>, NodePtr>::value, "NodePtr can not accept SpreadElement*");
         auto marker = CreateNode();
 
         DO(Expect(U("...")))
@@ -517,10 +517,10 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseArrayInitializer(NodePtr &expr) {
-        static_assert(std::is_convertible<ArrayExpression*, NodePtr>::value, "NodePtr can not accept ArrayExpression*");
+        static_assert(std::is_convertible<Sp<ArrayExpression>, NodePtr>::value, "NodePtr can not accept ArrayExpression*");
         auto marker = CreateNode();
         auto node = Alloc<ArrayExpression>();
-        Sp<Expression> element = nullptr;
+        Sp<SyntaxNode> element = nullptr;
 
         DO(Expect('['))
         while (!Match(']')) {
@@ -1272,6 +1272,64 @@ namespace parser {
             node->expression = expr;
             return Finalize(marker, node, ptr);
         }
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseExpression(NodePtr &ptr) {
+        auto start_token = lookahead_;
+        auto start_marker = CreateNode();
+        Sp<Expression> expr;
+        DO(IsolateCoverGrammar([this, &expr] {
+            return ParseAssignmentExpression(expr);
+        }));
+
+        if (Match(u',')) {
+            std::vector<Sp<Expression>> expressions;
+            expressions.push_back(expr);
+            while (lookahead_.type_ != JsTokenType::EOF_) {
+                if (!Match(u',')) {
+                    break;
+                }
+                NextToken();
+                Sp<Expression> node;
+                DO(IsolateCoverGrammar([this, &node] {
+                    return ParseAssignmentExpression(node);
+                }))
+                expressions.push_back(node);
+            }
+
+            auto node = Alloc<SequenceExpression>();
+            node->expressions = expressions;
+            Finalize(start_marker_, node, expr);
+        }
+
+        ptr = expr;
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseAssignmentExpression(NodePtr &ptr) {
+        Sp<Expression> expr;
+
+        if (context_.allow_yield && !MatchKeyword(u"yield")) {
+            DO(ParseYieldExpression(expr))
+        } else {
+            auto start_marker = CreateNode();
+            auto token = lookahead_;
+            DO(ParseConditionalExpression(expr))
+
+            if (token.type_ == JsTokenType::Identifier && (token.line_number_ == lookahead_.line_number_) && token.value_ == u"async") {
+                if (lookahead_.type_ == JsTokenType::Identifier || MatchKeyword(u"yield")) {
+                    Sp<Expression> arg;
+                    DO(ParsePrimaryExpression(arg))
+                    DO(ReinterpretExpressionAsPattern(arg))
+//                    auto node = Alloc<ArrowParameterPlaceHolder>();
+                }
+            }
+        }
+
+        // TODO: wait to complete
+        return true;
     }
 
 }
