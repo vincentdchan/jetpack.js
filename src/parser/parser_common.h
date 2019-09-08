@@ -64,7 +64,7 @@ namespace parser {
 
         ParserCommon(
             shared_ptr<u16string> source,
-        const Config& config
+            const Config& config
         );
         ParserCommon(const ParserCommon&) = delete;
         ParserCommon(ParserCommon&&) = delete;

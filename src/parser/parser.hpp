@@ -10,6 +10,13 @@ namespace parser {
     class Parser final: public ParserCommon {
     public:
 
+        Parser(
+            shared_ptr<u16string> source,
+            const Config& config
+        ): ParserCommon(source, config) {
+
+        }
+
         template<typename T, typename ...Args>
         Sp<T> Alloc(Args && ...args) {
             static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
@@ -238,7 +245,7 @@ namespace parser {
         bool ParseDirective(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseDirectivePrologues(NodePtr& ptr);
+        bool ParseDirectivePrologues(std::vector<NodePtr>& ptr_vec);
 
         template <typename NodePtr>
         bool ParseGetterMethod(NodePtr& ptr);
@@ -322,15 +329,15 @@ namespace parser {
         static_assert(std::is_convertible<FromT, ToT>::value, "FromT can not convert to ToT");
 
         if (config_.range) {
-            from->range_ = std::make_pair(marker.index, last_marker_.index);
+            from->range = std::make_pair(marker.index, last_marker_.index);
         }
 
         if (config_.loc) {
-            from->loc_.start_ = Position {
+            from->location.start_ = Position {
                 marker.line,
                 marker.column,
             };
-            from->loc_.end_ = Position {
+            from->location.end_ = Position {
                 last_marker_.line,
                 last_marker_.column,
             };
@@ -708,6 +715,190 @@ namespace parser {
         }
 
         return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseModule(NodePtr &ptr) {
+        context_.strict_ = true;
+        context_.is_module = true;
+        auto marker = CreateNode();
+        auto node = make_shared<Module>();
+        DO(ParseDirectivePrologues(node->body))
+        while (lookahead_.type_ != JsTokenType::EOF_) {
+            Sp<SyntaxNode> statement_list_item;
+            DO(ParseStatementListItem(statement_list_item))
+            node->body.push_back(move(statement_list_item));
+        }
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseStatement(NodePtr &ptr) {
+        Sp<Statement> statement;
+
+        switch (lookahead_.type_) {
+            case JsTokenType::BooleanLiteral:
+            case JsTokenType::NullLiteral:
+            case JsTokenType::NumericLiteral:
+            case JsTokenType::StringLiteral:
+            case JsTokenType::Template:
+            case JsTokenType::RegularExpression: {
+                DO(ParseExpressionStatement(statement))
+                break;
+            }
+
+            case JsTokenType::Punctuator: {
+                auto& value = lookahead_.value_;
+                if (value == u"{") {
+                    DO(ParseBlock(statement))
+                } else if (value == u"(") {
+                    DO(ParseExpressionStatement(statement))
+                } else if (value == u";") {
+                    DO(ParseEmptyStatement(statement));
+                } else {
+                    DO(ParseExpressionStatement(statement))
+                }
+                break;
+            }
+
+            case JsTokenType::Identifier: {
+                if (MatchAsyncFunction()) {
+                    DO(ParseFunctionDeclaration(statement))
+                } else {
+                    DO(ParseLexicalDeclaration(statement))
+                }
+                break;
+            }
+
+            case JsTokenType::Keyword: {
+                auto& value = lookahead_.value_;
+                if (value == u"break") {
+                    DO(ParseBreakStatement(statement))
+                } else if (value == u"continue") {
+                    DO(ParseContinueStatement(statement))
+                } else if (value == u"debugger") {
+                    DO(ParseDebuggerStatement(statement))
+                } else if (value == u"do") {
+                    DO(ParseDoWhileStatement(statement))
+                } else if (value == u"for") {
+                    DO(ParseForStatement(statement))
+                } else if (value == u"function") {
+                    DO(ParseFunctionDeclaration(statement))
+                } else if (value == u"if") {
+                    DO(ParseIfStatement(statement))
+                } else if (value == u"return") {
+                    DO(ParseReturnStatement(statement))
+                } else if (value == u"switch") {
+                    DO(ParseSwitchStatement(statement))
+                } else if (value == u"throw") {
+                    DO(ParseThrowStatement(statement))
+                } else if (value == u"try") {
+                    DO(ParseTryStatement(statement))
+                } else if (value == u"var") {
+                    DO(ParseVariableDeclaration(statement))
+                } else if (value == u"while") {
+                    DO(ParseWhileStatement(statement))
+                } else if (value == u"with") {
+                    DO(ParseWithStatement(statement))
+                } else {
+                    DO(ParseExpressionStatement(statement))
+                }
+                break;
+            }
+
+            default:
+                UnexpectedToken(&lookahead_);
+                return false;
+
+        }
+
+        ptr = statement;
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseStatementListItem(NodePtr &ptr) {
+        Sp<SyntaxNode> statement;
+        context_.is_assignment_target = true;
+        context_.is_binding_element = true;
+
+        if (lookahead_.type_ == JsTokenType::Keyword) {
+            if (lookahead_.value_ == u"export") {
+                if (context_.is_module) {
+                    string message = "IllegalExportDeclaration";
+                    UnexpectedToken(&lookahead_, &message);
+                }
+                DO(ParseExportDeclaration(statement))
+            } else if (lookahead_.value_ == u"import") {
+                if (MatchImportCall()) {
+                    DO(ParseExpressionStatement(statement))
+                } else {
+                    if (!context_.is_module) {
+                        string message = "IllegalImportDeclaration";
+                        UnexpectedToken(&lookahead_, &message);
+                    }
+                    DO(ParseImportDeclaration(statement))
+                }
+            } else if (lookahead_.value_ == u"const") {
+                DO(ParseLexicalDeclaration(statement))
+            } else if (lookahead_.value_ == u"function") {
+                DO(ParseFunctionDeclaration(statement))
+            } else if (lookahead_.value_ == u"class") {
+                DO(ParseClassExpression(statement))
+            } else if (lookahead_.value_ == u"let") {
+                if (IsLexicalDeclaration()) {
+                    DO(ParseLexicalDeclaration(statement))
+                } else {
+                    DO(ParseStatement(statement))
+                }
+            } else {
+                DO(ParseStatement(statement))
+            }
+        } else {
+            DO(ParseStatement(statement))
+        }
+
+        ptr = statement;
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseDirectivePrologues(std::vector<NodePtr> &ptr_vec) {
+        std::unique_ptr<Token> first_restrict;
+
+        Token token;
+        while (true) {
+            token = lookahead_;
+            if (token.type_ != JsTokenType::StringLiteral) {
+                break;
+            }
+
+            Sp<Statement> statement;
+            DO(ParseDirective(statement))
+            ptr_vec.push_back(statement);
+            if (statement->type != SyntaxNodeType::Directive) {
+                break;
+            }
+            auto directive_ = reinterpret_cast<Directive*>(statement.get());
+
+            if (directive_->directive == u"use strict") {
+                context_.strict_ = true;
+                if (first_restrict) {
+                    string message = "StrictOctalLiteral";
+                    UnexpectedToken(first_restrict.get(), &message);
+                }
+                if (!context_.allow_strict_directive) {
+                    string message = "IllegalLanguageModeDirective";
+                    UnexpectedToken(&token, &message);
+                }
+            } else {
+                if (!first_restrict && token.octal_) {
+                    first_restrict = make_unique<Token>(token);
+                }
+            }
+        }
+
+        return true;
     }
 
 }

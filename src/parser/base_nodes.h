@@ -24,6 +24,9 @@ public:
     SyntaxNodeType type = SyntaxNodeType::Invalid;
     SyntaxNode() = default;
 
+    std::pair<std::uint32_t, std::uint32_t> range;
+    SourceLocation location;
+
     virtual bool IsDeclaration() const { return false; }
     virtual bool IsExpression() const { return false; }
     virtual bool IsStatement() const { return false; }
