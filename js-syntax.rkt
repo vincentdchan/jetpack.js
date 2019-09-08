@@ -56,7 +56,7 @@
     )
   )
 
-  (syntax-node 'ArrayPattern 'SyntaxNode
+  (syntax-node 'ArrayPattern 'Pattern
     (list
       (cons (Vec 'SyntaxNode) "elements")
     )
@@ -81,7 +81,7 @@
     )
   )
 
-  (syntax-node 'AssignmentPattern 'SyntaxNode
+  (syntax-node 'AssignmentPattern 'Pattern
     (list
       (cons 'SyntaxNode "left")
       (cons 'Expression "right")

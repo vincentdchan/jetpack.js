@@ -6,7 +6,7 @@ ArrayExpression::ArrayExpression(): Expression() {
     type = SyntaxNodeType::ArrayExpression;
 }
 
-ArrayPattern::ArrayPattern(): SyntaxNode() {
+ArrayPattern::ArrayPattern(): Pattern() {
     type = SyntaxNodeType::ArrayPattern;
 }
 
@@ -18,7 +18,7 @@ AssignmentExpression::AssignmentExpression(): Expression() {
     type = SyntaxNodeType::AssignmentExpression;
 }
 
-AssignmentPattern::AssignmentPattern(): SyntaxNode() {
+AssignmentPattern::AssignmentPattern(): Pattern() {
     type = SyntaxNodeType::AssignmentPattern;
 }
 

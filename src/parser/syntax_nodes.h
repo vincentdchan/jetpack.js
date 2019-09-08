@@ -15,7 +15,7 @@ public:
 
 };
 
-class ArrayPattern: public SyntaxNode {
+class ArrayPattern: public Pattern {
 public:
     ArrayPattern();
 
@@ -30,9 +30,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<Expression> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -46,7 +46,7 @@ public:
 
 };
 
-class AssignmentPattern: public SyntaxNode {
+class AssignmentPattern: public Pattern {
 public:
     AssignmentPattern();
 
@@ -62,9 +62,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<Expression> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -75,9 +75,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<BlockStatement> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -88,9 +88,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<Expression> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -178,7 +178,7 @@ class ComputedMemberExpression: public Expression {
 public:
     ComputedMemberExpression();
 
-    bool computed;
+    bool computed = false;
     Sp<Expression> object;
     Sp<Expression> property;
 
@@ -284,7 +284,7 @@ public:
     Sp<Expression> left;
     Sp<Expression> right;
     Sp<Statement> body;
-    bool each;
+    bool each = false;
 
 };
 
@@ -316,9 +316,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<BlockStatement> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -329,9 +329,9 @@ public:
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
     Sp<BlockStatement> body;
-    bool generator;
-    bool expression;
-    bool async;
+    bool generator = false;
+    bool expression = false;
+    bool async = false;
 
 };
 
@@ -426,10 +426,10 @@ public:
     MethodDefinition();
 
     std::optional<Sp<Expression>> key;
-    bool computed;
+    bool computed = false;
     std::optional<Sp<Expression>> value;
     UString kind;
-    bool static_;
+    bool static_ = false;
 
 };
 
@@ -472,11 +472,11 @@ public:
     Property();
 
     Sp<SyntaxNode> key;
-    bool computed;
+    bool computed = false;
     std::optional<Sp<SyntaxNode>> value;
     UString kind;
-    bool method;
-    bool shorthand;
+    bool method = false;
+    bool shorthand = false;
 
 };
 
@@ -534,7 +534,7 @@ class StaticMemberExpression: public Expression {
 public:
     StaticMemberExpression();
 
-    bool computed;
+    bool computed = false;
     Sp<Expression> object;
     Sp<Expression> property;
 
@@ -614,7 +614,7 @@ public:
 
     UString operator_;
     Sp<Expression> argument;
-    bool prefix;
+    bool prefix = false;
 
 };
 
@@ -624,7 +624,7 @@ public:
 
     UString operator_;
     Sp<Expression> argument;
-    bool prefix;
+    bool prefix = false;
 
 };
 
@@ -669,7 +669,7 @@ public:
     YieldExpression();
 
     std::optional<Sp<Expression>> argument;
-    bool delegate;
+    bool delegate = false;
 
 };
 

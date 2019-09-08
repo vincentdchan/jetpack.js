@@ -80,6 +80,8 @@ enum class SyntaxNodeType {
 
 };
 
+static const char* SyntaxNodeTypeToString(SyntaxNodeType type_);
+
 class SyntaxNode;
 class Expression;
 class Statement;
