@@ -29,19 +29,114 @@ namespace parser {
         bool ParseSpreadElement(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseAssignmentExpression(NodePtr& ptr);
-
-        template <typename NodePtr>
         bool ParsePropertyMethodFunction(NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParsePropertyMethodAsyncFunction(NodePtr& ptr);
 
         template <typename NodePtr>
+        bool ParseObjectProperty(bool& has_proto, NodePtr& ptr);
+
+        template <typename NodePtr>
         bool ParseObjectPropertyKey(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseObjectProperty(bool& has_proto, NodePtr& ptr);
+        bool ParseObjectInitializer(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseTemplateHead(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseTemplateElement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseTemplateLiteral(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ReinterpretExpressionAsPattern(NodePtr ptr);
+
+        template <typename NodePtr>
+        bool ParseGroupExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseArguments(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseIdentifierName(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseNewExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseAsyncArgument(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseAsyncArguments(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseImportCall(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseLeftHandSideExpressionAllowCall(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseSuper(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseLeftHandSideExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseUpdateExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseAwaitExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseUnaryExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseExponentiationExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseBinaryExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseConditionalExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseAssignmentExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseStatementListItem(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseBlock(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseLexicalBinding(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseBindingList(NodePtr& ptr);
+
+        bool IsLexicalDeclaration();
+
+        template <typename NodePtr>
+        bool ParseLexicalDeclaration(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseBindingRestElement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseArrayPattern(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParsePropertyPattern(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseRestProperty(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseObjectPattern(NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseArrayInitializer(NodePtr& expr);
@@ -55,7 +150,153 @@ namespace parser {
         template <typename NodePtr>
         bool ParsePattern(std::vector<AstNode*>& params, VarKind  kind, NodePtr& ptr);
 
-        bool ParseFunctionExpression(Expression*& expr);
+        template <typename NodePtr>
+        bool ParsePatternWithDefault(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseVariableIdentifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseVariableDeclaration(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseVariableDeclarationList(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseVariableStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseEmptyStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseExpressionStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseIfClause(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseIfStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseDoWhileStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseWhileStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseForStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseContinueStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseBreakStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseReturnStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseWithStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseSwitchCase(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseSwitchStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseLabelledStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseThrowStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseCatchClause(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseFinallyClause(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseTryStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseDebuggerStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseStatement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseFunctionSourceElements(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseFunctionDeclaration(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseFunctionExpression(NodePtr& expr);
+
+        template <typename NodePtr>
+        bool ParseDirective(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseDirectivePrologues(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseGetterMethod(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseSetterMethod(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseGeneratorMethod(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseYieldExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseClassElement(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseClassElementList(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseClassBody(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseClassDeclaration(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseClassExpression(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseModule(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseScript(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseModuleSpecifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseImportSpecifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseNamedImports(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseImportDefaultSpecifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseImportNamespaceSpecifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseImportDeclaration(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseExportSpecifier(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ParseExportDeclaration(NodePtr& ptr);
+
         bool ParseTemplateLiteral(Expression*& expr);
         bool ParseGroupExpression(Expression*& expr);
 
