@@ -270,7 +270,7 @@ namespace parser {
         bool ParseClassElement(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseClassElementList(NodePtr& ptr);
+        bool ParseClassElementList(std::vector<NodePtr>& vec);
 
         template <typename NodePtr>
         bool ParseClassBody(NodePtr& ptr);
@@ -1046,6 +1046,98 @@ namespace parser {
         auto node = Alloc<EmptyStatement>();
         auto marker = CreateNode();
         DO(Expect(u';'));
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseClassBody(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<ClassBody>();
+
+        DO(ParseClassElementList(node->body))
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseCatchClause(NodePtr &ptr) {
+        auto marker = CreateNode();
+
+        DO(ExpectKeyword(u"catch"))
+
+        DO(Expect(u'('))
+        if (Match(u')')) {
+            UnexpectedToken(&lookahead_);
+            return false;
+        }
+
+        auto node = Alloc<CatchClause>();
+
+        // TODO: parse params
+
+        DO(Expect(u')'))
+        DO(ParseBlock(node->body))
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseFinallyClause(NodePtr &ptr) {
+        DO(ExpectKeyword(u"finally"))
+        return ParseBlock(ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseThrowStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"throw"))
+
+        if (has_line_terminator_) {
+            LogError("NewlineAfterThrow");
+            return false;
+        }
+
+        auto node = Alloc<ThrowStatement>();
+        DO(ParseExpression(node->argument))
+        DO(ConsumeSemicolon())
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseSwitchStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"switch"))
+        auto node = Alloc<SwitchStatement>();
+
+        DO(Expect(u'('))
+        DO(ParseExpression(node->discrimiant))
+        DO(Expect(u')'))
+
+        auto prev_in_switch = context_.in_switch;
+        context_.in_switch = true;
+
+        bool default_found = false;
+        DO(Expect(u'{'))
+        while (true) {
+            if (Match(u'}')) {
+                break;
+            }
+            Sp<SwitchCase> clause;
+            DO(ParseSwitchCase(clause))
+            if (!clause->test) {
+                if (default_found) {
+                    LogError("MultipleDefaultsInSwitch");
+                    return false;
+                }
+                default_found = true;
+            }
+            node->cases.push_back(clause);
+        }
+        DO(Expect(u'}'))
+
+        context_.in_switch = prev_in_switch;
+
         return Finalize(marker, node, ptr);
     }
 
