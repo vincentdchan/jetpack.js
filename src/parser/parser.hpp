@@ -154,6 +154,7 @@ namespace parser {
 
         bool ParseFormalParameters(bool first_restricted, FormalParameterOptions& option);
         bool ParseFormalParameter(FormalParameterOptions& option);
+        bool IsStartOfExpression();
 
         template <typename NodePtr>
         bool ParseRestElement(std::vector<Sp<SyntaxNode>>& params, NodePtr& ptr);
@@ -1137,6 +1138,100 @@ namespace parser {
         DO(Expect(u'}'))
 
         context_.in_switch = prev_in_switch;
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseExpressionStatement(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<ExpressionStatement>();
+
+        DO(ParseExpression(node->expression))
+        DO(ConsumeSemicolon())
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseConditionalExpression(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<ConditionalExpression>();
+
+        DO(InheritCoverGrammar([this, &node] {
+            return ParseBinaryExpression(node->test);
+        }))
+        if (Match(u'?')) {
+            DO(NextToken())
+
+            bool prev_allow_in = context_.allow_in;
+            context_.allow_in = true;
+
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseAssignmentExpression(node->consequent);
+            }))
+            context_.allow_in = prev_allow_in;
+
+            DO(Expect(u':'))
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseAssignmentExpression(node->alternate);
+            }))
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    bool Parser::IsStartOfExpression() {
+        bool start = true;
+
+        UString value = lookahead_.value_;
+        switch (lookahead_.type_) {
+            case JsTokenType::Punctuator: {
+                start = (value == u"[") || (value == u")") || (value == u"{") ||
+                    (value == u"+") || (value == u"-") ||
+                    (value == u"!") || (value == u"~") ||
+                    (value == u"++") || (value == u"--") ||
+                    (value == u"/") || (value == u"/=");
+
+                break;
+            }
+
+            case JsTokenType::Keyword: {
+                start = (value == u"class") || (value == u"delete") ||
+                    (value == u"function") || (value == u"let") || (value == u"new") ||
+                    (value == u"super") || (value == u"this") || (value == u"typeof") ||
+                    (value == u"void") || (value == u"yield");
+
+                break;
+            }
+
+            default:
+                break;
+        }
+
+        return start;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseYieldExpression(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(ExpectKeyword(u"yield"))
+
+        auto node = Alloc<YieldExpression>();
+        if (has_line_terminator_) {
+            bool prev_allow_yield = context_.allow_yield;
+            context_.allow_yield = false;
+            node->delegate = Match(u'*');
+            if (node->delegate) {
+                DO(NextToken())
+                DO(ParseAssignmentExpression(node->argument))
+            } else if (IsStartOfExpression()) {
+                DO(ParseAssignmentExpression(node->argument))
+            }
+            context_.allow_yield = prev_allow_yield;
+        }
 
         return Finalize(marker, node, ptr);
     }
