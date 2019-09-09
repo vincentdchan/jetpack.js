@@ -1930,4 +1930,37 @@ namespace parser {
         return true;
     }
 
+    template <typename NodePtr>
+    bool Parser::ParseWithStatement(NodePtr &ptr) {
+        if (context_.strict_) {
+            LogError("StrictModeWith");
+        }
+
+        auto marker = CreateNode();
+        auto node = Alloc<WithStatement>();
+
+        DO(ExpectKeyword(u"with"))
+        DO(Expect(u'('))
+
+        DO(ParseExpression(node->object))
+
+        if (!Match(u')') && config_.tolerant) {
+            Token token;
+            DO(NextToken(&token))
+            UnexpectedToken(&token);
+            auto empty = Alloc<EmptyStatement>();
+            Finalize(marker, empty, node->body);
+        } else {
+            DO(Expect(u')'))
+            DO(ParseStatement(node->body))
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseTemplateHead(NodePtr &ptr) {
+        return false;
+    }
+
 }
