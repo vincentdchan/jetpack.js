@@ -123,7 +123,7 @@ namespace parser {
         bool ParseLexicalBinding(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseBindingList(NodePtr& ptr);
+        bool ParseBindingList(VarKind kind, NodePtr& ptr);
 
         bool IsLexicalDeclaration();
         bool IsIdentifierName(Token&);
@@ -278,7 +278,7 @@ namespace parser {
         bool ParseClassBody(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseClassDeclaration(NodePtr& ptr);
+        bool ParseClassDeclaration(bool identifier_is_optional, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseClassExpression(NodePtr& ptr);
@@ -1539,7 +1539,7 @@ namespace parser {
             } else if (lookahead_.value_ == u"function") {
                 DO(ParseFunctionDeclaration(false, statement))
             } else if (lookahead_.value_ == u"class") {
-                DO(ParseClassDeclaration(statement))
+                DO(ParseClassDeclaration(false, statement))
             } else if (lookahead_.value_ == u"let") {
                 if (IsLexicalDeclaration()) {
                     DO(ParseLexicalDeclaration(statement))
@@ -1636,7 +1636,7 @@ namespace parser {
                     auto prev_allow_in = context_.allow_in;
                     context_.allow_in = false;
                     std::vector<Sp<VariableDeclarator>> declarations;
-                    DO(ParseBindingList(declarations))
+                    DO(ParseBindingList(VarKind::Const, declarations))
                     context_.allow_in = prev_allow_in;
 
                     if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(u"in")) {
@@ -1961,6 +1961,109 @@ namespace parser {
     template <typename NodePtr>
     bool Parser::ParseTemplateHead(NodePtr &ptr) {
         return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseImportDeclaration(NodePtr &ptr) {
+        if (context_.in_function_body) {
+            LogError("IllegalImportDeclaration");
+            return false;
+        }
+
+//        auto marker = CreateNode();
+//        DO(ExpectKeyword(u"import"))
+//
+//        Sp<Literal> src;
+//        std::vector<Sp<ImportDeSpecifier>> specifiers;
+//        if (lookahead_.type_ == JsTokenType::StringLiteral) {
+//            DO(ParseModuleSpecifier(src))
+//        } else {
+//            if (Match(u'{')) {
+//                ParseName
+//            }
+//        }
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseBindingList(VarKind kind, NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseGroupExpression(NodePtr& ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseBinaryExpression(NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseExportDeclaration(NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseClassElementList(std::vector<NodePtr> &vec) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseLexicalDeclaration(NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseVariableDeclarationList(bool in_for, NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ReinterpretExpressionAsPattern(NodePtr ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseLeftHandSideExpressionAllowCall(NodePtr &ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseClassDeclaration(bool identifier_is_optional, NodePtr &ptr) {
+        auto marker = CreateNode();
+
+        bool prev_strict = context_.strict_;
+        context_.strict_ = true;
+        DO(ExpectKeyword(u"class"))
+
+        auto node = Alloc<ClassDeclaration>();
+        if (identifier_is_optional && (lookahead_.type_ != JsTokenType::Identifier)) {
+            // nothing
+        } else {
+            DO(ParseVariableIdentifier(VarKind::Invalid, *node->id))
+        }
+
+        if (MatchKeyword(u"extends")) {
+            DO(NextToken())
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseLeftHandSideExpressionAllowCall(*node->super_class);
+            }))
+        }
+        DO(ParseClassBody(node->body))
+        context_.strict_ = prev_strict;
+
+        return Finalize(marker, node, ptr);
     }
 
 }
