@@ -46,7 +46,7 @@
     (list)
   )
 
-  (syntax-node (virtual 'Declaration) 'SyntaxNode
+  (syntax-node (virtual 'Declaration) 'Statement
     (list)
   )
 

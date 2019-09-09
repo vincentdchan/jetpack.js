@@ -127,6 +127,7 @@ namespace parser {
 
         bool IsLexicalDeclaration();
         bool IsIdentifierName(Token&);
+        bool ExpectCommaSeparator();
 
         template <typename NodePtr>
         bool ParseLexicalDeclaration(NodePtr& ptr);
@@ -172,7 +173,7 @@ namespace parser {
         bool ParseVariableDeclaration(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseVariableDeclarationList(NodePtr& ptr);
+        bool ParseVariableDeclarationList(bool in_for, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseVariableStatement(NodePtr& ptr);
@@ -244,7 +245,7 @@ namespace parser {
         bool ParseFunctionSourceElements(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseFunctionDeclaration(NodePtr& ptr);
+        bool ParseFunctionDeclaration(bool identifier_is_optional, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseFunctionExpression(NodePtr& expr);
@@ -312,15 +313,7 @@ namespace parser {
         template <typename NodePtr>
         bool ParseExportDeclaration(NodePtr& ptr);
 
-        bool ParseTemplateLiteral(Expression*& expr);
-        bool ParseGroupExpression(Expression*& expr);
-
-
-        bool ParseObjectInitializer(Expression*& expr);
-        bool ParseIdentifierName(Expression*& expr);
-        bool ParseClassExpression(Expression*& expr);
         bool MatchImportCall();
-        bool ParseImportCall(Expression*& expr);
 
         bool MatchAsyncFunction();
 
@@ -854,7 +847,7 @@ namespace parser {
 
             case JsTokenType::Identifier: {
                 if (MatchAsyncFunction()) {
-                    DO(ParseFunctionDeclaration(statement))
+                    DO(ParseFunctionDeclaration(false, statement))
                 } else {
                     DO(ParseLexicalDeclaration(statement))
                 }
@@ -874,7 +867,7 @@ namespace parser {
                 } else if (value == u"for") {
                     DO(ParseForStatement(statement))
                 } else if (value == u"function") {
-                    DO(ParseFunctionDeclaration(statement))
+                    DO(ParseFunctionDeclaration(false, statement))
                 } else if (value == u"if") {
                     DO(ParseIfStatement(statement))
                 } else if (value == u"return") {
@@ -905,6 +898,113 @@ namespace parser {
 
         ptr = statement;
         return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseVariableDeclaration(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<VariableDeclaration>();
+        node->kind = VarKind::Var;
+
+        DO(ExpectKeyword(u"var"))
+        DO(ParseVariableDeclarationList(false, node->declarations))
+        DO(ConsumeSemicolon())
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseSwitchCase(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<SwitchCase>();
+
+        if (MatchKeyword(u"default")) {
+            DO(NextToken())
+            node->test.reset();
+        } else {
+            DO(ExpectKeyword(u"case"))
+            DO(ParseExpression(*node->test))
+        }
+        DO(Expect(u':'))
+
+        while (true) {
+            if (Match(u'}') || MatchKeyword(u"default") || MatchKeyword(u"case")) {
+                break;
+            }
+            Sp<Statement> con;
+            DO(ParseStatementListItem(con))
+            node->consequent.push_back(std::move(con));
+        }
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseTemplateLiteral(NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<TemplateElement>();
+
+        Sp<TemplateElement> quasi;
+        DO(ParseTemplateHead(quasi))
+        node->quasis.push_back(quasi);
+
+        // TODO: TemplateLiteral
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseFunctionDeclaration(bool identifier_is_optional, NodePtr &ptr) {
+        auto marker = CreateNode();
+
+        bool is_async = MatchContextualKeyword(u"async");
+        if (is_async) {
+            DO(NextToken())
+        }
+
+        DO(ExpectKeyword(u"function"))
+
+        bool is_generator = is_async ? false : Match(u'*');
+        if (is_generator) {
+            DO(NextToken())
+        }
+
+        std::optional<Sp<Identifier>> id;
+        Token first_restricted;
+        string message;
+
+        if (!identifier_is_optional || !Match(u'(')) {
+            Token token = lookahead_;
+            DO(ParseVariableIdentifier(VarKind::Invalid, *id))
+            if (context_.strict_) {
+                if (scanner_->IsRestrictedWord(token.value_)) {
+                    message = "StrictFunctionName";
+                    first_restricted = token;
+                    UnexpectedToken(&token, &message);
+                } else if (scanner_->IsStrictModeReservedWord(token.value_)) {
+                    first_restricted = token;
+                    message = "StrictReservedWord";
+                }
+            }
+        }
+
+//        bool prev_allow_await = context_.await;
+//        bool prev_allow_yield = context_.allow_yield;
+//        context_.await = is_async;
+//        context_.allow_yield = !is_generator;
+
+
+
+        if (is_async) {
+            auto node = Alloc<AsyncFunctionDeclaration>();
+            node->id = id;
+            return Finalize(marker, node, ptr);
+        } else {
+            auto node = Alloc<FunctionDeclaration>();
+            node->id = id;
+            node->generator = is_generator;
+
+            return Finalize(marker, node, ptr);
+        }
     }
 
     template <typename NodePtr>
@@ -1215,6 +1315,101 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseFunctionExpression(NodePtr &expr) {
+        auto marker = CreateNode();
+
+        bool is_async = MatchContextualKeyword(u"async");
+        if (is_async) NextToken();
+
+        DO(ExpectKeyword(u"function"))
+
+        bool is_generator = is_async ? false : Match(u'*');
+        if (is_generator) NextToken();
+
+        std::optional<Sp<Identifier>> id;
+        Token first_restricted;
+
+        bool prev_allow_await = context_.await;
+        bool prev_allow_yield = context_.allow_yield;
+        context_.await = is_async;
+        context_.allow_yield = !is_generator;
+
+        std::string message;
+
+        if (Match(u'(')) {
+            Token token = lookahead_;
+
+            if (!context_.strict_ && !is_generator && MatchKeyword(u"yield")) {
+                DO(ParseIdentifierName(*id))
+            } else {
+                DO(ParseVariableIdentifier(VarKind::Invalid, *id))
+            }
+
+            if (context_.strict_) {
+                if (scanner_->IsRestrictedWord(token.value_)) {
+                    message = "StrictFunctionName";
+                    UnexpectedToken(&token, &message);
+                }
+            } else {
+                if (scanner_->IsRestrictedWord(token.value_)) {
+                    message = "StrictFunctionName";
+                    first_restricted = token;
+                } else if (scanner_->IsStrictModeReservedWord(token.value_)) {
+                    first_restricted = token;
+                    message = "StrictReservedWord";
+                }
+            }
+        }
+
+//        FormalParameterOptions formal;
+//        DO(ParseFormalParameters(first_restricted, formal))
+        // TODO: parse fomral
+
+        return true;
+    }
+
+    bool Parser::ExpectCommaSeparator() {
+        if (config_.tolerant) {
+            Token token = lookahead_;
+            if (token.type_ == JsTokenType::Punctuator && token.value_ == u",") {
+                DO(NextToken())
+            } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u";") {
+                DO(NextToken())
+                UnexpectedToken(&token);
+            } else {
+                UnexpectedToken(&token);
+            }
+        } else {
+            return Expect(u',');
+        }
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseObjectInitializer(NodePtr &ptr) {
+        auto marker = CreateNode();
+
+        DO(Expect(u'{'))
+        auto node = Alloc<ObjectExpression>();
+        bool has_proto = false;
+        while (!Match(u'}')) {
+            Sp<SyntaxNode> prop;
+            if (Match(u"...")) {
+                DO(ParseSpreadElement(prop))
+            } else {
+                DO(ParseObjectProperty(has_proto, prop))
+            }
+            node->properties.push_back(std::move(prop));
+            if (!Match(u'}')) {
+                DO(ExpectCommaSeparator())
+            }
+        }
+        DO(Expect(u'}'))
+
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseYieldExpression(NodePtr &ptr) {
         auto marker = CreateNode();
         DO(ExpectKeyword(u"yield"))
@@ -1318,7 +1513,7 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseStatementListItem(NodePtr &ptr) {
-        Sp<SyntaxNode> statement;
+        Sp<Statement> statement;
         context_.is_assignment_target = true;
         context_.is_binding_element = true;
 
@@ -1342,9 +1537,9 @@ namespace parser {
             } else if (lookahead_.value_ == u"const") {
                 DO(ParseLexicalDeclaration(statement))
             } else if (lookahead_.value_ == u"function") {
-                DO(ParseFunctionDeclaration(statement))
+                DO(ParseFunctionDeclaration(false, statement))
             } else if (lookahead_.value_ == u"class") {
-                DO(ParseClassExpression(statement))
+                DO(ParseClassDeclaration(statement))
             } else if (lookahead_.value_ == u"let") {
                 if (IsLexicalDeclaration()) {
                     DO(ParseLexicalDeclaration(statement))
@@ -1386,7 +1581,7 @@ namespace parser {
                 auto prev_allow_in = context_.allow_in;
                 context_.allow_in = true;
                 std::vector<Sp<VariableDeclarator>> declarations;
-                DO(ParseVariableDeclarationList(declarations))
+                DO(ParseVariableDeclarationList(for_in, declarations))
                 context_.allow_in = prev_allow_in;
 
                 if (declarations.size() == 1 && MatchKeyword(u"in")) {

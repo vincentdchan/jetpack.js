@@ -49,7 +49,7 @@ public:
 
 };
 
-class Declaration: public SyntaxNode {
+class Declaration: public Statement {
 public:
     Declaration() = default;
 
