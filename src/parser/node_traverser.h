@@ -8,8 +8,14 @@
 #include "syntax_nodes.h"
 
 class NodeTraverser {
+public:
+    enum class visit_tag {
+        unvisited = 0,
+        visited,
+    };
+
 private:
-    std::stack<Sp<SyntaxNode>> nodes_stack_;
+    std::stack<std::pair<Sp<SyntaxNode>, visit_tag>> nodes_stack_;
     Sp<INodeTraverser> traverser_;
 
 public:
@@ -18,19 +24,25 @@ public:
     inline void Traverse();
 
 private:
-    void TraverseNode_(const Sp<SyntaxNode>& node);
+    void TraverseNodeBefore_(const Sp<SyntaxNode>& node);
+    void TraverseNodeAfter_(const Sp<SyntaxNode>& node);
 
 };
 
 inline void NodeTraverser::Push(const Sp<SyntaxNode>& node) {
-    nodes_stack_.push(node);
+    nodes_stack_.push(std::make_pair(node, visit_tag::unvisited));
 }
 
 inline void NodeTraverser::Traverse() {
     while (!nodes_stack_.empty()) {
-        auto top = nodes_stack_.top();
-        nodes_stack_.pop();
+        auto& top = nodes_stack_.top();
 
-        TraverseNode_(top);
+        if (top.second == visit_tag::unvisited) {
+            TraverseNodeBefore_(top.first);
+            top.second = visit_tag::visited;
+        } else {
+            TraverseNodeAfter_(top.first);
+            nodes_stack_.pop();
+        }
     }
 }

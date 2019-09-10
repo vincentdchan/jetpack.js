@@ -288,7 +288,7 @@
     (printf "#include <memory>~n")
     (newline)
 
-    (printf "void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {~n")
+    (printf "void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {~n")
     (printf "    switch (node->type) {~n")
     (for-each
       (lambda (node)
@@ -304,7 +304,7 @@
                 [(cons (cons type-prefix pair-value) field) (match type-prefix
                   ['Vec (begin
                       (printf "            for (auto i = child->~a.rbegin(); i != child->~a.rend(); i++) {~n" field field)
-                      (printf "                nodes_stack_.push(*i);~n")
+                      (printf "                Push(*i);~n")
                       (printf "            }~n")
                     )
                   ]
@@ -312,7 +312,7 @@
                   [_ void]
                 )]
                 [(cons _ field) (begin
-                  (printf "            nodes_stack_.push(child->~a);~n" field)
+                  (printf "            Push(child->~a);~n" field)
                 )]
               )
             )
@@ -323,6 +323,33 @@
             (printf "            auto child = std::dynamic_pointer_cast<~s>(node);~n" node-id)
             (printf "            if(!traverser_->TraverseBefore(child)) return;~n")
             (for-each push-child (reverse node-props))
+            (printf "            break;~n")
+            (printf "        }~n")
+            (newline)
+          )
+        )
+      )
+      syntax-list
+    )
+    (printf "        default:~n")
+    (printf "            break;~n")
+    (newline)
+    (printf "    }~n")
+    (printf "    ~n")
+    (printf "}~n")
+
+    (printf "void NodeTraverser::TraverseNodeAfter_(const Sp<SyntaxNode> &node) {~n")
+    (printf "    switch (node->type) {~n")
+    (for-each
+      (lambda (node)
+        (letrec (
+          [node-id (syntax-node-id node)]
+          [node-props (syntax-node-props node)]
+        )
+          (when (symbol? node-id)
+            (printf "        case SyntaxNodeType::~s: {~n" node-id)
+            (printf "            auto child = std::dynamic_pointer_cast<~s>(node);~n" node-id)
+            (printf "            traverser_->TraverseAfter(child);~n")
             (printf "            break;~n")
             (printf "        }~n")
             (newline)
