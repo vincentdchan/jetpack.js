@@ -1,5 +1,6 @@
 #include <iostream>
 #include "parser/parser.hpp"
+#include "parser/node_traverser.h"
 #include "tokenizer/scanner.h"
 
 using namespace parser;
