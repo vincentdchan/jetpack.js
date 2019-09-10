@@ -8,66 +8,98 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::ArrayExpression: {
             auto child = std::dynamic_pointer_cast<ArrayExpression>(node);
             traverser_->Traverse(child);
+            for (auto i = child->elements.rbegin(); i != child->elements.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ArrayPattern: {
             auto child = std::dynamic_pointer_cast<ArrayPattern>(node);
             traverser_->Traverse(child);
+            for (auto i = child->elements.rbegin(); i != child->elements.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ArrowFunctionExpression: {
             auto child = std::dynamic_pointer_cast<ArrowFunctionExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::AssignmentExpression: {
             auto child = std::dynamic_pointer_cast<AssignmentExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->right);
+            nodes_stack_.push(child->left);
             break;
         }
 
         case SyntaxNodeType::AssignmentPattern: {
             auto child = std::dynamic_pointer_cast<AssignmentPattern>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->right);
+            nodes_stack_.push(child->left);
             break;
         }
 
         case SyntaxNodeType::AsyncArrowFunctionExpression: {
             auto child = std::dynamic_pointer_cast<AsyncArrowFunctionExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::AsyncFunctionDeclaration: {
             auto child = std::dynamic_pointer_cast<AsyncFunctionDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::AsyncFunctionExpression: {
             auto child = std::dynamic_pointer_cast<AsyncFunctionExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::AwaitExpression: {
             auto child = std::dynamic_pointer_cast<AwaitExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
         case SyntaxNodeType::BinaryExpression: {
             auto child = std::dynamic_pointer_cast<BinaryExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->right);
+            nodes_stack_.push(child->left);
             break;
         }
 
         case SyntaxNodeType::BlockStatement: {
             auto child = std::dynamic_pointer_cast<BlockStatement>(node);
             traverser_->Traverse(child);
+            for (auto i = child->body.rbegin(); i != child->body.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
@@ -80,24 +112,34 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::CallExpression: {
             auto child = std::dynamic_pointer_cast<CallExpression>(node);
             traverser_->Traverse(child);
+            for (auto i = child->arguments.rbegin(); i != child->arguments.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
+            nodes_stack_.push(child->callee);
             break;
         }
 
         case SyntaxNodeType::CatchClause: {
             auto child = std::dynamic_pointer_cast<CatchClause>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->param);
             break;
         }
 
         case SyntaxNodeType::ClassBody: {
             auto child = std::dynamic_pointer_cast<ClassBody>(node);
             traverser_->Traverse(child);
+            for (auto i = child->body.rbegin(); i != child->body.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ClassDeclaration: {
             auto child = std::dynamic_pointer_cast<ClassDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
             break;
         }
 
@@ -110,12 +152,17 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::ComputedMemberExpression: {
             auto child = std::dynamic_pointer_cast<ComputedMemberExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->property);
+            nodes_stack_.push(child->object);
             break;
         }
 
         case SyntaxNodeType::ConditionalExpression: {
             auto child = std::dynamic_pointer_cast<ConditionalExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->alternate);
+            nodes_stack_.push(child->consequent);
+            nodes_stack_.push(child->test);
             break;
         }
 
@@ -134,12 +181,15 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::Directive: {
             auto child = std::dynamic_pointer_cast<Directive>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->expression);
             break;
         }
 
         case SyntaxNodeType::DoWhileStatement: {
             auto child = std::dynamic_pointer_cast<DoWhileStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->test);
+            nodes_stack_.push(child->body);
             break;
         }
 
@@ -152,60 +202,83 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::ExportAllDeclaration: {
             auto child = std::dynamic_pointer_cast<ExportAllDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->source);
             break;
         }
 
         case SyntaxNodeType::ExportDefaultDeclaration: {
             auto child = std::dynamic_pointer_cast<ExportDefaultDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->declaration);
             break;
         }
 
         case SyntaxNodeType::ExportNamedDeclaration: {
             auto child = std::dynamic_pointer_cast<ExportNamedDeclaration>(node);
             traverser_->Traverse(child);
+            for (auto i = child->specifiers.rbegin(); i != child->specifiers.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ExportSpecifier: {
             auto child = std::dynamic_pointer_cast<ExportSpecifier>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->local);
+            nodes_stack_.push(child->exported);
             break;
         }
 
         case SyntaxNodeType::ExpressionStatement: {
             auto child = std::dynamic_pointer_cast<ExpressionStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->expression);
             break;
         }
 
         case SyntaxNodeType::ForInStatement: {
             auto child = std::dynamic_pointer_cast<ForInStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->right);
+            nodes_stack_.push(child->left);
             break;
         }
 
         case SyntaxNodeType::ForOfStatement: {
             auto child = std::dynamic_pointer_cast<ForOfStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->right);
+            nodes_stack_.push(child->left);
             break;
         }
 
         case SyntaxNodeType::ForStatement: {
             auto child = std::dynamic_pointer_cast<ForStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
             break;
         }
 
         case SyntaxNodeType::FunctionDeclaration: {
             auto child = std::dynamic_pointer_cast<FunctionDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::FunctionExpression: {
             auto child = std::dynamic_pointer_cast<FunctionExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
@@ -218,6 +291,8 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::IfStatement: {
             auto child = std::dynamic_pointer_cast<IfStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->consequent);
+            nodes_stack_.push(child->test);
             break;
         }
 
@@ -230,30 +305,40 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::ImportDeclaration: {
             auto child = std::dynamic_pointer_cast<ImportDeclaration>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->source);
+            for (auto i = child->specifiers.rbegin(); i != child->specifiers.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ImportDefaultSpecifier: {
             auto child = std::dynamic_pointer_cast<ImportDefaultSpecifier>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->local);
             break;
         }
 
         case SyntaxNodeType::ImportNamespaceSpecifier: {
             auto child = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->local);
             break;
         }
 
         case SyntaxNodeType::ImportSpecifier: {
             auto child = std::dynamic_pointer_cast<ImportSpecifier>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->imported);
+            nodes_stack_.push(child->local);
             break;
         }
 
         case SyntaxNodeType::LabeledStatement: {
             auto child = std::dynamic_pointer_cast<LabeledStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->label);
             break;
         }
 
@@ -266,6 +351,8 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::MetaProperty: {
             auto child = std::dynamic_pointer_cast<MetaProperty>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->property);
+            nodes_stack_.push(child->meta);
             break;
         }
 
@@ -278,30 +365,44 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::Module: {
             auto child = std::dynamic_pointer_cast<Module>(node);
             traverser_->Traverse(child);
+            for (auto i = child->body.rbegin(); i != child->body.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::NewExpression: {
             auto child = std::dynamic_pointer_cast<NewExpression>(node);
             traverser_->Traverse(child);
+            for (auto i = child->arguments.rbegin(); i != child->arguments.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
+            nodes_stack_.push(child->callee);
             break;
         }
 
         case SyntaxNodeType::ObjectExpression: {
             auto child = std::dynamic_pointer_cast<ObjectExpression>(node);
             traverser_->Traverse(child);
+            for (auto i = child->properties.rbegin(); i != child->properties.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::ObjectPattern: {
             auto child = std::dynamic_pointer_cast<ObjectPattern>(node);
             traverser_->Traverse(child);
+            for (auto i = child->properties.rbegin(); i != child->properties.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::Property: {
             auto child = std::dynamic_pointer_cast<Property>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->key);
             break;
         }
 
@@ -314,6 +415,7 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::RestElement: {
             auto child = std::dynamic_pointer_cast<RestElement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
@@ -326,24 +428,33 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::Script: {
             auto child = std::dynamic_pointer_cast<Script>(node);
             traverser_->Traverse(child);
+            for (auto i = child->body.rbegin(); i != child->body.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::SequenceExpression: {
             auto child = std::dynamic_pointer_cast<SequenceExpression>(node);
             traverser_->Traverse(child);
+            for (auto i = child->expressions.rbegin(); i != child->expressions.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::SpreadElement: {
             auto child = std::dynamic_pointer_cast<SpreadElement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
         case SyntaxNodeType::StaticMemberExpression: {
             auto child = std::dynamic_pointer_cast<StaticMemberExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->property);
+            nodes_stack_.push(child->object);
             break;
         }
 
@@ -356,24 +467,39 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::SwitchCase: {
             auto child = std::dynamic_pointer_cast<SwitchCase>(node);
             traverser_->Traverse(child);
+            for (auto i = child->consequent.rbegin(); i != child->consequent.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::SwitchStatement: {
             auto child = std::dynamic_pointer_cast<SwitchStatement>(node);
             traverser_->Traverse(child);
+            for (auto i = child->cases.rbegin(); i != child->cases.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
+            nodes_stack_.push(child->discrimiant);
             break;
         }
 
         case SyntaxNodeType::TaggedTemplateExpression: {
             auto child = std::dynamic_pointer_cast<TaggedTemplateExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->quasi);
+            nodes_stack_.push(child->tag);
             break;
         }
 
         case SyntaxNodeType::TemplateElement: {
             auto child = std::dynamic_pointer_cast<TemplateElement>(node);
             traverser_->Traverse(child);
+            for (auto i = child->expressions.rbegin(); i != child->expressions.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
+            for (auto i = child->quasis.rbegin(); i != child->quasis.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
@@ -386,48 +512,60 @@ void NodeTraverser::TraverseNode_(const Sp<SyntaxNode> &node) {
         case SyntaxNodeType::ThrowStatement: {
             auto child = std::dynamic_pointer_cast<ThrowStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
         case SyntaxNodeType::TryStatement: {
             auto child = std::dynamic_pointer_cast<TryStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->block);
             break;
         }
 
         case SyntaxNodeType::UnaryExpression: {
             auto child = std::dynamic_pointer_cast<UnaryExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
         case SyntaxNodeType::UpdateExpression: {
             auto child = std::dynamic_pointer_cast<UpdateExpression>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->argument);
             break;
         }
 
         case SyntaxNodeType::VariableDeclaration: {
             auto child = std::dynamic_pointer_cast<VariableDeclaration>(node);
             traverser_->Traverse(child);
+            for (auto i = child->declarations.rbegin(); i != child->declarations.rend(); i++) {
+                nodes_stack_.push(*i);
+            }
             break;
         }
 
         case SyntaxNodeType::VariableDeclarator: {
             auto child = std::dynamic_pointer_cast<VariableDeclarator>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->id);
             break;
         }
 
         case SyntaxNodeType::WhileStatement: {
             auto child = std::dynamic_pointer_cast<WhileStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->test);
             break;
         }
 
         case SyntaxNodeType::WithStatement: {
             auto child = std::dynamic_pointer_cast<WithStatement>(node);
             traverser_->Traverse(child);
+            nodes_stack_.push(child->body);
+            nodes_stack_.push(child->object);
             break;
         }
 

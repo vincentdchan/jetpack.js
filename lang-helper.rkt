@@ -289,13 +289,37 @@
     (printf "    switch (node->type) {~n")
     (for-each
       (lambda (node)
-        (let (
+        (letrec (
           [node-id (syntax-node-id node)]
+          [node-props (syntax-node-props node)]
+          [push-child (lambda (prop)
+              (match prop
+                [(cons 'String _) void]
+                [(cons 'Boolean _) void]
+                [(cons 'Number _) void]
+                [(cons 'VarKind _) void]
+                [(cons (cons type-prefix pair-value) field) (match type-prefix
+                  ['Vec (begin
+                      (printf "            for (auto i = child->~a.rbegin(); i != child->~a.rend(); i++) {~n" field field)
+                      (printf "                nodes_stack_.push(*i);~n")
+                      (printf "            }~n")
+                    )
+                  ]
+                  ['Option void]
+                  [_ void]
+                )]
+                [(cons _ field) (begin
+                  (printf "            nodes_stack_.push(child->~a);~n" field)
+                )]
+              )
+            )
+          ]
         )
           (when (symbol? node-id)
             (printf "        case SyntaxNodeType::~s: {~n" node-id)
             (printf "            auto child = std::dynamic_pointer_cast<~s>(node);~n" node-id)
             (printf "            traverser_->Traverse(child);~n")
+            (for-each push-child (reverse node-props))
             (printf "            break;~n")
             (printf "        }~n")
             (newline)
