@@ -7,5 +7,8 @@
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
+#define VDO(EXPR) \
+    if (!(EXPR)) return;
+
 #define U(EXP) \
     utils::To_UTF16(EXP)

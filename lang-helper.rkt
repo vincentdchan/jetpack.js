@@ -250,6 +250,7 @@
 	#:exists 'replace
   (lambda ()
     (print-title)
+    (printf "#pragma once~n")
     (printf "#include \"syntax_nodes.h\"~n")
     (newline)
 
@@ -265,7 +266,9 @@
             (let (
               [base-str (symbol->string node-base)]
             )
-              (printf "    virtual void Traverse(const Sp<~s>& node) = 0;~n" node-id)
+              (printf "    virtual bool TraverseBefore(const Sp<~s>& node) { return true; };~n" node-id)
+              (newline)
+              (printf "    virtual void TraverseAfter(const Sp<~s>& node) {};~n" node-id)
               (newline)
             )
           )
@@ -318,7 +321,7 @@
           (when (symbol? node-id)
             (printf "        case SyntaxNodeType::~s: {~n" node-id)
             (printf "            auto child = std::dynamic_pointer_cast<~s>(node);~n" node-id)
-            (printf "            traverser_->Traverse(child);~n")
+            (printf "            if(!traverser_->TraverseBefore(child)) return;~n")
             (for-each push-child (reverse node-props))
             (printf "            break;~n")
             (printf "        }~n")
