@@ -756,6 +756,9 @@ void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {
             break;
         }
 
+        default:
+            break;
+
     }
 }
 

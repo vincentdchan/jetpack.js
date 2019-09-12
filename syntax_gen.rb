@@ -274,6 +274,9 @@ SyntaxFactory.syntaxes.each do |item|
 end
 
 puts '
+        default:
+            break;
+
     }
 }
 
@@ -300,5 +303,91 @@ puts '
             break;
 
     }
+}
+'
+
+$stdout.reopen('src/dumper/ast_to_json.h', 'w')
+print_title
+puts '
+#pragma once
+
+#include <nlohmann/json.hpp>
+#include <vector>
+#include <memory>
+#include "../parser/node_traverser_intf.h"
+
+namespace dumper {
+
+    using json = nlohmann::json;
+
+    template <typename T>
+    using Sp = std::shared_ptr<T>;
+
+    class AstToJson {
+    public:
+
+        static json Dump(const Sp<SyntaxNode>& node) {
+            switch (node->type) {'
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "
+                case SyntaxNodeType::#{id}: {
+                    auto child = std::dynamic_pointer_cast<#{id}>(node);
+                    return Dump(child);
+                }"
+
+  end
+end
+
+puts "
+                default:
+                    return json::object();
+
+            }
+        }
+"
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "
+        static json Dump(const Sp<#{id}>& node) {
+            json result = json::object();
+            result[\"type\"] = \"#{id}\";"
+
+    item.props.each do |item|
+      if [:String, :Boolean, :Number, :VarKind].include? item.prop_type then
+        puts "            result[\"#{item.name}\"] = node->#{item.pretty_name};"
+      elsif item.prop_type.is_a? Array then
+        array_name = "array_#{item.name}"
+        puts "            json #{array_name} = json::array();"
+        puts "
+            for (auto& i : node->#{item.name}) {
+                #{array_name}.push_back(Dump(i));
+            }"
+        puts "            result[\"#{item.name}\"] = std::move(#{array_name});"
+
+      elsif item.prop_type.is_a? Option then
+        puts "            if (node->#{item.pretty_name}) {"
+        puts "                result[\"#{item.pretty_name}\"] = Dump(*node->#{item.pretty_name});"
+        puts "            }"
+      elsif item.prop_type.is_a? Variant then
+        # nothing
+      else
+          puts "            result[\"#{item.pretty_name}\"] = Dump(node->#{item.pretty_name});"
+      end
+    end
+
+    puts "
+            return result;
+        }"
+
+  end
+end
+
+puts '
+    };
 }
 '
