@@ -568,3 +568,13 @@
   )
 
 ))
+
+(for-each (lambda (node)
+    (letrec (
+      [node-id (syntax-node-id node)]
+      [node-props (syntax-node-props node)]
+    )
+    )
+  )
+  syntax-list
+)

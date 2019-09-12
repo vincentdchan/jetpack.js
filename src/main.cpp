@@ -1,7 +1,7 @@
 #include <iostream>
 #include "parser/parser.hpp"
 #include "parser/node_traverser.h"
-#include "parser/ast_to_json.h"
+#include "dumper/ast_to_json.h"
 #include "tokenizer/scanner.h"
 
 using namespace parser;

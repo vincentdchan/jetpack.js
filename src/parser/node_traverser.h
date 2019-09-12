@@ -14,6 +14,13 @@ public:
         visited,
     };
 
+    static void Traverse(const Sp<SyntaxNode>& node, const Sp<INodeTraverser>& traverser) {
+        NodeTraverser nt;
+        nt.Push(node);
+        nt.traverser_ = traverser;
+        nt.BeginTraverse();
+    }
+
 private:
     std::stack<std::pair<Sp<SyntaxNode>, visit_tag>> nodes_stack_;
     Sp<INodeTraverser> traverser_;
@@ -21,7 +28,7 @@ private:
 public:
 
     inline void Push(const Sp<SyntaxNode>& node);
-    inline void Traverse();
+    inline void BeginTraverse();
 
 private:
     void TraverseNodeBefore_(const Sp<SyntaxNode>& node);
@@ -33,7 +40,7 @@ inline void NodeTraverser::Push(const Sp<SyntaxNode>& node) {
     nodes_stack_.push(std::make_pair(node, visit_tag::unvisited));
 }
 
-inline void NodeTraverser::Traverse() {
+inline void NodeTraverser::BeginTraverse() {
     while (!nodes_stack_.empty()) {
         auto& top = nodes_stack_.top();
 
