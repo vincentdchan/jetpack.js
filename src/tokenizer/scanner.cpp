@@ -205,6 +205,8 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
             } else {
                 break;
             }
+        } else {
+            break;
         }
 
     }

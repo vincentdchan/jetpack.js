@@ -99,6 +99,10 @@ namespace parser {
 
         bool CollectComments();
 
+        inline Sp<ParseErrorHandler> ErrorHandler() {
+            return error_handler_;
+        }
+
     protected:
         Config config_;
         Context context_;

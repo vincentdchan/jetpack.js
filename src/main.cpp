@@ -13,7 +13,12 @@ int main() {
     Sp<Module> module_;
     auto src = std::make_shared<UString>(utils::To_UTF16(source));
     Parser parser(src, config);
-    parser.ParseModule(module_);
-    std::cout << "Hello, World!" << std::endl;
+    if (!parser.ParseModule(module_)) {
+        auto err_handler = parser.ErrorHandler();
+        err_handler->PrintAllErrors();
+        return 1;
+    }
+    auto json_result = dumper::AstToJson::Dump(module_);
+    std::cout << json_result.dump(2) << std::endl;
     return 0;
 }
