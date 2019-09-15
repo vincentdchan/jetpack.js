@@ -152,7 +152,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
 
         if (utils::IsWhiteSpace(ch)) {
             ++index_;
-        } else if (utils::IsIdentifierStart(ch)) {
+        } else if (utils::IsLineTerminator(ch)) {
             ++index_;
 
             if (ch == 0x0D && CodePointAt(index_) == 0x0A) {

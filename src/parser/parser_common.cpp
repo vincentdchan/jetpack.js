@@ -203,22 +203,15 @@ namespace parser {
     }
 
     bool ParserCommon::Match(char16_t t) {
-        Token token;
-        DO(NextToken(&token))
-        return token.type_ == JsTokenType::Punctuator && token.value_.size() == 1 && token.value_[0] == t;
+        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_.size() == 1 && lookahead_.value_[0] == t;
     }
 
     bool ParserCommon::Match(const UString& t) {
-        Token token;
-        DO(NextToken(&token))
-        return token.type_ == JsTokenType::Punctuator && token.value_.size() == 1 && token.value_ == t;
+        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_.size() == 1 && lookahead_.value_ == t;
     }
 
     bool ParserCommon::MatchKeyword(const UString &keyword) {
-        Token token;
-        DO(NextToken(&token))
-
-        return token.type_ == JsTokenType::Keyword && token.value_ == keyword;
+        return lookahead_.type_ == JsTokenType::Keyword && lookahead_.value_ == keyword;
     }
 
     bool ParserCommon::MatchAssign() {

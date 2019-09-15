@@ -105,23 +105,31 @@ namespace parser {
 
         int BinaryPrecedence(const Token& token) const;
 
+        inline Marker LastMarker() const {
+            return last_marker_;
+        }
+
+        inline Marker StartMarker() const {
+            return start_marker_;
+        }
+
     protected:
         Config config_;
         Context context_;
         Token lookahead_;
         unique_ptr<Scanner> scanner_;
 
-        Marker start_marker_;
-        Marker last_marker_;
-
         Sp<ParseErrorHandler> error_handler_;
-        Sp<std::u16string> source_;
+        Sp<UString> source_;
         bool has_line_terminator_;
 
         stack<Token> tokens_;
 
         vector<Comment> comments_;
 
+    private:
+        Marker start_marker_;
+        Marker last_marker_;
 
     };
 

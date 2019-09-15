@@ -130,7 +130,7 @@ namespace parser {
         bool ExpectCommaSeparator();
 
         template <typename NodePtr>
-        bool ParseLexicalDeclaration(NodePtr& ptr);
+        bool ParseLexicalDeclaration(NodePtr& ptr, bool& in_for);
 
         template <typename NodePtr>
         bool ParseBindingRestElement(NodePtr& ptr);
@@ -330,7 +330,7 @@ namespace parser {
         static_assert(std::is_convertible<FromT, ToT>::value, "FromT can not convert to ToT");
 
         if (config_.range) {
-            from->range = std::make_pair(marker.index, last_marker_.index);
+            from->range = std::make_pair(marker.index, LastMarker().index);
         }
 
         if (config_.loc) {
@@ -339,8 +339,8 @@ namespace parser {
                 marker.column,
             };
             from->location.end_ = Position {
-                last_marker_.line,
-                last_marker_.column,
+                LastMarker().line,
+                LastMarker().column,
             };
         }
 
@@ -849,7 +849,7 @@ namespace parser {
                 if (MatchAsyncFunction()) {
                     DO(ParseFunctionDeclaration(false, statement))
                 } else {
-                    DO(ParseLexicalDeclaration(statement))
+                    DO(ParseLabelledStatement(statement))
                 }
                 break;
             }
@@ -1186,6 +1186,57 @@ namespace parser {
     bool Parser::ParseFinallyClause(NodePtr &ptr) {
         DO(ExpectKeyword(u"finally"))
         return ParseBlock(ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseLabelledStatement(NodePtr &ptr) {
+        auto start_marker = CreateNode();
+        Sp<Expression> expr;
+        DO(ParseExpression(expr))
+
+        Sp<Statement> statement;
+        if ((expr->type == SyntaxNodeType::Identifier) && Match(u':')) {
+            DO(NextToken())
+
+            auto id = dynamic_pointer_cast<Identifier>(expr);
+            UString key = UString(u"$") + id->name;
+
+            // TODO: label set
+
+            Sp<Statement> body;
+
+            if (MatchKeyword(u"class")) {
+                UnexpectedToken(&lookahead_);
+                DO(ParseClassDeclaration(false, body))
+            } else if (MatchKeyword(u"function")) {
+                Token token = lookahead_;
+                Sp<Declaration> declaration;
+                DO(ParseFunctionDeclaration(false, declaration))
+                // TODO: check generator
+//                if (context_.strict_) {
+//                    string message = "StrictFunction";
+//                    UnexpectedToken(&token, &message);
+//                } else if (declaration->generator) {
+//                    string message = "GeneratorInLegacyContext";
+//                    UnexpectedToken(&token, &message);
+//                }
+                body = move(declaration);
+            } else {
+                DO(ParseStatement(body))
+            }
+
+            auto node = Alloc<LabeledStatement>();
+            node->label = id;
+            node->body = body;
+
+            statement = move(node);
+        } else {
+            DO(ConsumeSemicolon())
+            auto node = Alloc<ExpressionStatement>();
+            node->expression = expr;
+            statement = move(node);
+        }
+        return Finalize(start_marker, statement, ptr);
     }
 
     template <typename NodePtr>
@@ -1544,14 +1595,16 @@ namespace parser {
                     DO(ParseImportDeclaration(statement))
                 }
             } else if (lookahead_.value_ == u"const") {
-                DO(ParseLexicalDeclaration(statement))
+                bool in_for = false;
+                DO(ParseLexicalDeclaration(statement, in_for))
             } else if (lookahead_.value_ == u"function") {
                 DO(ParseFunctionDeclaration(false, statement))
             } else if (lookahead_.value_ == u"class") {
                 DO(ParseClassDeclaration(false, statement))
             } else if (lookahead_.value_ == u"let") {
                 if (IsLexicalDeclaration()) {
-                    DO(ParseLexicalDeclaration(statement))
+                    bool in_for = false;
+                    DO(ParseLexicalDeclaration(statement, in_for))
                 } else {
                     DO(ParseStatement(statement))
                 }
@@ -1677,7 +1730,7 @@ namespace parser {
                 }
             } else {
                 auto init_start_token = lookahead_;
-                auto start_node = CreateNode();
+                auto start_marker = CreateNode();
                 auto prev_allow_in = context_.allow_in;
                 context_.allow_in = false;
                 DO(InheritCoverGrammar([this, &init] {
@@ -1721,7 +1774,7 @@ namespace parser {
                         }
 
                         Sp<SequenceExpression> node;
-                        Finalize(start_marker_, node, *init);
+                        Finalize(start_marker, node, *init);
                     }
                     DO(Expect(u';'))
                 }
@@ -1907,7 +1960,7 @@ namespace parser {
 
             auto node = Alloc<SequenceExpression>();
             node->expressions = expressions;
-            Finalize(start_marker_, node, expr);
+            Finalize(start_marker, node, expr);
         }
 
         ptr = expr;
@@ -2180,7 +2233,7 @@ namespace parser {
     }
 
     template <typename NodePtr>
-    bool Parser::ParseLexicalDeclaration(NodePtr &ptr) {
+    bool Parser::ParseLexicalDeclaration(NodePtr &ptr, bool& in_for) {
         // TODO
         return false;
     }
