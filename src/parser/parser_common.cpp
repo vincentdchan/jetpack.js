@@ -61,7 +61,7 @@ namespace parser {
     }
 
     void ParserCommon::UnexpectedToken(const Token *token, const std::string *message) {
-        string msg = "UnexpetedToken";
+        string msg = "UnexpectedToken";
         if (message) {
             msg = *message;
         }
@@ -89,6 +89,8 @@ namespace parser {
         } else {
             value = utils::To_UTF16("ILLEGAL");
         }
+
+        LogError(msg);
     }
 
     void ParserCommon::DecorateToken(Token& token) {
