@@ -306,4 +306,52 @@ namespace parser {
         return true;
     }
 
+    int ParserCommon::BinaryPrecedence(const Token& token) const {
+        auto op = token.value_;
+        int precedence = 0;
+        if (token.type_ == JsTokenType::Punctuator) {
+            if (
+                op == u")" || op == u";" || op == u"," ||
+                op == u"=" || op == u"]"
+                ) {
+                precedence = 0;
+            } else if (op == u"||") {
+                precedence = 1;
+            } else if (op == u"&&") {
+                precedence = 2;
+            } else if (op == u"|") {
+                precedence = 3;
+            } else if (op == u"^") {
+                precedence = 4;
+            } else if (op == u"&") {
+                precedence = 5;
+            } else if (
+                op == u"==" || op == u"!=" || op == u"===" ||
+                op == u"!=="
+                ) {
+                precedence = 6;
+            } else if (
+                op == u"<" || op == u">" || op == u"<=" ||
+                op == u">=="
+                ) {
+                precedence = 7;
+            } else if (op == u"<<" || op == u">>" || op == u">>>") {
+                precedence = 8;
+            } else if (op == u"+" || op == u"-") {
+                precedence = 9;
+            } else if (
+                op == u"*" || op == u"/" || op == u"%"
+                ) {
+                precedence = 11;
+            }
+        } else if (token.type_ == JsTokenType::Keyword) {
+            if (op == u"instanceof" || (context_.allow_in && op == u"in")) {
+                precedence = 7;
+            } else {
+                precedence = 0;
+            }
+        }
+        return precedence;
+    }
+
 }

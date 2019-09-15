@@ -27,6 +27,10 @@ public:
         error_list_.push_back(std::move(error_));
     }
 
+    inline std::size_t Count() {
+        return error_list_.size();
+    }
+
     void PrintAllErrors();
 
 private:

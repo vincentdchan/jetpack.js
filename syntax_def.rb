@@ -330,7 +330,7 @@ SyntaxFactory.def_syntax :Literal, base: :Expression do
   def_prop :String, "raw"
 end
 
-SyntaxFactory.def_syntax :MetaProperty, base: :SyntaxNode do
+SyntaxFactory.def_syntax :MetaProperty, base: :Expression do
   def_prop :Identifier, "meta"
   def_prop :Identifier, "property"
 end
@@ -402,7 +402,7 @@ SyntaxFactory.def_syntax :StaticMemberExpression, base: :Expression do
   def_prop :Expression, "property"
 end
 
-SyntaxFactory.def_syntax :Super, base: :SyntaxNode do
+SyntaxFactory.def_syntax :Super, base: :Expression do
 end
 
 SyntaxFactory.def_syntax :SwitchCase, base: :SyntaxNode do

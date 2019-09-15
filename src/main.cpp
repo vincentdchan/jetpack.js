@@ -15,6 +15,7 @@ int main() {
     Parser parser(src, config);
     if (!parser.ParseModule(module_)) {
         auto err_handler = parser.ErrorHandler();
+        std::cout << "Parse completed with " << err_handler->Count() << " errors." << std::endl;
         err_handler->PrintAllErrors();
         return 1;
     }

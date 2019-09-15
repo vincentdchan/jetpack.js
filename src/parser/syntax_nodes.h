@@ -414,7 +414,7 @@ public:
 
 };
 
-class MetaProperty: public SyntaxNode {
+class MetaProperty: public Expression {
 public:
     MetaProperty();
 
@@ -542,7 +542,7 @@ public:
 
 };
 
-class Super: public SyntaxNode {
+class Super: public Expression {
 public:
     Super();
 

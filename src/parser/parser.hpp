@@ -1501,7 +1501,16 @@ namespace parser {
         if (MatchKeyword(u"extends")) {
             DO(NextToken());
             DO(IsolateCoverGrammar([this, &node] {
-                return ParseLeftHandSideExpressionAllowCall(node->super_class);
+                Token token = lookahead_;
+                Sp<Expression> temp_node;
+                DO(ParseLeftHandSideExpressionAllowCall(temp_node))
+                if (temp_node->type != SyntaxNodeType::Identifier) {
+                    UnexpectedToken(&token);
+                    return false;
+                }
+                Sp<Identifier> id = dynamic_pointer_cast<Identifier>(temp_node);
+                node->super_class = id;
+                return true;
             }))
         }
 
@@ -1909,7 +1918,7 @@ namespace parser {
     bool Parser::ParseAssignmentExpression(NodePtr &ptr) {
         Sp<Expression> expr;
 
-        if (context_.allow_yield && !MatchKeyword(u"yield")) {
+        if (context_.allow_yield && MatchKeyword(u"yield")) {
             DO(ParseYieldExpression(expr))
         } else {
             auto start_marker = CreateNode();
@@ -1998,9 +2007,164 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseUpdateExpression(NodePtr &ptr) {
+        Sp<Expression> expr;
+        auto start_marker = CreateNode();
+
+        if (Match(u"++") || Match(u"--")) {
+            auto marker = CreateNode();
+            Token token;
+            DO(NextToken(&token))
+            DO(InheritCoverGrammar([this, &expr] {
+                return ParseUnaryExpression(expr);
+            }))
+            if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+                auto id = dynamic_pointer_cast<Identifier>(expr);
+                if (scanner_->IsRestrictedWord(id->name)) {
+                    LogError("StrictLHSPrefix");
+                }
+            }
+            if (!context_.is_assignment_target) {
+                LogError("InvalidLHSInAssignment");
+            }
+            auto node = Alloc<UpdateExpression>();
+            node->prefix = true;
+            node->operator_ = token.value_;
+            node->argument = expr;
+            Finalize(marker, node, expr);
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+        } else {
+            DO(InheritCoverGrammar([this, &expr] {
+                return ParseLeftHandSideExpressionAllowCall(expr);
+            }))
+            if (!has_line_terminator_ && lookahead_.type_ == JsTokenType::Punctuator) {
+                if (Match(u"++") || Match(u"--")) {
+                    if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+                        auto id = dynamic_pointer_cast<Identifier>(expr);
+                        if (scanner_->IsRestrictedWord(id->name)) {
+                            LogError("StrictLHSPrefix");
+                        }
+                    }
+                    if (!context_.is_assignment_target) {
+                        LogError("InvalidLHSInAssignment");
+                    }
+                    context_.is_assignment_target = false;
+                    context_.is_binding_element = false;
+                    auto node = Alloc<UpdateExpression>();
+                    node->prefix = false;
+                    Token token;
+                    DO(NextToken(&token))
+                    node->operator_ = token.value_;
+                    node->argument = expr;
+                    Finalize(start_marker, node, expr);
+                }
+            }
+        }
+
+        ptr = expr;
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseAwaitExpression(NodePtr &ptr) {
+        auto marker = CreateNode();
+        DO(NextToken())
+        auto node = Alloc<AwaitExpression>();
+        DO(ParseUnaryExpression(node->argument))
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseUnaryExpression(NodePtr &ptr) {
+        Sp<Expression> expr;
+
+        if (
+            Match(u'+') || Match(u'-') || Match(u'~') || Match(u'!') ||
+            MatchKeyword(u"delete") || MatchKeyword(u"void") || MatchKeyword(u"typeof")
+        ) {
+            auto marker = CreateNode();
+            Token token = lookahead_;
+            DO(NextToken())
+            DO(InheritCoverGrammar([this, &expr] {
+                return ParseUnaryExpression(expr);
+            }))
+            auto node = Alloc<UnaryExpression>();
+            node->operator_ = token.value_;
+            node->argument = expr;
+            Finalize(marker, node, expr);
+            if (context_.strict_ && node->operator_ == u"delete" && node->argument->type == SyntaxNodeType::Identifier) {
+                LogError("StrictDelete");
+            }
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+        } else if (context_.await && MatchContextualKeyword(u"await")) {
+            DO(ParseAwaitExpression(expr))
+        } else {
+            DO(ParseUpdateExpression(expr))
+        }
+
+        ptr = expr;
+        return true;
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseBinaryExpression(NodePtr &ptr) {
-        // TODO
+        auto marker = CreateNode();
+
+        Sp<Expression> expr;
+        DO(InheritCoverGrammar([this, &expr] {
+            return ParseExponentiationExpression(expr);
+        }))
+
+        Token token = lookahead_;
+        int prec = BinaryPrecedence(token);
+        if (prec > 0) {
+            return false;
+            DO(NextToken())
+
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+
+            Sp<Expression> left = expr;
+            Sp<Expression> right;
+            DO(IsolateCoverGrammar([this, &right] {
+                return ParseExponentiationExpression(right);
+            }))
+
+            stack<int> precedences;
+            stack<Sp<Expression>> expr_stacks;
+
+            expr_stacks.push(left);
+            precedences.push(prec);
+
+        }
+
         return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseExponentiationExpression(NodePtr& ptr) {
+        auto start = CreateNode();
+
+        Sp<Expression> expr;
+        DO(InheritCoverGrammar([this, &expr] {
+            return ParseUnaryExpression(expr);
+        }))
+        if (expr->type != SyntaxNodeType::UnaryExpression && Match(u"**")) {
+            DO(NextToken())
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+            auto node = Alloc<BinaryExpression>();
+            node->left = expr;
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseExponentiationExpression(node->right);
+            }))
+            node->operator_ = u"**";
+            Finalize(start, node, expr);
+        }
+
+        return true;
     }
 
     template <typename NodePtr>
@@ -2034,9 +2198,132 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseNewExpression(NodePtr &ptr) {
+        auto start_marker = CreateNode();
+
+        Sp<Identifier> id;
+        DO(ParseIdentifierName(id))
+        if (id->name == u"new") {
+            LogError("New expression must start with `new`");
+            return false;
+        }
+
+        Sp<Expression> expr;
+
+        if (Match(u'.')) {
+            DO(NextToken())
+            if (lookahead_.type_ == JsTokenType::Identifier && context_.in_function_body && lookahead_.value_ == u"target") {
+                auto node = Alloc<MetaProperty>();
+                DO(ParseIdentifierName(node->property))
+                node->meta = id;
+                expr = node;
+            } else {
+                UnexpectedToken(&lookahead_);
+                return false;
+            }
+        } else if (MatchKeyword(u"import")) {
+            UnexpectedToken(&lookahead_);
+            return false;
+        } else {
+            auto node = Alloc<NewExpression>();
+            DO(IsolateCoverGrammar([this, &node] {
+                return ParseLeftHandSideExpression(node->callee);
+            }))
+            if (Match(u'(')) {
+                DO(ParseArguments(node->arguments))
+            }
+            expr = node;
+            context_.is_assignment_target = false;
+            context_.is_binding_element = false;
+        }
+
+        return Finalize(start_marker, expr, ptr);
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseLeftHandSideExpressionAllowCall(NodePtr &ptr) {
-        // TODO
-        return false;
+        Token start_token = lookahead_;
+        auto start_marker = CreateNode();
+        bool maybe_async = MatchContextualKeyword(u"async");
+
+        bool prev_allow_in = context_.allow_in;
+        context_.allow_in = true;
+
+        Sp<Expression> expr;
+        if (MatchKeyword(u"super") && context_.in_function_body) {
+            auto node = Alloc<Super>();
+            auto marker = CreateNode();
+            DO(NextToken())
+            Finalize(marker, node, expr);
+            if (!Match(u'(') && !Match(u'.') && !Match(u'[')) {
+                UnexpectedToken(&lookahead_);
+                return false;
+            }
+        } else {
+            if (MatchKeyword(u"new")) {
+                DO(InheritCoverGrammar([this, &expr] {
+                    return ParseNewExpression(expr);
+                }))
+            } else {
+                DO(InheritCoverGrammar([this, &expr] {
+                    return ParsePrimaryExpression(expr);
+                }))
+            }
+        }
+
+        while (true) {
+            if (Match(u'.')) {
+                context_.is_binding_element = false;
+                context_.is_assignment_target = true;
+                DO(Expect('.'))
+                auto node = Alloc<StaticMemberExpression>();
+                DO(ParseIdentifierName(node->property))
+                Finalize(start_marker, node, expr);
+            } else if (Match(u'(')) {
+                bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);
+                context_.is_binding_element = false;
+                context_.is_assignment_target = false;
+                auto node = Alloc<CallExpression>();
+                if (async_arrow) {
+                    DO(ParseAsyncArguments(node->arguments))
+                } else {
+                    DO(ParseArguments(node->arguments))
+                }
+                if (expr->type == SyntaxNodeType::Import && node->arguments.size() != 1) {
+                    LogError("BadImportCallArity");
+                }
+                node->callee = expr;
+                Finalize(start_marker, node, expr);
+                if (async_arrow && Match(u"=>")) {
+                    for (auto &i : node->arguments) {
+                        DO(ReinterpretExpressionAsPattern(i))
+                    }
+                    // TODO: Placefolder
+                }
+            } else if (Match(u'[')) {
+                context_.is_binding_element = false;
+                context_.is_assignment_target = true;
+                DO(Expect(u'['))
+                auto node = Alloc<ComputedMemberExpression>();
+                DO(IsolateCoverGrammar([this, &node] {
+                    return ParseExpression(node->property);
+                }))
+                DO(Expect(u']'))
+                node->object = expr;
+                Finalize(start_marker, node, expr);
+            } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
+                auto node = Alloc<TaggedTemplateExpression>();
+                DO(ParseTemplateLiteral(node->quasi))
+                node->tag = expr;
+                Finalize(start_marker, node, expr);
+            } else {
+                break;
+            }
+        }
+        context_.allow_in = prev_allow_in;
+
+        ptr = expr;
+        return true;
     }
 
     template <typename NodePtr>
@@ -2057,7 +2344,16 @@ namespace parser {
         if (MatchKeyword(u"extends")) {
             DO(NextToken())
             DO(IsolateCoverGrammar([this, &node] {
-                return ParseLeftHandSideExpressionAllowCall(*node->super_class);
+                Token token = lookahead_;
+                Sp<Expression> temp_node;
+                DO(ParseLeftHandSideExpressionAllowCall(temp_node))
+                if (temp_node->type != SyntaxNodeType::Identifier) {
+                    UnexpectedToken(&token);
+                    return false;
+                }
+                Sp<Identifier> id = dynamic_pointer_cast<Identifier>(temp_node);
+                node->super_class = id;
+                return true;
             }))
         }
         DO(ParseClassBody(node->body))

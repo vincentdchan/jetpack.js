@@ -103,6 +103,8 @@ namespace parser {
             return error_handler_;
         }
 
+        int BinaryPrecedence(const Token& token) const;
+
     protected:
         Config config_;
         Context context_;

@@ -174,7 +174,7 @@ Literal::Literal(): Expression() {
     type = SyntaxNodeType::Literal;
 }
 
-MetaProperty::MetaProperty(): SyntaxNode() {
+MetaProperty::MetaProperty(): Expression() {
     type = SyntaxNodeType::MetaProperty;
 }
 
@@ -230,7 +230,7 @@ StaticMemberExpression::StaticMemberExpression(): Expression() {
     type = SyntaxNodeType::StaticMemberExpression;
 }
 
-Super::Super(): SyntaxNode() {
+Super::Super(): Expression() {
     type = SyntaxNodeType::Super;
 }
 
