@@ -66,7 +66,7 @@ namespace parser {
         bool ParseGroupExpression(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseArguments(NodePtr& ptr);
+        bool ParseArguments(std::vector<Sp<NodePtr>>& ptr);
 
         template <typename NodePtr>
         bool ParseIdentifierName(NodePtr& ptr);
@@ -78,7 +78,7 @@ namespace parser {
         bool ParseAsyncArgument(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseAsyncArguments(NodePtr& ptr);
+        bool ParseAsyncArguments(std::vector<NodePtr>& ptr);
 
         template <typename NodePtr>
         bool ParseImportCall(NodePtr& ptr);
@@ -2241,6 +2241,76 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseSuper(NodePtr &ptr) {
+        auto start_marker = CreateNode();
+
+        DO(ExpectKeyword(u"super"))
+        if (!Match(u'[') && !Match(u'.')) {
+            UnexpectedToken(&lookahead_);
+            return false;
+        }
+
+        auto node = Alloc<Super>();
+        return Finalize(start_marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseLeftHandSideExpression(NodePtr &ptr) {
+        if (!context_.allow_in) {
+            LogError("callee of new expression always allow in keyword.");
+            return false;
+        }
+
+        auto start_marker = CreateNode();
+        Sp<Expression> expr;
+        if (MatchKeyword(u"super") && context_.in_function_body) {
+            DO(ParseSuper(expr))
+        } else {
+            DO(InheritCoverGrammar([this, &expr] {
+                if (MatchKeyword(u"new")) {
+                    DO(ParseNewExpression(expr))
+                } else {
+                    DO(ParsePrimaryExpression(expr))
+                }
+                return true;
+            }))
+        }
+
+        while (true) {
+            if (Match(u'[')) {
+                context_.is_binding_element = false;
+                context_.is_assignment_target = true;
+                DO(Expect(u'['))
+                auto node = Alloc<ComputedMemberExpression>();
+                DO(IsolateCoverGrammar([this, &node] {
+                    return ParseExpression(node->property);
+                }))
+                DO(Expect(u']'))
+                node->object = move(expr);
+                Finalize(start_marker, node, expr);
+            } else if (Match(u'.')) {
+                context_.is_binding_element = false;
+                context_.is_assignment_target = true;
+                DO(Expect('.'))
+                auto node = Alloc<StaticMemberExpression>();
+                DO(ParseIdentifierName(node->property))
+                node->object = move(expr);
+                Finalize(start_marker, node, expr);
+            } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
+                auto node = Alloc<TaggedTemplateExpression>();
+                DO(ParseTemplateLiteral(node->quasi))
+                node->tag = move(expr);
+                Finalize(start_marker, node, expr);
+            } else {
+                break;
+            }
+        }
+
+        ptr = expr;
+        return true;
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseLeftHandSideExpressionAllowCall(NodePtr &ptr) {
         Token start_token = lookahead_;
         auto start_marker = CreateNode();
@@ -2324,6 +2394,38 @@ namespace parser {
 
         ptr = expr;
         return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseArguments(std::vector<Sp<NodePtr>> &ptr) {
+        DO(Expect(u'('))
+        if (!Match(u')')) {
+            Sp<NodePtr> expr;
+            while (true) {
+                if (Match(u"...")) {
+                    DO(ParseSpreadElement(expr))
+                } else {
+                    DO(IsolateCoverGrammar([this, &expr] {
+                        return ParseAssignmentExpression(expr);
+                    }))
+                }
+                ptr.push_back(expr);
+                if (Match(u')')) {
+                    break;
+                }
+                DO(ExpectCommaSeparator())
+                if (Match(u')')) {
+                    break;
+                }
+            }
+        }
+        DO(Expect(u')'))
+        return true;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseAsyncArguments(std::vector<NodePtr>& ptr) {
+        return false;
     }
 
     template <typename NodePtr>
