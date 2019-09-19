@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include "../parser/node_traverser_intf.h"
+#include "../utils.h"
 
 namespace dumper {
 
@@ -440,7 +441,7 @@ namespace dumper {
         static json Dump(const Sp<AssignmentExpression>& node) {
             json result = json::object();
             result["type"] = "AssignmentExpression";
-            result["operator"] = node->operator_;
+            result["operator_"] = utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -527,7 +528,7 @@ namespace dumper {
         static json Dump(const Sp<BinaryExpression>& node) {
             json result = json::object();
             result["type"] = "BinaryExpression";
-            result["operator"] = node->operator_;
+            result["operator_"] = utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -664,7 +665,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "Directive";
             result["expression"] = Dump(node->expression);
-            result["directive"] = node->directive;
+            result["directive"] = utils::To_UTF8(node->directive);
 
             return result;
         }
@@ -818,7 +819,7 @@ namespace dumper {
         static json Dump(const Sp<Identifier>& node) {
             json result = json::object();
             result["type"] = "Identifier";
-            result["name"] = node->name;
+            result["name"] = utils::To_UTF8(node->name);
 
             return result;
         }
@@ -893,7 +894,7 @@ namespace dumper {
         static json Dump(const Sp<Literal>& node) {
             json result = json::object();
             result["type"] = "Literal";
-            result["raw"] = node->raw;
+            result["raw"] = utils::To_UTF8(node->raw);
 
             return result;
         }
@@ -932,7 +933,7 @@ namespace dumper {
                 array_body.push_back(Dump(i));
             }
             result["body"] = std::move(array_body);
-            result["sourceType"] = node->source_type;
+            result["source_type"] = utils::To_UTF8(node->source_type);
 
             return result;
         }
@@ -995,8 +996,8 @@ namespace dumper {
         static json Dump(const Sp<RegexLiteral>& node) {
             json result = json::object();
             result["type"] = "RegexLiteral";
-            result["value"] = node->value;
-            result["raw"] = node->raw;
+            result["value"] = utils::To_UTF8(node->value);
+            result["raw"] = utils::To_UTF8(node->raw);
 
             return result;
         }
@@ -1028,7 +1029,7 @@ namespace dumper {
                 array_body.push_back(Dump(i));
             }
             result["body"] = std::move(array_body);
-            result["sourceType"] = node->source_type;
+            result["source_type"] = utils::To_UTF8(node->source_type);
 
             return result;
         }
@@ -1161,7 +1162,7 @@ namespace dumper {
         static json Dump(const Sp<UnaryExpression>& node) {
             json result = json::object();
             result["type"] = "UnaryExpression";
-            result["operator"] = node->operator_;
+            result["operator_"] = utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 
@@ -1171,7 +1172,7 @@ namespace dumper {
         static json Dump(const Sp<UpdateExpression>& node) {
             json result = json::object();
             result["type"] = "UpdateExpression";
-            result["operator"] = node->operator_;
+            result["operator_"] = utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 

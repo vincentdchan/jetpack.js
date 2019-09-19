@@ -1315,13 +1315,14 @@ namespace parser {
     template <typename NodePtr>
     bool Parser::ParseConditionalExpression(NodePtr &ptr) {
         auto marker = CreateNode();
-        auto node = Alloc<ConditionalExpression>();
 
-        DO(InheritCoverGrammar([this, &node] {
-            return ParseBinaryExpression(node->test);
+        Sp<Expression> expr;
+        DO(InheritCoverGrammar([this, &expr] {
+            return ParseBinaryExpression(expr);
         }))
         if (Match(u'?')) {
             DO(NextToken())
+            auto node = Alloc<ConditionalExpression>();
 
             bool prev_allow_in = context_.allow_in;
             context_.allow_in = true;
@@ -1335,11 +1336,14 @@ namespace parser {
             DO(IsolateCoverGrammar([this, &node] {
                 return ParseAssignmentExpression(node->alternate);
             }))
+
+            expr = move(node);
+
             context_.is_assignment_target = false;
             context_.is_binding_element = false;
         }
 
-        return Finalize(marker, node, ptr);
+        return Finalize(marker, expr, ptr);
     }
 
     bool Parser::IsStartOfExpression() {
@@ -1503,7 +1507,7 @@ namespace parser {
         auto node = Alloc<Identifier>();
         Token token;
         DO(NextToken(&token))
-        if (IsIdentifierName(token)) {
+        if (!IsIdentifierName(token)) {
             UnexpectedToken(&token);
             return false;
         }
@@ -2635,6 +2639,7 @@ namespace parser {
                 DO(Expect('.'))
                 auto node = Alloc<StaticMemberExpression>();
                 DO(ParseIdentifierName(node->property))
+                node->object = expr;
                 Finalize(start_marker, node, expr);
             } else if (Match(u'(')) {
                 bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);

@@ -315,6 +315,7 @@ puts '
 #include <vector>
 #include <memory>
 #include "../parser/node_traverser_intf.h"
+#include "../utils.h"
 
 namespace dumper {
 
@@ -358,8 +359,10 @@ SyntaxFactory.syntaxes.each do |item|
             result[\"type\"] = \"#{id}\";"
 
     item.props.each do |item|
-      if [:String, :Boolean, :Number, :VarKind].include? item.prop_type then
+      if [:Boolean, :Number, :VarKind].include? item.prop_type then
         puts "            result[\"#{item.name}\"] = node->#{item.pretty_name};"
+      elsif item.prop_type == :String then
+        puts "            result[\"#{item.pretty_name}\"] = utils::To_UTF8(node->#{item.pretty_name});"
       elsif item.prop_type.is_a? Array then
         array_name = "array_#{item.name}"
         puts "            json #{array_name} = json::array();"
@@ -376,7 +379,7 @@ SyntaxFactory.syntaxes.each do |item|
       elsif item.prop_type.is_a? Variant then
         # nothing
       else
-          puts "            result[\"#{item.pretty_name}\"] = Dump(node->#{item.pretty_name});"
+        puts "            result[\"#{item.pretty_name}\"] = Dump(node->#{item.pretty_name});"
       end
     end
 
