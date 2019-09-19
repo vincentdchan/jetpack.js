@@ -289,3 +289,7 @@ WithStatement::WithStatement(): Statement() {
 YieldExpression::YieldExpression(): Expression() {
     type = SyntaxNodeType::YieldExpression;
 }
+
+ArrowParameterPlaceHolder::ArrowParameterPlaceHolder(): Expression() {
+    type = SyntaxNodeType::ArrowParameterPlaceHolder;
+}

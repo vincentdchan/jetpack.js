@@ -77,6 +77,7 @@ enum class SyntaxNodeType {
     WhileStatement,
     WithStatement,
     YieldExpression,
+    ArrowParameterPlaceHolder,
 
 };
 
@@ -154,3 +155,4 @@ class VariableDeclarator;
 class WhileStatement;
 class WithStatement;
 class YieldExpression;
+class ArrowParameterPlaceHolder;

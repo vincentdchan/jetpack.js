@@ -65,7 +65,10 @@ namespace parser {
         bool ParseTemplateLiteral(NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ReinterpretExpressionAsPattern(NodePtr ptr);
+        bool ReinterpretExpressionAsPattern(NodePtr& ptr);
+
+        template <typename NodePtr>
+        bool ReinterpretAsCoverFormalsList(NodePtr& ptr, FormalParameterOptions& list);
 
         template <typename NodePtr>
         bool ParseGroupExpression(NodePtr& ptr);
@@ -1771,7 +1774,7 @@ namespace parser {
 
                         while (Match(u',')) {
                             NextToken();
-                            Sp<AssignmentExpression> node;
+                            Sp<Expression> node;
                             DO(IsolateCoverGrammar([this, &node] {
                                 return ParseAssignmentExpression(node);
                             }));
@@ -1969,7 +1972,7 @@ namespace parser {
         }
 
         ASSERT_NOT_NULL(expr, "ParseExpression")
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 
@@ -1989,12 +1992,127 @@ namespace parser {
                     Sp<Expression> arg;
                     DO(ParsePrimaryExpression(arg))
                     DO(ReinterpretExpressionAsPattern(arg))
-//                    auto node = Alloc<ArrowParameterPlaceHolder>();
+
+                    auto node = Alloc<ArrowParameterPlaceHolder>();
+                    node->params.push_back(arg);
+                    node->async = true;
+                    expr = move(node);
+
                 }
             }
+
+            if (expr->type == SyntaxNodeType::ArrowParameterPlaceHolder || Match(u"=>")) {
+
+                auto placefolder = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr);
+                context_.is_assignment_target = false;
+                context_.is_binding_element = false;
+                bool is_async = placefolder->async;
+
+                FormalParameterOptions list;
+                if (ReinterpretAsCoverFormalsList(expr, list)) {
+                    if (has_line_terminator_) {
+                        UnexpectedToken(&lookahead_);
+                    }
+                    context_.first_cover_initialized_name_error.reset();
+
+                    bool prev_strict = context_.strict_;
+                    bool prev_allow_strict_directive = context_.allow_strict_directive;
+                    context_.allow_strict_directive = list.simple;
+
+                    bool prev_allow_yield = context_.allow_yield;
+                    bool prev_await = context_.await;
+                    context_.allow_yield = true;
+                    context_.await = is_async;
+
+                    auto marker = CreateNode();
+                    DO(Expect(u"=>"))
+                    Sp<SyntaxNode> body;
+
+                    if (Match(u'{')) {
+                        bool prev_allow_in = context_.allow_in;
+                        context_.allow_in = true;
+                        DO(ParseFunctionSourceElements(body))
+                        context_.allow_in = prev_allow_in;
+                    } else {
+                        DO(IsolateCoverGrammar([this, &body] {
+                            return ParseAssignmentExpression(body);
+                        }))
+                    }
+
+                    bool expression = body->type != SyntaxNodeType::BlockStatement;
+
+                    if (context_.strict_ && list.first_restricted) {
+                        // TODO: UnexpectedToken()
+                    }
+                    if (context_.strict_ && list.stricted) {
+                        // TODO: UnexpectedToken()
+                    }
+
+                    if (is_async) {
+                        auto node = Alloc<AsyncArrowFunctionExpression>();
+                        node->params = list.params;
+                        node->body = body;
+                        node->expression = expression;
+                        Finalize(marker, node, expr);
+                    } else {
+                        auto node = Alloc<ArrowFunctionExpression>();
+                        node->params = list.params;
+                        node->body = body;
+                        node->expression = expression;
+                        Finalize(marker, node, expr);
+                    }
+
+                    context_.strict_ = prev_strict;
+                    context_.allow_strict_directive = prev_allow_strict_directive;
+                    context_.allow_yield = prev_allow_yield;
+                    context_.await = prev_await;
+                }
+            } else {
+
+                if (MatchAssign()) {
+                    if (!context_.is_assignment_target) {
+                        LogError("InvalidLHSInAssignment");
+                    }
+
+                    if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+                        auto id = dynamic_pointer_cast<Identifier>(expr);
+                        if (scanner_->IsRestrictedWord(id->name)) {
+                            string message = "StrictLHSAssignment";
+                            UnexpectedToken(&token, &message);
+                        }
+                        if (scanner_->IsStrictModeReservedWord(id->name)) {
+                            string message = "StrictReservedWord";
+                            UnexpectedToken(&token, &message);
+                        }
+                    }
+
+                    if (!Match(u'=')) {
+                        context_.is_assignment_target = false;
+                        context_.is_binding_element = false;
+                    } else {
+                        DO(ReinterpretExpressionAsPattern(expr))
+                    }
+
+                    DO(NextToken(&token))
+                    auto operator_ = token.value_;
+                    Sp<Expression> right;
+                    DO(IsolateCoverGrammar([this, &right] {
+                        return ParseAssignmentExpression(right);
+                    }))
+                    auto temp = Alloc<AssignmentExpression>();
+                    temp->operator_ = operator_;
+                    temp->left = expr;
+                    temp->right = right;
+                    Finalize(start_marker, temp, expr);
+                    context_.first_cover_initialized_name_error.reset();
+                }
+            }
+
         }
 
         // TODO: wait to complete
+        ASSERT_NOT_NULL(expr, "ParseAssignmentExpression")
+        ptr = move(expr);
         return true;
     }
 
@@ -2121,7 +2239,7 @@ namespace parser {
             }
         }
 
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 
@@ -2163,7 +2281,7 @@ namespace parser {
             DO(ParseUpdateExpression(expr))
         }
 
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 
@@ -2260,7 +2378,7 @@ namespace parser {
             }
         }
 
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 
@@ -2285,6 +2403,7 @@ namespace parser {
             Finalize(start, node, expr);
         }
 
+        ptr = move(expr);
         return true;
     }
 
@@ -2313,7 +2432,13 @@ namespace parser {
     }
 
     template <typename NodePtr>
-    bool Parser::ReinterpretExpressionAsPattern(NodePtr ptr) {
+    bool Parser::ReinterpretExpressionAsPattern(NodePtr& ptr) {
+        // TODO
+        return false;
+    }
+
+    template <typename NodePtr>
+    bool Parser::ReinterpretAsCoverFormalsList(NodePtr& ptr, FormalParameterOptions& list) {
         // TODO
         return false;
     }
@@ -2427,7 +2552,7 @@ namespace parser {
             }
         }
 
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 
@@ -2513,7 +2638,7 @@ namespace parser {
         }
         context_.allow_in = prev_allow_in;
 
-        ptr = expr;
+        ptr = move(expr);
         return true;
     }
 

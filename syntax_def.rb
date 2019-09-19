@@ -108,7 +108,7 @@ end
 SyntaxFactory.def_syntax :ArrowFunctionExpression, base: :Expression do
   def_prop :Identifier.opt, "id"
   def_prop [:SyntaxNode], "params"
-  def_prop :Expression, "body"
+  def_prop :SyntaxNode, "body"
   def_prop :Boolean, "generator"
   def_prop :Boolean, "expression"
   def_prop :Boolean, "async"
@@ -128,7 +128,7 @@ end
 SyntaxFactory.def_syntax :AsyncArrowFunctionExpression, base: :Expression do
   def_prop :Identifier.opt, "id"
   def_prop [:SyntaxNode], "params"
-  def_prop :Expression, "body"
+  def_prop :SyntaxNode, "body"
   def_prop :Boolean, "generator"
   def_prop :Boolean, "expression"
   def_prop :Boolean, "async"
@@ -473,4 +473,9 @@ end
 SyntaxFactory.def_syntax :YieldExpression, base: :Expression do
   def_prop :Expression.opt, "argument"
   def_prop :Boolean, "delegate"
+end
+
+SyntaxFactory.def_syntax :ArrowParameterPlaceHolder, base: :Expression do
+  def_prop [:Expression], "params"
+  def_prop :Boolean, "async"
 end

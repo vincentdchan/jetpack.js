@@ -18,8 +18,6 @@
 namespace parser {
     using namespace std;
 
-    static const char* ArrowParameterPlaceHolder = "ArrowParameterPlaceHolder";
-
     class ParserCommon {
     public:
         struct Config {

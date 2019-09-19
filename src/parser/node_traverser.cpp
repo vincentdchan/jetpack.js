@@ -756,6 +756,17 @@ void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {
             break;
         }
 
+        case SyntaxNodeType::ArrowParameterPlaceHolder: {
+            auto child = std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node);
+            if(!traverser_->TraverseBefore(child)) return;
+
+            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
+                Push(*i);
+            }
+
+            break;
+        }
+
         default:
             break;
 
@@ -1193,6 +1204,12 @@ void NodeTraverser::TraverseNodeAfter_(const Sp<SyntaxNode> &node) {
 
         case SyntaxNodeType::YieldExpression: {
             auto child = std::dynamic_pointer_cast<YieldExpression>(node);
+            traverser_->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::ArrowParameterPlaceHolder: {
+            auto child = std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node);
             traverser_->TraverseAfter(child);
             break;
         }

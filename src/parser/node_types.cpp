@@ -221,6 +221,9 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::YieldExpression:
             return "YieldExpression";
 
+        case SyntaxNodeType::ArrowParameterPlaceHolder:
+            return "ArrowParameterPlaceHolder";
+
         default:
             return "<Invalid>";
 

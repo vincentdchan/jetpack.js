@@ -380,6 +380,11 @@ namespace dumper {
                     return Dump(child);
                 }
 
+                case SyntaxNodeType::ArrowParameterPlaceHolder: {
+                    auto child = std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node);
+                    return Dump(child);
+                }
+
                 default:
                     return json::object();
 
@@ -1223,6 +1228,20 @@ namespace dumper {
                 result["argument"] = Dump(*node->argument);
             }
             result["delegate"] = node->delegate;
+
+            return result;
+        }
+
+        static json Dump(const Sp<ArrowParameterPlaceHolder>& node) {
+            json result = json::object();
+            result["type"] = "ArrowParameterPlaceHolder";
+            json array_params = json::array();
+
+            for (auto& i : node->params) {
+                array_params.push_back(Dump(i));
+            }
+            result["params"] = std::move(array_params);
+            result["async"] = node->async;
 
             return result;
         }

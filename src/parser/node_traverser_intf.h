@@ -294,4 +294,8 @@ public:
 
     virtual void TraverseAfter(const Sp<YieldExpression>& node) {}
 
+    virtual bool TraverseBefore(const Sp<ArrowParameterPlaceHolder>& node) { return true; }
+
+    virtual void TraverseAfter(const Sp<ArrowParameterPlaceHolder>& node) {}
+
 };

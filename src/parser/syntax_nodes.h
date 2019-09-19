@@ -31,7 +31,7 @@ public:
 
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
-    Sp<Expression> body;
+    Sp<SyntaxNode> body;
     bool generator = false;
     bool expression = false;
     bool async = false;
@@ -63,7 +63,7 @@ public:
 
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
-    Sp<Expression> body;
+    Sp<SyntaxNode> body;
     bool generator = false;
     bool expression = false;
     bool async = false;
@@ -672,5 +672,14 @@ public:
 
     std::optional<Sp<Expression>> argument;
     bool delegate = false;
+
+};
+
+class ArrowParameterPlaceHolder: public Expression {
+public:
+    ArrowParameterPlaceHolder();
+
+    std::vector<Sp<Expression>> params;
+    bool async = false;
 
 };
