@@ -327,6 +327,25 @@ namespace dumper {
     class AstToJson {
     public:
 
+        static void DumpBaseInfo(json& result, const Sp<SyntaxNode>& node) {
+            result["start"] = node->range.first;
+            result["end"] = node->range.second;
+
+            json loc = json::object();
+
+            json start = json::object();
+            start["line"] = node->location.start_.line_;
+            start["column"] = node->location.start_.column_;
+            loc["start"] = start;
+
+            json end = json::object();
+            end["line"] = node->location.end_.line_;
+            end["column"] = node->location.end_.column_;
+            loc["end"] = end;
+
+            result["loc"] = loc;
+        }
+
         static json Dump(const Sp<SyntaxNode>& node) {
             switch (node->type) {'
 
@@ -356,6 +375,7 @@ SyntaxFactory.syntaxes.each do |item|
     puts "
         static json Dump(const Sp<#{id}>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result[\"type\"] = \"#{id}\";"
 
     item.props.each do |item|

@@ -920,7 +920,7 @@ bool Scanner::ScanStringLiteral(Token &tok) {
     }
 
     tok.type_ = JsTokenType::StringLiteral;
-    tok.value_ = str;
+    tok.value_ = move(str);
     tok.octal_ = octal;
     tok.line_number_ = line_number_;
     tok.line_start_ = line_start_;

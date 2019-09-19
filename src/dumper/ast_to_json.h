@@ -18,6 +18,25 @@ namespace dumper {
     class AstToJson {
     public:
 
+        static void DumpBaseInfo(json& result, const Sp<SyntaxNode>& node) {
+            result["start"] = node->range.first;
+            result["end"] = node->range.second;
+
+            json loc = json::object();
+
+            json start = json::object();
+            start["line"] = node->location.start_.line_;
+            start["column"] = node->location.start_.column_;
+            loc["start"] = start;
+
+            json end = json::object();
+            end["line"] = node->location.end_.line_;
+            end["column"] = node->location.end_.column_;
+            loc["end"] = end;
+
+            result["loc"] = loc;
+        }
+
         static json Dump(const Sp<SyntaxNode>& node) {
             switch (node->type) {
 
@@ -394,6 +413,7 @@ namespace dumper {
 
         static json Dump(const Sp<ArrayExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ArrayExpression";
             json array_elements = json::array();
 
@@ -407,6 +427,7 @@ namespace dumper {
 
         static json Dump(const Sp<ArrayPattern>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ArrayPattern";
             json array_elements = json::array();
 
@@ -420,6 +441,7 @@ namespace dumper {
 
         static json Dump(const Sp<ArrowFunctionExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ArrowFunctionExpression";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -440,6 +462,7 @@ namespace dumper {
 
         static json Dump(const Sp<AssignmentExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AssignmentExpression";
             result["operator_"] = utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
@@ -450,6 +473,7 @@ namespace dumper {
 
         static json Dump(const Sp<AssignmentPattern>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AssignmentPattern";
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
@@ -459,6 +483,7 @@ namespace dumper {
 
         static json Dump(const Sp<AsyncArrowFunctionExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AsyncArrowFunctionExpression";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -479,6 +504,7 @@ namespace dumper {
 
         static json Dump(const Sp<AsyncFunctionDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AsyncFunctionDeclaration";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -499,6 +525,7 @@ namespace dumper {
 
         static json Dump(const Sp<AsyncFunctionExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AsyncFunctionExpression";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -519,6 +546,7 @@ namespace dumper {
 
         static json Dump(const Sp<AwaitExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "AwaitExpression";
             result["argument"] = Dump(node->argument);
 
@@ -527,6 +555,7 @@ namespace dumper {
 
         static json Dump(const Sp<BinaryExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "BinaryExpression";
             result["operator_"] = utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
@@ -537,6 +566,7 @@ namespace dumper {
 
         static json Dump(const Sp<BlockStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "BlockStatement";
             json array_body = json::array();
 
@@ -550,6 +580,7 @@ namespace dumper {
 
         static json Dump(const Sp<BreakStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "BreakStatement";
             if (node->label) {
                 result["label"] = Dump(*node->label);
@@ -560,6 +591,7 @@ namespace dumper {
 
         static json Dump(const Sp<CallExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "CallExpression";
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
@@ -574,6 +606,7 @@ namespace dumper {
 
         static json Dump(const Sp<CatchClause>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "CatchClause";
             result["param"] = Dump(node->param);
             result["body"] = Dump(node->body);
@@ -583,6 +616,7 @@ namespace dumper {
 
         static json Dump(const Sp<ClassBody>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ClassBody";
             json array_body = json::array();
 
@@ -596,6 +630,7 @@ namespace dumper {
 
         static json Dump(const Sp<ClassDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ClassDeclaration";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -610,6 +645,7 @@ namespace dumper {
 
         static json Dump(const Sp<ClassExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ClassExpression";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -626,6 +662,7 @@ namespace dumper {
 
         static json Dump(const Sp<ComputedMemberExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ComputedMemberExpression";
             result["computed"] = node->computed;
             result["object"] = Dump(node->object);
@@ -636,6 +673,7 @@ namespace dumper {
 
         static json Dump(const Sp<ConditionalExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ConditionalExpression";
             result["test"] = Dump(node->test);
             result["consequent"] = Dump(node->consequent);
@@ -646,6 +684,7 @@ namespace dumper {
 
         static json Dump(const Sp<ContinueStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ContinueStatement";
             if (node->label) {
                 result["label"] = Dump(*node->label);
@@ -656,6 +695,7 @@ namespace dumper {
 
         static json Dump(const Sp<DebuggerStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "DebuggerStatement";
 
             return result;
@@ -663,6 +703,7 @@ namespace dumper {
 
         static json Dump(const Sp<Directive>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Directive";
             result["expression"] = Dump(node->expression);
             result["directive"] = utils::To_UTF8(node->directive);
@@ -672,6 +713,7 @@ namespace dumper {
 
         static json Dump(const Sp<DoWhileStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "DoWhileStatement";
             result["body"] = Dump(node->body);
             result["test"] = Dump(node->test);
@@ -681,6 +723,7 @@ namespace dumper {
 
         static json Dump(const Sp<EmptyStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "EmptyStatement";
 
             return result;
@@ -688,6 +731,7 @@ namespace dumper {
 
         static json Dump(const Sp<ExportAllDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ExportAllDeclaration";
             result["source"] = Dump(node->source);
 
@@ -696,6 +740,7 @@ namespace dumper {
 
         static json Dump(const Sp<ExportDefaultDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ExportDefaultDeclaration";
             result["declaration"] = Dump(node->declaration);
 
@@ -704,6 +749,7 @@ namespace dumper {
 
         static json Dump(const Sp<ExportNamedDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ExportNamedDeclaration";
             if (node->declaration) {
                 result["declaration"] = Dump(*node->declaration);
@@ -723,6 +769,7 @@ namespace dumper {
 
         static json Dump(const Sp<ExportSpecifier>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ExportSpecifier";
             result["exported"] = Dump(node->exported);
             result["local"] = Dump(node->local);
@@ -732,6 +779,7 @@ namespace dumper {
 
         static json Dump(const Sp<ExpressionStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ExpressionStatement";
             result["expression"] = Dump(node->expression);
 
@@ -740,6 +788,7 @@ namespace dumper {
 
         static json Dump(const Sp<ForInStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ForInStatement";
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
@@ -751,6 +800,7 @@ namespace dumper {
 
         static json Dump(const Sp<ForOfStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ForOfStatement";
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
@@ -761,6 +811,7 @@ namespace dumper {
 
         static json Dump(const Sp<ForStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ForStatement";
             if (node->init) {
                 result["init"] = Dump(*node->init);
@@ -778,6 +829,7 @@ namespace dumper {
 
         static json Dump(const Sp<FunctionDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "FunctionDeclaration";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -798,6 +850,7 @@ namespace dumper {
 
         static json Dump(const Sp<FunctionExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "FunctionExpression";
             if (node->id) {
                 result["id"] = Dump(*node->id);
@@ -818,6 +871,7 @@ namespace dumper {
 
         static json Dump(const Sp<Identifier>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Identifier";
             result["name"] = utils::To_UTF8(node->name);
 
@@ -826,6 +880,7 @@ namespace dumper {
 
         static json Dump(const Sp<IfStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "IfStatement";
             result["test"] = Dump(node->test);
             result["consequent"] = Dump(node->consequent);
@@ -838,6 +893,7 @@ namespace dumper {
 
         static json Dump(const Sp<Import>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Import";
 
             return result;
@@ -845,6 +901,7 @@ namespace dumper {
 
         static json Dump(const Sp<ImportDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ImportDeclaration";
             json array_specifiers = json::array();
 
@@ -859,6 +916,7 @@ namespace dumper {
 
         static json Dump(const Sp<ImportDefaultSpecifier>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ImportDefaultSpecifier";
             result["local"] = Dump(node->local);
 
@@ -867,6 +925,7 @@ namespace dumper {
 
         static json Dump(const Sp<ImportNamespaceSpecifier>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ImportNamespaceSpecifier";
             result["local"] = Dump(node->local);
 
@@ -875,6 +934,7 @@ namespace dumper {
 
         static json Dump(const Sp<ImportSpecifier>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ImportSpecifier";
             result["local"] = Dump(node->local);
             result["imported"] = Dump(node->imported);
@@ -884,6 +944,7 @@ namespace dumper {
 
         static json Dump(const Sp<LabeledStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "LabeledStatement";
             result["label"] = Dump(node->label);
             result["body"] = Dump(node->body);
@@ -893,6 +954,7 @@ namespace dumper {
 
         static json Dump(const Sp<Literal>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Literal";
             result["raw"] = utils::To_UTF8(node->raw);
 
@@ -901,6 +963,7 @@ namespace dumper {
 
         static json Dump(const Sp<MetaProperty>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "MetaProperty";
             result["meta"] = Dump(node->meta);
             result["property"] = Dump(node->property);
@@ -910,6 +973,7 @@ namespace dumper {
 
         static json Dump(const Sp<MethodDefinition>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "MethodDefinition";
             if (node->key) {
                 result["key"] = Dump(*node->key);
@@ -926,6 +990,7 @@ namespace dumper {
 
         static json Dump(const Sp<Module>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Module";
             json array_body = json::array();
 
@@ -940,6 +1005,7 @@ namespace dumper {
 
         static json Dump(const Sp<NewExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "NewExpression";
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
@@ -954,6 +1020,7 @@ namespace dumper {
 
         static json Dump(const Sp<ObjectExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ObjectExpression";
             json array_properties = json::array();
 
@@ -967,6 +1034,7 @@ namespace dumper {
 
         static json Dump(const Sp<ObjectPattern>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ObjectPattern";
             json array_properties = json::array();
 
@@ -980,6 +1048,7 @@ namespace dumper {
 
         static json Dump(const Sp<Property>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Property";
             result["key"] = Dump(node->key);
             result["computed"] = node->computed;
@@ -995,6 +1064,7 @@ namespace dumper {
 
         static json Dump(const Sp<RegexLiteral>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "RegexLiteral";
             result["value"] = utils::To_UTF8(node->value);
             result["raw"] = utils::To_UTF8(node->raw);
@@ -1004,6 +1074,7 @@ namespace dumper {
 
         static json Dump(const Sp<RestElement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "RestElement";
             result["argument"] = Dump(node->argument);
 
@@ -1012,6 +1083,7 @@ namespace dumper {
 
         static json Dump(const Sp<ReturnStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ReturnStatement";
             if (node->argument) {
                 result["argument"] = Dump(*node->argument);
@@ -1022,6 +1094,7 @@ namespace dumper {
 
         static json Dump(const Sp<Script>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Script";
             json array_body = json::array();
 
@@ -1036,6 +1109,7 @@ namespace dumper {
 
         static json Dump(const Sp<SequenceExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "SequenceExpression";
             json array_expressions = json::array();
 
@@ -1049,6 +1123,7 @@ namespace dumper {
 
         static json Dump(const Sp<SpreadElement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "SpreadElement";
             result["argument"] = Dump(node->argument);
 
@@ -1057,6 +1132,7 @@ namespace dumper {
 
         static json Dump(const Sp<StaticMemberExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "StaticMemberExpression";
             result["computed"] = node->computed;
             result["object"] = Dump(node->object);
@@ -1067,6 +1143,7 @@ namespace dumper {
 
         static json Dump(const Sp<Super>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "Super";
 
             return result;
@@ -1074,6 +1151,7 @@ namespace dumper {
 
         static json Dump(const Sp<SwitchCase>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "SwitchCase";
             if (node->test) {
                 result["test"] = Dump(*node->test);
@@ -1090,6 +1168,7 @@ namespace dumper {
 
         static json Dump(const Sp<SwitchStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "SwitchStatement";
             result["discrimiant"] = Dump(node->discrimiant);
             json array_cases = json::array();
@@ -1104,6 +1183,7 @@ namespace dumper {
 
         static json Dump(const Sp<TaggedTemplateExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "TaggedTemplateExpression";
             result["tag"] = Dump(node->tag);
             result["quasi"] = Dump(node->quasi);
@@ -1113,6 +1193,7 @@ namespace dumper {
 
         static json Dump(const Sp<TemplateElement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "TemplateElement";
             json array_quasis = json::array();
 
@@ -1132,6 +1213,7 @@ namespace dumper {
 
         static json Dump(const Sp<ThisExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ThisExpression";
 
             return result;
@@ -1139,6 +1221,7 @@ namespace dumper {
 
         static json Dump(const Sp<ThrowStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ThrowStatement";
             result["argument"] = Dump(node->argument);
 
@@ -1147,6 +1230,7 @@ namespace dumper {
 
         static json Dump(const Sp<TryStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "TryStatement";
             result["block"] = Dump(node->block);
             if (node->handler) {
@@ -1161,6 +1245,7 @@ namespace dumper {
 
         static json Dump(const Sp<UnaryExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "UnaryExpression";
             result["operator_"] = utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
@@ -1171,6 +1256,7 @@ namespace dumper {
 
         static json Dump(const Sp<UpdateExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "UpdateExpression";
             result["operator_"] = utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
@@ -1181,6 +1267,7 @@ namespace dumper {
 
         static json Dump(const Sp<VariableDeclaration>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "VariableDeclaration";
             json array_declarations = json::array();
 
@@ -1195,6 +1282,7 @@ namespace dumper {
 
         static json Dump(const Sp<VariableDeclarator>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "VariableDeclarator";
             result["id"] = Dump(node->id);
             if (node->init) {
@@ -1206,6 +1294,7 @@ namespace dumper {
 
         static json Dump(const Sp<WhileStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "WhileStatement";
             result["test"] = Dump(node->test);
             result["body"] = Dump(node->body);
@@ -1215,6 +1304,7 @@ namespace dumper {
 
         static json Dump(const Sp<WithStatement>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "WithStatement";
             result["object"] = Dump(node->object);
             result["body"] = Dump(node->body);
@@ -1224,6 +1314,7 @@ namespace dumper {
 
         static json Dump(const Sp<YieldExpression>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "YieldExpression";
             if (node->argument) {
                 result["argument"] = Dump(*node->argument);
@@ -1235,6 +1326,7 @@ namespace dumper {
 
         static json Dump(const Sp<ArrowParameterPlaceHolder>& node) {
             json result = json::object();
+            DumpBaseInfo(result, node);
             result["type"] = "ArrowParameterPlaceHolder";
             json array_params = json::array();
 
