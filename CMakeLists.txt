@@ -13,6 +13,8 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # include(...) for pulling in other CMake projects anyways.
 add_subdirectory(nlohmann_json)
 
+add_subdirectory(fifo_map)
+
 file(GLOB source_files
         "src/*.h"
         "src/*.hpp"
@@ -26,4 +28,4 @@ file(GLOB source_files
         )
 
 add_executable(BestPack ${source_files})
-target_link_libraries(BestPack PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(BestPack PRIVATE nlohmann_json::nlohmann_json fifo_map)

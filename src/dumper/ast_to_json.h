@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <memory>
+#include "nlohmann/fi"
 #include "../parser/node_traverser_intf.h"
 #include "../utils.h"
 
