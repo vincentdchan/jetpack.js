@@ -521,6 +521,7 @@ bool Scanner::ScanPunctuator(Token &tok) {
 
     char16_t ch = (*source_)[index_];
     UString str;
+    str.push_back(ch);
     switch (ch) {
         case '(':
         case '{':
