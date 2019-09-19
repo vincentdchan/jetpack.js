@@ -382,7 +382,7 @@ namespace parser {
 
         switch (lookahead_.type_) {
             case JsTokenType::Identifier: {
-                if ((context_.is_module || context_.await) && lookahead_.value_ == U("await")) {
+                if ((context_.is_module || context_.await) && lookahead_.value_ == u"await") {
                     UnexpectedToken(&lookahead_);
                 }
                 if (MatchAsyncFunction()) {
@@ -478,9 +478,9 @@ namespace parser {
             }
 
             case JsTokenType::Keyword:
-                if (!context_.strict_ && context_.allow_yield && MatchKeyword(U("yield"))) {
+                if (!context_.strict_ && context_.allow_yield && MatchKeyword(u"yield")) {
                     return ParseIdentifierName(expr);
-                } else if (!context_.strict_ && MatchKeyword(U("let"))) {
+                } else if (!context_.strict_ && MatchKeyword(u"let")) {
                     DO(NextToken(&token));
                     auto id = Alloc<Identifier>();
                     id->name = token.value_;
@@ -488,13 +488,13 @@ namespace parser {
                 } else {
                     context_.is_assignment_target = false;
                     context_.is_binding_element = false;
-                    if (MatchKeyword(U("function"))) {
+                    if (MatchKeyword(u"function")) {
                         ParseFunctionExpression(expr);
-                    } else if (MatchKeyword(U("this"))) {
+                    } else if (MatchKeyword(u"this")) {
                         DO(NextToken(&token))
                         auto th = Alloc<ThisExpression>();
                         return Finalize(marker, th, expr);
-                    } else if (MatchKeyword(U("class"))) {
+                    } else if (MatchKeyword(u"class")) {
                         return ParseClassExpression(expr);
                     } else if (MatchImportCall()) {
                         return ParseImportCall(expr);
@@ -522,7 +522,7 @@ namespace parser {
         static_assert(std::is_convertible<Sp<SpreadElement>, NodePtr>::value, "NodePtr can not accept SpreadElement*");
         auto marker = CreateNode();
 
-        DO(Expect(U("...")))
+        DO(Expect(u"..."))
 
         auto node = Alloc<SpreadElement>();
 
@@ -545,7 +545,7 @@ namespace parser {
             if (Match(',')) {
                 NextToken();
                 node->elements.push_back(nullptr);
-            } else if (Match(U("..."))) {
+            } else if (Match(u"...")) {
                 DO(ParseSpreadElement(element))
                 if (!Match(']')) {
                     context_.is_assignment_target = false;
@@ -635,7 +635,7 @@ namespace parser {
             }
 
             case JsTokenType::Punctuator:
-                if (token.value_ == U("[")) {
+                if (token.value_ == u"[") {
                     DO(IsolateCoverGrammar([this, &ptr]() {
                         return ParseAssignmentExpression(ptr);
                     }));
@@ -670,7 +670,7 @@ namespace parser {
             auto id = token.value_;
             DO(NextToken())
             computed = Match('[');
-            is_async = !has_line_terminator_ && (id == U("async")) &&
+            is_async = !has_line_terminator_ && (id == u"async") &&
                       !Match(':') && !Match('(') && !Match('*') && !Match(',');
             if (is_async) {
                 DO(ParseObjectPropertyKey(key))
@@ -730,7 +730,7 @@ namespace parser {
     }
 
     bool Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
-        if (Match(U("..."))) {
+        if (Match(u"...")) {
 
         }
 
@@ -795,7 +795,7 @@ namespace parser {
         auto marker = CreateNode();
         auto node = Alloc<RestElement>();
 
-        DO(Expect(U("...")))
+        DO(Expect(u"..."))
         DO(ParsePattern(params, VarKind::Invalid, node->argument))
         if (Match('=')) {
             LogError("DefaultRestParameter");

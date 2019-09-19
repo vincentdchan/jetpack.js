@@ -4,3 +4,6 @@
 [submodule "sparsehash"]
 	path = sparsehash
 	url = https://github.com/sparsehash/sparsehash.git
+[submodule "ordered-map"]
+	path = ordered-map
+	url = https://github.com/Tessil/ordered-map.git

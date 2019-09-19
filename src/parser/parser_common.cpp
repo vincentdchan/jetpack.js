@@ -219,19 +219,19 @@ namespace parser {
             return false;
         }
         auto& op = lookahead_.value_;
-        return op == U("=") ||
-               op == U("*=") ||
-               op == U("**=") ||
-               op == U("/=") ||
-               op == U("%=") ||
-               op == U("+=") ||
-               op == U("-=") ||
-               op == U("<<=") ||
-               op == U(">>=") ||
-               op == U(">>>=") ||
-               op == U("&=") ||
-               op == U("^=") ||
-               op == U("|=");
+        return op == u"=" ||
+               op == u"*=" ||
+               op == u"**=" ||
+               op == u"/=" ||
+               op == u"%=" ||
+               op == u"+=" ||
+               op == u"-=" ||
+               op == u"<<=" ||
+               op == u">>=" ||
+               op == u">>>=" ||
+               op == u"&=" ||
+               op == u"^=" ||
+               op == u"|=";
     }
 
     bool ParserCommon::IsolateCoverGrammar(std::function<bool()> cb) {
