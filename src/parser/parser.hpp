@@ -5,6 +5,11 @@
 
 #include "parser_common.h"
 
+#define ASSERT_NOT_NULL(EXPR, MSG) if ((EXPR) == nullptr) { \
+        LogError(std::string(#EXPR) + " should not be nullptr " + MSG); \
+        return false; \
+    }
+
 namespace parser {
 
     class Parser final: public ParserCommon {
@@ -1963,6 +1968,7 @@ namespace parser {
             Finalize(start_marker, node, expr);
         }
 
+        ASSERT_NOT_NULL(expr, "ParseExpression")
         ptr = expr;
         return true;
     }
@@ -2163,7 +2169,7 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseBinaryExpression(NodePtr &ptr) {
-        auto marker = CreateNode();
+        auto start_token = lookahead_;
 
         Sp<Expression> expr;
         DO(InheritCoverGrammar([this, &expr] {
@@ -2173,11 +2179,14 @@ namespace parser {
         Token token = lookahead_;
         int prec = BinaryPrecedence(token);
         if (prec > 0) {
-            return false;
             DO(NextToken())
 
             context_.is_assignment_target = false;
             context_.is_binding_element = false;
+
+            stack<Token> markers;
+            markers.push(start_token);
+            markers.push(lookahead_);
 
             Sp<Expression> left = expr;
             Sp<Expression> right;
@@ -2186,14 +2195,73 @@ namespace parser {
             }))
 
             stack<int> precedences;
-            stack<Sp<Expression>> expr_stacks;
+            stack<Sp<Expression>> expr_stack;
+            stack<UString> op_stack;
 
-            expr_stacks.push(left);
+            op_stack.push(token.value_);
+            expr_stack.push(left);
+            expr_stack.push(right);
             precedences.push(prec);
 
+            while (true) {
+                prec = BinaryPrecedence(lookahead_);
+                if (prec <= 0) break;
+
+                // reduce
+                while ((expr_stack.size() >= 2) && (prec <= precedences.top())) {
+                    right = expr_stack.top();
+                    expr_stack.pop();
+
+                    auto operator_ = move(op_stack.top());
+                    op_stack.pop();
+
+                    left = expr_stack.top();
+                    expr_stack.pop();
+
+                    markers.pop();
+
+                    auto node = Alloc<BinaryExpression>();
+                    node->operator_ = operator_;
+                    node->left = left;
+                    node->right = right;
+                    expr_stack.push(move(node));
+                }
+
+                // shift
+                Token next_;
+                DO(NextToken(&next_))
+                op_stack.push(next_.value_);
+                precedences.push(prec);
+                markers.push(lookahead_);
+                Sp<Expression> temp_expr;
+                DO(IsolateCoverGrammar([this, &temp_expr] {
+                    return ParseExponentiationExpression(temp_expr);
+                }))
+                expr_stack.push(temp_expr);
+            }
+
+            expr = expr_stack.top();
+
+            auto last_marker = markers.top();
+            markers.pop();
+            while (!expr_stack.empty()) {
+                auto marker = markers.top();
+                markers.pop();
+                auto last_line_start = last_marker.line_start_;
+                auto operator_ = move(op_stack.top());
+                op_stack.pop();
+                auto node = Alloc<BinaryExpression>();
+                node->operator_ = operator_;
+                node->left = expr_stack.top();
+                expr_stack.pop();
+                node->right = expr;
+                Finalize(CreateNode(), node, expr);
+                last_marker = marker;
+            }
         }
 
-        return false;
+        ptr = expr;
+        return true;
     }
 
     template <typename NodePtr>

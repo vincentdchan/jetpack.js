@@ -1,3 +1,6 @@
 [submodule "nlohmann_json"]
 	path = nlohmann_json
 	url = https://github.com/nlohmann/json.git
+[submodule "sparsehash"]
+	path = sparsehash
+	url = https://github.com/sparsehash/sparsehash.git
