@@ -1977,6 +1977,47 @@ namespace parser {
     }
 
     template <typename NodePtr>
+    bool Parser::ParseFunctionSourceElements(NodePtr &ptr) {
+        auto start_marker = CreateNode();
+
+        vector<Sp<SyntaxNode>> body;
+        DO(ParseDirectivePrologues(body))
+        DO(Expect(u'{'))
+
+        auto prev_label_set = move(context_.label_set);
+        bool prev_in_iteration = context_.in_iteration;
+        bool prev_in_switch = context_.in_switch;
+        bool prev_in_fun_body = context_.in_function_body;
+
+        context_.label_set = make_unique<unordered_set<UString>>();
+        context_.in_iteration = false;
+        context_.in_switch = false;
+        context_.in_function_body = true;
+
+        while (lookahead_.type_ != JsTokenType::EOF_) {
+            if (Match(u'}')) {
+                break;
+            }
+
+            Sp<SyntaxNode> temp;
+            DO(ParseStatementListItem(temp))
+            body.push_back(move(temp));
+        }
+
+        DO(Expect('}'))
+
+        context_.label_set = move(prev_label_set);
+        context_.in_iteration = prev_in_iteration;
+        context_.in_switch = prev_in_switch;
+        context_.in_function_body = prev_in_fun_body;
+
+        auto node = Alloc<BlockStatement>();
+        node->body = move(body);
+
+        return Finalize(start_marker, node, ptr);
+    }
+
+    template <typename NodePtr>
     bool Parser::ParseAssignmentExpression(NodePtr &ptr) {
         Sp<Expression> expr;
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <stack>
 #include <functional>
+#include <unordered_set>
 #include "../tokenizer/token.h"
 #include "../parse_error_handler.h"
 #include "../utils.h"
@@ -30,19 +31,23 @@ namespace parser {
         };
 
         struct Context {
-            bool is_module;
-            bool allow_in;
-            bool allow_strict_directive;
-            bool allow_yield;
-            bool await;
+            bool is_module = false;
+            bool allow_in = false;
+            bool allow_strict_directive = false;
+            bool allow_yield = false;
+            bool await = false;
             optional<Token> first_cover_initialized_name_error;
-            bool is_assignment_target;
-            bool is_binding_element;
-            bool in_function_body;
-            bool in_iteration;
-            bool in_switch;
-            bool label_set;
-            bool strict_;
+            bool is_assignment_target = false;
+            bool is_binding_element = false;
+            bool in_function_body = false;
+            bool in_iteration = false;
+            bool in_switch = false;
+            unique_ptr<unordered_set<UString>> label_set;
+            bool strict_ = false;
+
+            Context() {
+                label_set = make_unique<unordered_set<UString>>();
+            }
         };
 
         struct Marker {
