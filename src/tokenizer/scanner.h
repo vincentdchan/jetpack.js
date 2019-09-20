@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 #include <stack>
-#include "../parse_error_handler.h"
+#include "../parser/parse_error_handler.h"
 #include "../utils.h"
 #include "token.h"
 
@@ -19,7 +19,7 @@ struct Comment {
 
 class Scanner final {
 public:
-    Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<ParseErrorHandler> error_handler);
+    Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<parser::ParseErrorHandler> error_handler);
     Scanner(const Scanner&) = delete;
     Scanner(Scanner&&) = delete;
 
@@ -106,7 +106,7 @@ private:
     std::uint32_t line_number_ = 0u;
     std::uint32_t line_start_ = 0u;
 
-    std::shared_ptr<ParseErrorHandler> error_handler_;
+    std::shared_ptr<parser::ParseErrorHandler> error_handler_;
     std::shared_ptr<std::u16string> source_;
     bool track_comment_ = false;
     bool is_module_ = false;

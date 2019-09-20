@@ -10,7 +10,7 @@
 #include <functional>
 #include <unordered_set>
 #include "../tokenizer/token.h"
-#include "../parse_error_handler.h"
+#include "parse_error_handler.h"
 #include "../utils.h"
 #include "../macros.h"
 #include "../tokenizer/scanner.h"

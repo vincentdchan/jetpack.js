@@ -11,7 +11,7 @@ using namespace std;
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-Scanner::Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<ParseErrorHandler> error_handler):
+Scanner::Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
 source_(std::move(source)), error_handler_(std::move(error_handler)) {
 
 }
