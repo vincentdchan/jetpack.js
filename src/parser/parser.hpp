@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include <iostream>
 #include "parser_common.h"
 #include "error_message.h"
 
@@ -940,7 +941,7 @@ namespace parser {
         if (Match(u'=')) {
             DO(NextToken())
             DO(IsolateCoverGrammar([this, &init] {
-                return ParseAssignmentExpression(*init);
+                return ParseAssignmentExpression(init);
             }))
         } else if (id->type != SyntaxNodeType::Identifier && !in_for) {
             DO(Expect(u'='))
@@ -962,7 +963,7 @@ namespace parser {
             node->test.reset();
         } else {
             DO(ExpectKeyword(u"case"))
-            DO(ParseExpression(*node->test))
+            DO(ParseExpression(node->test))
         }
         DO(Expect(u':'))
 
@@ -1013,7 +1014,7 @@ namespace parser {
 
         if (!identifier_is_optional || !Match(u'(')) {
             Token token = lookahead_;
-            DO(ParseVariableIdentifier(VarKind::Invalid, *id))
+            DO(ParseVariableIdentifier(VarKind::Invalid, id))
             if (context_.strict_) {
                 if (scanner_->IsRestrictedWord(token.value_)) {
                     DO(TolerateUnexpectedToken(&token, ParseMessages::StrictFunctionName))
@@ -1463,9 +1464,9 @@ namespace parser {
             Token token = lookahead_;
 
             if (!context_.strict_ && !is_generator && MatchKeyword(u"yield")) {
-                DO(ParseIdentifierName(*id))
+                DO(ParseIdentifierName(id))
             } else {
-                DO(ParseVariableIdentifier(VarKind::Invalid, *id))
+                DO(ParseVariableIdentifier(VarKind::Invalid, id))
             }
 
             if (context_.strict_) {
@@ -1590,7 +1591,7 @@ namespace parser {
 
         auto node = Alloc<ReturnStatement>();
         if (has_arg) {
-            DO(ParseExpression(*node->argument))
+            DO(ParseExpression(node->argument))
         }
 
         DO(ConsumeSemicolon())
@@ -1617,7 +1618,7 @@ namespace parser {
         DO(ExpectKeyword(u"class"))
 
         if (lookahead_.type_ == JsTokenType::Identifier) {
-            DO(ParseVariableIdentifier(VarKind::Invalid, *node->id))
+            DO(ParseVariableIdentifier(VarKind::Invalid, node->id))
         }
 
         if (MatchKeyword(u"extends")) {
@@ -1636,7 +1637,7 @@ namespace parser {
             }))
         }
 
-        DO(ParseClassBody(*node->body))
+        DO(ParseClassBody(node->body))
         context_.strict_ = prev_strict;
 
         return Finalize(marker, node, ptr);
@@ -1909,10 +1910,10 @@ namespace parser {
 
         DO(ParseBlock(node->block))
         if (MatchKeyword(u"catch")) {
-            DO(ParseCatchClause(*node->handler))
+            DO(ParseCatchClause(node->handler))
         }
         if (MatchKeyword(u"finally")) {
-            DO(ParseFinallyClause(*node->finalizer))
+            DO(ParseFinallyClause(node->finalizer))
         }
 
         return Finalize(marker, node, ptr);
@@ -2383,6 +2384,7 @@ namespace parser {
             DO(ParseUpdateExpression(expr))
         }
 
+        ASSERT_NOT_NULL(expr, "ParseUnaryExpression")
         ptr = move(expr);
         return true;
     }
@@ -2792,7 +2794,7 @@ namespace parser {
         if (identifier_is_optional && (lookahead_.type_ != JsTokenType::Identifier)) {
             // nothing
         } else {
-            DO(ParseVariableIdentifier(VarKind::Invalid, *node->id))
+            DO(ParseVariableIdentifier(VarKind::Invalid, node->id))
         }
 
         if (MatchKeyword(u"extends")) {

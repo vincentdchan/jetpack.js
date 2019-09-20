@@ -2,6 +2,7 @@
 // Created by Duzhong Chen on 2019/9/3.
 //
 
+#include <iostream>
 #include "scanner.h"
 #include "../macros.h"
 
@@ -356,7 +357,7 @@ bool Scanner::ScanUnicodeCodePointEscape(char32_t& code) {
     }
 
     while (!IsEnd()) {
-        ch = (*source_)[index_];
+        ch = (*source_)[index_++];
         if (!utils::IsHexDigit(ch)) {
             break;
         }
@@ -426,16 +427,13 @@ bool Scanner::GetComplexIdentifier(UString &result) {
         if (!utils::IsIdentifierPart(cp)) {
             break;
         }
-        std::u32string tmp;
-        tmp.push_back(cp);
 
-        auto utf8 = utils::To_UTF8(tmp);
-        auto utf16 = utils::To_UTF16(utf8);
+        UString ch_ = utils::FromCodePoint(cp);
 
-        result.insert(result.end(), utf16.begin(), utf16.end());
+        result.insert(result.end(), ch_.begin(), ch_.end());
 
-        result.push_back(ch);
-        index_ += utf8.size();
+        std::cout << index_ << std::endl;
+        index_ += ch_.size();
 
         // '\u' (U+005C, U+0075) denotes an escaped character.
         if (cp == 0x5C) {

@@ -11,6 +11,16 @@ typedef std::u16string UString;
 
 namespace utils {
 
+    inline UString FromCodePoint(char32_t cp) {
+        UString result;
+        if (cp < 0x10000) {
+            result.push_back(static_cast<char16_t>(cp));
+        } else {
+            result.push_back(static_cast<char16_t>(0xD800 + ((cp - 0x10000) >> 10)));
+            result.push_back(static_cast<char16_t>(0xdc00 + ((cp - 0x10000) & 1023)));
+        }
+        return result;
+    }
 
     inline std::u16string To_UTF16(const std::string &s) {
         std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> conv;
