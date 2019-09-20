@@ -27,13 +27,27 @@ public:
         error_list_.push_back(std::move(error_));
     }
 
+    inline bool TolerateError(std::string msg, int index, int line, int col) {
+        CreateError(move(msg), index, line, col);
+        return tolerant_;
+    }
+
     inline std::size_t Count() {
         return error_list_.size();
+    }
+
+    inline void SetTolerate(bool tol) {
+        tolerant_ = tol;
+    }
+
+    inline bool GetTolerate() {
+        return tolerant_;
     }
 
     void PrintAllErrors();
 
 private:
     std::list<ParseError> error_list_;
+    bool tolerant_ = false;
 
 };

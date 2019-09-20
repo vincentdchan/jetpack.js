@@ -679,7 +679,7 @@ class ArrowParameterPlaceHolder: public Expression {
 public:
     ArrowParameterPlaceHolder();
 
-    std::vector<Sp<Expression>> params;
+    std::vector<Sp<SyntaxNode>> params;
     bool async = false;
 
 };

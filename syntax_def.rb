@@ -476,6 +476,6 @@ SyntaxFactory.def_syntax :YieldExpression, base: :Expression do
 end
 
 SyntaxFactory.def_syntax :ArrowParameterPlaceHolder, base: :Expression do
-  def_prop [:Expression], "params"
+  def_prop [:SyntaxNode], "params"
   def_prop :Boolean, "async"
 end

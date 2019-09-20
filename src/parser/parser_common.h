@@ -59,8 +59,8 @@ namespace parser {
         struct FormalParameterOptions {
             bool simple = true;
             vector<Sp<SyntaxNode>> params;
-            bool stricted;
-            bool first_restricted;
+            optional<Token> stricted;
+            optional<Token> first_restricted;
             string message;
         };
 
@@ -79,7 +79,12 @@ namespace parser {
 
         bool NextToken(Token* token = nullptr);
         void LogError(const string& message);
-        void UnexpectedToken(const Token* tok = nullptr, const string* message = nullptr);
+        bool TolerateError(const string& message);
+
+        void UnexpectedToken(const Token* tok = nullptr);
+        void UnexpectedToken(const Token* tok, const string& message);
+        bool TolerateUnexpectedToken(const Token* tok = nullptr);
+        bool TolerateUnexpectedToken(const Token* tok, const string& message);
 
         Marker CreateNode();
         Marker StartNode(Token& tok, uint32_t last_line_start = 0);

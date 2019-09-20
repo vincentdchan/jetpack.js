@@ -4,6 +4,7 @@
 #pragma once
 
 #include "parser_common.h"
+#include "error_message.h"
 
 #define ASSERT_NOT_NULL(EXPR, MSG) if ((EXPR) == nullptr) { \
         LogError(std::string(#EXPR) + " should not be nullptr " + MSG); \
@@ -161,7 +162,7 @@ namespace parser {
         template <typename NodePtr>
         bool PeinterpretExpressionAsPattern(NodePtr& ptr);
 
-        bool ParseFormalParameters(bool first_restricted, FormalParameterOptions& option);
+        bool ParseFormalParameters(optional<Token> first_restricted, FormalParameterOptions& option);
         bool ParseFormalParameter(FormalParameterOptions& option);
         bool IsStartOfExpression();
 
@@ -178,7 +179,7 @@ namespace parser {
         bool ParseVariableIdentifier(VarKind kind, NodePtr& ptr);
 
         template <typename NodePtr>
-        bool ParseVariableDeclaration(NodePtr& ptr);
+        bool ParseVariableDeclaration(bool in_for, NodePtr& ptr);
 
         template <typename NodePtr>
         bool ParseVariableDeclarationList(bool in_for, NodePtr& ptr);
@@ -579,7 +580,7 @@ namespace parser {
         FormalParameterOptions options;
         bool previous_allow_yield = context_.allow_yield;
         context_.allow_yield = true;
-        DO(ParseFormalParameters(false, options))
+        DO(ParseFormalParameters(nullopt, options))
 //        const params = this.parseFormalParameters();
 //        const method = this.parsePropertyMethod(params);
         context_.allow_yield = previous_allow_yield;
@@ -599,7 +600,7 @@ namespace parser {
         bool previous_allow_yield = context_.allow_yield;
         bool previous_await = context_.await;
         context_.allow_yield = true;
-        DO(ParseFormalParameters(false, options))
+        DO(ParseFormalParameters(nullopt, options))
 //        const params = this.parseFormalParameters();
 //        const method = this.parsePropertyMethod(params);
         context_.allow_yield = previous_allow_yield;
@@ -705,7 +706,7 @@ namespace parser {
             (next.type_ == JsTokenType::Keyword && next.value_ == u"yield");
     }
 
-    bool Parser::ParseFormalParameters(bool first_restricted, parser::Parser::FormalParameterOptions &options) {
+    bool Parser::ParseFormalParameters(optional<Token> first_restricted, parser::Parser::FormalParameterOptions &options) {
 
         options.simple = true;
         options.params.clear();
@@ -765,16 +766,14 @@ namespace parser {
         DO(NextToken(&token))
         if (token.type_ == JsTokenType::Keyword && token.value_ == u"yield") {
             if (context_.strict_) {
-                string message = "StrictReservedWord";
-                UnexpectedToken(&token, &message);
+                DO(TolerateUnexpectedToken(&token, ParseMessages::StrictReservedWord))
             } else if (!context_.allow_yield) {
                 UnexpectedToken(&token);
                 return false;
             }
         } else if (token.type_ == JsTokenType::Identifier) {
             if (context_.strict_ && token.type_ == JsTokenType::Keyword && scanner_->IsStrictModeReservedWord(token.value_)) {
-                string message = "StrictReservedWord";
-                UnexpectedToken(&token, &message);
+                DO(TolerateUnexpectedToken(&token, ParseMessages::StrictReservedWord))
             } else {
                 if (context_.strict_ || token.value_ != u"let" || kind != VarKind::Var) {
                     UnexpectedToken(&token);
@@ -782,7 +781,7 @@ namespace parser {
                 }
             }
         } else if ((context_.is_module || context_.await) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {
-            UnexpectedToken(&token);
+            DO(TolerateUnexpectedToken(&token))
         }
 
         auto node = Alloc<Identifier>();
@@ -887,7 +886,7 @@ namespace parser {
                 } else if (value == u"try") {
                     DO(ParseTryStatement(statement))
                 } else if (value == u"var") {
-                    DO(ParseVariableDeclaration(statement))
+                    DO(ParseVariableStatement(statement))
                 } else if (value == u"while") {
                     DO(ParseWhileStatement(statement))
                 } else if (value == u"with") {
@@ -909,14 +908,46 @@ namespace parser {
     }
 
     template <typename NodePtr>
-    bool Parser::ParseVariableDeclaration(NodePtr &ptr) {
+    bool Parser::ParseVariableStatement(NodePtr &ptr) {
         auto marker = CreateNode();
-        auto node = Alloc<VariableDeclaration>();
-        node->kind = VarKind::Var;
-
         DO(ExpectKeyword(u"var"))
+
+        auto node = Alloc<VariableDeclaration>();
         DO(ParseVariableDeclarationList(false, node->declarations))
         DO(ConsumeSemicolon())
+
+        node->kind = VarKind::Var;
+        return Finalize(marker, node, ptr);
+    }
+
+    template <typename NodePtr>
+    bool Parser::ParseVariableDeclaration(bool in_for, NodePtr &ptr) {
+        auto marker = CreateNode();
+        auto node = Alloc<VariableDeclarator>();
+
+        Sp<SyntaxNode> id;
+        vector<Sp<SyntaxNode>> params;
+        DO(ParsePattern(params, VarKind::Var, id))
+
+        if (context_.strict_ && id->type == SyntaxNodeType::Identifier) {
+            auto identifier = dynamic_pointer_cast<Identifier>(id);
+            if (scanner_->IsRestrictedWord(identifier->name)) {
+                DO(TolerateError(ParseMessages::StrictVarName))
+            }
+        }
+
+        optional<Sp<Expression>> init;
+        if (Match(u'=')) {
+            DO(NextToken())
+            DO(IsolateCoverGrammar([this, &init] {
+                return ParseAssignmentExpression(*init);
+            }))
+        } else if (id->type != SyntaxNodeType::Identifier && !in_for) {
+            DO(Expect(u'='))
+        }
+
+        node->id = move(id);
+        node->init = init;
 
         return Finalize(marker, node, ptr);
     }
@@ -976,8 +1007,8 @@ namespace parser {
             DO(NextToken())
         }
 
-        std::optional<Sp<Identifier>> id;
-        Token first_restricted;
+        optional<Sp<Identifier>> id;
+        optional<Token> first_restricted;
         string message;
 
         if (!identifier_is_optional || !Match(u'(')) {
@@ -985,22 +1016,51 @@ namespace parser {
             DO(ParseVariableIdentifier(VarKind::Invalid, *id))
             if (context_.strict_) {
                 if (scanner_->IsRestrictedWord(token.value_)) {
-                    message = "StrictFunctionName";
+                    DO(TolerateUnexpectedToken(&token, ParseMessages::StrictFunctionName))
+                }
+            } else {
+                if (scanner_->IsRestrictedWord(token.value_)) {
                     first_restricted = token;
-                    UnexpectedToken(&token, &message);
-                } else if (scanner_->IsStrictModeReservedWord(token.value_)) {
+                    message = ParseMessages::StrictFunctionName;
+                } else {
                     first_restricted = token;
-                    message = "StrictReservedWord";
+                    message = ParseMessages::StrictReservedWord;
                 }
             }
         }
 
-//        bool prev_allow_await = context_.await;
-//        bool prev_allow_yield = context_.allow_yield;
-//        context_.await = is_async;
-//        context_.allow_yield = !is_generator;
+        bool prev_allow_await = context_.await;
+        bool prev_allow_yield = context_.allow_yield;
+        context_.await = is_async;
+        context_.allow_yield = !is_generator;
 
+        FormalParameterOptions options;
+        DO(ParseFormalParameters(first_restricted, options))
+        first_restricted = options.first_restricted;
+        if (!options.message.empty()) {
+            message = move(options.message);
+        }
 
+        bool prev_strict = context_.strict_;
+        bool prev_allow_strict_directive = context_.allow_strict_directive;
+        context_.allow_strict_directive = options.simple;
+
+        // TODO: pasre function source elements
+
+        if (context_.strict_ && first_restricted) {
+            Token temp = *first_restricted;
+            UnexpectedToken(&temp, message);
+            return false;
+        }
+        if (context_.strict_ && options.stricted) {
+            Token temp = *options.stricted;
+            DO(TolerateUnexpectedToken(&temp, message))
+        }
+
+        context_.strict_ = prev_strict;
+        context_.allow_strict_directive = prev_allow_strict_directive;
+        context_.await = prev_allow_await;
+        context_.allow_yield = prev_allow_yield;
 
         if (is_async) {
             auto node = Alloc<AsyncFunctionDeclaration>();
@@ -1410,16 +1470,15 @@ namespace parser {
 
             if (context_.strict_) {
                 if (scanner_->IsRestrictedWord(token.value_)) {
-                    message = "StrictFunctionName";
-                    UnexpectedToken(&token, &message);
+                    DO(TolerateUnexpectedToken(&token, ParseMessages::StrictFunctionName))
                 }
             } else {
                 if (scanner_->IsRestrictedWord(token.value_)) {
-                    message = "StrictFunctionName";
                     first_restricted = token;
+                    message = ParseMessages::StrictFunctionName;
                 } else if (scanner_->IsStrictModeReservedWord(token.value_)) {
                     first_restricted = token;
-                    message = "StrictReservedWord";
+                    message = ParseMessages::StrictReservedWord;
                 }
             }
         }
@@ -1592,8 +1651,7 @@ namespace parser {
         if (lookahead_.type_ == JsTokenType::Keyword) {
             if (lookahead_.value_ == u"export") {
                 if (context_.is_module) {
-                    string message = "IllegalExportDeclaration";
-                    UnexpectedToken(&lookahead_, &message);
+                    DO(TolerateUnexpectedToken(&lookahead_, ParseMessages::IllegalExportDeclaration))
                 }
                 DO(ParseExportDeclaration(statement))
             } else if (lookahead_.value_ == u"import") {
@@ -1602,7 +1660,7 @@ namespace parser {
                 } else {
                     if (!context_.is_module) {
                         string message = "IllegalImportDeclaration";
-                        UnexpectedToken(&lookahead_, &message);
+                        DO(TolerateUnexpectedToken(&lookahead_, ParseMessages::IllegalImportDeclaration))
                     }
                     DO(ParseImportDeclaration(statement))
                 }
@@ -1882,12 +1940,10 @@ namespace parser {
             if (directive_->directive == u"use strict") {
                 context_.strict_ = true;
                 if (first_restrict) {
-                    string message = "StrictOctalLiteral";
-                    UnexpectedToken(first_restrict.get(), &message);
+                    DO(TolerateUnexpectedToken(first_restrict.get(), ParseMessages::StrictOctalLiteral))
                 }
                 if (!context_.allow_strict_directive) {
-                    string message = "IllegalLanguageModeDirective";
-                    UnexpectedToken(&token, &message);
+                    DO(TolerateUnexpectedToken(&token, ParseMessages::IllegalLanguageModeDirective))
                 }
             } else {
                 if (!first_restrict && token.octal_) {
@@ -2056,7 +2112,7 @@ namespace parser {
                 FormalParameterOptions list;
                 if (ReinterpretAsCoverFormalsList(expr, list)) {
                     if (has_line_terminator_) {
-                        UnexpectedToken(&lookahead_);
+                        DO(TolerateUnexpectedToken(&lookahead_))
                     }
                     context_.first_cover_initialized_name_error.reset();
 
@@ -2087,10 +2143,13 @@ namespace parser {
                     bool expression = body->type != SyntaxNodeType::BlockStatement;
 
                     if (context_.strict_ && list.first_restricted) {
-                        // TODO: UnexpectedToken()
+                        Token temp = *list.first_restricted;
+                        UnexpectedToken(&temp, list.message);
+                        return false;
                     }
                     if (context_.strict_ && list.stricted) {
-                        // TODO: UnexpectedToken()
+                        Token temp = *list.stricted;
+                        DO(TolerateUnexpectedToken(&temp, list.message))
                     }
 
                     if (is_async) {
@@ -2116,18 +2175,16 @@ namespace parser {
 
                 if (MatchAssign()) {
                     if (!context_.is_assignment_target) {
-                        LogError("InvalidLHSInAssignment");
+                        DO(TolerateError(ParseMessages::InvalidLHSInAssignment))
                     }
 
                     if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
                         if (scanner_->IsRestrictedWord(id->name)) {
-                            string message = "StrictLHSAssignment";
-                            UnexpectedToken(&token, &message);
+                            DO(TolerateUnexpectedToken(&token, ParseMessages::StrictLHSAssignment))
                         }
                         if (scanner_->IsStrictModeReservedWord(id->name)) {
-                            string message = "StrictReservedWord";
-                            UnexpectedToken(&token, &message);
+                            DO(TolerateUnexpectedToken(&token, ParseMessages::StrictReservedWord))
                         }
                     }
 
@@ -2243,11 +2300,11 @@ namespace parser {
             if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
                 auto id = dynamic_pointer_cast<Identifier>(expr);
                 if (scanner_->IsRestrictedWord(id->name)) {
-                    LogError("StrictLHSPrefix");
+                    DO(TolerateError(ParseMessages::StrictLHSPrefix));
                 }
             }
             if (!context_.is_assignment_target) {
-                LogError("InvalidLHSInAssignment");
+                DO(TolerateError(ParseMessages::InvalidLHSInAssignment));
             }
             auto node = Alloc<UpdateExpression>();
             node->prefix = true;
@@ -2265,11 +2322,11 @@ namespace parser {
                     if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
                         if (scanner_->IsRestrictedWord(id->name)) {
-                            LogError("StrictLHSPrefix");
+                            DO(TolerateError(ParseMessages::StrictLHSPostfix))
                         }
                     }
                     if (!context_.is_assignment_target) {
-                        LogError("InvalidLHSInAssignment");
+                        DO(TolerateError(ParseMessages::InvalidLHSInAssignment))
                     }
                     context_.is_assignment_target = false;
                     context_.is_binding_element = false;
@@ -2316,7 +2373,7 @@ namespace parser {
             node->argument = expr;
             Finalize(marker, node, expr);
             if (context_.strict_ && node->operator_ == u"delete" && node->argument->type == SyntaxNodeType::Identifier) {
-                LogError("StrictDelete");
+                DO(TolerateError(ParseMessages::StrictDelete))
             }
             context_.is_assignment_target = false;
             context_.is_binding_element = false;
@@ -2652,7 +2709,7 @@ namespace parser {
                     DO(ParseArguments(node->arguments))
                 }
                 if (expr->type == SyntaxNodeType::Import && node->arguments.size() != 1) {
-                    LogError("BadImportCallArity");
+                    DO(TolerateError(ParseMessages::BadImportCallArity))
                 }
                 node->callee = expr;
                 Finalize(start_marker, node, expr);
@@ -2660,7 +2717,10 @@ namespace parser {
                     for (auto &i : node->arguments) {
                         DO(ReinterpretExpressionAsPattern(i))
                     }
-                    // TODO: Placefolder
+                    auto placeholder = Alloc<ArrowParameterPlaceHolder>();
+                    placeholder->params = node->arguments;
+                    placeholder->async = true;
+                    expr = move(placeholder);
                 }
             } else if (Match(u'[')) {
                 context_.is_binding_element = false;

@@ -3,6 +3,7 @@
 //
 
 #include "parser_common.h"
+#include "error_message.h"
 
 namespace parser {
 
@@ -60,37 +61,50 @@ namespace parser {
         error_handler_->CreateError(message, index, line, column);
     }
 
-    void ParserCommon::UnexpectedToken(const Token *token, const std::string *message) {
-        string msg = "UnexpectedToken";
-        if (message) {
-            msg = *message;
-        }
+    bool ParserCommon::TolerateError(const std::string &message) {
+        auto index = last_marker_.index;
+        auto line = last_marker_.line;
+        auto column = last_marker_.column + 1;
+        return error_handler_->TolerateError(message, index, line, column);
+    }
 
+    bool ParserCommon::TolerateUnexpectedToken(const Token *tok) {
+        UnexpectedToken(tok);
+        return error_handler_->GetTolerate();
+    }
+
+    bool ParserCommon::TolerateUnexpectedToken(const Token *tok, const std::string& message) {
+        UnexpectedToken(tok, message);
+        return error_handler_->GetTolerate();
+    }
+
+    void ParserCommon::UnexpectedToken(const Token *token) {
+        string msg = ParseMessages::UnexpectedToken;
         UString value;
-        if (token) {
-            if (!message) {
-                msg = (token->type_ == JsTokenType::EOF_) ? "UnexpectedEOS" :
-                      (token->type_ == JsTokenType::Identifier) ? "UnexpectedIdentifier" :
-                      (token->type_ == JsTokenType::NumericLiteral) ? "UnexpectedNumber" :
-                      (token->type_ == JsTokenType::StringLiteral) ? "UnexpectedString" :
-                      (token->type_ == JsTokenType::Template) ? "UnexpectedTemplate" :
-                      "UnexpectedToken";
 
-                if (token->type_ == JsTokenType::Keyword) {
-                    if (Scanner::IsFutureReservedWord(token->value_)) {
-                        msg = "UnexpectedReserved";
-                    } else if (context_.strict_ && Scanner::IsStrictModeReservedWord(token->value_)) {
-                        msg = "StrictReservedWord";
-                    }
-                }
+        msg = (token->type_ == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
+              (token->type_ == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
+              (token->type_ == JsTokenType::NumericLiteral) ? ParseMessages::UnexpectedNumber :
+              (token->type_ == JsTokenType::StringLiteral) ? ParseMessages::UnexpectedString :
+              (token->type_ == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
+              ParseMessages::UnexpectedToken;
+
+        if (token->type_ == JsTokenType::Keyword) {
+            if (Scanner::IsFutureReservedWord(token->value_)) {
+                msg = ParseMessages::UnexpectedReserved;
+            } else if (context_.strict_ && Scanner::IsStrictModeReservedWord(token->value_)) {
+                msg = ParseMessages::StrictReservedWord;
             }
-
-            value = token->value_;
-        } else {
-            value = utils::To_UTF16("ILLEGAL");
         }
+        value = token->value_;
 
         LogError(msg);
+    }
+
+    void ParserCommon::UnexpectedToken(const Token *token, const std::string& message) {
+//        UString value;
+
+        LogError(message);
     }
 
     void ParserCommon::DecorateToken(Token& token) {
