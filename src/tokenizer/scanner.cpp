@@ -5,6 +5,7 @@
 #include <iostream>
 #include "scanner.h"
 #include "../macros.h"
+#include "../parser/error_message.h"
 
 using namespace std;
 
@@ -29,11 +30,24 @@ void Scanner::RestoreState(const Scanner::ScannerState &state) {
     line_start_ = state.line_start_;
 }
 
-void Scanner::UnexpectedToken() {
-    error_handler_->CreateError("<Unexpected Token>", "", index_, line_number_, index_ - line_start_ + 1);
+void Scanner::ThrowUnexpectedToken() {
+    ThrowUnexpectedToken(ParseMessages::UnexpectedTokenIllegal);
 }
 
-bool Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &result) {
+void Scanner::ThrowUnexpectedToken(const std::string &message) {
+    throw error_handler_->CreateError(message, index_, line_number_, index_ - line_start_ + 1);
+}
+
+void Scanner::TolerateUnexpectedToken() {
+    TolerateUnexpectedToken(ParseMessages::UnexpectedTokenIllegal);
+}
+
+void Scanner::TolerateUnexpectedToken(const std::string &message) {
+    auto error = error_handler_->CreateError(message, index_, line_number_, index_ - line_start_ + 1);
+    error_handler_->TolerateError(error);
+}
+
+void Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &result) {
     std::uint32_t start = 0;
     SourceLocation loc;
 
@@ -63,7 +77,7 @@ bool Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &
             }
             ++line_number_;
             line_start_ = index_;
-            return true;
+            return;
         }
 
     }
@@ -78,11 +92,9 @@ bool Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &
         };
         result.push_back(comment);
     }
-
-    return true;
 }
 
-bool Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
+void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
     std::uint32_t start = 0;
     SourceLocation loc;
 
@@ -117,7 +129,8 @@ bool Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
                         make_pair(start, index_),
                         loc,
                     };
-                    return true;
+                    result.push_back(comment);
+                    return;
                 }
             }
 
@@ -141,11 +154,10 @@ bool Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
         result.push_back(comment);
     }
 
-    this->UnexpectedToken();
-    return true;
+    TolerateUnexpectedToken();
 }
 
-bool Scanner::ScanComments(std::vector<Comment> &result) {
+void Scanner::ScanComments(std::vector<Comment> &result) {
     bool start = index_ == 0;
 
     while (!IsEnd()) {
@@ -167,7 +179,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
             if (ch == 0x2F) {
                 index_ += 2;
                 vector<Comment> comments;
-                DO(SkipSingleLineComment(2, comments));
+                SkipSingleLineComment(2, comments);
                 if (track_comment_) {
                     result.insert(result.end(), comments.begin(), comments.end());
                 }
@@ -175,7 +187,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
             } else if (ch == 0x2A) {  // U+002A is '*'
                 index_ += 2;
                 vector<Comment> comments;
-                DO(SkipMultiLineComment(comments));
+                SkipMultiLineComment(comments);
                 if (track_comment_) {
                     result.insert(result.end(), comments.begin(), comments.end());
                 }
@@ -185,7 +197,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
                     // '-->' is a single-line comment
                     index_ += 3;
                     vector<Comment> comments;
-                    DO(SkipSingleLineComment(3, comments))
+                    SkipSingleLineComment(3, comments);
                     if (track_comment_) {
                         result.insert(result.end(), comments.begin(), comments.end());
                     }
@@ -196,7 +208,7 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
                 if (source_->substr(index_ + 1, index_ + 4) == u"!--") {
                     index_ += 4; // `<!--`
                     vector<Comment> comments;
-                    DO(SkipSingleLineComment(4, comments))
+                    SkipSingleLineComment(4, comments);
                     if (track_comment_) {
                         result.insert(result.end(), comments.begin(), comments.end());
                     }
@@ -211,8 +223,6 @@ bool Scanner::ScanComments(std::vector<Comment> &result) {
         }
 
     }
-
-    return true;
 }
 
 char32_t Scanner::CodePointAt(std::uint32_t index, std::uint32_t* size) const {
@@ -348,12 +358,12 @@ bool Scanner::ScanHexEscape(char16_t ch, char32_t& code) {
     return true;
 }
 
-bool Scanner::ScanUnicodeCodePointEscape(char32_t& code) {
+char32_t Scanner::ScanUnicodeCodePointEscape() {
     char16_t ch = (*source_)[index_];
+    char32_t code = 0;
 
     if (ch == '}') {
-        this->UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     while (!IsEnd()) {
@@ -365,25 +375,26 @@ bool Scanner::ScanUnicodeCodePointEscape(char32_t& code) {
     }
 
     if (code > 0x10FFFF || ch != '}') {
-        this->UnexpectedToken();
+        ThrowUnexpectedToken();
     }
 
-    return true;
+    return code;
 }
 
-bool Scanner::GetIdentifier(UString &result) {
+UString Scanner::GetIdentifier() {
     std::uint32_t start = index_++;
+    UString result;
 
     while (!IsEnd()) {
         auto ch = (*source_)[index_];
         if (ch == 0x5C) {
             // Blackslash (U+005C) marks Unicode escape sequence.
             index_ = start;
-            return GetComplexIdentifier(result);
+            return GetComplexIdentifier();
         } else if (ch >= 0xD800 && ch < 0xDFFF) {
             // Need to handle surrogate pairs.
             index_ = start;
-            return GetComplexIdentifier(result);
+            return GetComplexIdentifier();
         }
         if (utils::IsIdentifierPart(ch)) {
             ++index_;
@@ -393,30 +404,29 @@ bool Scanner::GetIdentifier(UString &result) {
     }
 
     result.insert(result.end(), source_->begin() + start, source_->begin() + index_);
-
-    return true;
+    return result;
 }
 
-bool Scanner::GetComplexIdentifier(UString &result) {
+UString Scanner::GetComplexIdentifier() {
     std::uint32_t cp_size_;
     auto cp = CodePointAt(index_, &cp_size_);
     index_ += cp_size_;
+
+    UString result;
 
     // '\u' (U+005C, U+0075) denotes an escaped character.
     char32_t ch = 0;
     if (cp == 0x5C) {
         if ((*source_)[index_] != 0x75) {
-            this->UnexpectedToken();
-            return false;
+            ThrowUnexpectedToken();
         }
         ++index_;
         if ((*source_)[index_] == '{') {
             ++index_;
-            DO(ScanUnicodeCodePointEscape(ch))
+            ch = ScanUnicodeCodePointEscape();
         } else {
             if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierStart(ch)) {
-                this->UnexpectedToken();
-                return false;
+                ThrowUnexpectedToken();
             }
         }
         result.push_back(ch);
@@ -439,24 +449,22 @@ bool Scanner::GetComplexIdentifier(UString &result) {
         if (cp == 0x5C) {
             result = result.substr(0, result.size() - 1);
             if ((*source_)[index_] != 0x75) {
-                this->UnexpectedToken();
-                return false;
+                ThrowUnexpectedToken();
             }
             ++index_;
             if ((*source_)[index_] == '{') {
                 ++index_;
-                DO(ScanUnicodeCodePointEscape(ch))
+                ch = ScanUnicodeCodePointEscape();
             } else {
                 if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierPart(ch)) {
-                    this->UnexpectedToken();
-                    return false;
+                    ThrowUnexpectedToken();
                 }
             }
             result.push_back(ch);
         }
     }
 
-    return true;
+    return result;
 }
 
 bool Scanner::OctalToDecimal(char16_t ch, std::uint32_t &result) {
@@ -477,14 +485,15 @@ bool Scanner::OctalToDecimal(char16_t ch, std::uint32_t &result) {
     return octal;
 }
 
-bool Scanner::ScanIdentifier(Token &tok) {
+Token Scanner::ScanIdentifier() {
     auto start = index_;
+    Token tok;
 
     UString id;
     if ((*source_)[start] == 0x5C) {
-        DO(GetComplexIdentifier(id))
+        id = GetComplexIdentifier();
     } else {
-        DO(GetIdentifier(id))
+        id = GetIdentifier();
     }
 
     if (id.size() == 1) {
@@ -502,7 +511,7 @@ bool Scanner::ScanIdentifier(Token &tok) {
     if (tok.type_ != JsTokenType::Identifier && (start + id.size() != index_)) {
         auto restore = index_;
         index_ = start;
-        error_handler_->CreateError("InvalidEscapedReservedWord", index_, line_number_, index_ - line_start_);
+        TolerateUnexpectedToken(ParseMessages::InvalidEscapedReservedWord);
         index_ = restore;
     }
 
@@ -511,10 +520,10 @@ bool Scanner::ScanIdentifier(Token &tok) {
     tok.line_number_ = line_number_;
     tok.line_start_ = line_start_;
 
-    return true;
+    return tok;
 }
 
-bool Scanner::ScanPunctuator(Token &tok) {
+Token Scanner::ScanPunctuator() {
     auto start = index_;
 
     char16_t ch = (*source_)[index_];
@@ -597,21 +606,30 @@ bool Scanner::ScanPunctuator(Token &tok) {
     }
 
     if (index_ == start) {
-        this->UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
-    tok.type_ = JsTokenType::Punctuator;
-    tok.value_ = str;
-    tok.line_start_ = line_start_;
-    tok.line_number_ = line_number_;
-    tok.range_ = make_pair(start, index_);
+    return {
+        JsTokenType::Punctuator,
+        str,
+        SourceLocation(),
+        line_start_,
+        line_number_,
+        make_pair(start, index_)
+    };
 
-    return true;
+//    tok.type_ = JsTokenType::Punctuator;
+//    tok.value_ = str;
+//    tok.line_start_ = line_start_;
+//    tok.line_number_ = line_number_;
+//    tok.range_ = make_pair(start, index_);
+//
+//    return true;
 }
 
-bool Scanner::ScanHexLiteral(std::uint32_t start, Token &tok) {
+Token Scanner::ScanHexLiteral(std::uint32_t start) {
     UString num;
+    Token tok;
 
     while (!IsEnd()) {
         if (!utils::IsHexDigit(source_->at(index_))) {
@@ -621,13 +639,11 @@ bool Scanner::ScanHexLiteral(std::uint32_t start, Token &tok) {
     }
 
     if (num.size() == 0) {
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     if (utils::IsIdentifierStart(source_->at(index_))) {
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     tok.type_ = JsTokenType::Punctuator;
@@ -636,10 +652,10 @@ bool Scanner::ScanHexLiteral(std::uint32_t start, Token &tok) {
     tok.line_number_ = line_number_;
     tok.range_ = make_pair(start, index_);
 
-    return true;
+    return tok;
 }
 
-bool Scanner::ScanBinaryLiteral(std::uint32_t start, Token &tok) {
+Token Scanner::ScanBinaryLiteral(std::uint32_t start) {
     UString num;
     char16_t ch;
 
@@ -653,29 +669,35 @@ bool Scanner::ScanBinaryLiteral(std::uint32_t start, Token &tok) {
 
     if (num.empty()) {
         // only 0b or 0B
-        this->UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     if (!IsEnd()) {
         ch = (*source_)[index_++];
         /* istanbul ignore else */
         if (utils::IsIdentifierStart(ch) || utils::IsDecimalDigit(ch)) {
-            this->UnexpectedToken();
-            return false;
+            ThrowUnexpectedToken();
         }
     }
+//    Token tok;
+//
+//    tok.type_ = JsTokenType::NumericLiteral;
+//    tok.value_ = num;
+//    tok.line_number_ = line_number_;
+//    tok.line_start_ = line_start_;
+//    tok.range_ = make_pair(start, index_);
 
-    tok.type_ = JsTokenType::NumericLiteral;
-    tok.value_ = num;
-    tok.line_number_ = line_number_;
-    tok.line_start_ = line_start_;
-    tok.range_ = make_pair(start, index_);
-
-    return true;
+    return {
+        JsTokenType::NumericLiteral,
+        num,
+        SourceLocation(),
+        line_number_,
+        line_start_,
+        make_pair(start, index_),
+    };
 }
 
-bool Scanner::ScanOctalLiteral(char16_t prefix, std::uint32_t start, Token &tok) {
+Token Scanner::ScanOctalLiteral(char16_t prefix, std::uint32_t start) {
     UString num;
     bool octal = false;
 
@@ -695,23 +717,29 @@ bool Scanner::ScanOctalLiteral(char16_t prefix, std::uint32_t start, Token &tok)
 
     if (!octal && num.size() == 0) {
         // only 0o or 0O
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     if (utils::IsIdentifierStart((*source_)[index_]) || utils::IsDecimalDigit((*source_)[index_])) {
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
-    tok.type_ = JsTokenType::NumericLiteral;
-    tok.value_ = num;
-    tok.octal_ = octal;
-    tok.line_number_ = line_number_;
-    tok.line_start_ = line_start_;
-    tok.range_ = make_pair(start, index_);
+//    Token tok;
+//    tok.type_ = JsTokenType::NumericLiteral;
+//    tok.value_ = num;
+//    tok.octal_ = octal;
+//    tok.line_number_ = line_number_;
+//    tok.line_start_ = line_start_;
+//    tok.range_ = make_pair(start, index_);
 
-    return true;
+    return {
+        JsTokenType::NumericLiteral,
+        num,
+        SourceLocation(),
+        line_number_,
+        line_start_,
+        make_pair(start, index_),
+    };
 }
 
 bool Scanner::IsImplicitOctalLiteral() {
@@ -730,12 +758,12 @@ bool Scanner::IsImplicitOctalLiteral() {
     return true;
 }
 
-bool Scanner::ScanNumericLiteral(Token &tok) {
+Token Scanner::ScanNumericLiteral() {
     auto start = index_;
     char16_t ch = (*source_)[start];
     if (!(utils::IsDecimalDigit(ch) || (ch == '.'))) {
-        error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
-        return false;
+        auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
+        throw err;
     }
 
     UString num;
@@ -750,19 +778,19 @@ bool Scanner::ScanNumericLiteral(Token &tok) {
         if (num[0] == '0') {
             if (ch == 'x' || ch == 'X') {
                 ++index_;
-                return ScanHexLiteral(start, tok);
+                return ScanHexLiteral(start);
             }
             if (ch == 'b' || ch == 'B') {
                 ++index_;
-                return ScanBinaryLiteral(start, tok);
+                return ScanBinaryLiteral(start);
             }
             if (ch == 'o' || ch == 'O') {
-                return ScanOctalLiteral(ch, start, tok);
+                return ScanOctalLiteral(ch, start);
             }
 
             if (ch && utils::IsOctalDigit(ch)) {
                 if (IsImplicitOctalLiteral()) {
-                    return ScanOctalLiteral(ch, start, tok);
+                    return ScanOctalLiteral(ch, start);
                 }
             }
         }
@@ -793,32 +821,37 @@ bool Scanner::ScanNumericLiteral(Token &tok) {
                 num.push_back(source_->at(index_++));
             }
         } else {
-            UnexpectedToken();
-            return false;
+            ThrowUnexpectedToken();
         }
     }
 
     if (utils::IsIdentifierStart(source_->at(index_))) {
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
-    tok.type_ = JsTokenType::NumericLiteral;
-    tok.value_ = num;
-    tok.line_number_ = line_number_;
-    tok.line_start_ = line_start_;
-    tok.range_ = make_pair(start, index_);
+//    tok.type_ = JsTokenType::NumericLiteral;
+//    tok.value_ = num;
+//    tok.line_number_ = line_number_;
+//    tok.line_start_ = line_start_;
+//    tok.range_ = make_pair(start, index_);
 
-    return true;
+    return {
+        JsTokenType::NumericLiteral,
+        num,
+        SourceLocation(),
+        line_number_,
+        line_start_,
+        make_pair(start, index_),
+    };
 }
 
-bool Scanner::ScanStringLiteral(Token &tok) {
+Token Scanner::ScanStringLiteral() {
     auto start = index_;
     char16_t quote = source_->at(start);
 
     if (!(quote == '\'' || quote == '"')) {
-        error_handler_->CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
-        return false;
+        auto err = error_handler_->CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
+        throw err;
     }
 
     ++index_;
@@ -839,15 +872,13 @@ bool Scanner::ScanStringLiteral(Token &tok) {
                     case 'u':
                         if (source_->at(index_) == '{') {
                             ++index_;
-                            char32_t tmp;
-                            DO(ScanUnicodeCodePointEscape(tmp))
+                            char32_t tmp = ScanUnicodeCodePointEscape();
 
                             utils::AddU32ToUtf16(str, tmp);
                         } else {
                             char32_t unescapedChar;
                             if (!ScanHexEscape(ch, unescapedChar)) {
-                                UnexpectedToken();
-                                return false;
+                                ThrowUnexpectedToken();
                             }
 
                             utils::AddU32ToUtf16(str, unescapedChar);
@@ -856,8 +887,7 @@ bool Scanner::ScanStringLiteral(Token &tok) {
 
                     case 'x':
                         if (!ScanHexEscape(ch, unescaped)) {
-                            UnexpectedToken();
-                            return false;
+                            ThrowUnexpectedToken();
                         }
                         utils::AddU32ToUtf16(str, unescaped);
                         break;
@@ -883,7 +913,7 @@ bool Scanner::ScanStringLiteral(Token &tok) {
                     case '8':
                     case '9':
                         str += ch;
-                        UnexpectedToken();
+                        TolerateUnexpectedToken();
                         break;
 
                     default:
@@ -913,10 +943,10 @@ bool Scanner::ScanStringLiteral(Token &tok) {
 
     if (quote != 0) {
         index_ = start;
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
+    Token tok;
     tok.type_ = JsTokenType::StringLiteral;
     tok.value_ = move(str);
     tok.octal_ = octal;
@@ -924,10 +954,10 @@ bool Scanner::ScanStringLiteral(Token &tok) {
     tok.line_start_ = line_start_;
     tok.range_ = make_pair(start, index_);
 
-    return true;
+    return tok;
 }
 
-bool Scanner::ScanTemplate(Token &tok) {
+Token Scanner::ScanTemplate() {
     char16_t cooked;
     bool terminated = false;
     std::uint32_t start = index_;
@@ -969,8 +999,7 @@ bool Scanner::ScanTemplate(Token &tok) {
                     case 'u':
                         if ((*source_)[index_] == '{') {
                             ++index_;
-                            char32_t tmp;
-                            DO(ScanUnicodeCodePointEscape(tmp))
+                            char32_t tmp = ScanUnicodeCodePointEscape();
                             cooked = tmp;
                         } else {
                             auto restore = index_;
@@ -986,8 +1015,7 @@ bool Scanner::ScanTemplate(Token &tok) {
                     case 'x':
                         char32_t unescaped;
                         if (!ScanHexEscape(ch, unescaped)) {
-                            UnexpectedToken();
-                            return false;
+                            ThrowUnexpectedToken();
                         }
                         cooked = unescaped;
                         break;
@@ -1005,14 +1033,12 @@ bool Scanner::ScanTemplate(Token &tok) {
                         if (ch == '0') {
                             if (utils::IsDecimalDigit(source_->at(index_))) {
                                 // Illegal: \01 \02 and so on
-                                UnexpectedToken();
-                                return false;
+                                ThrowUnexpectedToken();
                             }
                             cooked += '\0';
                         } else if (utils::IsOctalDigit(ch)) {
                             // Illegal: \1 \2
-                            UnexpectedToken();
-                            return false;
+                            ThrowUnexpectedToken();
                         } else {
                             cooked = ch;
                         }
@@ -1038,14 +1064,14 @@ bool Scanner::ScanTemplate(Token &tok) {
     }
 
     if (!terminated) {
-        UnexpectedToken();
-        return false;
+        ThrowUnexpectedToken();
     }
 
     if (!head) {
         curly_stack_.pop();
     }
 
+    Token tok;
     tok.type_ = JsTokenType::Template;
     tok.value_ = source_->substr(start + 1, index_ - rawOffset);
     tok.line_number_ = line_number_;
@@ -1055,59 +1081,60 @@ bool Scanner::ScanTemplate(Token &tok) {
     tok.head_ = head;
     tok.tail_ = tail;
 
-    return true;
+    return tok;
 }
 
-bool Scanner::Lex(Token &tok) {
+Token Scanner::Lex() {
     if (IsEnd()) {
+        Token tok;
         tok.type_ = JsTokenType::EOF_;
         tok.line_number_ = line_number_;
         tok.line_start_ = line_start_;
         tok.range_ = make_pair(index_, index_);
-        return true;
+        return tok;
     }
 
     char16_t cp = (*source_)[index_];
 
     if (utils::IsIdentifierStart(cp)) {
-        return ScanIdentifier(tok);
+        return ScanIdentifier();
     }
     // Very common: ( and ) and ;
     if (cp == 0x28 || cp == 0x29 || cp == 0x3B) {
-        return ScanPunctuator(tok);
+        return ScanPunctuator();
     }
 
     // String literal starts with single quote (U+0027) or double quote (U+0022).
     if (cp == 0x27 || cp == 0x22) {
-        return ScanStringLiteral(tok);
+        return ScanStringLiteral();
     }
 
     // Dot (.) U+002E can also start a floating-point number, hence the need
     // to check the next character.
     if (cp == 0x2E) {
         if (utils::IsDecimalDigit((*source_)[index_ + 1])) {
-            return ScanNumericLiteral(tok);
+            return ScanNumericLiteral();
         }
-        return ScanPunctuator(tok);
+        return ScanPunctuator();
     }
 
     if (utils::IsDecimalDigit(cp)) {
-        return ScanNumericLiteral(tok);
+        return ScanNumericLiteral();
     }
 
     // Template literals start with ` (U+0060) for template head
     // or } (U+007D) for template middle or template tail.
     if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == u"${")) {
-        return ScanTemplate(tok);
+        return ScanTemplate();
     }
 
     // Possible identifier start in a surrogate pair.
     if (cp >= 0xD800 && cp < 0xDFFF) {
         if (utils::IsIdentifierStart(CodePointAt(index_))) {
-            return ScanIdentifier(tok);
+            return ScanIdentifier();
         }
     }
 
 
-    return ScanPunctuator(tok);
+    return ScanPunctuator();
 }

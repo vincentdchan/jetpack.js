@@ -357,8 +357,7 @@ namespace parser {
             auto state = scanner_->SaveState();
             std::vector<Comment> comments;
             scanner_->ScanComments(comments);
-            Token next;
-            scanner_->Lex(next);
+            Token next = scanner_->Lex();
             scanner_->RestoreState(state);
 
             match = (state.line_number_ == next.line_number_) && (next.type_ == JsTokenType::Keyword) && (next.value_ == u"function");

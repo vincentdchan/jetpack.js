@@ -43,7 +43,11 @@ public:
     ScannerState SaveState();
     void RestoreState(const ScannerState& state);
 
-    void UnexpectedToken();
+    void ThrowUnexpectedToken();
+    void ThrowUnexpectedToken(const std::string& message);
+
+    void TolerateUnexpectedToken();
+    void TolerateUnexpectedToken(const std::string& message);
 
     inline bool IsEnd() const {
         return index_ >= Length();
@@ -69,33 +73,33 @@ public:
         return line_start_;
     }
 
-    bool SkipSingleLineComment(std::uint32_t offset, std::vector<Comment>& result);
-    bool SkipMultiLineComment(std::vector<Comment>& result);
-    bool ScanComments(std::vector<Comment>& result);
+    void SkipSingleLineComment(std::uint32_t offset, std::vector<Comment>& result);
+    void SkipMultiLineComment(std::vector<Comment>& result);
+    void ScanComments(std::vector<Comment>& result);
     static bool IsFutureReservedWord(const UString& str_);
     static bool IsStrictModeReservedWord(const UString& str_);
     static bool IsRestrictedWord(const UString& str_);
     static bool IsKeyword(const UString& str_);
     bool ScanHexEscape(char16_t ch, char32_t& result);
-    bool ScanUnicodeCodePointEscape(char32_t& ch);
-    bool GetIdentifier(UString& result);
-    bool GetComplexIdentifier(UString& result);
+    char32_t ScanUnicodeCodePointEscape();
+    UString GetIdentifier();
+    UString GetComplexIdentifier();
     bool OctalToDecimal(char16_t ch, std::uint32_t& result);
 
-    bool ScanIdentifier(Token& tok);
-    bool ScanPunctuator(Token& tok);
-    bool ScanHexLiteral(std::uint32_t index, Token& tok);
-    bool ScanBinaryLiteral(std::uint32_t index, Token& tok);
-    bool ScanOctalLiteral(char16_t prefix, std::uint32_t index, Token& tok);
+    Token ScanIdentifier();
+    Token ScanPunctuator();
+    Token ScanHexLiteral(std::uint32_t index);
+    Token ScanBinaryLiteral(std::uint32_t index);
+    Token ScanOctalLiteral(char16_t prefix, std::uint32_t index);
     bool IsImplicitOctalLiteral();
-    bool ScanNumericLiteral(Token& tok);
-    bool ScanStringLiteral(Token& tok);
-    bool ScanTemplate(Token& tok);
+    Token ScanNumericLiteral();
+    Token ScanStringLiteral();
+    Token ScanTemplate();
     bool TestRegExp(const UString& pattern, const UString& flags, UString& regex);
     bool ScanRegExpBody(UString& result);
     bool ScanRegExpFlags(UString& result);
     bool ScanRegExp(Token& tok);
-    bool Lex(Token& tok);
+    Token Lex();
 
     char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
 

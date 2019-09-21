@@ -10,8 +10,7 @@ namespace parser {
         auto state = scanner_->SaveState();
         std::vector<Comment> comments;
         scanner_->ScanComments(comments);
-        Token next;
-        DO(scanner_->Lex(next))
+        Token next = scanner_->Lex();
         scanner_->RestoreState(state);
 
         return (next.type_ == JsTokenType::Identifier) ||
@@ -42,8 +41,7 @@ namespace parser {
         if (match) {
             auto state = scanner_->SaveState();
             std::vector<Comment> comments;
-            Token next;
-            scanner_->Lex(next);
+            Token next = scanner_->Lex();
             scanner_->ScanComments(comments);
             scanner_->RestoreState(state);
             match = (next.type_ == JsTokenType::Punctuator) && (next.value_ == u"(");

@@ -152,8 +152,7 @@ namespace parser {
             start_marker_.column = scanner_->Index() - scanner_->LineStart();
         }
 
-        Token next;
-        scanner_->Lex(next);
+        Token next = scanner_->Lex();
 
         has_line_terminator_ = token.line_number_ != next.line_number_;
 
