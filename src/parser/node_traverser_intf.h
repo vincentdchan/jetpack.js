@@ -254,6 +254,10 @@ public:
 
     virtual void TraverseAfter(const Sp<TemplateElement>& node) {}
 
+    virtual bool TraverseBefore(const Sp<TemplateLiteral>& node) { return true; }
+
+    virtual void TraverseAfter(const Sp<TemplateLiteral>& node) {}
+
     virtual bool TraverseBefore(const Sp<ThisExpression>& node) { return true; }
 
     virtual void TraverseAfter(const Sp<ThisExpression>& node) {}

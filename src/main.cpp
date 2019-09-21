@@ -31,14 +31,14 @@ int main(int argc, char** argv) {
     std::cout << utils::To_UTF8(*src) << std::endl;
 
     ParserCommon::Config config;
-    Sp<Module> module_;
     Parser parser(src, config);
-    if (!parser.ParseModule(module_)) {
-        auto err_handler = parser.ErrorHandler();
-        std::cout << "Parse completed with " << err_handler->Count() << " errors." << std::endl;
-        err_handler->PrintAllErrors();
-        return 1;
-    }
+    Sp<Module> module_= parser.ParseModule();
+//    if (!parser.ParseModule(module_)) {
+//        auto err_handler = parser.ErrorHandler();
+//        std::cout << "Parse completed with " << err_handler->Count() << " errors." << std::endl;
+//        err_handler->PrintAllErrors();
+//        return 1;
+//    }
     auto json_result = dumper::AstToJson::Dump(module_);
     std::cout << json_result.dump(2) << std::endl;
     return 0;

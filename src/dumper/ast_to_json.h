@@ -357,6 +357,11 @@ namespace dumper {
                     return Dump(child);
                 }
 
+                case SyntaxNodeType::TemplateLiteral: {
+                    auto child = std::dynamic_pointer_cast<TemplateLiteral>(node);
+                    return Dump(child);
+                }
+
                 case SyntaxNodeType::ThisExpression: {
                     auto child = std::dynamic_pointer_cast<ThisExpression>(node);
                     return Dump(child);
@@ -1201,6 +1206,17 @@ namespace dumper {
         static json Dump(const Sp<TemplateElement>& node) {
             json result = json::object();
             result["type"] = "TemplateElement";
+            DumpBaseInfo(result, node);
+            result["cooked"] = utils::To_UTF8(node->cooked);
+            result["raw"] = utils::To_UTF8(node->raw);
+            result["tail"] = node->tail;
+
+            return result;
+        }
+
+        static json Dump(const Sp<TemplateLiteral>& node) {
+            json result = json::object();
+            result["type"] = "TemplateLiteral";
             DumpBaseInfo(result, node);
             json array_quasis = json::array();
 

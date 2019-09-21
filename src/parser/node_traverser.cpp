@@ -650,6 +650,13 @@ void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {
             auto child = std::dynamic_pointer_cast<TemplateElement>(node);
             if(!traverser_->TraverseBefore(child)) return;
 
+            break;
+        }
+
+        case SyntaxNodeType::TemplateLiteral: {
+            auto child = std::dynamic_pointer_cast<TemplateLiteral>(node);
+            if(!traverser_->TraverseBefore(child)) return;
+
             for (auto i = child->expressions.rbegin(); i != child->expressions.rend(); i++) {
                 Push(*i);
             }
@@ -1144,6 +1151,12 @@ void NodeTraverser::TraverseNodeAfter_(const Sp<SyntaxNode> &node) {
 
         case SyntaxNodeType::TemplateElement: {
             auto child = std::dynamic_pointer_cast<TemplateElement>(node);
+            traverser_->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TemplateLiteral: {
+            auto child = std::dynamic_pointer_cast<TemplateLiteral>(node);
             traverser_->TraverseAfter(child);
             break;
         }

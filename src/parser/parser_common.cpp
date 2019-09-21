@@ -54,57 +54,75 @@ namespace parser {
         };
     }
 
-    void ParserCommon::LogError(const std::string &message) {
-        auto index = last_marker_.index;
-        auto line = last_marker_.line;
-        auto column = last_marker_.column + 1;
-        error_handler_->CreateError(message, index, line, column);
+    void ParserCommon::TolerateError(const std::string &message) {
+        ParseError error;
+        error.msg_ = message;
+        error.index_ = last_marker_.index;
+        error.line_ = last_marker_.line ;
+        error.col_ = last_marker_.column + 1;
+        error_handler_->TolerateError(error);
     }
 
-    bool ParserCommon::TolerateError(const std::string &message) {
-        auto index = last_marker_.index;
-        auto line = last_marker_.line;
-        auto column = last_marker_.column + 1;
-        return error_handler_->TolerateError(message, index, line, column);
-    }
-
-    bool ParserCommon::TolerateUnexpectedToken(const Token *tok) {
+    void ParserCommon::TolerateUnexpectedToken(const Token& tok) {
         UnexpectedToken(tok);
-        return error_handler_->GetTolerate();
     }
 
-    bool ParserCommon::TolerateUnexpectedToken(const Token *tok, const std::string& message) {
+    void ParserCommon::TolerateUnexpectedToken(const Token& tok, const std::string& message) {
         UnexpectedToken(tok, message);
-        return error_handler_->GetTolerate();
     }
 
-    void ParserCommon::UnexpectedToken(const Token *token) {
+    ParseError ParserCommon::UnexpectedToken(const Token &token) {
         string msg = ParseMessages::UnexpectedToken;
         UString value;
 
-        msg = (token->type_ == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
-              (token->type_ == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
-              (token->type_ == JsTokenType::NumericLiteral) ? ParseMessages::UnexpectedNumber :
-              (token->type_ == JsTokenType::StringLiteral) ? ParseMessages::UnexpectedString :
-              (token->type_ == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
+        msg = (token.type_ == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
+              (token.type_ == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
+              (token.type_ == JsTokenType::NumericLiteral) ? ParseMessages::UnexpectedNumber :
+              (token.type_ == JsTokenType::StringLiteral) ? ParseMessages::UnexpectedString :
+              (token.type_ == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
               ParseMessages::UnexpectedToken;
 
-        if (token->type_ == JsTokenType::Keyword) {
-            if (Scanner::IsFutureReservedWord(token->value_)) {
+        if (token.type_ == JsTokenType::Keyword) {
+            if (Scanner::IsFutureReservedWord(token.value_)) {
                 msg = ParseMessages::UnexpectedReserved;
-            } else if (context_.strict_ && Scanner::IsStrictModeReservedWord(token->value_)) {
+            } else if (context_.strict_ && Scanner::IsStrictModeReservedWord(token.value_)) {
                 msg = ParseMessages::StrictReservedWord;
             }
         }
-        value = token->value_;
+        value = token.value_;
 
-        LogError(msg);
+        return UnexpectedToken(token, msg);
     }
 
-    void ParserCommon::UnexpectedToken(const Token *token, const std::string& message) {
-//        UString value;
+    ParseError ParserCommon::UnexpectedToken(const Token &token, const std::string& message) {
+        if (token.line_number_ > 0) {
+            uint32_t index = token.line_start_;
+            uint32_t line = token.line_number_;
+            uint32_t lastMarkerLineStart = last_marker_.index - last_marker_.column;
+            uint32_t column = token.line_start_ - lastMarkerLineStart + 1;
+            return error_handler_->CreateError(message, index, line, column);
+        } else {
+            uint32_t index = token.line_start_;
+            uint32_t line = token.line_number_;
+            uint32_t column = last_marker_.column + 1;
+            return error_handler_->CreateError(message, index, line, column);
+        }
+    }
 
-        LogError(message);
+    void ParserCommon::ThrowError(const std::string &message) {
+        auto index = last_marker_.index;
+        auto line = last_marker_.line;
+        auto column = last_marker_.column + 1;
+        ParseError err = error_handler_->CreateError(message, index, line, column);
+        throw err;
+    }
+
+    void ParserCommon::ThrowUnexpectedToken(const Token& tok) {
+        throw UnexpectedToken(tok);
+    }
+
+    void ParserCommon::ThrowUnexpectedToken(const Token& tok, const std::string &message) {
+        throw UnexpectedToken(tok, message);
     }
 
     void ParserCommon::DecorateToken(Token& token) {
@@ -119,14 +137,14 @@ namespace parser {
         };
     }
 
-    bool ParserCommon::NextToken(Token *result) {
+    void ParserCommon::NextToken(Token *result) {
         Token token = lookahead_;
 
         last_marker_.index = scanner_->Index();
         last_marker_.line = scanner_->LineNumber();
         last_marker_.column = scanner_->Column();
 
-        DO(CollectComments())
+        CollectComments();
 
         if (scanner_->Index() != start_marker_.index) {
             start_marker_.index = scanner_->Index();
@@ -135,7 +153,7 @@ namespace parser {
         }
 
         Token next;
-        DO(scanner_->Lex(next))
+        scanner_->Lex(next);
 
         has_line_terminator_ = token.line_number_ != next.line_number_;
 
@@ -154,8 +172,6 @@ namespace parser {
         if (result) {
             *result = token;
         }
-
-        return true;
     }
 
     ParserCommon::Marker ParserCommon::CreateNode() {
@@ -180,40 +196,33 @@ namespace parser {
         };
     }
 
-    bool ParserCommon::Expect(char16_t t) {
+    void ParserCommon::Expect(char16_t t) {
         Token token;
-        DO(NextToken(&token))
+        NextToken(&token);
         if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_[0] != t) {
-            UnexpectedToken(&token);
-            return false;
+            ThrowUnexpectedToken(token);
         }
-        return true;
     }
 
-    bool ParserCommon::Expect(const UString &keyword) {
+     void ParserCommon::Expect(const UString &keyword) {
         Token token;
-        DO(NextToken(&token))
+        NextToken(&token);
         if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_ != keyword) {
-            UnexpectedToken(&token);
-            return false;
+            ThrowUnexpectedToken(token);
         }
-        return true;
     }
 
-    bool ParserCommon::ExpectCommaSeparator() {
-        return Expect(',');
+    void ParserCommon::ExpectCommaSeparator() {
+        Expect(',');
     }
 
-    bool ParserCommon::ExpectKeyword(const UString &keyword) {
+    void ParserCommon::ExpectKeyword(const UString &keyword) {
         Token token;
-        DO(NextToken(&token))
+        NextToken(&token);
 
         if (token.type_ != JsTokenType::Keyword || token.value_ != keyword) {
-            UnexpectedToken(&token);
-            return false;
+            ThrowUnexpectedToken(token);
         }
-
-        return true;
     }
 
     bool ParserCommon::Match(char16_t t) {
@@ -248,71 +257,25 @@ namespace parser {
                op == u"|=";
     }
 
-    bool ParserCommon::IsolateCoverGrammar(std::function<bool()> cb) {
-        auto previousIsBindingElement = context_.is_binding_element;
-        auto previousIsAssignmentTarget = context_.is_assignment_target;
-        auto previousFirstCoverInitializedNameError = context_.first_cover_initialized_name_error;
-
-        context_.is_binding_element = true;
-        context_.is_assignment_target = true;
-        context_.first_cover_initialized_name_error.reset();
-
-        bool result = cb();
-        if (context_.first_cover_initialized_name_error) {
-            LogError("firstCoverInitializedNameError");
-            return false;
-        }
-
-        context_.is_binding_element = previousIsBindingElement;
-        context_.is_assignment_target = previousIsAssignmentTarget;
-        context_.first_cover_initialized_name_error = previousFirstCoverInitializedNameError;
-
-        return result;
-    }
-
-    bool ParserCommon::InheritCoverGrammar(std::function<bool()> cb) {
-        auto previousIsBindingElement = context_.is_binding_element;
-        auto previousIsAssignmentTarget = context_.is_assignment_target;
-        auto previousFirstCoverInitializedNameError = context_.first_cover_initialized_name_error;
-
-        context_.is_binding_element = true;
-        context_.is_assignment_target = true;
-        context_.first_cover_initialized_name_error.reset();
-
-        bool result = cb();
-
-        context_.is_binding_element &= previousIsBindingElement;
-        context_.is_assignment_target &= previousIsAssignmentTarget;
-        context_.first_cover_initialized_name_error =
-            previousFirstCoverInitializedNameError ?
-            previousFirstCoverInitializedNameError : context_.first_cover_initialized_name_error;
-
-        return result;
-    }
-
-    bool ParserCommon::ConsumeSemicolon() {
+    void ParserCommon::ConsumeSemicolon() {
         if (Match(';')) {
-            return NextToken();
+            NextToken();
         } else if (!has_line_terminator_) {
             if (lookahead_.type_ != JsTokenType::EOF_ && !Match('}')) {
-                UnexpectedToken(&lookahead_);
-                return false;
+                ThrowUnexpectedToken(lookahead_);
             }
             last_marker_.index = start_marker_.index;
             last_marker_.line = start_marker_.line;
             last_marker_.column = start_marker_.column;
         }
-        return true;
     }
 
     bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
         return lookahead_.type_ == JsTokenType::Identifier && lookahead_.value_ == keyword;
     }
 
-    bool ParserCommon::CollectComments() {
-        DO(scanner_->ScanComments(comments_))
-
-        return true;
+    void ParserCommon::CollectComments() {
+        scanner_->ScanComments(comments_);
     }
 
     int ParserCommon::BinaryPrecedence(const Token& token) const {
@@ -361,6 +324,13 @@ namespace parser {
             }
         }
         return precedence;
+    }
+
+    bool ParserCommon::IsIdentifierName(Token &token) {
+        return token.type_ == JsTokenType::Identifier ||
+               token.type_ == JsTokenType::Keyword ||
+               token.type_ == JsTokenType::BooleanLiteral ||
+               token.type_ == JsTokenType::NullLiteral;
     }
 
 }

@@ -572,13 +572,23 @@ public:
     TaggedTemplateExpression();
 
     Sp<Expression> tag;
-    Sp<TemplateElement> quasi;
+    Sp<TemplateLiteral> quasi;
 
 };
 
 class TemplateElement: public SyntaxNode {
 public:
     TemplateElement();
+
+    UString cooked;
+    UString raw;
+    bool tail = false;
+
+};
+
+class TemplateLiteral: public Expression {
+public:
+    TemplateLiteral();
 
     std::vector<Sp<TemplateElement>> quasis;
     std::vector<Sp<Expression>> expressions;

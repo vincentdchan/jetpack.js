@@ -8,8 +8,9 @@
 
 namespace parser {
 
-    class ParseError {
+    class ParseError: public std::exception {
     public:
+        ParseError() = default;
 
         std::string name_;
         std::string msg_;
@@ -22,11 +23,11 @@ namespace parser {
     class ParseErrorHandler {
     public:
 
-        void CreateError(std::string msg, int index, int line, int col);
+        ParseError CreateError(std::string msg, int index, int line, int col);
 
-        void CreateError(std::string name, std::string msg, int index, int line, int col);
+        ParseError CreateError(std::string name, std::string msg, int index, int line, int col);
 
-        bool TolerateError(std::string msg, int index, int line, int col);
+        void TolerateError(std::exception& err);
 
         inline std::size_t Count() {
             return error_list_.size();

@@ -250,6 +250,10 @@ TemplateElement::TemplateElement(): SyntaxNode() {
     type = SyntaxNodeType::TemplateElement;
 }
 
+TemplateLiteral::TemplateLiteral(): Expression() {
+    type = SyntaxNodeType::TemplateLiteral;
+}
+
 ThisExpression::ThisExpression(): Expression() {
     type = SyntaxNodeType::ThisExpression;
 }

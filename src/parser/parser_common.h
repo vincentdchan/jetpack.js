@@ -77,22 +77,24 @@ namespace parser {
 
         void DecorateToken(Token& );
 
-        bool NextToken(Token* token = nullptr);
-        void LogError(const string& message);
-        bool TolerateError(const string& message);
+        void NextToken(Token* token = nullptr);
+        void TolerateError(const string& message);
 
-        void UnexpectedToken(const Token* tok = nullptr);
-        void UnexpectedToken(const Token* tok, const string& message);
-        bool TolerateUnexpectedToken(const Token* tok = nullptr);
-        bool TolerateUnexpectedToken(const Token* tok, const string& message);
+        void ThrowUnexpectedToken(const Token& tok);
+        void ThrowUnexpectedToken(const Token& tok, const string& message);
+        void TolerateUnexpectedToken(const Token& tok);
+        void TolerateUnexpectedToken(const Token& tok, const string& message);
+
+        void ThrowError(const std::string& message);
+        void ThrowError(const std::string& message, const std::string& arg);
 
         Marker CreateNode();
         Marker StartNode(Token& tok, uint32_t last_line_start = 0);
 
-        bool Expect(char16_t t);
-        bool Expect(const UString& str);
-        bool ExpectCommaSeparator();
-        bool ExpectKeyword(const UString& keyword);
+        void Expect(char16_t t);
+        void Expect(const UString& str);
+        void ExpectCommaSeparator();
+        void ExpectKeyword(const UString& keyword);
 
         bool Match(char16_t t);
         bool Match(const UString& str);
@@ -100,18 +102,17 @@ namespace parser {
         bool MatchContextualKeyword(const UString& keyword);
         bool MatchAssign();
 
-        bool IsolateCoverGrammar(std::function<bool()> cb);
-        bool InheritCoverGrammar(std::function<bool()> cb);
+        void ConsumeSemicolon();
 
-        bool ConsumeSemicolon();
-
-        bool CollectComments();
+        void CollectComments();
 
         inline Sp<ParseErrorHandler> ErrorHandler() {
             return error_handler_;
         }
 
         int BinaryPrecedence(const Token& token) const;
+
+        static bool IsIdentifierName(Token&);
 
         inline Marker LastMarker() const {
             return last_marker_;
@@ -136,6 +137,10 @@ namespace parser {
         vector<Comment> comments_;
 
     private:
+
+        ParseError UnexpectedToken(const Token& tok);
+        ParseError UnexpectedToken(const Token& tok, const string& message);
+
         Marker start_marker_;
         Marker last_marker_;
 

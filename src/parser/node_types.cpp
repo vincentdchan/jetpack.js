@@ -191,6 +191,9 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::TemplateElement:
             return "TemplateElement";
 
+        case SyntaxNodeType::TemplateLiteral:
+            return "TemplateLiteral";
+
         case SyntaxNodeType::ThisExpression:
             return "ThisExpression";
 

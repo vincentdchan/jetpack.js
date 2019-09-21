@@ -8,19 +8,32 @@ using namespace std;
 
 namespace parser {
 
-    void ParseErrorHandler::CreateError(std::string msg, int index, int line, int col) {
-        ParseError error_ { "<Error>", std::move(msg), index, line, col };
-        error_list_.push_back(std::move(error_));
+    ParseError ParseErrorHandler::CreateError(std::string msg, int index, int line, int col) {
+        ParseError error_;
+        error_.name_ = "<Error>";
+        error_.msg_ = std::move(msg);
+        error_.index_ = index;
+        error_.line_ = line;
+        error_.col_ = col;
+        error_list_.push_back(error_);
+        return error_;
     }
 
-    void ParseErrorHandler::CreateError(std::string name, std::string msg, int index, int line, int col) {
-        ParseError error_ { std::move(name), std::move(msg), index, line, col };
-        error_list_.push_back(std::move(error_));
+    ParseError ParseErrorHandler::CreateError(std::string name, std::string msg, int index, int line, int col) {
+        ParseError error_;
+        error_.name_ = std::move(name);
+        error_.msg_ = std::move(msg);
+        error_.index_ = index;
+        error_.line_ = line;
+        error_.col_ = col;
+        error_list_.push_back(error_);
+        return error_;
     }
 
-    bool ParseErrorHandler::TolerateError(std::string msg, int index, int line, int col) {
-        CreateError(move(msg), index, line, col);
-        return tolerant_;
+    void ParseErrorHandler::TolerateError(std::exception& err) {
+        if (!tolerant_) {
+            throw err;
+        }
     }
 
     void ParseErrorHandler::PrintAllErrors() {

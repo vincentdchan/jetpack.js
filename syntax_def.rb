@@ -417,10 +417,16 @@ end
 
 SyntaxFactory.def_syntax :TaggedTemplateExpression, base: :Expression do
   def_prop :Expression, "tag"
-  def_prop :TemplateElement, "quasi"
+  def_prop :TemplateLiteral, "quasi"
 end
 
 SyntaxFactory.def_syntax :TemplateElement, base: :SyntaxNode do
+  def_prop :String, "cooked"
+  def_prop :String, "raw"
+  def_prop :Boolean, "tail"
+end
+
+SyntaxFactory.def_syntax :TemplateLiteral, base: :Expression do
   def_prop [:TemplateElement], "quasis"
   def_prop [:Expression], "expressions"
 end

@@ -67,6 +67,7 @@ enum class SyntaxNodeType {
     SwitchStatement,
     TaggedTemplateExpression,
     TemplateElement,
+    TemplateLiteral,
     ThisExpression,
     ThrowStatement,
     TryStatement,
@@ -145,6 +146,7 @@ class SwitchCase;
 class SwitchStatement;
 class TaggedTemplateExpression;
 class TemplateElement;
+class TemplateLiteral;
 class ThisExpression;
 class ThrowStatement;
 class TryStatement;
