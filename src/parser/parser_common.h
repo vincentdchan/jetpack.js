@@ -59,6 +59,7 @@ namespace parser {
         struct FormalParameterOptions {
             bool simple = true;
             vector<Sp<SyntaxNode>> params;
+            std::unordered_set<UString> param_set;
             optional<Token> stricted;
             optional<Token> first_restricted;
             string message;

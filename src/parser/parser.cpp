@@ -97,8 +97,40 @@ namespace parser {
             param = ParsePattern(params, VarKind::Invalid);
         }
 
+        for (auto& i : params) {
+            ValidateParam(option, i, i.value_);
+        }
+
         option.simple &= param->type == SyntaxNodeType::Identifier;
         option.params.push_back(move(param));
+    }
+
+    void Parser::ValidateParam(parser::ParserCommon::FormalParameterOptions &options, const Token &param,
+                               const UString &name) {
+        UString key = UString(u"$") + name;
+        if (context_.strict_) {
+            if (scanner_->IsRestrictedWord(name)) {
+                options.stricted = param;
+                options.message = ParseMessages::StrictParamName;
+            }
+            if (options.param_set.find(key) != options.param_set.end()) {
+                options.stricted = param;
+                options.message = ParseMessages::StrictParamDupe;
+            }
+        } else if (!options.first_restricted) {
+            if (scanner_->IsRestrictedWord(name)) {
+                options.first_restricted = param;
+                options.message = ParseMessages::StrictParamName;
+            } else if (scanner_->IsStrictModeReservedWord(name)) {
+                options.first_restricted = param;
+                options.message = ParseMessages::StrictReservedWord;
+            } else if (options.param_set.find(key) != options.param_set.end()) {
+                options.stricted = param;
+                options.message = ParseMessages::StrictParamDupe;
+            }
+        }
+
+        options.param_set.insert(key);
     }
 
     Sp<Expression> Parser::ParsePrimaryExpression() {

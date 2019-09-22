@@ -175,6 +175,7 @@ namespace parser {
 
         FormalParameterOptions ParseFormalParameters(optional<Token> first_restricted = nullopt);
         void ParseFormalParameter(FormalParameterOptions& option);
+        void ValidateParam(FormalParameterOptions& option, const Token& param, const UString& name);
         bool IsStartOfExpression();
 
         Sp<RestElement> ParseRestElement(std::vector<Token>& params);
