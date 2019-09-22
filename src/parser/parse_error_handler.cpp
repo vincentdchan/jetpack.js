@@ -3,6 +3,7 @@
 //
 #include "parse_error_handler.h"
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -41,6 +42,28 @@ namespace parser {
             cout << error.line_ << ":" << error.col_ << " "
                  << error.name_ << ": " << error.msg_ << endl;
         }
+    }
+
+    ParseAssertFailed::ParseAssertFailed(std::string message, int line, int col) {
+        name_ = "<AssertFailed>";
+        msg_ = move(message);
+        line_ = line;
+        col_ = col;
+    }
+
+    const char *ParseAssertFailed::what() const noexcept {
+        return "ParseAssertFailed";
+    }
+
+
+    const char *ParseError::what() const noexcept {
+        return "ParseError";
+    }
+
+    std::string ParseError::ErrorMessage() const {
+        stringstream ss;
+        ss << line_ << ":" << col_ << ": " << name_ << ": " << msg_;
+        return ss.str();
     }
 
 }

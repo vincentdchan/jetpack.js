@@ -1,8 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <string>
-#include <streambuf>
 #include "parser/parser.hpp"
 #include "parser/node_traverser.h"
 #include "dumper/ast_to_json.h"
@@ -32,14 +30,14 @@ int main(int argc, char** argv) {
 
     ParserCommon::Config config;
     Parser parser(src, config);
-    Sp<Module> module_= parser.ParseModule();
-//    if (!parser.ParseModule(module_)) {
-//        auto err_handler = parser.ErrorHandler();
-//        std::cout << "Parse completed with " << err_handler->Count() << " errors." << std::endl;
-//        err_handler->PrintAllErrors();
-//        return 1;
-//    }
-    auto json_result = dumper::AstToJson::Dump(module_);
-    std::cout << json_result.dump(2) << std::endl;
+    try {
+        Sp<Module> module_ = parser.ParseModule();
+        auto json_result = dumper::AstToJson::Dump(module_);
+        std::cout << json_result.dump(2) << std::endl;
+    } catch (ParseError& err) {
+        std::cerr << err.ErrorMessage() << std::endl;
+    } catch (std::exception& ex) {
+        std::cerr << ex.what() << std::endl;
+    }
     return 0;
 }

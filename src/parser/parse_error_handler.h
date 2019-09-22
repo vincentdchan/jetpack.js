@@ -18,6 +18,19 @@ namespace parser {
         int line_ = 0;
         int col_ = 0;
 
+        [[nodiscard]] const char *what() const noexcept override;
+
+        [[nodiscard]] virtual std::string ErrorMessage() const;
+
+    };
+
+    class ParseAssertFailed: public ParseError {
+    public:
+
+        ParseAssertFailed(std::string message, int line, int col);
+
+        [[nodiscard]] const char *what() const noexcept override;
+
     };
 
     class ParseErrorHandler {
