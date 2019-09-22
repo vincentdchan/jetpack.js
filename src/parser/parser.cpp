@@ -343,7 +343,7 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParseFunctionExpression() {
+    Sp<Expression> Parser::ParseFunctionExpression() {
         auto marker = CreateStartMarker();
 
         bool is_async = MatchContextualKeyword(u"async");
@@ -354,8 +354,8 @@ namespace parser {
         bool is_generator = is_async ? false : Match(u'*');
         if (is_generator) NextToken();
 
-        std::optional<Sp<Identifier>> id;
-        Token first_restricted;
+        optional<Sp<Identifier>> id;
+        optional<Token> first_restricted;
 
         bool prev_allow_await = context_.await;
         bool prev_allow_yield = context_.allow_yield;
@@ -388,11 +388,43 @@ namespace parser {
             }
         }
 
-//        FormalParameterOptions formal;
-//        DO(ParseFormalParameters(first_restricted, formal))
-        // TODO: parse fomral
+        FormalParameterOptions formal;
+        ParseFormalParameters(first_restricted, formal);
+        if (!formal.message.empty()) {
+            message = formal.message;
+        }
 
-        return nullptr;
+        bool prev_strict = context_.strict_;
+        bool prev_allow_strict_directive = context_.allow_strict_directive;
+        context_.allow_strict_directive = formal.simple;
+        auto body = ParseFunctionSourceElements();
+        if (context_.strict_ && first_restricted.has_value()) {
+            ThrowUnexpectedToken(*first_restricted, message);
+        }
+        if (context_.strict_ && formal.stricted.has_value()) {
+            TolerateUnexpectedToken(*formal.stricted, message);
+        }
+        context_.strict_ = prev_strict;
+        context_.allow_strict_directive = prev_allow_strict_directive;
+        context_.await = prev_allow_await;
+        context_.allow_yield = prev_allow_yield;
+
+        if (is_async) {
+            auto node = Alloc<AsyncFunctionExpression>();
+            node->id = id;
+            node->params = move(formal.params);
+            node->body = move(body);
+            node->async = true;
+            return Finalize(marker, node);
+        } else {
+            auto node = Alloc<FunctionExpression>();
+            node->id = id;
+            node->params = move(formal.params);
+            node->body = move(body);
+            node->generator = is_generator;
+            node->async = false;
+            return Finalize(marker, node);
+        }
     }
 
     Sp<Identifier> Parser::ParseIdentifierName() {
@@ -728,6 +760,7 @@ namespace parser {
                 });
             }
         }
+        Assert(!expr, "ParseLeftHandSideExpressionAllowCall: expr should not be nullptr");
 
         while (true) {
             if (Match(u'.')) {
@@ -2089,6 +2122,8 @@ namespace parser {
             return ParseUnaryExpression();
         });
 
+        Assert(!expr, "ParseExponentiationExpression: expr should not be null");
+
         if (expr->type != SyntaxNodeType::UnaryExpression && Match(u"**")) {
             NextToken();
             context_.is_assignment_target = false;
@@ -2597,7 +2632,144 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseGroupExpression() {
-        return nullptr;
+        Sp<Expression> expr;
+
+        Expect(u'(');
+        if (Match(u')')) {
+            NextToken();
+            if (!Match(u"=>")) {
+                Expect(u"=>");
+            }
+            auto node = Alloc<ArrowParameterPlaceHolder>();
+            node->async = false;
+            expr = move(node);
+        } else {
+            auto start_token = lookahead_;
+
+            std::vector<Token> params;
+            if (Match(u"...")) {
+                expr = ParseRestElement(params);
+                Expect(u')');
+                if (!Match(u"=>")) {
+                    Expect(u"=>");
+                }
+                auto node = Alloc<ArrowParameterPlaceHolder>();
+                node->params.push_back(move(expr));
+                node->async = false;
+                expr = move(node);
+            } else {
+                bool arrow = false;
+                context_.is_binding_element = true;
+
+                expr = InheritCoverGrammar<Expression>([this] {
+                    return ParseAssignmentExpression();
+                });
+
+                if (Match(u',')) {
+                    std::vector<Sp<Expression>> expressions;
+
+                    context_.is_assignment_target = false;
+                    expressions.push_back(expr);
+                    while (lookahead_.type_ != JsTokenType::EOF_) {
+                        if (!Match(u',')) {
+                            break;
+                        }
+                        NextToken();
+                        if (Match(u')')) {
+                            NextToken();
+                            for (auto& i : expressions) {
+                                ReinterpretExpressionAsPattern(i);
+                            }
+                            arrow = true;
+                            auto node = Alloc<ArrowParameterPlaceHolder>();
+                            for (auto& i : expressions) {
+                                node->params.push_back(i);
+                            }
+                            node->async = false;
+                            expr = move(node);
+                        } else if (Match(u"...")) {
+                            if (!context_.is_binding_element) {
+                                ThrowUnexpectedToken(lookahead_);
+                            }
+                            expressions.push_back(ParseRestElement(params));
+                            Expect(u')');
+                            if (!Match(u"=>")) {
+                                Expect(u"=>");
+                            }
+                            context_.is_binding_element = false;
+                            for (auto& i : expressions) {
+                                ReinterpretExpressionAsPattern(i);
+                            }
+                            arrow = true;
+                            auto node = Alloc<ArrowParameterPlaceHolder>();
+                            for (auto& i : expressions) {
+                                node->params.push_back(i);
+                            }
+                            node->async = false;
+                            expr = move(node);
+                        } else {
+                            expressions.push_back(InheritCoverGrammar<Expression>([this] {
+                                return ParseAssignmentExpression();
+                            }));
+                        }
+                        if (arrow) {
+                            break;
+                        }
+                    }
+
+                    if (!arrow) {
+                        auto node = Alloc<SequenceExpression>();
+                        node->expressions = move(expressions);
+                        expr = Finalize(StartNode(start_token), node);
+                    }
+                }
+
+                if (!arrow) {
+                    Expect(u')');
+                    if (Match(u"=>")) {
+                        if (expr->type == SyntaxNodeType::Identifier && dynamic_pointer_cast<Identifier>(expr)->name == u"yield") {
+                            arrow = true;
+                            auto node = Alloc<ArrowParameterPlaceHolder>();
+                            node->params.push_back(move(expr));
+                            node->async = false;
+                            expr = move(node);
+                        }
+
+                        if (!arrow) {
+                            if (!context_.is_binding_element) {
+                                ThrowUnexpectedToken(lookahead_);
+                            }
+
+                            if (expr->type == SyntaxNodeType::SequenceExpression) {
+                                auto node = dynamic_pointer_cast<SequenceExpression>(expr);
+                                for (auto& i : node->expressions) {
+                                    ReinterpretExpressionAsPattern(i);
+                                }
+                            } else {
+                                ReinterpretExpressionAsPattern(expr);
+                            }
+
+                            auto placeholder = Alloc<ArrowParameterPlaceHolder>();
+
+                            if (expr->type == SyntaxNodeType::SequenceExpression) {
+                                auto seq = dynamic_pointer_cast<SequenceExpression>(expr);
+                                for (auto& i : seq->expressions) {
+                                    placeholder->params.push_back(i);
+                                }
+                            } else {
+                                placeholder->params.push_back(expr);
+                            }
+
+                            expr = move(placeholder);
+                        }
+                    }
+
+                    context_.is_binding_element = false;
+                }
+            }
+        }
+
+        return expr;
     }
 
     Sp<TemplateLiteral> Parser::ParseTemplateLiteral() {

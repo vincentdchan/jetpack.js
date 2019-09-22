@@ -206,7 +206,7 @@ RegexLiteral::RegexLiteral(): SyntaxNode() {
     type = SyntaxNodeType::RegexLiteral;
 }
 
-RestElement::RestElement(): SyntaxNode() {
+RestElement::RestElement(): Expression() {
     type = SyntaxNodeType::RestElement;
 }
 

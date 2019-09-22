@@ -240,7 +240,7 @@ namespace parser {
 
         Sp<Declaration> ParseFunctionDeclaration(bool identifier_is_optional);
 
-        Sp<FunctionExpression> ParseFunctionExpression();
+        Sp<Expression> ParseFunctionExpression();
 
         Sp<Statement> ParseDirective();
 

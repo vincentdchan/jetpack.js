@@ -89,7 +89,7 @@ public:
 
     std::optional<Sp<Identifier>> id;
     std::vector<Sp<SyntaxNode>> params;
-    Sp<Expression> body;
+    Sp<SyntaxNode> body;
     bool generator = false;
     bool expression = false;
     bool async = false;
@@ -491,7 +491,7 @@ public:
 
 };
 
-class RestElement: public SyntaxNode {
+class RestElement: public Expression {
 public:
     RestElement();
 
