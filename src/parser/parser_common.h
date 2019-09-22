@@ -77,7 +77,7 @@ namespace parser {
 
         void DecorateToken(Token& );
 
-        void NextToken(Token* token = nullptr);
+        Token NextToken();
         void TolerateError(const string& message);
 
         void ThrowUnexpectedToken(const Token& tok);

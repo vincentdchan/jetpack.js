@@ -140,7 +140,7 @@ namespace parser {
         };
     }
 
-    void ParserCommon::NextToken(Token *result) {
+    Token ParserCommon::NextToken() {
         Token token = lookahead_;
 
         last_marker_.index = scanner_->Index();
@@ -171,9 +171,7 @@ namespace parser {
             tokens_.push(next);
         }
 
-        if (result) {
-            *result = token;
-        }
+        return token;
     }
 
     ParserCommon::Marker ParserCommon::CreateStartMarker() {
@@ -199,16 +197,14 @@ namespace parser {
     }
 
     void ParserCommon::Expect(char16_t t) {
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
         if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_[0] != t) {
             ThrowUnexpectedToken(token);
         }
     }
 
      void ParserCommon::Expect(const UString &keyword) {
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
         if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_ != keyword) {
             ThrowUnexpectedToken(token);
         }
@@ -231,8 +227,7 @@ namespace parser {
     }
 
     void ParserCommon::ExpectKeyword(const UString &keyword) {
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
 
         if (token.type_ != JsTokenType::Keyword || token.value_ != keyword) {
             ThrowUnexpectedToken(token);

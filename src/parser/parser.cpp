@@ -107,8 +107,7 @@ namespace parser {
                     return ParseFunctionExpression();
                 } else {
                     auto node = Alloc<Identifier>();
-                    Token next;
-                    NextToken(&next);
+                    Token next = NextToken();
                     node->name = next.value_;
                     return Finalize(marker, node);
                 }
@@ -122,7 +121,7 @@ namespace parser {
                 }
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
-                NextToken(&token);
+                token = NextToken();
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -132,7 +131,7 @@ namespace parser {
             case JsTokenType::BooleanLiteral: {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
-                NextToken(&token);
+                token = NextToken();
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -142,7 +141,7 @@ namespace parser {
             case JsTokenType::NullLiteral: {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
-                NextToken(&token);
+                token = NextToken();
 //            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -184,7 +183,7 @@ namespace parser {
                         return nullptr;
 
                     default: {
-                        NextToken(&token);
+                        token = NextToken();
                         ThrowUnexpectedToken(token);
                     }
 
@@ -196,7 +195,7 @@ namespace parser {
                 if (!context_.strict_ && context_.allow_yield && MatchKeyword(u"yield")) {
                     return ParseIdentifierName();
                 } else if (!context_.strict_ && MatchKeyword(u"let")) {
-                    NextToken(&token);
+                    token = NextToken();
                     auto id = Alloc<Identifier>();
                     id->name = token.value_;
                     return Finalize(marker, id);
@@ -206,7 +205,7 @@ namespace parser {
                     if (MatchKeyword(u"function")) {
                         return ParseFunctionExpression();
                     } else if (MatchKeyword(u"this")) {
-                        NextToken(&token);
+                        token = NextToken();
                         auto th = Alloc<ThisExpression>();
                         return Finalize(marker, th);
                     } else if (MatchKeyword(u"class")) {
@@ -214,16 +213,14 @@ namespace parser {
                     } else if (MatchImportCall()) {
                         return ParseImportCall();
                     } else {
-                        NextToken(&token);
-                        ThrowUnexpectedToken(token);
+                        ThrowUnexpectedToken(NextToken());
                         return nullptr;
                     }
                 }
                 break;
 
             default:
-                NextToken(&token);
-                ThrowUnexpectedToken(token);
+                ThrowUnexpectedToken(NextToken());
                 return nullptr;
 
         }
@@ -280,10 +277,8 @@ namespace parser {
     }
 
     Sp<SyntaxNode> Parser::ParseObjectPropertyKey() {
-
         auto marker = CreateStartMarker();
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
 
         switch (token.type_) {
             case JsTokenType::StringLiteral:
@@ -403,8 +398,7 @@ namespace parser {
     Sp<Identifier> Parser::ParseIdentifierName() {
         auto marker = CreateStartMarker();
         auto node = Alloc<Identifier>();
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
         if (!IsIdentifierName(token)) {
             ThrowUnexpectedToken(token);
             return nullptr;
@@ -874,8 +868,7 @@ namespace parser {
         node->test = ParseExpression();
 
         if (!Match(u')') && config_.tolerant) {
-            Token token;
-            NextToken(&token);
+            Token token = NextToken();
             ThrowUnexpectedToken(token);
             node->consequent = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
@@ -1204,9 +1197,7 @@ namespace parser {
         node->test = ParseExpression();
 
         if (!Match(u')') && config_.tolerant) {
-            Token token;
-            NextToken(&token);
-            ThrowUnexpectedToken(token);
+            ThrowUnexpectedToken(NextToken());
         } else {
             Expect(u'(');
             if (Match(u';')) {
@@ -1273,8 +1264,7 @@ namespace parser {
                 }
             } else if (MatchKeyword(u"const") || MatchKeyword(u"let")) {
                 auto marker = CreateStartMarker();
-                Token token;
-                NextToken(&token);
+                Token token = NextToken();
                 VarKind kind;
                 if (token.value_ == u"const") {
                     kind = VarKind::Const;
@@ -1388,9 +1378,7 @@ namespace parser {
 
         Sp<Statement> body;
         if (!Match(u')') && config_.tolerant) {
-            Token tok;
-            NextToken(&tok);
-            TolerateUnexpectedToken(tok);
+            TolerateUnexpectedToken(NextToken());
             auto node = Alloc<EmptyStatement>();
             body = Finalize(CreateStartMarker(), node);
         } else {
@@ -1599,9 +1587,7 @@ namespace parser {
         node->test = ParseExpression();
 
         if (!Match(u')') && config_.tolerant) {
-            Token token;
-            NextToken(&token);
-            TolerateUnexpectedToken(token);
+            TolerateUnexpectedToken(NextToken());
             node->body = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
             Expect(u')');
@@ -1629,9 +1615,7 @@ namespace parser {
         node->object = ParseExpression();
 
         if (!Match(u')') && config_.tolerant) {
-            Token token;
-            NextToken(&token);
-            TolerateUnexpectedToken(token);
+            TolerateUnexpectedToken(NextToken());
             auto empty = Alloc<EmptyStatement>();
             node->body = Finalize(marker, empty);
         } else {
@@ -1830,7 +1814,7 @@ namespace parser {
                         ReinterpretExpressionAsPattern(expr);
                     }
 
-                    NextToken(&token);
+                    token = NextToken();
                     auto operator_ = token.value_;
                     Sp<Expression> right = IsolateCoverGrammar<Expression>([this] {
                         return ParseAssignmentExpression();
@@ -1941,8 +1925,7 @@ namespace parser {
                 }
 
                 // shift
-                Token next_;
-                NextToken(&next_);
+                Token next_ = NextToken();
                 op_stack.push(next_.value_);
                 precedences.push(prec);
                 markers.push(lookahead_);
@@ -2043,8 +2026,7 @@ namespace parser {
 
         if (Match(u"++") || Match(u"--")) {
             auto marker = CreateStartMarker();
-            Token token;
-            NextToken(&token);
+            Token token = NextToken();
             expr = InheritCoverGrammar<Expression>([this] {
                 return ParseUnaryExpression();
             });
@@ -2083,8 +2065,7 @@ namespace parser {
                     context_.is_binding_element = false;
                     auto node = Alloc<UpdateExpression>();
                     node->prefix = false;
-                    Token token;
-                    NextToken(&token);
+                    Token token = NextToken();
                     node->operator_ = token.value_;
                     node->argument = expr;
                     expr = Finalize(start_marker, node);
@@ -2193,9 +2174,7 @@ namespace parser {
                     }
                 }
             } else {
-                Token next;
-                NextToken(&next);
-                ThrowUnexpectedToken(next);
+                ThrowUnexpectedToken(NextToken());
             }
 
             if (!MatchContextualKeyword(u"from")) {
@@ -2252,9 +2231,7 @@ namespace parser {
                 NextToken();
                 local = ParseVariableIdentifier(VarKind::Invalid);
             } else {
-                Token next;
-                NextToken(&next);
-                ThrowUnexpectedToken(next);
+                ThrowUnexpectedToken(NextToken());
             }
         }
 
@@ -2271,8 +2248,7 @@ namespace parser {
             ThrowError(ParseMessages::InvalidModuleSpecifier);
         }
 
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
         auto node = Alloc<Literal>();
         node->value = token.value_;
         node->raw = token.value_;
@@ -2309,8 +2285,7 @@ namespace parser {
     Sp<Identifier> Parser::ParseVariableIdentifier(VarKind kind) {
         auto marker = CreateStartMarker();
 
-        Token token;
-        NextToken(&token);
+        Token token = NextToken();
         if (token.type_ == JsTokenType::Keyword && token.value_ == u"yield") {
             if (context_.strict_) {
                 TolerateUnexpectedToken(token, ParseMessages::StrictReservedWord);

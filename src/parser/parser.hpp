@@ -130,9 +130,6 @@ namespace parser {
 
         Sp<Expression> ParseLeftHandSideExpression();
 
-        template <typename NodePtr>
-        bool ParseLeftHandSideExpression(NodePtr& ptr);
-
         Sp<Expression> ParseUpdateExpression();
 
         Sp<AwaitExpression> ParseAwaitExpression();
@@ -147,9 +144,6 @@ namespace parser {
 
         Sp<Expression>
         ParseAssignmentExpression();
-
-        template <typename NodePtr>
-        bool ParseStatementListItem(NodePtr& ptr);
 
         Sp<Statement> ParseStatementListItem();
 
@@ -236,24 +230,15 @@ namespace parser {
 
         Sp<Statement> ParseLabelledStatement();
 
-        template <typename NodePtr>
-        bool ParseLabelledStatement(NodePtr& ptr);
-
         Sp<ThrowStatement> ParseThrowStatement();
 
         Sp<CatchClause> ParseCatchClause();
-
-        template <typename NodePtr>
-        bool ParseCatchClause(NodePtr& ptr);
 
         Sp<BlockStatement> ParseFinallyClause();
 
         Sp<TryStatement> ParseTryStatement();
 
         Sp<DebuggerStatement> ParseDebuggerStatement();
-
-        template <typename NodePtr>
-        bool ParseDebuggerStatement(NodePtr& ptr);
 
         Sp<Statement> ParseStatement();
 
