@@ -88,7 +88,7 @@ namespace parser {
         void ThrowError(const std::string& message);
         void ThrowError(const std::string& message, const std::string& arg);
 
-        Marker CreateNode();
+        Marker CreateStartMarker();
         Marker StartNode(Token& tok, uint32_t last_line_start = 0);
 
         void Expect(char16_t t);
@@ -120,6 +120,12 @@ namespace parser {
 
         inline Marker StartMarker() const {
             return start_marker_;
+        }
+
+        inline void Assert(bool value, std::string message) {
+            if (value) {
+                throw ParseAssertFailed(message, last_marker_.line, last_marker_.column);
+            }
         }
 
     protected:

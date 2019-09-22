@@ -14,7 +14,7 @@
 
 namespace parser {
 
-    class Parser final: public ParserCommon {
+    class Parser final: private ParserCommon {
     public:
 
         Parser(
@@ -161,7 +161,6 @@ namespace parser {
         std::vector<Sp<VariableDeclarator>> ParseBindingList(VarKind kind);
 
         bool IsLexicalDeclaration();
-        void ExpectCommaSeparator();
 
         Sp<Declaration> ParseLexicalDeclaration(bool& in_for);
 
@@ -295,20 +294,15 @@ namespace parser {
         template <typename NodePtr>
         bool ParseScript(NodePtr& ptr);
 
-        template <typename NodePtr>
-        bool ParseModuleSpecifier(NodePtr& ptr);
+        Sp<Literal> ParseModuleSpecifier();
 
-        template <typename NodePtr>
-        bool ParseImportSpecifier(NodePtr& ptr);
+        Sp<ImportSpecifier> ParseImportSpecifier();
 
-        template <typename NodePtr>
-        bool ParseNamedImports(NodePtr& ptr);
+        std::vector<Sp<SyntaxNode>> ParseNamedImports();
 
-        template <typename NodePtr>
-        bool ParseImportDefaultSpecifier(NodePtr& ptr);
+        Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier();
 
-        template <typename NodePtr>
-        bool ParseImportNamespaceSpecifier(NodePtr& ptr);
+        Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier();
 
         Sp<ImportDeclaration> ParseImportDeclaration();
 
@@ -369,7 +363,7 @@ namespace parser {
     template <typename NodePtr>
     bool Parser::ParsePropertyMethodFunction(NodePtr &ptr) {
         static_assert(std::is_convertible<FunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
         bool isGenerator = false;
@@ -388,7 +382,7 @@ namespace parser {
     template <typename NodePtr>
     bool Parser::ParsePropertyMethodAsyncFunction(NodePtr& ptr) {
         static_assert(std::is_convertible<AsyncFunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<AsyncFunctionExpression>();
 
         bool isGenerator = false;

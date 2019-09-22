@@ -20,22 +20,6 @@ namespace parser {
                (next.type_ == JsTokenType::Keyword && next.value_ == u"yield");
     }
 
-    void Parser::ExpectCommaSeparator() {
-        if (config_.tolerant) {
-            Token token = lookahead_;
-            if (token.type_ == JsTokenType::Punctuator && token.value_ == u",") {
-                NextToken();
-            } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u";") {
-                NextToken();
-                ThrowUnexpectedToken(token);
-            } else {
-                ThrowUnexpectedToken(token);
-            }
-        } else {
-            Expect(u',');
-        }
-    }
-
     bool Parser::MatchImportCall() {
         bool match = MatchKeyword(u"import");
         if (match) {
@@ -111,7 +95,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParsePrimaryExpression() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         Token token;
 
         switch (lookahead_.type_) {
@@ -249,7 +233,7 @@ namespace parser {
     }
 
     Sp<SpreadElement> Parser::ParseSpreadElement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         Expect(u"...");
 
@@ -262,7 +246,7 @@ namespace parser {
     }
 
     Sp<SyntaxNode> Parser::ParseObjectProperty(bool &has_proto) {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         Token token = lookahead_;
         VarKind kind;
         bool computed = false;
@@ -297,7 +281,7 @@ namespace parser {
 
     Sp<SyntaxNode> Parser::ParseObjectPropertyKey() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         Token token;
         NextToken(&token);
 
@@ -342,7 +326,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseObjectInitializer() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         Expect(u'{');
         auto node = Alloc<ObjectExpression>();
@@ -365,7 +349,7 @@ namespace parser {
     }
 
     Sp<FunctionExpression> Parser::ParseFunctionExpression() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         bool is_async = MatchContextualKeyword(u"async");
         if (is_async) NextToken();
@@ -417,7 +401,7 @@ namespace parser {
     }
 
     Sp<Identifier> Parser::ParseIdentifierName() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<Identifier>();
         Token token;
         NextToken(&token);
@@ -430,13 +414,10 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseNewExpression() {
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
 
         Sp<Identifier> id = ParseIdentifierName();
-//        if (id->name == u"new") { // TODO: assert
-//            LogError("New expression must start with `new`");
-//            return nullptr;
-//        }
+        Assert(id->name == u"new", "New expression must start with `new`");
 
         Sp<Expression> expr;
 
@@ -472,7 +453,7 @@ namespace parser {
 
     Sp<YieldExpression> Parser::ParseYieldExpression() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"yield");
 
         auto node = Alloc<YieldExpression>();
@@ -520,7 +501,7 @@ namespace parser {
     }
 
     Sp<Import> Parser::ParseImportCall() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<Import>();
         ExpectKeyword(u"import");
         return Finalize(marker, node);
@@ -529,7 +510,7 @@ namespace parser {
     Sp<Statement> Parser::ParseDirective() {
         auto token = lookahead_;
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         Sp<Expression> expr = ParseExpression();
         UString directive;
         if (expr->type == SyntaxNodeType::Literal) {
@@ -550,9 +531,8 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseExpression() {
-
         auto start_token = lookahead_;
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
         Sp<Expression> expr = IsolateCoverGrammar<Expression>([this] {
             return ParseAssignmentExpression();
         });
@@ -580,8 +560,7 @@ namespace parser {
     }
 
     Sp<BlockStatement> Parser::ParseFunctionSourceElements() {
-
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
 
         vector<Sp<SyntaxNode>> body = ParseDirectivePrologues();
         Expect(u'{');
@@ -655,7 +634,7 @@ namespace parser {
     }
 
     Sp<ClassBody> Parser::ParseClassBody() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<ClassBody>();
 
         node->body = ParseClassElementList();
@@ -665,7 +644,7 @@ namespace parser {
 
     Sp<ClassDeclaration> Parser::ParseClassDeclaration(bool identifier_is_optional) {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         bool prev_strict = context_.strict_;
         context_.strict_ = true;
@@ -697,7 +676,7 @@ namespace parser {
 
     Sp<ClassExpression> Parser::ParseClassExpression() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<ClassExpression>();
 
         bool prev_strict = context_.strict_;
@@ -728,7 +707,7 @@ namespace parser {
 
     Sp<Expression> Parser::ParseLeftHandSideExpressionAllowCall() {
         Token start_token = lookahead_;
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
         bool maybe_async = MatchContextualKeyword(u"async");
 
         bool prev_allow_in = context_.allow_in;
@@ -737,7 +716,7 @@ namespace parser {
         Sp<Expression> expr;
         if (MatchKeyword(u"super") && context_.in_function_body) {
             auto node = Alloc<Super>();
-            auto marker = CreateNode();
+            auto marker = CreateStartMarker();
             NextToken();
             expr = Finalize(marker, node);
             if (!Match(u'(') && !Match(u'.') && !Match(u'[')) {
@@ -764,7 +743,7 @@ namespace parser {
                 auto node = Alloc<StaticMemberExpression>();
                 node->property = ParseIdentifierName();
                 node->object = expr;
-                expr = Finalize(start_marker, node);
+                expr = Finalize(StartNode(start_token), node);
             } else if (Match(u'(')) {
                 bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);
                 context_.is_binding_element = false;
@@ -779,7 +758,7 @@ namespace parser {
                     TolerateError(ParseMessages::BadImportCallArity);
                 }
                 node->callee = expr;
-                expr = Finalize(start_marker, node);
+                expr = Finalize(StartNode(start_token), node);
                 if (async_arrow && Match(u"=>")) {
                     for (auto &i : node->arguments) {
                         ReinterpretExpressionAsPattern(i);
@@ -799,12 +778,12 @@ namespace parser {
                 });
                 Expect(u']');
                 node->object = expr;
-                expr = Finalize(start_marker, node);
+                expr = Finalize(StartNode(start_token), node);
             } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral();
                 node->tag = expr;
-                expr = Finalize(start_marker, node);
+                expr = Finalize(StartNode(start_token), node);
             } else {
                 break;
             }
@@ -815,7 +794,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseArrayInitializer() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<ArrayExpression>();
         Sp<SyntaxNode> element;
 
@@ -850,7 +829,7 @@ namespace parser {
     Sp<Module> Parser::ParseModule() {
         context_.strict_ = true;
         context_.is_module = true;
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = make_shared<Module>();
         node->body = ParseDirectivePrologues();
         while (lookahead_.type_ != JsTokenType::EOF_) {
@@ -862,7 +841,7 @@ namespace parser {
 
     Sp<SwitchCase> Parser::ParseSwitchCase() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<SwitchCase>();
 
         if (MatchKeyword(u"default")) {
@@ -887,7 +866,7 @@ namespace parser {
 
     Sp<IfStatement> Parser::ParseIfStatement() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<IfStatement>();
 
         ExpectKeyword(u"if");
@@ -898,7 +877,7 @@ namespace parser {
             Token token;
             NextToken(&token);
             ThrowUnexpectedToken(token);
-            node->consequent = Finalize(CreateNode(), Alloc<EmptyStatement>());
+            node->consequent = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
             Expect(u')');
             node->consequent = ParseIfClause();
@@ -993,7 +972,7 @@ namespace parser {
     }
 
     Sp<ExpressionStatement> Parser::ParseExpressionStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<ExpressionStatement>();
 
         node->expression  = ParseExpression();
@@ -1003,7 +982,7 @@ namespace parser {
     }
 
     Sp<BlockStatement> Parser::ParseBlock() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
 
         Expect(u'{');
@@ -1021,13 +1000,13 @@ namespace parser {
 
     Sp<EmptyStatement> Parser::ParseEmptyStatement() {
         auto node = Alloc<EmptyStatement>();
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         Expect(u';');
         return Finalize(marker, node);
     }
 
     Sp<Declaration> Parser::ParseFunctionDeclaration(bool identifier_is_optional) {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         bool is_async = MatchContextualKeyword(u"async");
         if (is_async) {
@@ -1109,7 +1088,7 @@ namespace parser {
     }
 
     Sp<Statement> Parser::ParseLabelledStatement() {
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
         Sp<Expression> expr = ParseExpression();
 
         Sp<Statement> statement;
@@ -1158,7 +1137,7 @@ namespace parser {
 
     Sp<BreakStatement> Parser::ParseBreakStatement() {
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"break");
 
         std::optional<Sp<Identifier>> label;
@@ -1183,7 +1162,7 @@ namespace parser {
     }
 
     Sp<ContinueStatement> Parser::ParseContinueStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"continue");
         auto node = Alloc<ContinueStatement>();
 
@@ -1203,7 +1182,7 @@ namespace parser {
     }
 
     Sp<DebuggerStatement> Parser::ParseDebuggerStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"keyword");
         ConsumeSemicolon();
         auto node = Alloc<DebuggerStatement>();
@@ -1211,7 +1190,7 @@ namespace parser {
     }
 
     Sp<DoWhileStatement> Parser::ParseDoWhileStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<DoWhileStatement>();
         ExpectKeyword(u"do");
 
@@ -1246,7 +1225,7 @@ namespace parser {
         std::optional<Sp<Expression>> update;
         Sp<SyntaxNode> left;
         Sp<SyntaxNode> right;
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         ExpectKeyword(u"for");
         Expect(u'(');
@@ -1255,7 +1234,7 @@ namespace parser {
             NextToken();
         } else {
             if (MatchKeyword(u"var")) {
-                auto marker = CreateNode();
+                auto marker = CreateStartMarker();
                 NextToken();
 
                 auto prev_allow_in = context_.allow_in;
@@ -1293,7 +1272,7 @@ namespace parser {
                     Expect(u';');
                 }
             } else if (MatchKeyword(u"const") || MatchKeyword(u"let")) {
-                auto marker = CreateNode();
+                auto marker = CreateStartMarker();
                 Token token;
                 NextToken(&token);
                 VarKind kind;
@@ -1346,7 +1325,7 @@ namespace parser {
                 }
             } else {
                 auto init_start_token = lookahead_;
-                auto start_marker = CreateNode();
+                auto start_marker = CreateStartMarker();
                 auto prev_allow_in = context_.allow_in;
                 context_.allow_in = false;
                 init = InheritCoverGrammar<Expression>([this] {
@@ -1413,7 +1392,7 @@ namespace parser {
             NextToken(&tok);
             TolerateUnexpectedToken(tok);
             auto node = Alloc<EmptyStatement>();
-            body = Finalize(CreateNode(), node);
+            body = Finalize(CreateStartMarker(), node);
         } else {
             Expect(u')');
 
@@ -1453,7 +1432,7 @@ namespace parser {
             TolerateError(ParseMessages::IllegalReturn);
         }
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"return");
 
         bool has_arg = (!Match(u';') && !Match(u'}') &&
@@ -1472,7 +1451,7 @@ namespace parser {
     }
 
     Sp<SwitchStatement> Parser::ParseSwitchStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"switch");
         auto node = Alloc<SwitchStatement>();
 
@@ -1507,7 +1486,7 @@ namespace parser {
     }
 
     Sp<ThrowStatement> Parser::ParseThrowStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"throw");
 
         if (has_line_terminator_) {
@@ -1523,7 +1502,7 @@ namespace parser {
     }
 
     Sp<TryStatement> Parser::ParseTryStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"try");
         auto node = Alloc<TryStatement>();
 
@@ -1539,7 +1518,7 @@ namespace parser {
     }
 
     Sp<CatchClause> Parser::ParseCatchClause() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         ExpectKeyword(u"catch");
 
@@ -1565,7 +1544,7 @@ namespace parser {
     }
 
     Sp<VariableDeclaration> Parser::ParseVariableStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         ExpectKeyword(u"var");
 
         auto node = Alloc<VariableDeclaration>();
@@ -1577,7 +1556,7 @@ namespace parser {
     }
 
     Sp<VariableDeclarator> Parser::ParseVariableDeclaration(bool in_for) {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<VariableDeclarator>();
 
         vector<Sp<SyntaxNode>> params;
@@ -1612,7 +1591,7 @@ namespace parser {
     }
 
     Sp<WhileStatement> Parser::ParseWhileStatement() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<WhileStatement>();
 
         ExpectKeyword(u"while");
@@ -1623,7 +1602,7 @@ namespace parser {
             Token token;
             NextToken(&token);
             TolerateUnexpectedToken(token);
-            node->body = Finalize(CreateNode(), Alloc<EmptyStatement>());
+            node->body = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
             Expect(u')');
 
@@ -1641,7 +1620,7 @@ namespace parser {
             TolerateError(ParseMessages::StrictModeWith);
         }
 
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<WithStatement>();
 
         ExpectKeyword(u"with");
@@ -1669,7 +1648,7 @@ namespace parser {
     }
 
     Sp<RestElement> Parser::ParseRestElement(std::vector<Sp<SyntaxNode>> &params) {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         auto node = Alloc<RestElement>();
 
         Expect(u"...");
@@ -1741,7 +1720,7 @@ namespace parser {
         if (context_.allow_yield && MatchKeyword(u"yield")) {
             expr = ParseYieldExpression();
         } else {
-            auto start_marker = CreateNode();
+            auto start_marker = CreateStartMarker();
             auto token = lookahead_;
             expr = ParseConditionalExpression();
 
@@ -1781,7 +1760,7 @@ namespace parser {
                     context_.allow_yield = true;
                     context_.await = is_async;
 
-                    auto marker = CreateNode();
+                    auto marker = CreateStartMarker();
                     Expect(u"=>");
                     Sp<SyntaxNode> body;
 
@@ -1872,7 +1851,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseConditionalExpression() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
             return ParseBinaryExpression();
@@ -1988,7 +1967,7 @@ namespace parser {
                 node->left = expr_stack.top();
                 expr_stack.pop();
                 node->right = expr;
-                expr = Finalize(CreateNode(), node);
+                expr = Finalize(CreateStartMarker(), node);
                 last_marker = marker;
             }
         }
@@ -1997,7 +1976,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseExponentiationExpression() {
-        auto start = CreateNode();
+        auto start = CreateStartMarker();
 
         Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
             return ParseUnaryExpression();
@@ -2026,7 +2005,7 @@ namespace parser {
             Match(u'+') || Match(u'-') || Match(u'~') || Match(u'!') ||
             MatchKeyword(u"delete") || MatchKeyword(u"void") || MatchKeyword(u"typeof")
             ) {
-            auto marker = CreateNode();
+            auto marker = CreateStartMarker();
             Token token = lookahead_;
             NextToken();
             expr = InheritCoverGrammar<Expression>([this] {
@@ -2051,7 +2030,7 @@ namespace parser {
     }
 
     Sp<AwaitExpression> Parser::ParseAwaitExpression() {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
         NextToken();
         auto node = Alloc<AwaitExpression>();
         node->argument = ParseUnaryExpression();
@@ -2060,10 +2039,10 @@ namespace parser {
 
     Sp<Expression> Parser::ParseUpdateExpression() {
         Sp<Expression> expr;
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
 
         if (Match(u"++") || Match(u"--")) {
-            auto marker = CreateNode();
+            auto marker = CreateStartMarker();
             Token token;
             NextToken(&token);
             expr = InheritCoverGrammar<Expression>([this] {
@@ -2117,13 +2096,9 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseLeftHandSideExpression() {
-        // TODO: assert error
-//        if (!context_.allow_in) {
-//            LogError("callee of new expression always allow in keyword.");
-//            return nullptr;
-//        }
+        Assert(context_.allow_in, "callee of new expression always allow in keyword.");
 
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
         Sp<Expression> expr;
         if (MatchKeyword(u"super") && context_.in_function_body) {
             expr = ParseSuper();
@@ -2171,7 +2146,7 @@ namespace parser {
     }
 
     Sp<Super> Parser::ParseSuper() {
-        auto start_marker = CreateNode();
+        auto start_marker = CreateStartMarker();
 
         ExpectKeyword(u"super");
         if (!Match(u'[') && !Match(u'.')) {
@@ -2184,25 +2159,147 @@ namespace parser {
     }
 
     Sp<ImportDeclaration> Parser::ParseImportDeclaration() {
-//        TODO: assert
-//        if (context_.in_function_body) {
-//            LogError("IllegalImportDeclaration");
-//            return nullptr;
-//        }
+        if (context_.in_function_body) {
+            ThrowError(ParseMessages::IllegalImportDeclaration);
+        }
 
-//        auto marker = CreateNode();
-//        DO(ExpectKeyword(u"import"))
-//
-//        Sp<Literal> src;
-//        std::vector<Sp<ImportDeSpecifier>> specifiers;
-//        if (lookahead_.type_ == JsTokenType::StringLiteral) {
-//            DO(ParseModuleSpecifier(src))
-//        } else {
-//            if (Match(u'{')) {
-//                ParseName
-//            }
-//        }
-        return nullptr;
+        auto start_marker = CreateStartMarker();
+        ExpectKeyword(u"import");
+
+        Sp<Literal> src;
+        std::vector<Sp<SyntaxNode>> specifiers;
+
+        if (lookahead_.type_ == JsTokenType::StringLiteral) {
+            src = ParseModuleSpecifier();
+        } else {
+            if (Match(u'{')) {
+                auto children = ParseNamedImports();
+                specifiers.insert(specifiers.end(), children.begin(), children.end());
+            } else if (Match(u'*')) {
+                specifiers.push_back(ParseImportNamespaceSpecifier());
+            } else if (IsIdentifierName(lookahead_) && !MatchKeyword(u"default")) {
+                auto default_ = ParseImportDefaultSpecifier();
+                specifiers.push_back(move(default_));
+
+                if (Match(u',')) {
+                    NextToken();
+                    if (Match(u'*')) {
+                        specifiers.push_back(ParseImportNamespaceSpecifier());
+                    } else if (Match(u'*')) {
+                        auto children = ParseNamedImports();
+                        specifiers.insert(specifiers.end(), children.begin(), children.end());
+                    } else {
+                        ThrowUnexpectedToken(lookahead_);
+                    }
+                }
+            } else {
+                Token next;
+                NextToken(&next);
+                ThrowUnexpectedToken(next);
+            }
+
+            if (!MatchContextualKeyword(u"from")) {
+                string message;
+                if (!lookahead_.value_.empty()) {
+                    message = ParseMessages::UnexpectedToken;
+                } else {
+                    message = ParseMessages::MissingFromClause;
+                }
+                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+            }
+            NextToken();
+            src = ParseModuleSpecifier();
+        }
+        ConsumeSemicolon();
+
+        auto node = Alloc<ImportDeclaration>();
+        node->specifiers = move(specifiers);
+        node->source = move(src);
+
+        return Finalize(start_marker, node);
+    }
+
+    std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports() {
+        Expect(u'{');
+        std::vector<Sp<SyntaxNode>> specifiers;
+        while (!Match(u'}')) {
+            specifiers.push_back(ParseImportSpecifier());
+            if (!Match(u'}')) {
+                Expect(u',');
+            }
+        }
+        Expect(u'}');
+
+        return specifiers;
+    }
+
+    Sp<ImportSpecifier> Parser::ParseImportSpecifier() {
+        auto start_marker = CreateStartMarker();
+
+        Sp<Identifier> imported;
+        Sp<Identifier> local;
+        if (lookahead_.type_ == JsTokenType::Identifier) {
+            imported = ParseVariableIdentifier(VarKind::Invalid);
+            local = imported;
+            if (MatchContextualKeyword(u"as")) {
+                NextToken();
+                local = ParseVariableIdentifier(VarKind::Invalid);
+            }
+        } else {
+            imported = ParseIdentifierName();
+            local = imported;
+            if (MatchContextualKeyword(u"as")) {
+                NextToken();
+                local = ParseVariableIdentifier(VarKind::Invalid);
+            } else {
+                Token next;
+                NextToken(&next);
+                ThrowUnexpectedToken(next);
+            }
+        }
+
+        auto node = Alloc<ImportSpecifier>();
+        node->local = local;
+        node->imported = imported;
+        return Finalize(start_marker, node);
+    }
+
+    Sp<Literal> Parser::ParseModuleSpecifier() {
+        auto start_marker = CreateStartMarker();
+
+        if (lookahead_.type_ != JsTokenType::StringLiteral) {
+            ThrowError(ParseMessages::InvalidModuleSpecifier);
+        }
+
+        Token token;
+        NextToken(&token);
+        auto node = Alloc<Literal>();
+        node->value = token.value_;
+        node->raw = token.value_;
+        return Finalize(start_marker, node);
+    }
+
+    Sp<ImportDefaultSpecifier> Parser::ParseImportDefaultSpecifier() {
+        auto start_marker = CreateStartMarker();
+        auto local = ParseIdentifierName();
+        auto node = Alloc<ImportDefaultSpecifier>();
+        node->local = move(local);
+        return Finalize(start_marker, node);
+    }
+
+    Sp<ImportNamespaceSpecifier> Parser::ParseImportNamespaceSpecifier() {
+        auto start_marker = CreateStartMarker();
+
+        Expect(u'*');
+        if (MatchContextualKeyword(u"as")) {
+            ThrowError(ParseMessages::NoAsAfterImportNamespace);
+        }
+        NextToken();
+        auto local = ParseIdentifierName();
+
+        auto node = Alloc<ImportNamespaceSpecifier>();
+        node->local = move(local);
+        return Finalize(start_marker, node);
     }
 
     Sp<Declaration> Parser::ParseLexicalDeclaration(bool &in_for) {
@@ -2210,7 +2307,7 @@ namespace parser {
     }
 
     Sp<Identifier> Parser::ParseVariableIdentifier(VarKind kind) {
-        auto marker = CreateNode();
+        auto marker = CreateStartMarker();
 
         Token token;
         NextToken(&token);

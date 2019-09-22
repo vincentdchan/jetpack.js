@@ -113,8 +113,11 @@ namespace parser {
         auto index = last_marker_.index;
         auto line = last_marker_.line;
         auto column = last_marker_.column + 1;
-        ParseError err = error_handler_->CreateError(message, index, line, column);
-        throw err;
+        throw error_handler_->CreateError(message, index, line, column);
+    }
+
+    void ParserCommon::ThrowError(const std::string &message, const std::string &arg) {
+        ThrowError(message + " " + arg);
     }
 
     void ParserCommon::ThrowUnexpectedToken(const Token& tok) {
@@ -173,7 +176,7 @@ namespace parser {
         }
     }
 
-    ParserCommon::Marker ParserCommon::CreateNode() {
+    ParserCommon::Marker ParserCommon::CreateStartMarker() {
         return Marker {
             start_marker_.index,
             start_marker_.line,
@@ -212,7 +215,19 @@ namespace parser {
     }
 
     void ParserCommon::ExpectCommaSeparator() {
-        Expect(',');
+        if (config_.tolerant) {
+            Token token = lookahead_;
+            if (token.type_ == JsTokenType::Punctuator && token.value_ == u",") {
+                NextToken();
+            } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u";") {
+                NextToken();
+                ThrowUnexpectedToken(token);
+            } else {
+                ThrowUnexpectedToken(token);
+            }
+        } else {
+            Expect(u',');
+        }
     }
 
     void ParserCommon::ExpectKeyword(const UString &keyword) {
