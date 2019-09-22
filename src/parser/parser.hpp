@@ -158,20 +158,15 @@ namespace parser {
 
         Sp<Declaration> ParseLexicalDeclaration(bool& in_for);
 
-        template <typename NodePtr>
-        bool ParseBindingRestElement(NodePtr& ptr);
+        Sp<RestElement> ParseBindingRestElement(std::vector<Token> &params, VarKind kind);
 
-        template <typename NodePtr>
-        bool ParseArrayPattern(NodePtr& ptr);
+        Sp<ArrayPattern> ParseArrayPattern(std::vector<Token> &params, VarKind kind);
 
-        template <typename NodePtr>
-        bool ParsePropertyPattern(NodePtr& ptr);
+        Sp<Property> ParsePropertyPattern(std::vector<Token> &params, VarKind kind);
 
-        template <typename NodePtr>
-        bool ParseRestProperty(NodePtr& ptr);
+        Sp<RestElement> ParseRestProperty(std::vector<Token> &params, VarKind kind);
 
-        template <typename NodePtr>
-        bool ParseObjectPattern(NodePtr& ptr);
+        Sp<ObjectPattern> ParseObjectPattern(std::vector<Token> &params, VarKind kind);
 
         Sp<Expression> ParseArrayInitializer();
 
@@ -182,12 +177,11 @@ namespace parser {
         bool ParseFormalParameter(FormalParameterOptions& option);
         bool IsStartOfExpression();
 
-        Sp<RestElement> ParseRestElement(std::vector<Sp<SyntaxNode>>& params);
+        Sp<RestElement> ParseRestElement(std::vector<Token>& params);
 
-        Sp<Identifier> ParsePattern(std::vector<Sp<SyntaxNode>>& params, VarKind  kind);
+        Sp<SyntaxNode> ParsePattern(std::vector<Token>& params, VarKind  kind);
 
-        template <typename NodePtr>
-        bool ParsePatternWithDefault(NodePtr& ptr);
+        Sp<SyntaxNode> ParsePatternWithDefault(std::vector<Token> &params, VarKind kind);
 
         Sp<Identifier> ParseVariableIdentifier(VarKind kind);
 

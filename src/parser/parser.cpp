@@ -1547,7 +1547,7 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<VariableDeclarator>();
 
-        vector<Sp<SyntaxNode>> params;
+        vector<Token> params;
         Sp<SyntaxNode> id = ParsePattern(params, VarKind::Var);
 
         if (context_.strict_ && id->type == SyntaxNodeType::Identifier) {
@@ -1631,7 +1631,7 @@ namespace parser {
         return {};
     }
 
-    Sp<RestElement> Parser::ParseRestElement(std::vector<Sp<SyntaxNode>> &params) {
+    Sp<RestElement> Parser::ParseRestElement(std::vector<Token> &params) {
         auto marker = CreateStartMarker();
         auto node = Alloc<RestElement>();
 
@@ -2311,8 +2311,161 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    Sp<Identifier> Parser::ParsePattern(std::vector<Sp<SyntaxNode>> &params, VarKind kind) {
-        return nullptr;
+    Sp<SyntaxNode> Parser::ParsePattern(std::vector<Token> &params, VarKind kind) {
+        Sp<SyntaxNode> pattern;
+
+        if (Match(u'[')) {
+            pattern = ParseArrayPattern(params, kind);
+        } else if (Match(u'{')) {
+            pattern = ParseObjectPattern(params, kind);
+        } else {
+            if (MatchKeyword(u"let") && (kind == VarKind::Const || kind == VarKind::Let)) {
+                TolerateUnexpectedToken(lookahead_, ParseMessages::LetInLexicalBinding);
+            }
+            params.push_back(lookahead_);
+            pattern = ParseVariableIdentifier(kind);
+        }
+
+        return pattern;
+    }
+
+    Sp<SyntaxNode> Parser::ParsePatternWithDefault(std::vector<Token> &params, VarKind kind) {
+        Token start_token_ = lookahead_;
+
+        auto pattern = ParsePattern(params, kind);
+        if (Match(u'=')) {
+            NextToken();
+            bool prev_allow_yield = context_.allow_yield;
+            context_.allow_yield = true;
+            auto right = IsolateCoverGrammar<Expression>([this] {
+                return ParseAssignmentExpression();
+            });
+            context_.allow_yield = prev_allow_yield;
+            auto node = Alloc<AssignmentPattern>();
+            node->left = move(pattern);
+            node->right = move(right);
+            pattern = node;
+        }
+
+        return pattern;
+    }
+
+    Sp<RestElement> Parser::ParseBindingRestElement(std::vector<Token> &params, VarKind kind) {
+        auto start_marker = CreateStartMarker();
+
+        Expect(u"...");
+        auto node = Alloc<RestElement>();
+        node->argument = ParsePattern(params, kind);
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<ArrayPattern> Parser::ParseArrayPattern(std::vector<Token> &params, VarKind kind) {
+        auto start_marker = CreateStartMarker();
+
+        Expect(u'[');
+        std::vector<Sp<SyntaxNode>> elements;
+        while (!Match(u']')) {
+            if (Match(u',')) {
+                NextToken();
+                // TODO: push nullopt
+                elements.push_back(nullptr);
+            } else {
+                if (Match(u"...")) {
+                    elements.push_back(ParseBindingRestElement(params, kind));
+                    break;
+                } else {
+                    elements.push_back(ParsePatternWithDefault(params, kind));
+                }
+                if (!Match(u']')) {
+                    Expect(u',');
+                }
+            }
+        }
+        Expect(u']');
+
+        auto node = Alloc<ArrayPattern>();
+        node->elements = move(elements);
+        return Finalize(start_marker, node);
+    }
+
+    Sp<Property> Parser::ParsePropertyPattern(std::vector<Token> &params, VarKind kind) {
+        auto start_marker = CreateStartMarker();
+
+        auto node = Alloc<Property>();
+        node->computed = false;
+        node->shorthand = false;
+        node->method = false;
+
+        if (lookahead_.type_ == JsTokenType::Identifier) {
+            Token keyToken = lookahead_;
+            node->key = ParseVariableIdentifier(VarKind::Invalid);
+            auto id_ = Alloc<Identifier>();
+            id_->name = keyToken.value_;
+            auto init = Finalize(start_marker, id_);
+            if (Match(u'=')) {
+                params.push_back(keyToken);
+                node->shorthand = true;
+                NextToken();
+                auto expr = ParseAssignmentExpression();
+                auto assign = Alloc<AssignmentPattern>();
+                assign->left = move(init);
+                assign->right = move(expr);
+                node->value = Finalize(StartNode(keyToken), assign);
+            } else if (!Match(u':')) {
+                params.push_back(keyToken);
+                node->shorthand = true;
+                node->value = move(init);
+            } else {
+                Expect(u':');
+                node->value = ParsePatternWithDefault(params, kind);
+            }
+        } else {
+            node->computed = Match(u'[');
+            node->key = ParseObjectPropertyKey();
+            Expect(u':');
+            node->value = ParsePatternWithDefault(params, kind);
+        }
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<RestElement> Parser::ParseRestProperty(std::vector<Token> &params, VarKind kind) {
+        auto start_marker = CreateStartMarker();
+        Expect(u"...");
+        auto arg = ParsePattern(params, VarKind::Invalid);
+        if (Match(u'=')) {
+            ThrowError(ParseMessages::DefaultRestProperty);
+        }
+        if (!Match(u'}')) {
+            ThrowError(ParseMessages::PropertyAfterRestProperty);
+        }
+        auto node = Alloc<RestElement>();
+        node->argument = move(arg);
+        return Finalize(start_marker, node);
+    }
+
+    Sp<ObjectPattern> Parser::ParseObjectPattern(std::vector<Token> &params, VarKind kind) {
+        auto start_marker = CreateStartMarker();
+        std::vector<Sp<SyntaxNode>> props;
+
+        Expect(u'{');
+        while (!Match(u'}')) {
+            if (Match(u"...")) {
+                props.push_back(ParseRestProperty(params, kind));
+            } else {
+                props.push_back(ParsePropertyPattern(params, kind));
+            }
+
+            if (!Match(u'}')) {
+                Expect(u',');
+            }
+        }
+        Expect(u'}');
+
+        auto node = Alloc<ObjectPattern>();
+        node->properties = move(props);
+        return Finalize(start_marker, node);
     }
 
     std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments() {
