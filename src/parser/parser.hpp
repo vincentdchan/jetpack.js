@@ -173,8 +173,8 @@ namespace parser {
         template <typename NodePtr>
         bool PeinterpretExpressionAsPattern(NodePtr& ptr);
 
-        void ParseFormalParameters(optional<Token> first_restricted, FormalParameterOptions& option);
-        bool ParseFormalParameter(FormalParameterOptions& option);
+        FormalParameterOptions ParseFormalParameters(optional<Token> first_restricted = nullopt);
+        void ParseFormalParameter(FormalParameterOptions& option);
         bool IsStartOfExpression();
 
         Sp<RestElement> ParseRestElement(std::vector<Token>& params);
@@ -345,10 +345,9 @@ namespace parser {
 
         bool isGenerator = false;
 
-        FormalParameterOptions options;
         bool previous_allow_yield = context_.allow_yield;
         context_.allow_yield = true;
-        ParseFormalParameters(nullopt, options);
+        auto options = ParseFormalParameters(nullopt);
 //        const params = this.parseFormalParameters();
 //        const method = this.parsePropertyMethod(params);
         context_.allow_yield = previous_allow_yield;
@@ -364,11 +363,10 @@ namespace parser {
 
         bool isGenerator = false;
 
-        FormalParameterOptions options;
         bool previous_allow_yield = context_.allow_yield;
         bool previous_await = context_.await;
         context_.allow_yield = true;
-        ParseFormalParameters(nullopt, options);
+        auto options = ParseFormalParameters(nullopt);
 //        const params = this.parseFormalParameters();
 //        const method = this.parsePropertyMethod(params);
         context_.allow_yield = previous_allow_yield;

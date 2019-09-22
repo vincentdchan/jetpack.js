@@ -64,11 +64,11 @@ namespace parser {
         return start;
     }
 
-    void Parser::ParseFormalParameters(optional<Token> first_restricted, parser::Parser::FormalParameterOptions &options) {
+    ParserCommon::FormalParameterOptions Parser::ParseFormalParameters(optional<Token> first_restricted) {
 
+        FormalParameterOptions options;
         options.simple = true;
-        options.params.clear();
-        options.first_restricted = first_restricted;
+        options.first_restricted = move(first_restricted);
 
         Expect('(');
         if (!Match(')')) {
@@ -84,14 +84,21 @@ namespace parser {
             }
         }
         Expect(')');
+
+        return options;
     }
 
-    bool Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
+    void Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
+        std::vector<Token> params;
+        Sp<SyntaxNode> param;
         if (Match(u"...")) {
-
+            param = ParseRestElement(params);
+        } else {
+            param = ParsePattern(params, VarKind::Invalid);
         }
 
-        return true;
+        option.simple &= param->type == SyntaxNodeType::Identifier;
+        option.params.push_back(move(param));
     }
 
     Sp<Expression> Parser::ParsePrimaryExpression() {
@@ -225,7 +232,7 @@ namespace parser {
 
         }
 
-        // TODO;: check;
+        Assert(false, "ParsePrimaryExpression: should not reach here");
         return nullptr;
     }
 
@@ -388,8 +395,7 @@ namespace parser {
             }
         }
 
-        FormalParameterOptions formal;
-        ParseFormalParameters(first_restricted, formal);
+        auto formal = ParseFormalParameters(first_restricted);
         if (!formal.message.empty()) {
             message = formal.message;
         }
@@ -1073,8 +1079,7 @@ namespace parser {
         context_.await = is_async;
         context_.allow_yield = !is_generator;
 
-        FormalParameterOptions options;
-        ParseFormalParameters(first_restricted, options);
+        auto options = ParseFormalParameters(first_restricted);
         first_restricted = options.first_restricted;
         if (!options.message.empty()) {
             message = move(options.message);
