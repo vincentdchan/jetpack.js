@@ -1693,9 +1693,133 @@ namespace parser {
         return statement;
     }
 
+    Sp<ExportSpecifier> Parser::ParseExportSpecifier() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<ExportSpecifier>();
+
+        node->local = ParseIdentifierName();
+        node->exported = node->local;
+        if (MatchContextualKeyword(u"as")) {
+            NextToken();
+            node->exported = ParseIdentifierName();
+        }
+
+        return Finalize(start_marker, node);
+    }
+
     Sp<Declaration> Parser::ParseExportDeclaration() {
-        // TODO;
-        return nullptr;
+        if (context_.in_function_body) {
+            ThrowError(ParseMessages::IllegalExportDeclaration);
+        }
+
+        auto start_marker = CreateStartMarker();
+        ExpectKeyword(u"export");
+
+        Sp<Declaration> export_decl;
+        if (MatchKeyword(u"default")) {
+            NextToken();
+            if (MatchKeyword(u"function")) {
+                auto node = Alloc<ExportDefaultDeclaration>();
+                node->declaration = ParseFunctionDeclaration(true);
+                export_decl = Finalize(start_marker, node);
+            } else if (MatchKeyword(u"class")) {
+                auto node = Alloc<ExportDefaultDeclaration>();
+                node->declaration = ParseClassExpression();
+                export_decl = Finalize(start_marker, node);
+            } else if (MatchContextualKeyword(u"async")) {
+                auto node = Alloc<ExportDefaultDeclaration>();
+                if (MatchAsyncFunction()) {
+                    node->declaration = ParseFunctionDeclaration(true);
+                } else {
+                    node->declaration = ParseAssignmentExpression();
+                }
+                export_decl = Finalize(start_marker, node);
+            } else {
+                if (MatchContextualKeyword(u"from")) {
+                    ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(lookahead_.value_));
+                }
+                Sp<SyntaxNode> decl;
+                if (Match(u'{')) {
+                    decl = ParseObjectInitializer();
+                } else if (Match(u'[')) {
+                    decl = ParseArrayInitializer();
+                } else {
+                    decl = ParseAssignmentExpression();
+                }
+                ConsumeSemicolon();
+                auto node = Alloc<ExportDefaultDeclaration>();
+                node->declaration = move(decl);
+                export_decl = Finalize(start_marker, node);
+            }
+
+        } else if (Match(u'*')) {
+            NextToken();
+            if (!MatchContextualKeyword(u"from")) {
+                string message;
+                if (!lookahead_.value_.empty()) {
+                    message = ParseMessages::UnexpectedToken;
+                } else {
+                    message = ParseMessages::MissingFromClause;
+                }
+                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+            }
+            NextToken();
+            auto node = Alloc<ExportAllDeclaration>();
+            node->source = ParseModuleSpecifier();
+            ConsumeSemicolon();
+            export_decl = Finalize(start_marker, node);
+        } else if (lookahead_.type_ == JsTokenType::Keyword) {
+            auto node = Alloc<ExportNamedDeclaration>();
+
+            if (lookahead_.value_ == u"let" || lookahead_.value_ == u"const") {
+                bool in_for = false;
+                node->declaration = ParseLexicalDeclaration(in_for);
+            } else if (lookahead_.value_ == u"var" || lookahead_.value_ == u"class" || lookahead_.value_ == u"function") {
+                node->declaration = ParseStatementListItem();
+            } else {
+                ThrowUnexpectedToken(lookahead_);
+            }
+
+            export_decl = Finalize(start_marker, node);
+
+        } else if (MatchAsyncFunction()) {
+            auto node = Alloc<ExportNamedDeclaration>();
+            node->declaration = ParseFunctionDeclaration(false);
+            export_decl = Finalize(start_marker, node);
+        } else {
+            auto node = Alloc<ExportNamedDeclaration>();
+            bool is_export_from_id = false;
+
+            Expect(u'{');
+            while (!Match(u'}')) {
+                is_export_from_id = is_export_from_id || MatchKeyword(u"default");
+                node->specifiers.push_back(ParseExportSpecifier());
+                if (!Match(u'}')) {
+                    Expect(u',');
+                }
+            }
+            Expect(u'}');
+
+            if (MatchContextualKeyword(u"from")) {
+                NextToken();
+                node->source = ParseModuleSpecifier();
+                ConsumeSemicolon();
+            } else if (is_export_from_id) {
+                string message;
+                if (!lookahead_.value_.empty()) {
+                    message = ParseMessages::UnexpectedToken;
+                } else {
+                    message = ParseMessages::MissingFromClause;
+                }
+                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+            } else {
+                ConsumeSemicolon();
+            }
+
+            export_decl = Finalize(start_marker, node);
+        }
+
+        return export_decl;
     }
 
     Sp<Expression> Parser::ParseAssignmentExpression() {

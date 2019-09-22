@@ -285,9 +285,7 @@ namespace parser {
 
         Sp<ImportDeclaration> ParseImportDeclaration();
 
-        template <typename NodePtr>
-        bool ParseExportSpecifier(NodePtr& ptr);
-
+        Sp<ExportSpecifier> ParseExportSpecifier();
 
         Sp<Declaration> ParseExportDeclaration();
 
