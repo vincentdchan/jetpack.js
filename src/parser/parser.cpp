@@ -515,7 +515,11 @@ namespace parser {
 
             case JsTokenType::Identifier:
             case JsTokenType::BooleanLiteral:
-            case JsTokenType::NullLiteral:
+            case JsTokenType::NullLiteral: {
+                auto node = Alloc<Identifier>();
+                node->name = token.value_;
+                return Finalize(marker, node);
+            }
 
             case JsTokenType::Punctuator:
                 if (token.value_ == u"[") {
@@ -3151,7 +3155,7 @@ namespace parser {
             computed = Match(u'[');
             key = ParseObjectPropertyKey();
             auto id = dynamic_pointer_cast<Identifier>(*key);
-            if (id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(u'*'))) {
+            if (id && id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(u'*'))) {
                 token = lookahead_;
                 is_static = true;
                 computed = Match(u'[');
@@ -3196,7 +3200,7 @@ namespace parser {
             method = true;
         }
 
-        if (kind != VarKind::Invalid && key.has_value() && Match(u'(')) {
+        if (kind == VarKind::Invalid && key.has_value() && Match(u'(')) {
             kind = VarKind::Init;
             if (is_async) {
                 value = ParsePropertyMethodAsyncFunction();
@@ -3206,7 +3210,7 @@ namespace parser {
             method = true;
         }
 
-        if (kind != VarKind::Invalid) {
+        if (kind == VarKind::Invalid) {
             ThrowUnexpectedToken(lookahead_);
         }
 

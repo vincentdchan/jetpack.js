@@ -28,8 +28,8 @@ int main(int argc, char** argv) {
 
     std::cout << utils::To_UTF8(*src) << std::endl;
 
-    Parser parser(src);
     try {
+        Parser parser(src);
         Sp<Module> module_ = parser.ParseModule();
         auto json_result = dumper::AstToJson::Dump(module_);
         std::cout << json_result.dump(2) << std::endl;
