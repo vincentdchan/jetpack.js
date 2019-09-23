@@ -155,7 +155,9 @@ namespace parser {
             case SyntaxNodeType::ArrayPattern: {
                 auto pattern = dynamic_pointer_cast<ArrayPattern>(param);
                 for (auto& i : pattern->elements) {
-                    CheckPatternParam(options, i);
+                    if (i.has_value()) {
+                        CheckPatternParam(options, *i);
+                    }
                 }
                 break;
             }
@@ -2844,12 +2846,11 @@ namespace parser {
         auto start_marker = CreateStartMarker();
 
         Expect(u'[');
-        std::vector<Sp<SyntaxNode>> elements;
+        std::vector<optional<Sp<SyntaxNode>>> elements;
         while (!Match(u']')) {
             if (Match(u',')) {
                 NextToken();
-                // TODO: push nullopt
-                elements.push_back(nullptr);
+                elements.push_back(nullopt);
             } else {
                 if (Match(u"...")) {
                     elements.push_back(ParseBindingRestElement(params, kind));

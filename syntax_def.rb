@@ -102,7 +102,7 @@ SyntaxFactory.def_syntax :ArrayExpression, base: :Expression do
 end
 
 SyntaxFactory.def_syntax :ArrayPattern, base: :Pattern do
-  def_prop [:SyntaxNode], "elements"
+  def_prop [:SyntaxNode.opt], "elements"
 end
 
 SyntaxFactory.def_syntax :ArrowFunctionExpression, base: :Expression do

@@ -21,7 +21,7 @@ class ArrayPattern: public Pattern {
 public:
     ArrayPattern();
 
-    std::vector<Sp<SyntaxNode>> elements;
+    std::vector<std::optional<Sp<SyntaxNode>>> elements;
 
 };
 

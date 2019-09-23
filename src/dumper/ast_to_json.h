@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 #include <tsl/ordered_map.h>
-#include "../parser/node_traverser_intf.h"
 #include "../utils.h"
 
 namespace dumper {
@@ -414,9 +413,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_elements = json::array();
 
-            for (auto& i : node->elements) {
-                array_elements.push_back(Dump(i));
-            }
+              for (auto& i : node->elements) {
+                  array_elements.push_back(Dump(i));
+              }
             result["elements"] = std::move(array_elements);
 
             return result;
@@ -429,7 +428,11 @@ namespace dumper {
             json array_elements = json::array();
 
             for (auto& i : node->elements) {
-                array_elements.push_back(Dump(i));
+                if (i.has_value()) {
+                    array_elements.push_back(Dump(*i));
+                } else {
+                    array_elements.push_back(nullptr);
+                }
             }
             result["elements"] = std::move(array_elements);
 
@@ -445,9 +448,9 @@ namespace dumper {
             }
             json array_params = json::array();
 
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
+              for (auto& i : node->params) {
+                  array_params.push_back(Dump(i));
+              }
             result["params"] = std::move(array_params);
             result["body"] = Dump(node->body);
             result["generator"] = node->generator;
@@ -504,9 +507,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-            for (auto& i : node->body) {
-                array_body.push_back(Dump(i));
-            }
+              for (auto& i : node->body) {
+                  array_body.push_back(Dump(i));
+              }
             result["body"] = std::move(array_body);
 
             return result;
@@ -530,9 +533,9 @@ namespace dumper {
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
 
-            for (auto& i : node->arguments) {
-                array_arguments.push_back(Dump(i));
-            }
+              for (auto& i : node->arguments) {
+                  array_arguments.push_back(Dump(i));
+              }
             result["arguments"] = std::move(array_arguments);
 
             return result;
@@ -554,9 +557,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-            for (auto& i : node->body) {
-                array_body.push_back(Dump(i));
-            }
+              for (auto& i : node->body) {
+                  array_body.push_back(Dump(i));
+              }
             result["body"] = std::move(array_body);
 
             return result;
@@ -690,9 +693,9 @@ namespace dumper {
             }
             json array_specifiers = json::array();
 
-            for (auto& i : node->specifiers) {
-                array_specifiers.push_back(Dump(i));
-            }
+              for (auto& i : node->specifiers) {
+                  array_specifiers.push_back(Dump(i));
+              }
             result["specifiers"] = std::move(array_specifiers);
             if (node->source) {
                 result["source"] = Dump(*node->source);
@@ -770,9 +773,9 @@ namespace dumper {
             }
             json array_params = json::array();
 
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
+              for (auto& i : node->params) {
+                  array_params.push_back(Dump(i));
+              }
             result["params"] = std::move(array_params);
             result["body"] = Dump(node->body);
             result["generator"] = node->generator;
@@ -791,9 +794,9 @@ namespace dumper {
             }
             json array_params = json::array();
 
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
+              for (auto& i : node->params) {
+                  array_params.push_back(Dump(i));
+              }
             result["params"] = std::move(array_params);
             result["body"] = Dump(node->body);
             result["generator"] = node->generator;
@@ -839,9 +842,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_specifiers = json::array();
 
-            for (auto& i : node->specifiers) {
-                array_specifiers.push_back(Dump(i));
-            }
+              for (auto& i : node->specifiers) {
+                  array_specifiers.push_back(Dump(i));
+              }
             result["specifiers"] = std::move(array_specifiers);
             result["source"] = Dump(node->source);
 
@@ -928,9 +931,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-            for (auto& i : node->body) {
-                array_body.push_back(Dump(i));
-            }
+              for (auto& i : node->body) {
+                  array_body.push_back(Dump(i));
+              }
             result["body"] = std::move(array_body);
             result["source_type"] = utils::To_UTF8(node->source_type);
 
@@ -944,9 +947,9 @@ namespace dumper {
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
 
-            for (auto& i : node->arguments) {
-                array_arguments.push_back(Dump(i));
-            }
+              for (auto& i : node->arguments) {
+                  array_arguments.push_back(Dump(i));
+              }
             result["arguments"] = std::move(array_arguments);
 
             return result;
@@ -958,9 +961,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_properties = json::array();
 
-            for (auto& i : node->properties) {
-                array_properties.push_back(Dump(i));
-            }
+              for (auto& i : node->properties) {
+                  array_properties.push_back(Dump(i));
+              }
             result["properties"] = std::move(array_properties);
 
             return result;
@@ -972,9 +975,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_properties = json::array();
 
-            for (auto& i : node->properties) {
-                array_properties.push_back(Dump(i));
-            }
+              for (auto& i : node->properties) {
+                  array_properties.push_back(Dump(i));
+              }
             result["properties"] = std::move(array_properties);
 
             return result;
@@ -1032,9 +1035,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-            for (auto& i : node->body) {
-                array_body.push_back(Dump(i));
-            }
+              for (auto& i : node->body) {
+                  array_body.push_back(Dump(i));
+              }
             result["body"] = std::move(array_body);
             result["source_type"] = utils::To_UTF8(node->source_type);
 
@@ -1047,9 +1050,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_expressions = json::array();
 
-            for (auto& i : node->expressions) {
-                array_expressions.push_back(Dump(i));
-            }
+              for (auto& i : node->expressions) {
+                  array_expressions.push_back(Dump(i));
+              }
             result["expressions"] = std::move(array_expressions);
 
             return result;
@@ -1092,9 +1095,9 @@ namespace dumper {
             }
             json array_consequent = json::array();
 
-            for (auto& i : node->consequent) {
-                array_consequent.push_back(Dump(i));
-            }
+              for (auto& i : node->consequent) {
+                  array_consequent.push_back(Dump(i));
+              }
             result["consequent"] = std::move(array_consequent);
 
             return result;
@@ -1107,9 +1110,9 @@ namespace dumper {
             result["discrimiant"] = Dump(node->discrimiant);
             json array_cases = json::array();
 
-            for (auto& i : node->cases) {
-                array_cases.push_back(Dump(i));
-            }
+              for (auto& i : node->cases) {
+                  array_cases.push_back(Dump(i));
+              }
             result["cases"] = std::move(array_cases);
 
             return result;
@@ -1142,15 +1145,15 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_quasis = json::array();
 
-            for (auto& i : node->quasis) {
-                array_quasis.push_back(Dump(i));
-            }
+              for (auto& i : node->quasis) {
+                  array_quasis.push_back(Dump(i));
+              }
             result["quasis"] = std::move(array_quasis);
             json array_expressions = json::array();
 
-            for (auto& i : node->expressions) {
-                array_expressions.push_back(Dump(i));
-            }
+              for (auto& i : node->expressions) {
+                  array_expressions.push_back(Dump(i));
+              }
             result["expressions"] = std::move(array_expressions);
 
             return result;
@@ -1216,9 +1219,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_declarations = json::array();
 
-            for (auto& i : node->declarations) {
-                array_declarations.push_back(Dump(i));
-            }
+              for (auto& i : node->declarations) {
+                  array_declarations.push_back(Dump(i));
+              }
             result["declarations"] = std::move(array_declarations);
             result["kind"] = node->kind;
 
@@ -1275,9 +1278,9 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_params = json::array();
 
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
+              for (auto& i : node->params) {
+                  array_params.push_back(Dump(i));
+              }
             result["params"] = std::move(array_params);
             result["async"] = node->async;
 

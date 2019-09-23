@@ -22,17 +22,23 @@ class Symbol
 
 end
 
+
 class Array
 
+  def opt_to_codegen(opt)
+    "std::optional<#{opt.value.to_codegen}>"
+  end
+
   def to_codegen
-    if self.length == 1 and self[0].is_a? Symbol then
+    if self.length == 1 and self[0].is_a? Option then
+      return "std::vector<#{opt_to_codegen(self[0])}>"
+    elsif self.length == 1 and self[0].is_a? Symbol then
       return "std::vector<#{self[0].to_codegen}>"
     end
     super.to_codegen
   end
 
 end
-
 
 class Option
 
@@ -233,109 +239,6 @@ puts '
 }
 '
 
-$stdout.reopen('src/parser/node_traverser_intf.h', 'w')
-print_title
-puts '
-#pragma once
-#include "syntax_nodes.h"
-
-class INodeTraverser {
-public:
-'
-
-SyntaxFactory.syntaxes.each do |item|
-  if !item.is_virtual then
-    id = item.class_id.to_s
-    puts "
-    virtual bool TraverseBefore(const Sp<#{id}>& node) { return true; }
-
-    virtual void TraverseAfter(const Sp<#{id}>& node) {}
-"
-  end
-end
-
-puts '
-};
-'
-
-$stdout.reopen('src/parser/node_traverser.cpp', 'w')
-print_title
-puts '
-#include "node_traverser.h"
-#include <memory>
-
-void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {
-    switch (node->type) {
-'
-
-SyntaxFactory.syntaxes.each do |item|
-  if !item.is_virtual then
-    id = item.class_id.to_s
-    puts "
-        case SyntaxNodeType::#{id}: {
-            auto child = std::dynamic_pointer_cast<#{id}>(node);
-            if(!traverser_->TraverseBefore(child)) return;"
-
-    item.props.reverse.each do |item|
-      if not [:String, :Boolean, :Number, :VarKind].include? item.prop_type then
-        if item.prop_type.is_a? Array then
-
-          puts "
-            for (auto i = child->#{item.name}.rbegin(); i != child->#{item.name}.rend(); i++) {
-                Push(*i);
-            }"
-        elsif item.prop_type.is_a? Option then
-          puts "            if (child->#{item.pretty_name}) {"
-          puts "                Push(*child->#{item.pretty_name});"
-          puts "            }"
-        elsif item.prop_type.is_a? Variant then
-          # nothing
-        else
-          puts "            Push(child->#{item.pretty_name});"
-        end
-      end
-    end
-
-    puts "
-            break;
-        }
-"
-  end
-end
-
-puts '
-        default:
-            break;
-
-    }
-}
-
-void NodeTraverser::TraverseNodeAfter_(const Sp<SyntaxNode> &node) {
-    switch (node->type) {
-'
-
-
-SyntaxFactory.syntaxes.each do |item|
-  if !item.is_virtual then
-    id = item.class_id.to_s
-    puts "
-        case SyntaxNodeType::#{id}: {
-            auto child = std::dynamic_pointer_cast<#{id}>(node);
-            traverser_->TraverseAfter(child);
-            break;
-        }"
-
-  end
-end
-
-puts '
-        default:
-            break;
-
-    }
-}
-'
-
 $stdout.reopen('src/dumper/ast_to_json.h', 'w')
 print_title
 puts '
@@ -345,7 +248,6 @@ puts '
 #include <vector>
 #include <memory>
 #include <tsl/ordered_map.h>
-#include "../parser/node_traverser_intf.h"
 #include "../utils.h"
 
 namespace dumper {
@@ -423,10 +325,21 @@ SyntaxFactory.syntaxes.each do |item|
       elsif item.prop_type.is_a? Array then
         array_name = "array_#{item.name}"
         puts "            json #{array_name} = json::array();"
-        puts "
+        if item.prop_type[0].is_a? Option then
+          puts "
             for (auto& i : node->#{item.name}) {
-                #{array_name}.push_back(Dump(i));
+                if (i.has_value()) {
+                    #{array_name}.push_back(Dump(*i));
+                } else {
+                    #{array_name}.push_back(nullptr);
+                }
             }"
+        else
+          puts "
+              for (auto& i : node->#{item.name}) {
+                  #{array_name}.push_back(Dump(i));
+              }"
+        end
         puts "            result[\"#{item.name}\"] = std::move(#{array_name});"
 
       elsif item.prop_type.is_a? Option then

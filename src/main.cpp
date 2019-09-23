@@ -2,7 +2,6 @@
 #include <fstream>
 #include <string>
 #include "parser/parser.hpp"
-#include "parser/node_traverser.h"
 #include "dumper/ast_to_json.h"
 #include "tokenizer/scanner.h"
 
