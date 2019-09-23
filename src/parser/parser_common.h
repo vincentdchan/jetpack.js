@@ -111,21 +111,21 @@ namespace parser {
             return error_handler_;
         }
 
-        int BinaryPrecedence(const Token& token) const;
+        [[nodiscard]] int BinaryPrecedence(const Token& token) const;
 
         static bool IsIdentifierName(Token&);
 
-        inline Marker LastMarker() const {
+        [[nodiscard]] inline Marker LastMarker() const {
             return last_marker_;
         }
 
-        inline Marker StartMarker() const {
+        [[nodiscard]] inline Marker StartMarker() const {
             return start_marker_;
         }
 
         inline void Assert(bool value, std::string message) {
             if (value) {
-                throw ParseAssertFailed(message, last_marker_.line, last_marker_.column);
+                throw ParseAssertFailed(std::move(message), last_marker_.line, last_marker_.column);
             }
         }
 

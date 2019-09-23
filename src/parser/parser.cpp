@@ -73,6 +73,111 @@ namespace parser {
         }
     }
 
+    std::optional<ParserCommon::FormalParameterOptions> Parser::ReinterpretAsCoverFormalsList(const Sp<SyntaxNode> &expr) {
+        std::vector<Sp<SyntaxNode>> params;
+        FormalParameterOptions options;
+
+        bool async_arrow = false;
+        switch (expr->type) {
+            case SyntaxNodeType::Identifier:
+                break;
+
+            case SyntaxNodeType::ArrowParameterPlaceHolder: {
+                auto node = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr);
+                params = node->params;
+                async_arrow = node->async;
+                break;
+            }
+
+            default:
+                return nullopt;
+
+        }
+
+        options.simple = true;
+
+        for (auto& param : params) {
+            if (param->type == SyntaxNodeType::AssignmentPattern) {
+                auto node = dynamic_pointer_cast<AssignmentPattern>(param);
+                if (node->right->type == SyntaxNodeType::YieldExpression) {
+                    auto right = dynamic_pointer_cast<YieldExpression>(node->right);
+                    if (right->argument) {
+                        ThrowUnexpectedToken(lookahead_);
+                    }
+                    auto new_right = Alloc<Identifier>();
+                    new_right->name = u"yield";
+                    node->right = new_right;
+                }
+            } else if (async_arrow && param->type == SyntaxNodeType::Identifier) {
+                auto id = dynamic_pointer_cast<Identifier>(param);
+                if (id->name == u"await") {
+                    ThrowUnexpectedToken(lookahead_);
+                }
+            }
+            CheckPatternParam(options, param);
+        }
+
+        if (context_.strict_ || !context_.allow_yield) {
+            for (auto& param : params) {
+                if (param->type == SyntaxNodeType::YieldExpression) {
+                    ThrowUnexpectedToken(lookahead_);
+                }
+            }
+        }
+
+        if (options.message == ParseMessages::StrictParamDupe) {
+            Token token = context_.strict_ ? *options.stricted : *options.first_restricted;
+            ThrowUnexpectedToken(token, options.message);
+        }
+
+        options.params = move(params);
+        return options;
+    }
+
+    void Parser::CheckPatternParam(parser::ParserCommon::FormalParameterOptions &options,
+                                   const Sp<SyntaxNode> &param) {
+        switch (param->type) {
+            case SyntaxNodeType::Identifier: {
+                auto id = dynamic_pointer_cast<Identifier>(param);
+                ValidateParam(options, Token(), id->name);
+                break;
+            }
+            case SyntaxNodeType::RestElement: {
+                auto rest_element = dynamic_pointer_cast<RestElement>(param);
+                CheckPatternParam(options, rest_element->argument);
+                break;
+            }
+            case SyntaxNodeType::AssignmentPattern: {
+                auto assignment = dynamic_pointer_cast<AssignmentPattern>(param);
+                CheckPatternParam(options, assignment->left);
+                break;
+            }
+            case SyntaxNodeType::ArrayPattern: {
+                auto pattern = dynamic_pointer_cast<ArrayPattern>(param);
+                for (auto& i : pattern->elements) {
+                    CheckPatternParam(options, i);
+                }
+                break;
+            }
+            case SyntaxNodeType::ObjectPattern: {
+                auto pattern = dynamic_pointer_cast<ObjectPattern>(param);
+                for (auto& prop : pattern->properties) {
+                    if (prop->type == SyntaxNodeType::RestElement) {
+                        auto rest = dynamic_pointer_cast<RestElement>(prop);
+                        CheckPatternParam(options, rest);
+                    } else {
+                        auto property = dynamic_pointer_cast<Property>(prop);
+                        if (property->value.has_value()) {
+                            CheckPatternParam(options, *property->value);
+                        }
+                    }
+                }
+            }
+            default:
+                break;
+        }
+    }
+
     bool Parser::IsLexicalDeclaration() {
         auto state = scanner_->SaveState();
         std::vector<Comment> comments;
@@ -1989,8 +2094,7 @@ namespace parser {
                 context_.is_binding_element = false;
                 bool is_async = placefolder->async;
 
-                FormalParameterOptions list;
-                if (ReinterpretAsCoverFormalsList(expr, list)) {
+                if (auto list = ReinterpretAsCoverFormalsList(expr); list.has_value()) {
                     if (has_line_terminator_) {
                         TolerateUnexpectedToken(lookahead_);
                     }
@@ -1998,7 +2102,7 @@ namespace parser {
 
                     bool prev_strict = context_.strict_;
                     bool prev_allow_strict_directive = context_.allow_strict_directive;
-                    context_.allow_strict_directive = list.simple;
+                    context_.allow_strict_directive = list->simple;
 
                     bool prev_allow_yield = context_.allow_yield;
                     bool prev_await = context_.await;
@@ -2022,25 +2126,23 @@ namespace parser {
 
                     bool expression = body->type != SyntaxNodeType::BlockStatement;
 
-                    if (context_.strict_ && list.first_restricted) {
-                        Token temp = *list.first_restricted;
-                        ThrowUnexpectedToken(temp, list.message);
+                    if (context_.strict_ && list->first_restricted) {
+                        ThrowUnexpectedToken(*list->first_restricted, list->message);
                         return nullptr;
                     }
-                    if (context_.strict_ && list.stricted) {
-                        Token temp = *list.stricted;
-                        TolerateUnexpectedToken(temp, list.message);
+                    if (context_.strict_ && list->stricted) {
+                        TolerateUnexpectedToken(*list->stricted, list->message);
                     }
 
                     if (is_async) {
                         auto node = Alloc<AsyncArrowFunctionExpression>();
-                        node->params = list.params;
+                        node->params = list->params;
                         node->body = body;
                         node->expression = expression;
                         expr = Finalize(marker, node);
                     } else {
                         auto node = Alloc<ArrowFunctionExpression>();
-                        node->params = list.params;
+                        node->params = list->params;
                         node->body = body;
                         node->expression = expression;
                         expr = Finalize(marker, node);

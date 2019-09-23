@@ -105,8 +105,9 @@ namespace parser {
 
         Sp<Pattern> ReinterpretExpressionAsPattern(const Sp<SyntaxNode>& expr);
 
-        template <typename NodePtr>
-        bool ReinterpretAsCoverFormalsList(NodePtr& ptr, FormalParameterOptions& list);
+        std::optional<FormalParameterOptions> ReinterpretAsCoverFormalsList(const Sp<SyntaxNode>& ptr);
+
+        void CheckPatternParam(FormalParameterOptions& options, const Sp<SyntaxNode>& param);
 
         Sp<Expression> ParseGroupExpression();
 
@@ -377,12 +378,6 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseTemplateHead(NodePtr &ptr) {
-        return false;
-    }
-
-    template <typename NodePtr>
-    bool Parser::ReinterpretAsCoverFormalsList(NodePtr& ptr, FormalParameterOptions& list) {
-        // TODO
         return false;
     }
 
