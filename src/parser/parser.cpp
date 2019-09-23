@@ -581,7 +581,7 @@ namespace parser {
 
         std::string message;
 
-        if (Match(u'(')) {
+        if (!Match(u'(')) {
             Token token = lookahead_;
 
             if (!context_.strict_ && !is_generator && MatchKeyword(JsTokenType::K_Yield)) {
@@ -1077,10 +1077,19 @@ namespace parser {
         auto node = make_shared<Module>();
         node->body = ParseDirectivePrologues();
         while (lookahead_.type_ != JsTokenType::EOF_) {
-            Sp<SyntaxNode> statement_list_item = ParseStatementListItem();
-            node->body.push_back(move(statement_list_item));
+            node->body.push_back(ParseStatementListItem());
         }
         return Finalize(marker, node);
+    }
+
+    Sp<Script> Parser::ParseScript() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<Script>();
+        node->body = ParseDirectivePrologues();
+        while (lookahead_.type_ != JsTokenType::EOF_) {
+            node->body.push_back(ParseStatementListItem());
+        }
+        return Finalize(start_marker, node);
     }
 
     Sp<SwitchCase> Parser::ParseSwitchCase() {
@@ -1177,6 +1186,9 @@ namespace parser {
 
             case JsTokenType::K_Continue:
                 return ParseContinueStatement();
+
+            case JsTokenType::K_Debugger:
+                return ParseDebuggerStatement();
 
             case JsTokenType::K_Do:
                 return ParseDoWhileStatement();
@@ -1306,8 +1318,7 @@ namespace parser {
         bool prev_strict = context_.strict_;
         bool prev_allow_strict_directive = context_.allow_strict_directive;
         context_.allow_strict_directive = options.simple;
-
-        // TODO: pasre function source elements
+        auto body = ParseFunctionSourceElements();
 
         if (context_.strict_ && first_restricted) {
             Token temp = *first_restricted;
@@ -1326,12 +1337,17 @@ namespace parser {
         if (is_async) {
             auto node = Alloc<FunctionDeclaration>();
             node->id = id;
+            node->params = move(options.params);
+            node->body = move(body);
             node->async = true;
             return Finalize(marker, node);
         } else {
             auto node = Alloc<FunctionDeclaration>();
             node->id = id;
             node->generator = is_generator;
+            node->params = move(options.params);
+            node->body = move(body);
+            node->async = false;
 
             return Finalize(marker, node);
         }
@@ -1348,24 +1364,23 @@ namespace parser {
             auto id = dynamic_pointer_cast<Identifier>(expr);
             UString key = UString(u"$") + id->name;
 
-            // TODO: label set
+            if (context_.label_set->find(key) != context_.label_set->end()) {
+                ThrowError(ParseMessages::Redeclaration, string("Label: ") + utils::To_UTF8(id->name));
+            }
+            context_.label_set->insert(key);
 
             Sp<Statement> body;
-
             if (MatchKeyword(JsTokenType::K_Class)) {
                 TolerateUnexpectedToken(lookahead_);
                 body = ParseClassDeclaration(false);
             } else if (MatchKeyword(JsTokenType::K_Function)) {
                 Token token = lookahead_;
-                Sp<Declaration> declaration = ParseFunctionDeclaration(false);
-                // TODO: check generator
-//                if (context_.strict_) {
-//                    string message = "StrictFunction";
-//                    UnexpectedToken(&token, &message);
-//                } else if (declaration->generator) {
-//                    string message = "GeneratorInLegacyContext";
-//                    UnexpectedToken(&token, &message);
-//                }
+                auto declaration = ParseFunctionDeclaration(false);
+                if (context_.strict_) {
+                    TolerateUnexpectedToken(token, ParseMessages::StrictFunction);
+                } else if (declaration->generator) {
+                    TolerateUnexpectedToken(token, ParseMessages::GeneratorInLegacyContext);
+                }
                 body = move(declaration);
             } else {
                 body = ParseStatement();
@@ -1395,7 +1410,9 @@ namespace parser {
             Sp<Identifier> id = ParseVariableIdentifier(VarKind::Invalid);
 
             UString key = UString(u"$") + id->name;
-            // TODO: labelSet
+            if (context_.label_set->find(key) == context_.label_set->end()) {
+                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
+            }
             label = id;
         }
 
@@ -1417,8 +1434,13 @@ namespace parser {
         auto node = Alloc<ContinueStatement>();
 
         if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
-            // TODO: label
-            node->label = ParseVariableIdentifier(VarKind::Invalid);
+            auto id = ParseVariableIdentifier(VarKind::Invalid);
+            node->label = id;
+
+            UString key = UString(u"$") + id->name;
+            if (context_.label_set->find(key) == context_.label_set->end()) {
+                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
+            }
         }
 
         ConsumeSemicolon();
@@ -1603,8 +1625,9 @@ namespace parser {
                     for_in = false;
                 } else {
                     if (Match(u',')) {
-                        std::vector<Sp<SyntaxNode>> init_seq;
-                        init_seq.push_back(*init);
+                        std::vector<Sp<Expression>> init_seq;
+                        Assert(init.has_value() && (*init)->IsExpression(), "init should be an expression");
+                        init_seq.push_back(dynamic_pointer_cast<Expression>(*init));
 
                         while (Match(u',')) {
                             NextToken();
@@ -1615,7 +1638,7 @@ namespace parser {
                         }
 
                         Sp<SequenceExpression> node;
-                        // TODO: ???
+                        node->expressions = move(init_seq);
                         init = Finalize(start_marker, node);
                     }
                     Expect(u';');
@@ -1775,7 +1798,24 @@ namespace parser {
 
         auto node = Alloc<CatchClause>();
 
-        // TODO: parse params
+        std::vector<Token> params;
+        node->param = ParsePattern(params);
+
+        std::unordered_set<UString> param_set;
+        for (auto& token : params) {
+            UString key = UString(u"$") + token.value_;
+            if (param_set.find(key) != param_set.end()) {
+                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + utils::To_UTF8(token.value_));
+            }
+            param_set.insert(key);
+        }
+
+        if (context_.strict_ && node->param->type == SyntaxNodeType::Identifier) {
+            auto id = dynamic_pointer_cast<Identifier>(node->param);
+            if (scanner_->IsRestrictedWord(id->name)) {
+                TolerateError(ParseMessages::StrictCatchVariable);
+            }
+        }
 
         Expect(u')');
         node->body = ParseBlock();
@@ -1831,8 +1871,14 @@ namespace parser {
     }
 
     std::vector<Sp<VariableDeclarator>> Parser::ParseVariableDeclarationList(bool in_for) {
-        // TODO:
-        return {};
+        std::vector<Sp<VariableDeclarator>> list;
+        list.push_back(ParseVariableDeclaration(in_for));
+        while (Match(u',')) {
+            NextToken();
+            list.push_back(ParseVariableDeclaration(in_for));
+        }
+
+        return list;
     }
 
     Sp<WhileStatement> Parser::ParseWhileStatement() {
@@ -2670,7 +2716,7 @@ namespace parser {
                 ThrowUnexpectedToken(token);
                 return nullptr;
             }
-        } else if (token.type_ == JsTokenType::Identifier) {
+        } else if (token.type_ != JsTokenType::Identifier) {
             ThrowUnexpectedToken(token);
             return nullptr;
         } else if ((context_.is_module || context_.await) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {

@@ -28,8 +28,7 @@ int main(int argc, char** argv) {
 
     std::cout << utils::To_UTF8(*src) << std::endl;
 
-    ParserCommon::Config config;
-    Parser parser(src, config);
+    Parser parser(src);
     try {
         Sp<Module> module_ = parser.ParseModule();
         auto json_result = dumper::AstToJson::Dump(module_);

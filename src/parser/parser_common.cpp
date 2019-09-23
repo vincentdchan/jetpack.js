@@ -7,6 +7,15 @@
 
 namespace parser {
 
+    ParserCommon::Config ParserCommon::Config::Default() {
+        return {
+            nullopt,
+            false,
+            true,
+            false,
+        };
+    }
+
     ParserCommon::ParserCommon(shared_ptr <std::u16string> source, const ParserCommon::Config& config):
         source_(source), config_(config) {
 
@@ -175,7 +184,7 @@ namespace parser {
     }
 
     ParserCommon::Marker ParserCommon::CreateStartMarker() {
-        return Marker {
+        return {
             start_marker_.index,
             start_marker_.line,
             start_marker_.column
@@ -189,7 +198,7 @@ namespace parser {
             column += last_line_start;
             line--;
         }
-        return Marker {
+        return {
             static_cast<uint32_t>(tok.range_.first),
             line,
             column

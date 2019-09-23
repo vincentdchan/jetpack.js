@@ -125,33 +125,6 @@ SyntaxFactory.def_syntax :AssignmentPattern, base: :Pattern do
   def_prop :Expression, "right"
 end
 
-SyntaxFactory.def_syntax :AsyncArrowFunctionExpression, base: :Expression do
-  def_prop :Identifier.opt, "id"
-  def_prop [:SyntaxNode], "params"
-  def_prop :SyntaxNode, "body"
-  def_prop :Boolean, "generator"
-  def_prop :Boolean, "expression"
-  def_prop :Boolean, "async"
-end
-
-SyntaxFactory.def_syntax :AsyncFunctionDeclaration, base: :Declaration do
-  def_prop :Identifier.opt, "id"
-  def_prop [:SyntaxNode], "params"
-  def_prop :BlockStatement, "body"
-  def_prop :Boolean, "generator"
-  def_prop :Boolean, "expression"
-  def_prop :Boolean, "async"
-end
-
-SyntaxFactory.def_syntax :AsyncFunctionExpression, base: :Expression do
-  def_prop :Identifier.opt, "id"
-  def_prop [:SyntaxNode], "params"
-  def_prop :SyntaxNode, "body"
-  def_prop :Boolean, "generator"
-  def_prop :Boolean, "expression"
-  def_prop :Boolean, "async"
-end
-
 SyntaxFactory.def_syntax :AwaitExpression, base: :Expression do
   def_prop :Expression, "argument"
 end
@@ -181,7 +154,7 @@ SyntaxFactory.def_syntax :CatchClause, base: :SyntaxNode do
 end
 
 SyntaxFactory.def_syntax :ClassBody, base: :SyntaxNode do
-  def_prop [:Property], "body"
+  def_prop [:MethodDefinition], "body"
 end
 
 SyntaxFactory.def_syntax :ClassDeclaration, base: :Declaration do
@@ -336,7 +309,7 @@ SyntaxFactory.def_syntax :MetaProperty, base: :Expression do
 end
 
 SyntaxFactory.def_syntax :MethodDefinition, base: :SyntaxNode do
-  def_prop :Expression.opt, "key"
+  def_prop :SyntaxNode.opt, "key"
   def_prop :Boolean, "computed"
   def_prop :Expression.opt, "value"
   def_prop :VarKind, "kind"

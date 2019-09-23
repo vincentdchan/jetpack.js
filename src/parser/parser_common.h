@@ -22,12 +22,16 @@ namespace parser {
     class ParserCommon {
     public:
         struct Config {
-            bool range;
-            bool loc;
+        public:
+            static Config Default();
+
             optional<UString> source;
             bool tokens;
             bool comment;
             bool tolerant;
+
+        private:
+            Config() = default;
         };
 
         struct Context {

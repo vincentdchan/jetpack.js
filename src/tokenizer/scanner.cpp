@@ -104,6 +104,7 @@ void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
             line_number_,
             index_ - line_start_ - 2,
         };
+        loc.end_ = Position { 0, 0 };
     }
 
     while (!IsEnd()) {
@@ -130,8 +131,8 @@ void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
                         loc,
                     };
                     result.push_back(comment);
-                    return;
                 }
+                return;
             }
 
             ++index_;
@@ -612,8 +613,8 @@ Token Scanner::ScanPunctuator() {
         JsTokenType::Punctuator,
         str,
         SourceLocation(),
-        line_start_,
         line_number_,
+        line_start_,
         make_pair(start, index_)
     };
 

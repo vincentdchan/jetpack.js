@@ -25,6 +25,10 @@ namespace parser {
 
         }
 
+        Parser(shared_ptr<u16string> source): Parser(std::move(source), ParserCommon::Config::Default()) {
+
+        }
+
         template<typename T, typename ...Args>
         Sp<T> Alloc(Args && ...args) {
             static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
@@ -169,9 +173,6 @@ namespace parser {
 
         Sp<Expression> ParseArrayInitializer();
 
-        template <typename NodePtr>
-        bool PeinterpretExpressionAsPattern(NodePtr& ptr);
-
         FormalParameterOptions ParseFormalParameters(optional<Token> first_restricted = nullopt);
         void ParseFormalParameter(FormalParameterOptions& option);
         void ValidateParam(FormalParameterOptions& option, const Token& param, const UString& name);
@@ -179,7 +180,7 @@ namespace parser {
 
         Sp<RestElement> ParseRestElement(std::vector<Token>& params);
 
-        Sp<SyntaxNode> ParsePattern(std::vector<Token>& params, VarKind  kind);
+        Sp<SyntaxNode> ParsePattern(std::vector<Token>& params, VarKind kind = VarKind::Invalid);
 
         Sp<SyntaxNode> ParsePatternWithDefault(std::vector<Token> &params, VarKind kind);
 
@@ -190,9 +191,6 @@ namespace parser {
         std::vector<Sp<VariableDeclarator>> ParseVariableDeclarationList(bool in_for);
 
         Sp<VariableDeclaration> ParseVariableStatement();
-
-        template <typename NodePtr>
-        bool ParseEmptyStatement(NodePtr& ptr);
 
         Sp<EmptyStatement> ParseEmptyStatement();
 
@@ -270,8 +268,7 @@ namespace parser {
 
         Sp<Module> ParseModule();
 
-        template <typename NodePtr>
-        bool ParseScript(NodePtr& ptr);
+        Sp<Script> ParseScript();
 
         Sp<Literal> ParseModuleSpecifier();
 
@@ -303,21 +300,17 @@ namespace parser {
 //    bool Finalize(const Marker& marker, FromT from, ToT& to);
     template<typename T>
     Sp<T> Parser::Finalize(const Parser::Marker &marker, const Sp<T>& from) {
+        from->range = std::make_pair(marker.index, LastMarker().index);
 
-        if (config_.range) {
-            from->range = std::make_pair(marker.index, LastMarker().index);
-        }
+        from->location.start_ = Position {
+            marker.line,
+            marker.column,
+        };
 
-        if (config_.loc) {
-            from->location.start_ = Position {
-                marker.line,
-                marker.column,
-            };
-            from->location.end_ = Position {
-                LastMarker().line,
-                LastMarker().column,
-            };
-        }
+        from->location.end_ = Position {
+            LastMarker().line,
+            LastMarker().column,
+        };
 
         return from;
     }
