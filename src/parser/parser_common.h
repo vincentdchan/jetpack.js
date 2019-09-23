@@ -128,7 +128,7 @@ namespace parser {
         }
 
         inline void Assert(bool value, std::string message) {
-            if (value) {
+            if (!value) {
                 throw ParseAssertFailed(std::move(message), last_marker_.line, last_marker_.column);
             }
         }

@@ -599,6 +599,8 @@ Token Scanner::ScanPunctuator() {
                         if (UString(u"<>=!+-*%&|^/").find(ch) >= 0) {
                             ++index_;
                         }
+                        str.clear();
+                        str.shrink_to_fit();
                         str.push_back(ch);
                     }
                 }
@@ -617,14 +619,6 @@ Token Scanner::ScanPunctuator() {
         line_start_,
         make_pair(start, index_)
     };
-
-//    tok.type_ = JsTokenType::Punctuator;
-//    tok.value_ = str;
-//    tok.line_start_ = line_start_;
-//    tok.line_number_ = line_number_;
-//    tok.range_ = make_pair(start, index_);
-//
-//    return true;
 }
 
 Token Scanner::ScanHexLiteral(std::uint32_t start) {

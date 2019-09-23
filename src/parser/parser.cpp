@@ -977,7 +977,7 @@ namespace parser {
                 });
             }
         }
-        Assert(!expr, "ParseLeftHandSideExpressionAllowCall: expr should not be nullptr");
+        Assert(!!expr, "ParseLeftHandSideExpressionAllowCall: expr should not be nullptr");
 
         while (true) {
             if (Match(u'.')) {
@@ -2289,7 +2289,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseBinaryExpression() {
-        auto start_token = lookahead_;
+        Token start_token = lookahead_;
 
         Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
             return ParseExponentiationExpression();
@@ -2338,11 +2338,12 @@ namespace parser {
 
                     markers.pop();
 
+                    auto top_marker = markers.top();
                     auto node = Alloc<BinaryExpression>();
                     node->operator_ = operator_;
                     node->left = left;
                     node->right = right;
-                    expr_stack.push(move(node));
+                    expr_stack.push(Finalize(StartNode(top_marker), node));
                 }
 
                 // shift
@@ -2360,18 +2361,20 @@ namespace parser {
 
             auto last_marker = markers.top();
             markers.pop();
-            while (!expr_stack.empty()) {
+            while (expr_stack.size() >= 2) {
+                Assert(!markers.empty(), "ParseBinaryExpression: markers should not be mepty");
                 auto marker = markers.top();
                 markers.pop();
                 auto last_line_start = last_marker.line_start_;
                 auto operator_ = move(op_stack.top());
                 op_stack.pop();
+                auto start_marker = StartNode(marker, last_line_start);
                 auto node = Alloc<BinaryExpression>();
                 node->operator_ = operator_;
                 node->left = expr_stack.top();
                 expr_stack.pop();
                 node->right = expr;
-                expr = Finalize(CreateStartMarker(), node);
+                expr = Finalize(start_marker, node);
                 last_marker = marker;
             }
         }
@@ -2386,7 +2389,7 @@ namespace parser {
             return ParseUnaryExpression();
         });
 
-        Assert(!expr, "ParseExponentiationExpression: expr should not be null");
+        Assert(!!expr, "ParseExponentiationExpression: expr should not be null");
 
         if (expr->type != SyntaxNodeType::UnaryExpression && Match(u"**")) {
             NextToken();
