@@ -1562,7 +1562,8 @@ namespace parser {
                 } else {
                     auto prev_allow_in = context_.allow_in;
                     context_.allow_in = false;
-                    std::vector<Sp<VariableDeclarator>> declarations = ParseBindingList(VarKind::Const);
+                    bool in_for = true;
+                    std::vector<Sp<VariableDeclarator>> declarations = ParseBindingList(VarKind::Const, in_for);
                     context_.allow_in = prev_allow_in;
 
                     if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(JsTokenType::K_In)) {
@@ -1929,9 +1930,50 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    std::vector<Sp<VariableDeclarator>> Parser::ParseBindingList(VarKind kind) {
-        // TODO:
-        return {};
+    Sp<VariableDeclarator> Parser::ParseLexicalBinding(VarKind kind, bool &in_for) {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<VariableDeclarator>();
+        std::vector<Token> params;
+        node->id = ParsePattern(params, kind);
+
+        if (context_.strict_ && node->id->type == SyntaxNodeType::Identifier) {
+            auto id = dynamic_pointer_cast<Identifier>(node->id);
+            if (scanner_->IsRestrictedWord(id->name)) {
+                TolerateError(ParseMessages::StrictVarName);
+            }
+        }
+
+        if (kind == VarKind::Const) {
+            if (!MatchKeyword(JsTokenType::K_In) && !MatchContextualKeyword(u"of")) {
+                if (Match(u'=')) {
+                    NextToken();
+                    node->init = IsolateCoverGrammar<Expression>([this] {
+                        return ParseAssignmentExpression();
+                    });
+                } else {
+                    ThrowError(ParseMessages::DeclarationMissingInitializer);
+                }
+            }
+        } else if ((!in_for && node->id->type != SyntaxNodeType::Identifier) || Match(u'=')) {
+            Expect(u'=');
+            node->init = IsolateCoverGrammar<Expression>([this] {
+                return ParseAssignmentExpression();
+            });
+        }
+
+        return Finalize(start_marker, node);
+    }
+
+    std::vector<Sp<VariableDeclarator>> Parser::ParseBindingList(VarKind kind, bool& in_for) {
+        std::vector<Sp<VariableDeclarator>> list;
+        list.push_back(ParseLexicalBinding(kind, in_for));
+
+        while (Match(u',')) {
+            NextToken();
+            list.push_back(ParseLexicalBinding(kind, in_for));
+        }
+
+        return list;
     }
 
     Sp<RestElement> Parser::ParseRestElement(std::vector<Token> &params) {
@@ -2716,7 +2758,7 @@ namespace parser {
             ThrowUnexpectedToken(next);
         }
 
-        node->declarations = ParseBindingList(node->kind);
+        node->declarations = ParseBindingList(node->kind, in_for);
         ConsumeSemicolon();
 
         return Finalize(start_marker, node);

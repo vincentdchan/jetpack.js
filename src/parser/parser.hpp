@@ -152,10 +152,9 @@ namespace parser {
 
         Sp<BlockStatement> ParseBlock();
 
-        template <typename NodePtr>
-        bool ParseLexicalBinding(NodePtr& ptr);
+        Sp<VariableDeclarator> ParseLexicalBinding(VarKind kind, bool &in_for);
 
-        std::vector<Sp<VariableDeclarator>> ParseBindingList(VarKind kind);
+        std::vector<Sp<VariableDeclarator>> ParseBindingList(VarKind kind, bool& in_for);
 
         bool IsLexicalDeclaration();
 
