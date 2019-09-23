@@ -2982,8 +2982,48 @@ namespace parser {
         return expr;
     }
 
+    Sp<TemplateElement> Parser::ParseTemplateHead() {
+        Assert(lookahead_.head_, "Template literal must start with a template head");
+        auto start_marker = CreateStartMarker();
+        Token token = NextToken();
+
+        auto node = Alloc<TemplateElement>();
+        node->raw = token.value_;
+        node->cooked = token.cooked_;
+        node->tail = token.tail_;
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<TemplateElement> Parser::ParseTemplateElement() {
+        if (lookahead_.type_ != JsTokenType::Template) {
+            ThrowUnexpectedToken(lookahead_);
+        }
+
+        auto start_marker = CreateStartMarker();
+        Token token = NextToken();
+
+        auto node = Alloc<TemplateElement>();
+        node->raw = token.value_;
+        node->cooked = token.cooked_;
+        node->tail = token.tail_;
+
+        return Finalize(start_marker, node);
+    }
+
     Sp<TemplateLiteral> Parser::ParseTemplateLiteral() {
-        return nullptr;
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<TemplateLiteral>();
+
+        Sp<TemplateElement> quasi = ParseTemplateHead();
+        node->quasis.push_back(quasi);
+        while (!quasi->tail) {
+            node->expressions.push_back(ParseExpression());
+            quasi = ParseTemplateElement();
+            node->quasis.push_back(quasi);
+        }
+
+        return Finalize(start_marker, node);
     }
 
     std::vector<Sp<Property>> Parser::ParseClassElementList() {

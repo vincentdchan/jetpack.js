@@ -96,11 +96,9 @@ namespace parser {
 
         Sp<Expression> ParseObjectInitializer();
 
-        template <typename NodePtr>
-        bool ParseTemplateHead(NodePtr& ptr);
+        Sp<TemplateElement> ParseTemplateHead();
 
-        template <typename NodePtr>
-        bool ParseTemplateElement(NodePtr& ptr);
+        Sp<TemplateElement> ParseTemplateElement();
 
         Sp<TemplateLiteral> ParseTemplateLiteral();
 
@@ -375,11 +373,6 @@ namespace parser {
         context_.await = previous_await;
 
         return Finalize(marker, node, ptr);
-    }
-
-    template <typename NodePtr>
-    bool Parser::ParseTemplateHead(NodePtr &ptr) {
-        return false;
     }
 
 }
