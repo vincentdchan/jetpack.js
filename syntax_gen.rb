@@ -143,8 +143,23 @@ puts '
 SyntaxFactory.syntaxes.each do |item|
   if !item.is_virtual then
     id = item.class_id.to_s
+    base_content = ""
+
+    index = 0
+    if item.base.is_a? Array then
+      item.base.each do |base_i|
+        base_content += "public " + base_i.to_s
+        if index != item.base.length - 1 then
+          base_content += ", "
+        end
+        index += 1
+      end
+    else
+      base_content += "public " + item.base.to_s
+    end
+
     puts "
-class #{id}: public #{item.base.to_s} {
+class #{id}: #{base_content} {
 public:
     #{id}();
 
@@ -168,8 +183,23 @@ puts '
 SyntaxFactory.syntaxes.each do |item|
   if !item.is_virtual then
     id = item.class_id.to_s
+
+    index = 0
+    base_content = ""
+    if item.base.is_a? Array then
+      item.base.each do |base_i|
+        base_content += base_i.to_s + "()"
+        if index != item.base.length - 1 then
+          base_content += ", "
+        end
+        index += 1
+      end
+    else
+      base_content += item.base.to_s + "()"
+    end
+
     puts "
-#{id}::#{id}(): #{item.base.to_s}() {
+#{id}::#{id}(): #{base_content} {
     type = SyntaxNodeType::#{id};
 }
 "

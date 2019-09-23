@@ -43,7 +43,7 @@ public:
     AssignmentExpression();
 
     UString operator_;
-    Sp<Expression> left;
+    Sp<Pattern> left;
     Sp<Expression> right;
 
 };
@@ -176,7 +176,7 @@ public:
 
 };
 
-class ComputedMemberExpression: public Expression {
+class ComputedMemberExpression: public Expression, public Pattern {
 public:
     ComputedMemberExpression();
 
@@ -337,7 +337,7 @@ public:
 
 };
 
-class Identifier: public Expression {
+class Identifier: public Expression, public Pattern {
 public:
     Identifier();
 
@@ -491,7 +491,7 @@ public:
 
 };
 
-class RestElement: public Expression {
+class RestElement: public Pattern, public Expression {
 public:
     RestElement();
 
@@ -532,7 +532,7 @@ public:
 
 };
 
-class StaticMemberExpression: public Expression {
+class StaticMemberExpression: public Expression, public Pattern {
 public:
     StaticMemberExpression();
 

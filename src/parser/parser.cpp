@@ -6,6 +6,73 @@
 
 namespace parser {
 
+    Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
+        switch (expr->type) {
+            case SyntaxNodeType::Identifier:
+                return dynamic_pointer_cast<Identifier>(expr);
+
+            case SyntaxNodeType::RestElement:
+                return dynamic_pointer_cast<RestElement>(expr);
+
+            case SyntaxNodeType::ComputedMemberExpression:
+                return dynamic_pointer_cast<ComputedMemberExpression>(expr);
+
+            case SyntaxNodeType::StaticMemberExpression:
+                return dynamic_pointer_cast<StaticMemberExpression>(expr);
+
+            case SyntaxNodeType::AssignmentPattern:
+                return dynamic_pointer_cast<AssignmentPattern>(expr);
+
+            case SyntaxNodeType::SpreadElement: {
+                auto that = dynamic_pointer_cast<SpreadElement>(expr);
+                auto node = Alloc<RestElement>();
+                node->argument = ReinterpretExpressionAsPattern(that->argument);
+                return node;
+            }
+
+            case SyntaxNodeType::ArrayExpression: {
+                auto that = dynamic_pointer_cast<ArrayExpression>(expr);
+                auto node = Alloc<ArrayPattern>();
+                for (auto& i : that->elements) {
+                    node->elements.push_back(ReinterpretExpressionAsPattern(i));
+                }
+                return node;
+            }
+
+            case SyntaxNodeType::ObjectExpression: {
+                auto that = dynamic_pointer_cast<ObjectExpression>(expr);
+                auto node = Alloc<ObjectPattern>();
+                for (auto& i : that->properties) {
+                    if (i->type == SyntaxNodeType::SpreadElement) {
+                        node->properties.push_back(ReinterpretExpressionAsPattern(i));
+                    } else {
+                        auto prop = dynamic_pointer_cast<Property>(i);
+                        auto new_prop = Alloc<Property>();
+                        new_prop->key = prop->key;
+                        if (prop->value) {
+                            new_prop->value = ReinterpretExpressionAsPattern(*prop->value);
+                        }
+                        node->properties.push_back(move(new_prop));
+                    }
+                }
+
+                return node;
+            }
+
+            case SyntaxNodeType::AssignmentExpression: {
+                auto that = dynamic_pointer_cast<AssignmentExpression>(expr);
+                auto node = Alloc<AssignmentPattern>();
+                node->right = that->right;
+                node->left = ReinterpretExpressionAsPattern(that->left);
+                return node;
+            }
+
+            default:
+                Assert(false, "ReinterpretExpressionAsPattern: should not reach here.");
+                return nullptr;
+        }
+    }
+
     bool Parser::IsLexicalDeclaration() {
         auto state = scanner_->SaveState();
         std::vector<Comment> comments;
@@ -825,8 +892,8 @@ namespace parser {
                 node->callee = expr;
                 expr = Finalize(StartNode(start_token), node);
                 if (async_arrow && Match(u"=>")) {
-                    for (auto &i : node->arguments) {
-                        ReinterpretExpressionAsPattern(i);
+                    for (std::size_t i = 0; i < node->arguments.size(); i++) {
+                        node->arguments[i] = ReinterpretExpressionAsPattern(node->arguments[i]);
                     }
                     auto placeholder = Alloc<ArrowParameterPlaceHolder>();
                     placeholder->params = node->arguments;
@@ -1399,7 +1466,7 @@ namespace parser {
                     }
 
                     NextToken();
-                    ReinterpretExpressionAsPattern(*init);
+                    init = ReinterpretExpressionAsPattern(*init);
                     left = *init;
                     right = ParseExpression();
                     init.reset();
@@ -1409,7 +1476,7 @@ namespace parser {
                     }
 
                     NextToken();
-                    ReinterpretExpressionAsPattern(*init);
+                    init = ReinterpretExpressionAsPattern(*init);
                     left = *init;
                     right = ParseAssignmentExpression();
                     init.reset();
@@ -1904,8 +1971,8 @@ namespace parser {
 
             if (token.type_ == JsTokenType::Identifier && (token.line_number_ == lookahead_.line_number_) && token.value_ == u"async") {
                 if (lookahead_.type_ == JsTokenType::Identifier || MatchKeyword(u"yield")) {
-                    Sp<Expression> arg =ParsePrimaryExpression();
-                    ReinterpretExpressionAsPattern(arg);
+                    Sp<SyntaxNode> arg = ParsePrimaryExpression();
+                    arg = ReinterpretExpressionAsPattern(arg);
 
                     auto node = Alloc<ArrowParameterPlaceHolder>();
                     node->params.push_back(arg);
@@ -2001,22 +2068,21 @@ namespace parser {
                         }
                     }
 
+                    auto temp = Alloc<AssignmentExpression>();
+
                     if (!Match(u'=')) {
                         context_.is_assignment_target = false;
                         context_.is_binding_element = false;
                     } else {
-                        ReinterpretExpressionAsPattern(expr);
+                        temp->left = ReinterpretExpressionAsPattern(expr);
                     }
 
                     token = NextToken();
                     auto operator_ = token.value_;
-                    Sp<Expression> right = IsolateCoverGrammar<Expression>([this] {
+                    temp->right = IsolateCoverGrammar<Expression>([this] {
                         return ParseAssignmentExpression();
                     });
-                    auto temp = Alloc<AssignmentExpression>();
                     temp->operator_ = operator_;
-                    temp->left = expr;
-                    temp->right = right;
                     expr = Finalize(start_marker, temp);
                     context_.first_cover_initialized_name_error.reset();
                 }

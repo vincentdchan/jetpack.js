@@ -70,7 +70,7 @@ ClassExpression::ClassExpression(): Expression() {
     type = SyntaxNodeType::ClassExpression;
 }
 
-ComputedMemberExpression::ComputedMemberExpression(): Expression() {
+ComputedMemberExpression::ComputedMemberExpression(): Expression(), Pattern() {
     type = SyntaxNodeType::ComputedMemberExpression;
 }
 
@@ -138,7 +138,7 @@ FunctionExpression::FunctionExpression(): Expression() {
     type = SyntaxNodeType::FunctionExpression;
 }
 
-Identifier::Identifier(): Expression() {
+Identifier::Identifier(): Expression(), Pattern() {
     type = SyntaxNodeType::Identifier;
 }
 
@@ -206,7 +206,7 @@ RegexLiteral::RegexLiteral(): SyntaxNode() {
     type = SyntaxNodeType::RegexLiteral;
 }
 
-RestElement::RestElement(): Expression() {
+RestElement::RestElement(): Pattern(), Expression() {
     type = SyntaxNodeType::RestElement;
 }
 
@@ -226,7 +226,7 @@ SpreadElement::SpreadElement(): SyntaxNode() {
     type = SyntaxNodeType::SpreadElement;
 }
 
-StaticMemberExpression::StaticMemberExpression(): Expression() {
+StaticMemberExpression::StaticMemberExpression(): Expression(), Pattern() {
     type = SyntaxNodeType::StaticMemberExpression;
 }
 

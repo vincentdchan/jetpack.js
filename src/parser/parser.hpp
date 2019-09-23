@@ -103,8 +103,7 @@ namespace parser {
 
         Sp<TemplateLiteral> ParseTemplateLiteral();
 
-        template <typename NodePtr>
-        bool ReinterpretExpressionAsPattern(NodePtr& ptr);
+        Sp<Pattern> ReinterpretExpressionAsPattern(const Sp<SyntaxNode>& expr);
 
         template <typename NodePtr>
         bool ReinterpretAsCoverFormalsList(NodePtr& ptr, FormalParameterOptions& list);
@@ -378,12 +377,6 @@ namespace parser {
 
     template <typename NodePtr>
     bool Parser::ParseTemplateHead(NodePtr &ptr) {
-        return false;
-    }
-
-    template <typename NodePtr>
-    bool Parser::ReinterpretExpressionAsPattern(NodePtr& ptr) {
-        // TODO
         return false;
     }
 

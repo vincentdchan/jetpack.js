@@ -116,7 +116,7 @@ end
 
 SyntaxFactory.def_syntax :AssignmentExpression, base: :Expression do
   def_prop :String, "operator"
-  def_prop :Expression, "left"
+  def_prop :Pattern, "left"
   def_prop :Expression, "right"
 end
 
@@ -146,7 +146,7 @@ end
 SyntaxFactory.def_syntax :AsyncFunctionExpression, base: :Expression do
   def_prop :Identifier.opt, "id"
   def_prop [:SyntaxNode], "params"
-  def_prop :Expression, "body"
+  def_prop :SyntaxNode, "body"
   def_prop :Boolean, "generator"
   def_prop :Boolean, "expression"
   def_prop :Boolean, "async"
@@ -196,7 +196,7 @@ SyntaxFactory.def_syntax :ClassExpression, base: :Expression do
   def_prop :ClassBody.opt, "body"
 end
 
-SyntaxFactory.def_syntax :ComputedMemberExpression, base: :Expression do
+SyntaxFactory.def_syntax :ComputedMemberExpression, base: [:Expression, :Pattern] do
   def_prop :Boolean, "computed"
   def_prop :Expression, "object"
   def_prop :Expression, "property"
@@ -289,7 +289,7 @@ SyntaxFactory.def_syntax :FunctionExpression, base: :Expression do
   def_prop :Boolean, "async"
 end
 
-SyntaxFactory.def_syntax :Identifier, base: :Expression do
+SyntaxFactory.def_syntax :Identifier, base: [:Expression, :Pattern] do
   def_prop :String, "name"
 end
 
@@ -375,7 +375,7 @@ SyntaxFactory.def_syntax :RegexLiteral, base: :SyntaxNode do
   def_prop :String, "raw"
 end
 
-SyntaxFactory.def_syntax :RestElement, base: :SyntaxNode do
+SyntaxFactory.def_syntax :RestElement, base: [:Pattern, :Expression] do
   def_prop :SyntaxNode, "argument"
 end
 
@@ -396,7 +396,7 @@ SyntaxFactory.def_syntax :SpreadElement, base: :SyntaxNode do
   def_prop :Expression, "argument"
 end
 
-SyntaxFactory.def_syntax :StaticMemberExpression, base: :Expression do
+SyntaxFactory.def_syntax :StaticMemberExpression, base: [:Expression, :Pattern] do
   def_prop :Boolean, "computed"
   def_prop :Expression, "object"
   def_prop :Expression, "property"

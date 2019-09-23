@@ -27,38 +27,41 @@ public:
     std::pair<std::uint32_t, std::uint32_t> range;
     SourceLocation location;
 
+    virtual bool IsPattern() const { return false; }
     virtual bool IsDeclaration() const { return false; }
     virtual bool IsExpression() const { return false; }
     virtual bool IsStatement() const { return false; }
 
 };
 
-class Expression: public SyntaxNode {
+class Expression: virtual public SyntaxNode {
 public:
     Expression() = default;
 
-    bool IsExpression() const override { return true; }
+    [[nodiscard]] bool IsExpression() const override { return true; }
 
 };
 
-class Statement: public SyntaxNode {
+class Statement: virtual public SyntaxNode {
 public:
     Statement() = default;
 
-    bool IsStatement() const override { return true; }
+    [[nodiscard]] bool IsStatement() const override { return true; }
 
 };
 
-class Declaration: public Statement {
+class Declaration: virtual public Statement {
 public:
     Declaration() = default;
 
-    bool IsDeclaration() const override { return true; }
+    [[nodiscard]] bool IsDeclaration() const override { return true; }
 
 };
 
-class Pattern: public SyntaxNode {
+class Pattern: virtual public SyntaxNode {
 public:
     Pattern() = default;
+
+    [[nodiscard]] bool IsPattern() const override { return true; }
 
 };
