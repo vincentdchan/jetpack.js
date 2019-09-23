@@ -26,18 +26,6 @@ public:
 
     virtual void TraverseAfter(const Sp<AssignmentPattern>& node) {}
 
-    virtual bool TraverseBefore(const Sp<AsyncArrowFunctionExpression>& node) { return true; }
-
-    virtual void TraverseAfter(const Sp<AsyncArrowFunctionExpression>& node) {}
-
-    virtual bool TraverseBefore(const Sp<AsyncFunctionDeclaration>& node) { return true; }
-
-    virtual void TraverseAfter(const Sp<AsyncFunctionDeclaration>& node) {}
-
-    virtual bool TraverseBefore(const Sp<AsyncFunctionExpression>& node) { return true; }
-
-    virtual void TraverseAfter(const Sp<AsyncFunctionExpression>& node) {}
-
     virtual bool TraverseBefore(const Sp<AwaitExpression>& node) { return true; }
 
     virtual void TraverseAfter(const Sp<AwaitExpression>& node) {}

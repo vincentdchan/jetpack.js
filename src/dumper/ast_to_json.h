@@ -72,21 +72,6 @@ namespace dumper {
                     return Dump(child);
                 }
 
-                case SyntaxNodeType::AsyncArrowFunctionExpression: {
-                    auto child = std::dynamic_pointer_cast<AsyncArrowFunctionExpression>(node);
-                    return Dump(child);
-                }
-
-                case SyntaxNodeType::AsyncFunctionDeclaration: {
-                    auto child = std::dynamic_pointer_cast<AsyncFunctionDeclaration>(node);
-                    return Dump(child);
-                }
-
-                case SyntaxNodeType::AsyncFunctionExpression: {
-                    auto child = std::dynamic_pointer_cast<AsyncFunctionExpression>(node);
-                    return Dump(child);
-                }
-
                 case SyntaxNodeType::AwaitExpression: {
                     auto child = std::dynamic_pointer_cast<AwaitExpression>(node);
                     return Dump(child);
@@ -489,69 +474,6 @@ namespace dumper {
             DumpBaseInfo(result, node);
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
-
-            return result;
-        }
-
-        static json Dump(const Sp<AsyncArrowFunctionExpression>& node) {
-            json result = json::object();
-            result["type"] = "AsyncArrowFunctionExpression";
-            DumpBaseInfo(result, node);
-            if (node->id) {
-                result["id"] = Dump(*node->id);
-            }
-            json array_params = json::array();
-
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
-            result["params"] = std::move(array_params);
-            result["body"] = Dump(node->body);
-            result["generator"] = node->generator;
-            result["expression"] = node->expression;
-            result["async"] = node->async;
-
-            return result;
-        }
-
-        static json Dump(const Sp<AsyncFunctionDeclaration>& node) {
-            json result = json::object();
-            result["type"] = "AsyncFunctionDeclaration";
-            DumpBaseInfo(result, node);
-            if (node->id) {
-                result["id"] = Dump(*node->id);
-            }
-            json array_params = json::array();
-
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
-            result["params"] = std::move(array_params);
-            result["body"] = Dump(node->body);
-            result["generator"] = node->generator;
-            result["expression"] = node->expression;
-            result["async"] = node->async;
-
-            return result;
-        }
-
-        static json Dump(const Sp<AsyncFunctionExpression>& node) {
-            json result = json::object();
-            result["type"] = "AsyncFunctionExpression";
-            DumpBaseInfo(result, node);
-            if (node->id) {
-                result["id"] = Dump(*node->id);
-            }
-            json array_params = json::array();
-
-            for (auto& i : node->params) {
-                array_params.push_back(Dump(i));
-            }
-            result["params"] = std::move(array_params);
-            result["body"] = Dump(node->body);
-            result["generator"] = node->generator;
-            result["expression"] = node->expression;
-            result["async"] = node->async;
 
             return result;
         }

@@ -17,6 +17,12 @@ enum class VarKind {
     Var,
     Let,
     Const,
+
+    Init,
+    Ctor,
+    Method,
+    Get,
+    Set,
 };
 
 class SyntaxNode {

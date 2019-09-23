@@ -560,7 +560,7 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseFunctionExpression() {
+    Sp<FunctionExpression> Parser::ParseFunctionExpression() {
         auto marker = CreateStartMarker();
 
         bool is_async = MatchContextualKeyword(u"async");
@@ -627,7 +627,7 @@ namespace parser {
         context_.allow_yield = prev_allow_yield;
 
         if (is_async) {
-            auto node = Alloc<AsyncFunctionExpression>();
+            auto node = Alloc<FunctionExpression>();
             node->id = id;
             node->params = move(formal.params);
             node->body = move(body);
@@ -1255,7 +1255,7 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    Sp<Declaration> Parser::ParseFunctionDeclaration(bool identifier_is_optional) {
+    Sp<FunctionDeclaration> Parser::ParseFunctionDeclaration(bool identifier_is_optional) {
         auto marker = CreateStartMarker();
 
         bool is_async = MatchContextualKeyword(u"async");
@@ -1324,8 +1324,9 @@ namespace parser {
         context_.allow_yield = prev_allow_yield;
 
         if (is_async) {
-            auto node = Alloc<AsyncFunctionDeclaration>();
+            auto node = Alloc<FunctionDeclaration>();
             node->id = id;
+            node->async = true;
             return Finalize(marker, node);
         } else {
             auto node = Alloc<FunctionDeclaration>();
@@ -2149,10 +2150,11 @@ namespace parser {
                     }
 
                     if (is_async) {
-                        auto node = Alloc<AsyncArrowFunctionExpression>();
+                        auto node = Alloc<ArrowFunctionExpression>();
                         node->params = list->params;
                         node->body = body;
                         node->expression = expression;
+                        node->async = true;
                         expr = Finalize(marker, node);
                     } else {
                         auto node = Alloc<ArrowFunctionExpression>();
@@ -3026,8 +3028,279 @@ namespace parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<Property>> Parser::ParseClassElementList() {
-        return {};
+    Sp<MethodDefinition> Parser::ParseClassElement(bool &has_ctor) {
+        Token token = lookahead_;
+        auto start_marker = CreateStartMarker();
+
+        optional<Sp<SyntaxNode>> key;
+        optional<Sp<Expression>> value;
+        bool computed = false;
+        bool method = false;
+        bool is_static = false;
+        bool is_async = false;
+        VarKind kind = VarKind::Invalid;
+
+        if (Match(u'*')) {
+            NextToken();
+        } else {
+            computed = Match(u'[');
+            key = ParseObjectPropertyKey();
+            auto id = dynamic_pointer_cast<Identifier>(*key);
+            if (id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(u'*'))) {
+                token = lookahead_;
+                is_static = true;
+                computed = Match(u'[');
+                if (Match(u'*')) {
+                    NextToken();
+                } else {
+                    key = ParseObjectPropertyKey();
+                }
+            }
+            if ((token.type_ == JsTokenType::Identifier) && !has_line_terminator_ && (token.value_ == u"async")) {
+                auto punctuator = lookahead_.value_;
+                if (punctuator != u":" && punctuator != u"(" && punctuator != u"*") {
+                    is_async = true;
+                    token = lookahead_;
+                    key = ParseObjectPropertyKey();
+                    if (token.type_ == JsTokenType::Identifier && token.value_ == u"constructor") {
+                        TolerateUnexpectedToken(token, ParseMessages::ConstructorIsAsync);
+                    }
+                }
+            }
+        }
+
+        bool lookahead_prop_key = QualifiedPropertyName(lookahead_);
+        if (token.type_ == JsTokenType::Identifier) {
+            if (token.value_ == u"get" && lookahead_prop_key) {
+                kind = VarKind::Get;
+                computed = Match(u'[');
+                key = ParseObjectPropertyKey();
+                context_.allow_yield = false;
+                value = ParseGetterMethod();
+            } else if (token.value_ == u"set" && lookahead_prop_key) {
+                kind = VarKind::Set;
+                computed = Match(u'[');
+                key = ParseObjectPropertyKey();
+                value = ParseSetterMethod();
+            }
+        } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u"*" && lookahead_prop_key) {
+            kind = VarKind::Init;
+            computed = Match(u'[');
+            key = ParseObjectPropertyKey();
+            value = ParseGeneratorMethod();
+            method = true;
+        }
+
+        if (kind != VarKind::Invalid && key.has_value() && Match(u'(')) {
+            kind = VarKind::Init;
+            if (is_async) {
+                value = ParsePropertyMethodAsyncFunction();
+            } else {
+                value = ParsePropertyMethodFunction();
+            }
+            method = true;
+        }
+
+        if (kind != VarKind::Invalid) {
+            ThrowUnexpectedToken(lookahead_);
+        }
+
+        if (kind == VarKind::Init) {
+            kind = VarKind::Method;
+        }
+
+        if (!computed) {
+            if (is_static && IsPropertyKey(*key, u"prototype")) {
+                ThrowUnexpectedToken(token, ParseMessages::StaticPrototype);
+            }
+            if (!is_static && IsPropertyKey(*key, u"constructor")) {
+//                TODO: generator
+//                if (kind != VarKind::Method || !method || (value.has_value() &&))
+                if (has_ctor) {
+                    ThrowUnexpectedToken(token, ParseMessages::ConstructorSpecialMethod);
+                } else {
+                    has_ctor = true;
+                }
+                kind = VarKind::Ctor;
+            }
+        }
+
+        auto node = Alloc<MethodDefinition>();
+        node->key = move(key);
+        node->computed = computed;
+        node->value = move(value);
+        node->kind = kind;
+        node->static_ = is_static;
+        return Finalize(start_marker, node);
+    }
+
+    std::vector<Sp<MethodDefinition>> Parser::ParseClassElementList() {
+        std::vector<Sp<MethodDefinition>> body;
+        bool has_ctor = false;
+
+        Expect(u'{');
+        while (!Match(u'}')) {
+            if (Match(u';')) {
+                NextToken();
+            } else {
+                body.push_back(ParseClassElement(has_ctor));
+            }
+        }
+        Expect(u'}');
+
+        return body;
+    }
+
+    Sp<FunctionExpression> Parser::ParseGetterMethod() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<FunctionExpression>();
+
+        node->generator = false;
+        bool prev_allow_yield = context_.allow_yield;
+        context_.allow_yield = !node->generator;
+
+        auto formal = ParseFormalParameters();
+        if (!formal.params.empty()) {
+            TolerateError(ParseMessages::BadGetterArity);
+        }
+
+        node->params = formal.params;
+        node->body = ParsePropertyMethod(formal);
+        context_.allow_yield = prev_allow_yield;
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<FunctionExpression> Parser::ParseSetterMethod() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<FunctionExpression>();
+
+        node->generator = false;
+        bool prev_allow_yield = context_.allow_yield;
+        context_.allow_yield = !node->generator;
+        auto options = ParseFormalParameters();
+        if (options.params.size() != 1) {
+            TolerateError(ParseMessages::BadSetterArity);
+        } else if (options.params[0]->type == SyntaxNodeType::RestElement) {
+            TolerateError(ParseMessages::BadSetterRestParameter);
+        }
+        node->params = options.params;
+        node->body = ParsePropertyMethod(options);
+        context_.allow_yield = prev_allow_yield;
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<BlockStatement> Parser::ParsePropertyMethod(parser::ParserCommon::FormalParameterOptions &options) {
+        context_.is_assignment_target = false;
+        context_.is_binding_element = false;
+
+        bool prev_strict = context_.strict_;
+        bool prev_allow_strict_directive = context_.allow_strict_directive;
+        context_.allow_strict_directive = options.simple;
+
+        auto body = IsolateCoverGrammar<BlockStatement>([this] {
+            return ParseFunctionSourceElements();
+        });
+        if (context_.strict_ && options.first_restricted.has_value()) {
+            TolerateUnexpectedToken(*options.first_restricted, options.message);
+        }
+        if (context_.strict_ && options.stricted.has_value()) {
+            TolerateUnexpectedToken(*options.stricted, options.message);
+        }
+        context_.strict_ = prev_strict;
+        context_.allow_strict_directive = prev_allow_strict_directive;
+
+        return body;
+    }
+
+    Sp<FunctionExpression> Parser::ParseGeneratorMethod() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<FunctionExpression>();
+
+        node->generator = true;
+        bool prev_allow_yield = context_.allow_yield;
+
+        context_.allow_yield = true;
+        auto params = ParseFormalParameters();
+        context_.allow_yield = false;
+        auto method = ParsePropertyMethod(params);
+        context_.allow_yield = prev_allow_yield;
+
+        node->params = params.params;
+        node->body = move(method);
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<FunctionExpression> Parser::ParsePropertyMethodFunction() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<FunctionExpression>();
+
+        node->generator = false;
+        bool prev_allow_yield = context_.allow_yield;
+        context_.allow_yield = true;
+        auto params = ParseFormalParameters();
+        auto method = ParsePropertyMethod(params);
+        context_.allow_yield = prev_allow_yield;
+
+        node->params = params.params;
+        node->body = move(method);
+
+        return Finalize(start_marker, node);
+    }
+
+    Sp<FunctionExpression> Parser::ParsePropertyMethodAsyncFunction() {
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<FunctionExpression>();
+
+        node->generator = false;
+        bool prev_allow_yield = context_.allow_yield;
+        bool prev_await = context_.await;
+        context_.allow_yield = false;
+        context_.await = true;
+        auto params = ParseFormalParameters();
+        auto method = ParsePropertyMethod(params);
+        context_.allow_yield = prev_allow_yield;
+        context_.await = prev_await;
+
+        node->params = params.params;
+        node->body = move(method);
+        node->async = true;
+
+        return Finalize(start_marker, node);
+    }
+
+    bool Parser::QualifiedPropertyName(const Token &token) {
+        if (IsKeywordToken(token.type_)) return true;
+
+        switch (token.type_) {
+            case JsTokenType::Identifier:
+            case JsTokenType::StringLiteral:
+            case JsTokenType::BooleanLiteral:
+            case JsTokenType::NullLiteral:
+            case JsTokenType::NumericLiteral:
+                return true;
+
+            case JsTokenType::Punctuator:
+                return token.value_ == u"[";
+
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    bool Parser::IsPropertyKey(const Sp<SyntaxNode> &key, const UString &name) {
+        if (key->type == SyntaxNodeType::Identifier) {
+            return dynamic_pointer_cast<Identifier>(key)->name == name;
+        }
+        if (key->type == SyntaxNodeType::Literal) {
+            auto lit = dynamic_pointer_cast<Literal>(key);
+            return std::holds_alternative<UString>(lit->value) && std::get<UString>(lit->value) == name;
+        }
+        return false;
     }
 
 }

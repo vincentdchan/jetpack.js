@@ -20,15 +20,6 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::AssignmentPattern:
             return "AssignmentPattern";
 
-        case SyntaxNodeType::AsyncArrowFunctionExpression:
-            return "AsyncArrowFunctionExpression";
-
-        case SyntaxNodeType::AsyncFunctionDeclaration:
-            return "AsyncFunctionDeclaration";
-
-        case SyntaxNodeType::AsyncFunctionExpression:
-            return "AsyncFunctionExpression";
-
         case SyntaxNodeType::AwaitExpression:
             return "AwaitExpression";
 

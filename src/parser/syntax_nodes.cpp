@@ -22,18 +22,6 @@ AssignmentPattern::AssignmentPattern(): Pattern() {
     type = SyntaxNodeType::AssignmentPattern;
 }
 
-AsyncArrowFunctionExpression::AsyncArrowFunctionExpression(): Expression() {
-    type = SyntaxNodeType::AsyncArrowFunctionExpression;
-}
-
-AsyncFunctionDeclaration::AsyncFunctionDeclaration(): Declaration() {
-    type = SyntaxNodeType::AsyncFunctionDeclaration;
-}
-
-AsyncFunctionExpression::AsyncFunctionExpression(): Expression() {
-    type = SyntaxNodeType::AsyncFunctionExpression;
-}
-
 AwaitExpression::AwaitExpression(): Expression() {
     type = SyntaxNodeType::AwaitExpression;
 }

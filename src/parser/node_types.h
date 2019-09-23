@@ -10,9 +10,6 @@ enum class SyntaxNodeType {
     ArrowFunctionExpression,
     AssignmentExpression,
     AssignmentPattern,
-    AsyncArrowFunctionExpression,
-    AsyncFunctionDeclaration,
-    AsyncFunctionExpression,
     AwaitExpression,
     BinaryExpression,
     BlockStatement,
@@ -89,9 +86,6 @@ class ArrayPattern;
 class ArrowFunctionExpression;
 class AssignmentExpression;
 class AssignmentPattern;
-class AsyncArrowFunctionExpression;
-class AsyncFunctionDeclaration;
-class AsyncFunctionExpression;
 class AwaitExpression;
 class BinaryExpression;
 class BlockStatement;

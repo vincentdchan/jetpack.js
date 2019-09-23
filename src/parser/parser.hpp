@@ -84,11 +84,11 @@ namespace parser {
 
         Sp<SpreadElement> ParseSpreadElement();
 
-        template <typename NodePtr>
-        bool ParsePropertyMethodFunction(NodePtr& ptr);
+        Sp<BlockStatement> ParsePropertyMethod(FormalParameterOptions& options);
 
-        template <typename NodePtr>
-        bool ParsePropertyMethodAsyncFunction(NodePtr& ptr);
+        Sp<FunctionExpression> ParsePropertyMethodFunction();
+
+        Sp<FunctionExpression> ParsePropertyMethodAsyncFunction();
 
         Sp<SyntaxNode> ParseObjectProperty(bool& has_proto);
 
@@ -238,29 +238,29 @@ namespace parser {
 
         Sp<BlockStatement> ParseFunctionSourceElements();
 
-        Sp<Declaration> ParseFunctionDeclaration(bool identifier_is_optional);
+        Sp<FunctionDeclaration> ParseFunctionDeclaration(bool identifier_is_optional);
 
-        Sp<Expression> ParseFunctionExpression();
+        Sp<FunctionExpression> ParseFunctionExpression();
 
         Sp<Statement> ParseDirective();
 
         std::vector<Sp<SyntaxNode>> ParseDirectivePrologues();
 
-        template <typename NodePtr>
-        bool ParseGetterMethod(NodePtr& ptr);
+        Sp<FunctionExpression> ParseGetterMethod();
 
-        template <typename NodePtr>
-        bool ParseSetterMethod(NodePtr& ptr);
+        Sp<FunctionExpression> ParseSetterMethod();
 
-        template <typename NodePtr>
-        bool ParseGeneratorMethod(NodePtr& ptr);
+        Sp<FunctionExpression> ParseGeneratorMethod();
 
         Sp<YieldExpression> ParseYieldExpression();
 
-        template <typename NodePtr>
-        bool ParseClassElement(NodePtr& ptr);
+        bool QualifiedPropertyName(const Token& token);
 
-        std::vector<Sp<Property>> ParseClassElementList();
+        Sp<MethodDefinition> ParseClassElement(bool& has_ctor);
+
+        std::vector<Sp<MethodDefinition>> ParseClassElementList();
+
+        bool IsPropertyKey(const Sp<SyntaxNode>& key, const UString& name);
 
         Sp<ClassBody> ParseClassBody();
 
@@ -335,44 +335,6 @@ namespace parser {
         }
 
         return match;
-    }
-
-    template <typename NodePtr>
-    bool Parser::ParsePropertyMethodFunction(NodePtr &ptr) {
-        static_assert(std::is_convertible<FunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
-        auto marker = CreateStartMarker();
-        auto node = Alloc<FunctionExpression>();
-
-        bool isGenerator = false;
-
-        bool previous_allow_yield = context_.allow_yield;
-        context_.allow_yield = true;
-        auto options = ParseFormalParameters(nullopt);
-//        const params = this.parseFormalParameters();
-//        const method = this.parsePropertyMethod(params);
-        context_.allow_yield = previous_allow_yield;
-
-        return Finalize(marker, node, ptr);
-    }
-
-    template <typename NodePtr>
-    bool Parser::ParsePropertyMethodAsyncFunction(NodePtr& ptr) {
-        static_assert(std::is_convertible<AsyncFunctionExpression*, NodePtr>::value, "NodePtr can not accept FunctionExpression*");
-        auto marker = CreateStartMarker();
-        auto node = Alloc<AsyncFunctionExpression>();
-
-        bool isGenerator = false;
-
-        bool previous_allow_yield = context_.allow_yield;
-        bool previous_await = context_.await;
-        context_.allow_yield = true;
-        auto options = ParseFormalParameters(nullopt);
-//        const params = this.parseFormalParameters();
-//        const method = this.parsePropertyMethod(params);
-        context_.allow_yield = previous_allow_yield;
-        context_.await = previous_await;
-
-        return Finalize(marker, node, ptr);
     }
 
 }

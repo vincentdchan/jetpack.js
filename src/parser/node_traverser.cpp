@@ -61,51 +61,6 @@ void NodeTraverser::TraverseNodeBefore_(const Sp<SyntaxNode> &node) {
             break;
         }
 
-        case SyntaxNodeType::AsyncArrowFunctionExpression: {
-            auto child = std::dynamic_pointer_cast<AsyncArrowFunctionExpression>(node);
-            if(!traverser_->TraverseBefore(child)) return;
-            Push(child->body);
-
-            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
-                Push(*i);
-            }
-            if (child->id) {
-                Push(*child->id);
-            }
-
-            break;
-        }
-
-        case SyntaxNodeType::AsyncFunctionDeclaration: {
-            auto child = std::dynamic_pointer_cast<AsyncFunctionDeclaration>(node);
-            if(!traverser_->TraverseBefore(child)) return;
-            Push(child->body);
-
-            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
-                Push(*i);
-            }
-            if (child->id) {
-                Push(*child->id);
-            }
-
-            break;
-        }
-
-        case SyntaxNodeType::AsyncFunctionExpression: {
-            auto child = std::dynamic_pointer_cast<AsyncFunctionExpression>(node);
-            if(!traverser_->TraverseBefore(child)) return;
-            Push(child->body);
-
-            for (auto i = child->params.rbegin(); i != child->params.rend(); i++) {
-                Push(*i);
-            }
-            if (child->id) {
-                Push(*child->id);
-            }
-
-            break;
-        }
-
         case SyntaxNodeType::AwaitExpression: {
             auto child = std::dynamic_pointer_cast<AwaitExpression>(node);
             if(!traverser_->TraverseBefore(child)) return;
@@ -809,24 +764,6 @@ void NodeTraverser::TraverseNodeAfter_(const Sp<SyntaxNode> &node) {
 
         case SyntaxNodeType::AssignmentPattern: {
             auto child = std::dynamic_pointer_cast<AssignmentPattern>(node);
-            traverser_->TraverseAfter(child);
-            break;
-        }
-
-        case SyntaxNodeType::AsyncArrowFunctionExpression: {
-            auto child = std::dynamic_pointer_cast<AsyncArrowFunctionExpression>(node);
-            traverser_->TraverseAfter(child);
-            break;
-        }
-
-        case SyntaxNodeType::AsyncFunctionDeclaration: {
-            auto child = std::dynamic_pointer_cast<AsyncFunctionDeclaration>(node);
-            traverser_->TraverseAfter(child);
-            break;
-        }
-
-        case SyntaxNodeType::AsyncFunctionExpression: {
-            auto child = std::dynamic_pointer_cast<AsyncFunctionExpression>(node);
             traverser_->TraverseAfter(child);
             break;
         }

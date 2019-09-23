@@ -57,45 +57,6 @@ public:
 
 };
 
-class AsyncArrowFunctionExpression: public Expression {
-public:
-    AsyncArrowFunctionExpression();
-
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<SyntaxNode> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
-
-};
-
-class AsyncFunctionDeclaration: public Declaration {
-public:
-    AsyncFunctionDeclaration();
-
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<BlockStatement> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
-
-};
-
-class AsyncFunctionExpression: public Expression {
-public:
-    AsyncFunctionExpression();
-
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<SyntaxNode> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
-
-};
-
 class AwaitExpression: public Expression {
 public:
     AwaitExpression();
@@ -152,7 +113,7 @@ class ClassBody: public SyntaxNode {
 public:
     ClassBody();
 
-    std::vector<Sp<Property>> body;
+    std::vector<Sp<MethodDefinition>> body;
 
 };
 
@@ -427,7 +388,7 @@ class MethodDefinition: public SyntaxNode {
 public:
     MethodDefinition();
 
-    std::optional<Sp<Expression>> key;
+    std::optional<Sp<SyntaxNode>> key;
     bool computed = false;
     std::optional<Sp<Expression>> value;
     VarKind kind;
