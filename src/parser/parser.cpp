@@ -2705,7 +2705,21 @@ namespace parser {
     }
 
     Sp<Declaration> Parser::ParseLexicalDeclaration(bool &in_for) {
-        return nullptr;
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<VariableDeclaration>();
+        Token next = NextToken();
+        if (next.value_ == u"let") {
+            node->kind = VarKind::Let;
+        } else if (next.value_ == u"const") {
+            node->kind = VarKind::Const;
+        } else {
+            ThrowUnexpectedToken(next);
+        }
+
+        node->declarations = ParseBindingList(node->kind);
+        ConsumeSemicolon();
+
+        return Finalize(start_marker, node);
     }
 
     Sp<Identifier> Parser::ParseVariableIdentifier(VarKind kind) {
