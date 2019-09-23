@@ -76,10 +76,10 @@ public:
     void SkipSingleLineComment(std::uint32_t offset, std::vector<Comment>& result);
     void SkipMultiLineComment(std::vector<Comment>& result);
     void ScanComments(std::vector<Comment>& result);
-    static bool IsFutureReservedWord(const UString& str_);
-    static bool IsStrictModeReservedWord(const UString& str_);
+    static bool IsFutureReservedWord(JsTokenType t);
+    static JsTokenType IsStrictModeReservedWord(const UString& str_);
     static bool IsRestrictedWord(const UString& str_);
-    static bool IsKeyword(const UString& str_);
+    static JsTokenType ToKeyword(const UString& str_);
     bool ScanHexEscape(char16_t ch, char32_t& result);
     char32_t ScanUnicodeCodePointEscape();
     UString GetIdentifier();

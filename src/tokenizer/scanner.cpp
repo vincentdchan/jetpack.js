@@ -247,98 +247,97 @@ char32_t Scanner::CodePointAt(std::uint32_t index, std::uint32_t* size) const {
 }
 
 #define MAYBE_WORD(WORD) \
-    if (str_ == utils::To_UTF16(WORD)) return true;
+    if (str_ == WORD) return true;
 
-bool Scanner::IsFutureReservedWord(const UString &str_) {
-    MAYBE_WORD("enum")
-    MAYBE_WORD("export")
-    MAYBE_WORD("import")
-    MAYBE_WORD("super")
-    return false;
+bool Scanner::IsFutureReservedWord(JsTokenType t) {
+    return t == JsTokenType::K_Enum ||
+           t == JsTokenType::K_Export ||
+           t == JsTokenType::K_Import ||
+           t == JsTokenType::K_Super;
 }
 
-bool Scanner::IsStrictModeReservedWord(const UString &str_) {
-    MAYBE_WORD("implements")
-    MAYBE_WORD("interface")
-    MAYBE_WORD("package")
-    MAYBE_WORD("private")
-    MAYBE_WORD("protected")
-    MAYBE_WORD("public")
-    MAYBE_WORD("static")
-    MAYBE_WORD("yield")
-    MAYBE_WORD("let")
-    return false;
+JsTokenType Scanner::IsStrictModeReservedWord(const UString &str_) {
+    if (str_ == u"implements") return JsTokenType::KS_Implements;
+    if (str_ == u"interface") return JsTokenType::KS_Interface;
+    if (str_ == u"package") return JsTokenType::KS_Package;
+    if (str_ == u"private") return JsTokenType::KS_Private;
+    if (str_ == u"protected") return JsTokenType::KS_Protected;
+    if (str_ == u"public") return JsTokenType::KS_Public;
+    if (str_ == u"static") return JsTokenType::KS_Static;
+    if (str_ == u"yield") return JsTokenType::K_Yield;
+    if (str_ == u"let") return JsTokenType::K_Let;
+    return JsTokenType::Invalid;
 }
 
 bool Scanner::IsRestrictedWord(const UString &str_) {
-    MAYBE_WORD("eval")
-    MAYBE_WORD("arguments")
+    MAYBE_WORD(u"eval")
+    MAYBE_WORD(u"arguments")
     return false;
 }
 
-bool Scanner::IsKeyword(const UString &str_) {
+JsTokenType Scanner::ToKeyword(const UString &str_) {
     switch (str_.size()) {
         case 2:
-            MAYBE_WORD("if")
-            MAYBE_WORD("in")
-            MAYBE_WORD("do")
-            return false;
+            if (str_ == u"if") return JsTokenType::K_If;
+            if (str_ == u"in") return JsTokenType::K_In;
+            if (str_ == u"do") return JsTokenType::K_Do;
+            return JsTokenType::Invalid;
 
         case 3:
-            MAYBE_WORD("var")
-            MAYBE_WORD("for")
-            MAYBE_WORD("new")
-            MAYBE_WORD("try")
-            MAYBE_WORD("let")
-            return false;
+            if (str_ == u"var") return JsTokenType::K_Var;
+            if (str_ == u"for") return JsTokenType::K_For;
+            if (str_ == u"new") return JsTokenType::K_New;
+            if (str_ == u"try") return JsTokenType::K_Try;
+            if (str_ == u"let") return JsTokenType::K_Let;
+            return JsTokenType::Invalid;
 
         case 4:
-            MAYBE_WORD("this")
-            MAYBE_WORD("else")
-            MAYBE_WORD("case")
-            MAYBE_WORD("void")
-            MAYBE_WORD("with")
-            MAYBE_WORD("enum")
-            return false;
+            if (str_ == u"this") return JsTokenType::K_This;
+            if (str_ == u"else") return JsTokenType::K_Else;
+            if (str_ == u"case") return JsTokenType::K_Case;
+            if (str_ == u"void") return JsTokenType::K_Void;
+            if (str_ == u"with") return JsTokenType::K_With;
+            if (str_ == u"enum") return JsTokenType::K_Enum;
+            return JsTokenType::Invalid;
 
         case 5:
-            MAYBE_WORD("while")
-            MAYBE_WORD("break")
-            MAYBE_WORD("catch")
-            MAYBE_WORD("throw")
-            MAYBE_WORD("const")
-            MAYBE_WORD("yield")
-            MAYBE_WORD("class")
-            MAYBE_WORD("super")
-            return false;
+            if (str_ == u"while") return JsTokenType::K_While;
+            if (str_ == u"break") return JsTokenType::K_Break;
+            if (str_ == u"catch") return JsTokenType::K_Catch;
+            if (str_ == u"throw") return JsTokenType::K_Throw;
+            if (str_ == u"const") return JsTokenType::K_Const;
+            if (str_ == u"yield") return JsTokenType::K_Yield;
+            if (str_ == u"class") return JsTokenType::K_Class;
+            if (str_ == u"super") return JsTokenType::K_Super;
+            return JsTokenType::Invalid;
 
         case 6:
-            MAYBE_WORD("return")
-            MAYBE_WORD("typeof")
-            MAYBE_WORD("delete")
-            MAYBE_WORD("switch")
-            MAYBE_WORD("export")
-            MAYBE_WORD("import")
-            return false;
+            if (str_ == u"return") return JsTokenType::K_Return;
+            if (str_ == u"typeof") return JsTokenType::K_Typeof;
+            if (str_ == u"delete") return JsTokenType::K_Delete;
+            if (str_ == u"switch") return JsTokenType::K_Switch;
+            if (str_ == u"export") return JsTokenType::K_Export;
+            if (str_ == u"import") return JsTokenType::K_Import;
+            return JsTokenType::Invalid;
 
         case 7:
-            MAYBE_WORD("default")
-            MAYBE_WORD("finally")
-            MAYBE_WORD("extends")
-            return false;
+            if (str_ == u"default") return JsTokenType::K_Default;
+            if (str_ == u"finally") return JsTokenType::K_Finally;
+            if (str_ == u"extends") return JsTokenType::K_Extends;
+            return JsTokenType::Invalid;
 
         case 8:
-            MAYBE_WORD("function")
-            MAYBE_WORD("continue")
-            MAYBE_WORD("debugger")
-            return false;
+            if (str_ == u"function") return JsTokenType::K_Function;
+            if (str_ == u"continue") return JsTokenType::K_Continue;
+            if (str_ == u"debugger") return JsTokenType::K_Debugger;
+            return JsTokenType::Invalid;
 
         case 10:
-            MAYBE_WORD("instanceof");
-            return false;
+            if (str_ == u"instanceof") return JsTokenType::K_Instanceof;
+            return JsTokenType::Invalid;
 
         default:
-            return false;
+            return JsTokenType::Invalid;
     }
 }
 
@@ -498,8 +497,8 @@ Token Scanner::ScanIdentifier() {
 
     if (id.size() == 1) {
         tok.type_ = JsTokenType::Identifier;
-    } else if (IsKeyword(id)) {
-        tok.type_ = JsTokenType::Keyword;
+    } else if ((tok.type_ = ToKeyword(id)) != JsTokenType::Invalid) {
+        // nothing
     } else if (id == u"null") {
         tok.type_ = JsTokenType::NullLiteral;
     } else if (id == u"true" || id == u"false") {

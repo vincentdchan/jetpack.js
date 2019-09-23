@@ -82,11 +82,11 @@ namespace parser {
               (token.type_ == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
               ParseMessages::UnexpectedToken;
 
-        if (token.type_ == JsTokenType::Keyword) {
-            if (Scanner::IsFutureReservedWord(token.value_)) {
+        if (IsKeywordToken(token.type_)) {
+            if (Scanner::IsFutureReservedWord(token.type_)) {
                 msg = ParseMessages::UnexpectedReserved;
-            } else if (context_.strict_ && Scanner::IsStrictModeReservedWord(token.value_)) {
-                msg = ParseMessages::StrictReservedWord;
+            } else {
+                msg = ParseMessages::UnexpectedToken;
             }
         }
         value = token.value_;
@@ -160,8 +160,8 @@ namespace parser {
         has_line_terminator_ = token.line_number_ != next.line_number_;
 
         if (context_.strict_ && next.type_ == JsTokenType::Identifier) {
-            if (Scanner::IsStrictModeReservedWord(next.value_)) {
-                next.type_ = JsTokenType::Keyword;
+            if (JsTokenType t = Scanner::IsStrictModeReservedWord(next.value_); t != JsTokenType::Invalid) {
+                next.type_ = t;
             }
         }
         lookahead_ = next;
@@ -226,10 +226,10 @@ namespace parser {
         }
     }
 
-    void ParserCommon::ExpectKeyword(const UString &keyword) {
+    void ParserCommon::ExpectKeyword(JsTokenType t) {
         Token token = NextToken();
 
-        if (token.type_ != JsTokenType::Keyword || token.value_ != keyword) {
+        if (token.type_ != t) {
             ThrowUnexpectedToken(token);
         }
     }
@@ -242,8 +242,8 @@ namespace parser {
         return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_.size() == 1 && lookahead_.value_ == t;
     }
 
-    bool ParserCommon::MatchKeyword(const UString &keyword) {
-        return lookahead_.type_ == JsTokenType::Keyword && lookahead_.value_ == keyword;
+    bool ParserCommon::MatchKeyword(JsTokenType t) {
+        return lookahead_.type_ == t;
     }
 
     bool ParserCommon::MatchAssign() {
@@ -325,8 +325,8 @@ namespace parser {
                 ) {
                 precedence = 11;
             }
-        } else if (token.type_ == JsTokenType::Keyword) {
-            if (op == u"instanceof" || (context_.allow_in && op == u"in")) {
+        } else if (IsKeywordToken(token.type_)) {
+            if (token.type_ == JsTokenType::K_Instanceof|| (context_.allow_in && token.type_ == JsTokenType::K_In)) {
                 precedence = 7;
             } else {
                 precedence = 0;
@@ -337,7 +337,7 @@ namespace parser {
 
     bool ParserCommon::IsIdentifierName(Token &token) {
         return token.type_ == JsTokenType::Identifier ||
-               token.type_ == JsTokenType::Keyword ||
+               IsKeywordToken(token.type_) ||
                token.type_ == JsTokenType::BooleanLiteral ||
                token.type_ == JsTokenType::NullLiteral;
     }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <iostream>
+#include "../tokenizer/token.h"
 #include "parser_common.h"
 #include "error_message.h"
 
@@ -332,7 +333,7 @@ namespace parser {
             Token next = scanner_->Lex();
             scanner_->RestoreState(state);
 
-            match = (state.line_number_ == next.line_number_) && (next.type_ == JsTokenType::Keyword) && (next.value_ == u"function");
+            match = (state.line_number_ == next.line_number_) && IsKeywordToken(next.type_) && (next.value_ == u"function");
         }
 
         return match;

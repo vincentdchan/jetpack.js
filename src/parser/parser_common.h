@@ -95,11 +95,11 @@ namespace parser {
         void Expect(char16_t t);
         void Expect(const UString& str);
         void ExpectCommaSeparator();
-        void ExpectKeyword(const UString& keyword);
+        void ExpectKeyword(JsTokenType t);
 
         bool Match(char16_t t);
         bool Match(const UString& str);
-        bool MatchKeyword(const UString& keyword);
+        bool MatchKeyword(JsTokenType t);
         bool MatchContextualKeyword(const UString& keyword);
         bool MatchAssign();
 
