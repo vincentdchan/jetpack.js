@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
 
     try {
         Parser parser(src);
-        Sp<Module> module_ = parser.ParseModule();
-        auto json_result = dumper::AstToJson::Dump(module_);
+        auto script = parser.ParseScript();
+        auto json_result = dumper::AstToJson::Dump(script);
         std::cout << json_result.dump(2) << std::endl;
     } catch (ParseError& err) {
         std::cerr << err.ErrorMessage() << std::endl;

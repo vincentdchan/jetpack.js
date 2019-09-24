@@ -31,7 +31,7 @@ namespace parser {
         return error_;
     }
 
-    void ParseErrorHandler::TolerateError(std::exception& err) {
+    void ParseErrorHandler::TolerateError(const ParseError& err) {
         if (!tolerant_) {
             throw err;
         }

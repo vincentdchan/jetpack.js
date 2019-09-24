@@ -321,7 +321,7 @@ SyntaxFactory.syntaxes.each do |item|
       if [:Boolean, :Number, :VarKind].include? item.prop_type then
         puts "            result[\"#{item.name}\"] = node->#{item.pretty_name};"
       elsif item.prop_type == :String then
-        puts "            result[\"#{item.pretty_name}\"] = utils::To_UTF8(node->#{item.pretty_name});"
+        puts "            result[\"#{item.name}\"] = utils::To_UTF8(node->#{item.pretty_name});"
       elsif item.prop_type.is_a? Array then
         array_name = "array_#{item.name}"
         puts "            json #{array_name} = json::array();"
@@ -344,12 +344,19 @@ SyntaxFactory.syntaxes.each do |item|
 
       elsif item.prop_type.is_a? Option then
         puts "            if (node->#{item.pretty_name}) {"
-        puts "                result[\"#{item.pretty_name}\"] = Dump(*node->#{item.pretty_name});"
+        puts "                result[\"#{item.name}\"] = Dump(*node->#{item.pretty_name});"
         puts "            }"
       elsif item.prop_type.is_a? Variant then
         # nothing
+        item.prop_type.elements.each do |elem|
+          if elem == :String then
+            puts "            if (std::holds_alternative<UString>(node->#{item.name})) result[\"#{item.name}\"] = utils::To_UTF8(std::get<UString>(node->#{item.name}));"
+          else
+            puts "            if (std::holds_alternative<#{elem.to_codegen}>(node->#{item.name})) result[\"#{item.name}\"] = std::get<#{elem.to_codegen}>(node->#{item.name});"
+          end
+        end
       else
-        puts "            result[\"#{item.pretty_name}\"] = Dump(node->#{item.pretty_name});"
+        puts "            result[\"#{item.name}\"] = Dump(node->#{item.pretty_name});"
       end
     end
 

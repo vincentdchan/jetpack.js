@@ -40,7 +40,7 @@ namespace parser {
 
         ParseError CreateError(std::string name, std::string msg, int index, int line, int col);
 
-        void TolerateError(std::exception& err);
+        void TolerateError(const ParseError& err);
 
         inline std::size_t Count() {
             return error_list_.size();
