@@ -34,7 +34,11 @@ namespace parser {
                 auto that = dynamic_pointer_cast<ArrayExpression>(expr);
                 auto node = Alloc<ArrayPattern>();
                 for (auto& i : that->elements) {
-                    node->elements.push_back(ReinterpretExpressionAsPattern(i));
+                    if (i.has_value()) {
+                        node->elements.push_back(ReinterpretExpressionAsPattern(*i));
+                    } else {
+                        node->elements.push_back(nullopt);
+                    }
                 }
                 return node;
             }
@@ -1052,7 +1056,7 @@ namespace parser {
         while (!Match(']')) {
             if (Match(',')) {
                 NextToken();
-                node->elements.push_back(nullptr);
+                node->elements.push_back(nullopt);
             } else if (Match(u"...")) {
                 element = ParseSpreadElement();
                 if (!Match(']')) {
@@ -2283,8 +2287,9 @@ namespace parser {
                         context_.is_assignment_target = false;
                         context_.is_binding_element = false;
                     } else {
-                        temp->left = ReinterpretExpressionAsPattern(expr);
+//                        Assert(!!temp->left, "left should not be null");
                     }
+                    temp->left = ReinterpretExpressionAsPattern(expr);
 
                     token = NextToken();
                     auto operator_ = token.value_;

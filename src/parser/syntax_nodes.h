@@ -13,7 +13,7 @@ class ArrayExpression: public Expression {
 public:
     ArrayExpression();
 
-    std::vector<Sp<SyntaxNode>> elements;
+    std::vector<std::optional<Sp<SyntaxNode>>> elements;
 
 };
 

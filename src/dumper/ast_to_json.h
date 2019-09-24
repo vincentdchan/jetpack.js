@@ -413,9 +413,13 @@ namespace dumper {
             DumpBaseInfo(result, node);
             json array_elements = json::array();
 
-              for (auto& i : node->elements) {
-                  array_elements.push_back(Dump(i));
-              }
+            for (auto& i : node->elements) {
+                if (i.has_value()) {
+                    array_elements.push_back(Dump(*i));
+                } else {
+                    array_elements.push_back(nullptr);
+                }
+            }
             result["elements"] = std::move(array_elements);
 
             return result;

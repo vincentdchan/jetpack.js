@@ -98,7 +98,7 @@ SyntaxFactory.def_syntax :Declaration, base: :Statement, is_virtual: true do
 end
 
 SyntaxFactory.def_syntax :ArrayExpression, base: :Expression do
-  def_prop [:SyntaxNode], "elements"
+  def_prop [:SyntaxNode.opt], "elements"
 end
 
 SyntaxFactory.def_syntax :ArrayPattern, base: :Pattern do
