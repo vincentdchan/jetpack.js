@@ -471,7 +471,7 @@ bool Scanner::OctalToDecimal(char16_t ch, std::uint32_t &result) {
     bool octal = (ch != '0');
     result = ch - '0';
 
-    while (!IsEnd() && utils::IsOctalDigit((*source_)[index_])) {
+    if (!IsEnd() && utils::IsOctalDigit((*source_)[index_])) {
         octal = true;
         result = result * 8 + ((*source_)[index_] - '0');
 
@@ -963,7 +963,7 @@ Token Scanner::ScanTemplate() {
     ++index_;
 
     while (!IsEnd()) {
-        char16_t ch = (*source_)[index_];
+        char16_t ch = (*source_)[index_++];
         if (ch == '`') {
             rawOffset = 1;
             tail = true;

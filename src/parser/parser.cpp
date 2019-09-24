@@ -464,16 +464,17 @@ namespace parser {
         return Finalize(marker, node);
     }
 
-    Sp<SyntaxNode> Parser::ParseObjectProperty(bool &has_proto) {
+    Sp<Property> Parser::ParseObjectProperty(bool &has_proto) {
         auto marker = CreateStartMarker();
         Token token = lookahead_;
-        VarKind kind;
+        VarKind kind = VarKind::Invalid;
         bool computed = false;
         bool method = false;
         bool shorthand = false;
         bool is_async = false;
 
-        Sp<SyntaxNode> key = nullptr;
+        optional<Sp<SyntaxNode>> key;
+        optional<Sp<SyntaxNode>> value;
 
         if (token.type_ == JsTokenType::Identifier) {
             auto id = token.value_;
@@ -495,7 +496,81 @@ namespace parser {
             key = ParseObjectPropertyKey();
         }
 
-        return key;
+        auto lookahead_prop_key = QualifiedPropertyName(lookahead_);
+
+        if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"get" && lookahead_prop_key) {
+            kind = VarKind::Get;
+            computed = Match(u'[');
+            key = ParseObjectPropertyKey();
+            context_.allow_yield = false;
+            value = ParseGetterMethod();
+        } else if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"set" && lookahead_prop_key) {
+            kind = VarKind::Set;
+            computed = Match(u'[');
+            key = ParseObjectPropertyKey();
+            context_.allow_yield = false;
+            value = ParseGetterMethod();
+        } else if (token.type_ == JsTokenType::Punctuator && !is_async && token.value_ == u"*" && lookahead_prop_key) {
+            kind = VarKind::Init;
+            computed = Match(u'[');
+            key = ParseObjectPropertyKey();
+            value = ParseGeneratorMethod();
+            method = true;
+        } else {
+            if (!key.has_value()) {
+                ThrowUnexpectedToken(lookahead_);
+            }
+
+            kind = VarKind::Init;
+            if (Match(u':') && !is_async) {
+                if (!computed && IsPropertyKey(*key, u"__proto__")) {
+                    if (has_proto) {
+                        TolerateError(ParseMessages::DuplicateProtoProperty);
+                    }
+                    has_proto = true;
+                }
+                NextToken();
+                value = InheritCoverGrammar<Expression>([this] {
+                    return ParseAssignmentExpression();
+                });
+            } else if (Match(u'(')) {
+                if (is_async) {
+                    value = ParsePropertyMethodAsyncFunction();
+                } else {
+                    value = ParsePropertyMethodFunction();
+                }
+                method = true;
+            } else if (token.type_ == JsTokenType::Identifier) {
+                auto id = Alloc<Identifier>();
+                id->name = token.value_;
+                Finalize(marker, id);
+                if (Match(u'=')) {
+                    context_.first_cover_initialized_name_error = lookahead_;
+                    NextToken();
+                    shorthand = true;
+                    auto node = Alloc<AssignmentPattern>();
+                    node->left = move(id);
+                    node->right = IsolateCoverGrammar<Expression>([this] {
+                        return ParseAssignmentExpression();
+                    });
+                } else {
+                    shorthand = true;
+                    value = move(id);
+                }
+            } else {
+                ThrowUnexpectedToken(NextToken());
+            }
+        }
+
+        Assert(key.has_value(), "Property: key should has value");
+        auto node = Alloc<Property>();
+        node->kind = kind;
+        node->key = *key;
+        node->value = move(value);
+        node->computed = computed;
+        node->method = method;
+        node->shorthand = shorthand;
+        return node;
     }
 
     Sp<SyntaxNode> Parser::ParseObjectPropertyKey() {
@@ -2332,6 +2407,7 @@ namespace parser {
                 return ParseAssignmentExpression();
             });
 
+            node->test = move(expr);
             expr = move(node);
 
             context_.is_assignment_target = false;
@@ -2954,8 +3030,36 @@ namespace parser {
         return Finalize(start_marker, node);
     }
 
+    Sp<SyntaxNode> Parser::ParseAsyncArgument() {
+        auto arg = ParseAssignmentExpression();
+        context_.first_cover_initialized_name_error.reset();
+        return arg;
+    }
+
     std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments() {
-        return {};
+        Expect(u'(');
+        std::vector<Sp<SyntaxNode>> result;
+        if (!Match(u')')) {
+            while (true) {
+                if (Match(u"...")) {
+                    result.push_back(ParseSpreadElement());
+                } else {
+                    result.push_back(IsolateCoverGrammar<SyntaxNode>([this] {
+                        return ParseAsyncArgument();
+                    }));
+                }
+                if (Match(u')')) {
+                    break;
+                }
+                ExpectCommaSeparator();
+                if (Match(u')')) {
+                    break;
+                }
+            }
+        }
+        Expect(u')');
+
+        return result;
     }
 
     Sp<Expression> Parser::ParseGroupExpression() {

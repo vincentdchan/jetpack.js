@@ -94,7 +94,7 @@ namespace parser {
 
         Sp<FunctionExpression> ParsePropertyMethodAsyncFunction();
 
-        Sp<SyntaxNode> ParseObjectProperty(bool& has_proto);
+        Sp<Property> ParseObjectProperty(bool& has_proto);
 
         Sp<SyntaxNode> ParseObjectPropertyKey();
 
@@ -120,8 +120,7 @@ namespace parser {
 
         Sp<Expression> ParseNewExpression();
 
-        template <typename NodePtr>
-        bool ParseAsyncArgument(NodePtr& ptr);
+        Sp<SyntaxNode> ParseAsyncArgument();
 
         std::vector<Sp<SyntaxNode>> ParseAsyncArguments();
 
