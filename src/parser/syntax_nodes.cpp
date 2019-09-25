@@ -190,7 +190,7 @@ Property::Property(): SyntaxNode() {
     type = SyntaxNodeType::Property;
 }
 
-RegexLiteral::RegexLiteral(): SyntaxNode() {
+RegexLiteral::RegexLiteral(): Expression() {
     type = SyntaxNodeType::RegexLiteral;
 }
 

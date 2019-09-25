@@ -402,6 +402,16 @@ namespace parser {
                 return ParseTemplateLiteral();
 
             case JsTokenType::Punctuator: {
+                if (lookahead_.value_ == u"/=" || lookahead_.value_ == u"/") {
+                    context_.is_assignment_target = false;
+                    context_.is_binding_element = false;
+                    scanner_->SetIndex(StartMarker().index);
+                    token = NextRegexToken();
+                    auto node = Alloc<RegexLiteral>();
+                    node->value = token.value_;
+                    node->raw = GetTokenRaw(token);
+                    return Finalize(marker, node);
+                }
                 switch (lookahead_.value_[0]) {
                     case '(':
                         context_.is_binding_element = false;
@@ -418,19 +428,6 @@ namespace parser {
                         return InheritCoverGrammar<Expression>([this]() {
                             return ParseObjectInitializer();
                         });
-
-                    case '/':
-//                case '/=': TODO:
-//                    context_.is_assignment_target = false;
-//                    context_.is_binding_element = false;
-//                    scanner_->SetIndex(start_marker_.index);
-//                    token = this.nextRegexToken();
-//                    raw = this.getTokenRaw(token);
-//                    expr = this.finalize(node, new Node.RegexLiteral(token.regex
-//                    as
-//                    RegExp, raw, token.pattern, token.flags));
-                        ThrowUnexpectedToken(token);
-                        return nullptr;
 
                     default: {
                         token = NextToken();
@@ -1563,7 +1560,7 @@ namespace parser {
         if (!Match(u')') && config_.tolerant) {
             ThrowUnexpectedToken(NextToken());
         } else {
-            Expect(u'(');
+            Expect(u')');
             if (Match(u';')) {
                 NextToken();
             }
@@ -1723,7 +1720,7 @@ namespace parser {
                             init_seq.push_back(node);
                         }
 
-                        Sp<SequenceExpression> node;
+                        auto node = Alloc<SequenceExpression>();
                         node->expressions = move(init_seq);
                         init = Finalize(start_marker, node);
                     }
@@ -2277,10 +2274,12 @@ namespace parser {
 
             if (expr->type == SyntaxNodeType::ArrowParameterPlaceHolder || Match(u"=>")) {
 
-                auto placefolder = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr);
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
-                bool is_async = placefolder->async;
+                bool is_async = false;
+                if (auto placeholder = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr); placeholder) {
+                    is_async = placeholder->async;
+                }
 
                 if (auto list = ReinterpretAsCoverFormalsList(expr); list.has_value()) {
                     if (has_line_terminator_) {

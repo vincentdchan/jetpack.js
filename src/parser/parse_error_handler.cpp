@@ -39,7 +39,7 @@ namespace parser {
 
     void ParseErrorHandler::PrintAllErrors() {
         for (auto& error : error_list_) {
-            cout << error.line_ << ":" << error.col_ << " "
+            cout << error.line_ + 1 << ":" << error.col_ << " "
                  << error.name_ << ": " << error.msg_ << endl;
         }
     }
@@ -62,7 +62,7 @@ namespace parser {
 
     std::string ParseError::ErrorMessage() const {
         stringstream ss;
-        ss << line_ << ":" << col_ << ": " << name_ << ": " << msg_;
+        ss << line_ + 1 << ":" << col_ << ": " << name_ << ": " << msg_;
         return ss.str();
     }
 

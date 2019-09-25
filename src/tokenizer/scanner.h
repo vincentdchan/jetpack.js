@@ -95,13 +95,18 @@ public:
     Token ScanNumericLiteral();
     Token ScanStringLiteral();
     Token ScanTemplate();
-    bool TestRegExp(const UString& pattern, const UString& flags, UString& regex);
-    bool ScanRegExpBody(UString& result);
-    bool ScanRegExpFlags(UString& result);
-    bool ScanRegExp(Token& tok);
+    UString TestRegExp(const UString& pattern, const UString& flags);
+
+    UString ScanRegExpBody();
+    UString ScanRegExpFlags();
+    Token ScanRegExp();
     Token Lex();
 
     char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
+
+    [[nodiscard]] std::shared_ptr<std::u16string> Source() const {
+        return source_;
+    }
 
 private:
     std::stack<UString> curly_stack_;

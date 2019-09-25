@@ -105,13 +105,13 @@ namespace parser {
 
     ParseError ParserCommon::UnexpectedToken(const Token &token, const std::string& message) {
         if (token.line_number_ > 0) {
-            uint32_t index = token.line_start_;
+            uint32_t index = token.range_.first;
             uint32_t line = token.line_number_;
             uint32_t lastMarkerLineStart = last_marker_.index - last_marker_.column;
-            uint32_t column = token.line_start_ - lastMarkerLineStart + 1;
+            uint32_t column = token.range_.first - lastMarkerLineStart + 1;
             return error_handler_->CreateError(message, index, line, column);
         } else {
-            uint32_t index = token.line_start_;
+            uint32_t index = token.range_.first;
             uint32_t line = token.line_number_;
             uint32_t column = last_marker_.column + 1;
             return error_handler_->CreateError(message, index, line, column);
@@ -183,6 +183,25 @@ namespace parser {
         return token;
     }
 
+    Token ParserCommon::NextRegexToken() {
+        CollectComments();
+
+        Token token = scanner_->ScanRegExp();
+        if (config_.tokens) {
+            tokens_.pop();
+            tokens_.push(token);
+        }
+
+        lookahead_ = token;
+        NextToken();
+
+        return token;
+    }
+
+    UString ParserCommon::GetTokenRaw(const Token& token) {
+        return scanner_->Source()->substr(token.range_.first, token.range_.second);
+    }
+
     ParserCommon::Marker ParserCommon::CreateStartMarker() {
         return {
             start_marker_.index,
@@ -214,7 +233,7 @@ namespace parser {
 
      void ParserCommon::Expect(const UString &keyword) {
         Token token = NextToken();
-        if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_ != keyword) {
+        if (token.type_ != JsTokenType::Punctuator || token.value_ != keyword) {
             ThrowUnexpectedToken(token);
         }
     }
@@ -248,7 +267,7 @@ namespace parser {
     }
 
     bool ParserCommon::Match(const UString& t) {
-        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_.size() == 1 && lookahead_.value_ == t;
+        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_ == t;
     }
 
     bool ParserCommon::MatchKeyword(JsTokenType t) {
@@ -322,7 +341,7 @@ namespace parser {
                 precedence = 6;
             } else if (
                 op == u"<" || op == u">" || op == u"<=" ||
-                op == u">=="
+                op == u">="
                 ) {
                 precedence = 7;
             } else if (op == u"<<" || op == u">>" || op == u">>>") {

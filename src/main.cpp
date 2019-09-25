@@ -7,8 +7,6 @@
 
 using namespace parser;
 
-static const char* source = "console.log('hello world')";
-
 std::u16string ReadFileStream(const string& filename) {
     std::ifstream t(filename);
     std::string str((std::istreambuf_iterator<char>(t)),

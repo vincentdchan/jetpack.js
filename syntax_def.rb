@@ -343,7 +343,7 @@ SyntaxFactory.def_syntax :Property, base: :SyntaxNode do
   def_prop :Boolean, "shorthand"
 end
 
-SyntaxFactory.def_syntax :RegexLiteral, base: :SyntaxNode do
+SyntaxFactory.def_syntax :RegexLiteral, base: :Expression do
   def_prop :String, "value"
   def_prop :String, "raw"
 end

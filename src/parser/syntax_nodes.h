@@ -443,7 +443,7 @@ public:
 
 };
 
-class RegexLiteral: public SyntaxNode {
+class RegexLiteral: public Expression {
 public:
     RegexLiteral();
 

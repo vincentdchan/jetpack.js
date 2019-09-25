@@ -83,6 +83,10 @@ namespace parser {
         void DecorateToken(Token& );
 
         Token NextToken();
+
+        Token NextRegexToken();
+        UString GetTokenRaw(const Token&);
+
         void TolerateError(const string& message);
 
         void ThrowUnexpectedToken(const Token& tok);

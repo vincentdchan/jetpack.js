@@ -80,7 +80,6 @@ namespace parser {
             return result;
         }
 
-
         template<typename T>
         Sp<T> Finalize(const Marker& marker, const Sp<T>& from);
 

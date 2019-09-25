@@ -640,7 +640,7 @@ Token Scanner::ScanHexLiteral(std::uint32_t start) {
         ThrowUnexpectedToken();
     }
 
-    tok.type_ = JsTokenType::Punctuator;
+    tok.type_ = JsTokenType::NumericLiteral;
     tok.value_ = UString(u"0x") + num;
     tok.line_start_ = line_start_;
     tok.line_number_ = line_number_;
@@ -673,13 +673,6 @@ Token Scanner::ScanBinaryLiteral(std::uint32_t start) {
             ThrowUnexpectedToken();
         }
     }
-//    Token tok;
-//
-//    tok.type_ = JsTokenType::NumericLiteral;
-//    tok.value_ = num;
-//    tok.line_number_ = line_number_;
-//    tok.line_start_ = line_start_;
-//    tok.range_ = make_pair(start, index_);
 
     return {
         JsTokenType::NumericLiteral,
@@ -717,14 +710,6 @@ Token Scanner::ScanOctalLiteral(char16_t prefix, std::uint32_t start) {
     if (utils::IsIdentifierStart((*source_)[index_]) || utils::IsDecimalDigit((*source_)[index_])) {
         ThrowUnexpectedToken();
     }
-
-//    Token tok;
-//    tok.type_ = JsTokenType::NumericLiteral;
-//    tok.value_ = num;
-//    tok.octal_ = octal;
-//    tok.line_number_ = line_number_;
-//    tok.line_start_ = line_start_;
-//    tok.range_ = make_pair(start, index_);
 
     return {
         JsTokenType::NumericLiteral,
@@ -823,12 +808,6 @@ Token Scanner::ScanNumericLiteral() {
         ThrowUnexpectedToken();
     }
 
-//    tok.type_ = JsTokenType::NumericLiteral;
-//    tok.value_ = num;
-//    tok.line_number_ = line_number_;
-//    tok.line_start_ = line_start_;
-//    tok.range_ = make_pair(start, index_);
-
     return {
         JsTokenType::NumericLiteral,
         num,
@@ -870,12 +849,11 @@ Token Scanner::ScanStringLiteral() {
 
                             utils::AddU32ToUtf16(str, tmp);
                         } else {
-                            char32_t unescapedChar;
-                            if (!ScanHexEscape(ch, unescapedChar)) {
+                            if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
 
-                            utils::AddU32ToUtf16(str, unescapedChar);
+                            utils::AddU32ToUtf16(str, unescaped);
                         }
                         break;
 
@@ -1076,6 +1054,104 @@ Token Scanner::ScanTemplate() {
     tok.tail_ = tail;
 
     return tok;
+}
+
+UString Scanner::ScanRegExpBody() {
+    char16_t ch = (*source_)[index_];
+    if (ch != u'/') {
+        ThrowUnexpectedToken("Regular expression literal must start with a slash");
+    }
+
+    UString str;
+    str.push_back((*source_)[index_++]);
+    bool class_marker = false;
+    bool terminated = false;
+
+    while (!IsEnd()) {
+        ch = (*source_)[index_++];
+        str.push_back(ch);
+        if (ch == u'\\') {
+            ch = (*source_)[index_++];
+            if (utils::IsLineTerminator(ch)) {
+                ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
+            }
+            str.push_back(ch);
+        } else if (utils::IsLineTerminator(ch)) {
+            ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
+        } else if (class_marker) {
+            if (ch == u']') {
+                class_marker = false;
+            }
+        } else {
+            if (ch == u'/') {
+                terminated = true;
+                break;
+            } else if (ch == u'[') {
+                class_marker = true;
+            }
+        }
+    }
+
+    if (!terminated) {
+        ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
+    }
+
+    return str.substr(1, str.size() - 2);
+}
+
+UString Scanner::ScanRegExpFlags() {
+    UString str;
+    UString flags;
+    while (!IsEnd()) {
+        char16_t ch = (*source_)[index_];
+        if (!utils::IsIdentifierPart(ch)) {
+            break;
+        }
+
+        ++index_;
+        if (ch == u'\\' && !IsEnd()) {
+            ch = (*source_)[index_];
+            if (ch == u'u') {
+                ++index_;
+                auto restore = index_;
+                char32_t char_;
+                if (ScanHexEscape(u'u', char_)) {
+                    flags.push_back(char_);
+                    for (str += u"\\u"; restore < index_; ++ restore) {
+                        str.push_back((*source_)[restore]);
+                    }
+                } else {
+                    index_ = restore;
+                    flags += u"u";
+                    str += u"\\u";
+                }
+                TolerateUnexpectedToken();
+            } else {
+                str += u"\\";
+                TolerateUnexpectedToken();
+            }
+        } else {
+            flags.push_back(ch);
+            str.push_back(ch);
+        }
+    }
+
+    return flags;
+}
+
+Token Scanner::ScanRegExp() {
+//    auto start = index_;
+
+    auto pattern = ScanRegExpBody();
+    auto flags = ScanRegExpFlags();
+
+    Token token;
+    token.type_ = JsTokenType::RegularExpression;
+    token.line_number_ = line_number_;
+    token.line_start_ = line_start_;
+    token.value_ = UString(u"/") + pattern + u"/" + flags;
+
+    return token;
 }
 
 Token Scanner::Lex() {
