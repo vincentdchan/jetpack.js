@@ -3,6 +3,7 @@
 //
 
 #include "parser.hpp"
+#include "../tokenizer/token.h"
 
 namespace parser {
 
@@ -192,58 +193,71 @@ namespace parser {
         scanner_->RestoreState(state);
 
         return (next.type_ == JsTokenType::Identifier) ||
-               (next.type_ == JsTokenType::Punctuator && next.value_ == u"[") ||
-               (next.type_ == JsTokenType::Punctuator && next.value_ == u"{") ||
+               (next.type_ == JsTokenType::LeftBrace) ||
+               (next.type_ == JsTokenType::LeftBracket) ||
                next.type_ == JsTokenType::K_Let ||
                next.type_ == JsTokenType::K_Yield;
     }
 
     bool Parser::MatchImportCall() {
-        bool match = MatchKeyword(JsTokenType::K_Import);
+        bool match = Match(JsTokenType::K_Import);
         if (match) {
             auto state = scanner_->SaveState();
             std::vector<Comment> comments;
             Token next = scanner_->Lex();
             scanner_->ScanComments(comments);
             scanner_->RestoreState(state);
-            match = (next.type_ == JsTokenType::Punctuator) && (next.value_ == u"(");
+            match = (next.type_ == JsTokenType::LeftParen);
         }
         return match;
     }
 
     bool Parser::IsStartOfExpression() {
-        bool start = true;
-
         UString value = lookahead_.value_;
-        switch (lookahead_.type_) {
-            case JsTokenType::Punctuator: {
-                start = (value == u"[") || (value == u")") || (value == u"{") ||
-                        (value == u"+") || (value == u"-") ||
-                        (value == u"!") || (value == u"~") ||
-                        (value == u"++") || (value == u"--") ||
-                        (value == u"/") || (value == u"/=");
 
-                break;
+        if (IsPunctuatorToken(lookahead_.type_)) {
+            switch (lookahead_.type_) {
+                case JsTokenType::LeftBrace:
+                case JsTokenType::RightParen:
+                case JsTokenType::LeftBracket:
+                case JsTokenType::Plus:
+                case JsTokenType::Minus:
+                case JsTokenType::Not:
+                case JsTokenType::Wave:
+                case JsTokenType::Increase:
+                case JsTokenType::Decrease:
+                case JsTokenType::Div:
+                case JsTokenType::DivAssign:
+                    return true;
+
+                default:
+                    return false;
+
             }
 
-            case JsTokenType::K_Class:
-            case JsTokenType::K_Delete:
-            case JsTokenType::K_Function:
-            case JsTokenType::K_Let:
-            case JsTokenType::K_New:
-            case JsTokenType::K_Super:
-            case JsTokenType::K_This:
-            case JsTokenType::K_Typeof:
-            case JsTokenType::K_Void:
-            case JsTokenType::K_Yield:
-                start = true;
-                break;
-
-            default:
-                break;
         }
 
-        return start;
+        if (IsKeywordToken(lookahead_.type_)) {
+            switch (lookahead_.type_) {
+                case JsTokenType::K_Class:
+                case JsTokenType::K_Delete:
+                case JsTokenType::K_Function:
+                case JsTokenType::K_Let:
+                case JsTokenType::K_New:
+                case JsTokenType::K_Super:
+                case JsTokenType::K_This:
+                case JsTokenType::K_Typeof:
+                case JsTokenType::K_Void:
+                case JsTokenType::K_Yield:
+                    return true;
+
+                default:
+                    return false;
+
+            }
+        }
+
+        return true;
     }
 
     ParserCommon::FormalParameterOptions Parser::ParseFormalParameters(optional<Token> first_restricted) {
@@ -252,20 +266,20 @@ namespace parser {
         options.simple = true;
         options.first_restricted = move(first_restricted);
 
-        Expect('(');
-        if (!Match(')')) {
+        Expect(JsTokenType::LeftParen);
+        if (!Match(JsTokenType::RightParen)) {
             while (lookahead_.type_ != JsTokenType::EOF_) {
                 ParseFormalParameter(options);
-                if (Match(')')) {
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
-                Expect(',');
-                if (Match(')')) {
+                Expect(JsTokenType::Comma);
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
             }
         }
-        Expect(')');
+        Expect(JsTokenType::RightParen);
 
         return options;
     }
@@ -273,7 +287,7 @@ namespace parser {
     void Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
         std::vector<Token> params;
         Sp<SyntaxNode> param;
-        if (Match(u"...")) {
+        if (Match(JsTokenType::Spread)) {
             param = ParseRestElement(params);
         } else {
             param = ParsePattern(params, VarKind::Invalid);
@@ -321,9 +335,9 @@ namespace parser {
         Token token;
 
         if (IsKeywordToken(lookahead_.type_)) {
-            if (!context_.strict_ && context_.allow_yield && MatchKeyword(JsTokenType::K_Yield)) {
+            if (!context_.strict_ && context_.allow_yield && Match(JsTokenType::K_Yield)) {
                 return ParseIdentifierName();
-            } else if (!context_.strict_ && MatchKeyword(JsTokenType::K_Let)) {
+            } else if (!context_.strict_ && Match(JsTokenType::K_Let)) {
                 token = NextToken();
                 auto id = Alloc<Identifier>();
                 id->name = token.value_;
@@ -331,13 +345,13 @@ namespace parser {
             } else {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
-                if (MatchKeyword(JsTokenType::K_Function)) {
+                if (Match(JsTokenType::K_Function)) {
                     return ParseFunctionExpression();
-                } else if (MatchKeyword(JsTokenType::K_This)) {
+                } else if (Match(JsTokenType::K_This)) {
                     token = NextToken();
                     auto th = Alloc<ThisExpression>();
                     return Finalize(marker, th);
-                } else if (MatchKeyword(JsTokenType::K_Class)) {
+                } else if (Match(JsTokenType::K_Class)) {
                     return ParseClassExpression();
                 } else if (MatchImportCall()) {
                     return ParseImportCall();
@@ -401,41 +415,32 @@ namespace parser {
             case JsTokenType::Template:
                 return ParseTemplateLiteral();
 
-            case JsTokenType::Punctuator: {
-                if (lookahead_.value_ == u"/=" || lookahead_.value_ == u"/") {
-                    context_.is_assignment_target = false;
-                    context_.is_binding_element = false;
-                    scanner_->SetIndex(StartMarker().index);
-                    token = NextRegexToken();
-                    auto node = Alloc<RegexLiteral>();
-                    node->value = token.value_;
-                    node->raw = GetTokenRaw(token);
-                    return Finalize(marker, node);
-                }
-                switch (lookahead_.value_[0]) {
-                    case '(':
-                        context_.is_binding_element = false;
-                        return InheritCoverGrammar<Expression>([this]() {
-                            return ParseGroupExpression();
-                        });
+            case JsTokenType::LeftParen:
+                context_.is_binding_element = false;
+                return InheritCoverGrammar<Expression>([this]() {
+                    return ParseGroupExpression();
+                });
 
-                    case '[':
-                        return InheritCoverGrammar<Expression>([this]() {
-                            return ParseArrayInitializer();
-                        });
+            case JsTokenType::LeftBrace:
+                return InheritCoverGrammar<Expression>([this]() {
+                    return ParseArrayInitializer();
+                });
 
-                    case '{':
-                        return InheritCoverGrammar<Expression>([this]() {
-                            return ParseObjectInitializer();
-                        });
+            case JsTokenType::LeftBracket:
+                return InheritCoverGrammar<Expression>([this]() {
+                    return ParseObjectInitializer();
+                });
 
-                    default: {
-                        token = NextToken();
-                        ThrowUnexpectedToken(token);
-                    }
-
-                }
-                break;
+            case JsTokenType::Div:
+            case JsTokenType::DivAssign: {
+                context_.is_assignment_target = false;
+                context_.is_binding_element = false;
+                scanner_->SetIndex(StartMarker().index);
+                token = NextRegexToken();
+                auto node = Alloc<RegexLiteral>();
+                node->value = token.value_;
+                node->raw = GetTokenRaw(token);
+                return Finalize(marker, node);
             }
 
             default:
@@ -451,7 +456,7 @@ namespace parser {
     Sp<SpreadElement> Parser::ParseSpreadElement() {
         auto marker = CreateStartMarker();
 
-        Expect(u"...");
+        Expect(JsTokenType::Spread);
 
         auto node = Alloc<SpreadElement>();
         node->argument = InheritCoverGrammar<Expression>([this] {
@@ -476,9 +481,9 @@ namespace parser {
         if (token.type_ == JsTokenType::Identifier) {
             auto id = token.value_;
             NextToken();
-            computed = Match('[');
+            computed = Match(JsTokenType::LeftBrace);
             is_async = !has_line_terminator_ && (id == u"async") &&
-                       !Match(':') && !Match('(') && !Match('*') && !Match(',');
+                       !Match(JsTokenType::Colon) && !Match(JsTokenType::LeftParen) && !Match(JsTokenType::Mul) && !Match(JsTokenType::Comma);
             if (is_async) {
                 key = ParseObjectPropertyKey();
             } else {
@@ -486,10 +491,10 @@ namespace parser {
                 node->name = id;
                 key = Finalize(marker, node);
             }
-        } else if (Match('*')) {
+        } else if (Match(JsTokenType::Mul)) {
             NextToken();
         } else {
-            computed = Match('[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
         }
 
@@ -497,19 +502,19 @@ namespace parser {
 
         if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"get" && lookahead_prop_key) {
             kind = VarKind::Get;
-            computed = Match(u'[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             context_.allow_yield = false;
             value = ParseGetterMethod();
         } else if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"set" && lookahead_prop_key) {
             kind = VarKind::Set;
-            computed = Match(u'[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             context_.allow_yield = false;
             value = ParseGetterMethod();
-        } else if (token.type_ == JsTokenType::Punctuator && !is_async && token.value_ == u"*" && lookahead_prop_key) {
+        } else if (token.type_ == JsTokenType::Mul && !is_async && lookahead_prop_key) {
             kind = VarKind::Init;
-            computed = Match(u'[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             value = ParseGeneratorMethod();
             method = true;
@@ -519,7 +524,7 @@ namespace parser {
             }
 
             kind = VarKind::Init;
-            if (Match(u':') && !is_async) {
+            if (Match(JsTokenType::Colon) && !is_async) {
                 if (!computed && IsPropertyKey(*key, u"__proto__")) {
                     if (has_proto) {
                         TolerateError(ParseMessages::DuplicateProtoProperty);
@@ -530,7 +535,7 @@ namespace parser {
                 value = InheritCoverGrammar<Expression>([this] {
                     return ParseAssignmentExpression();
                 });
-            } else if (Match(u'(')) {
+            } else if (Match(JsTokenType::LeftParen)) {
                 if (is_async) {
                     value = ParsePropertyMethodAsyncFunction();
                 } else {
@@ -541,7 +546,7 @@ namespace parser {
                 auto id = Alloc<Identifier>();
                 id->name = token.value_;
                 Finalize(marker, id);
-                if (Match(u'=')) {
+                if (Match(JsTokenType::Assign)) {
                     context_.first_cover_initialized_name_error = lookahead_;
                     NextToken();
                     shorthand = true;
@@ -580,6 +585,18 @@ namespace parser {
             return Finalize(marker, node);
         }
 
+        if (IsPunctuatorToken(token.type_)) {
+            if (token.type_ == JsTokenType::LeftBrace) {
+                auto result = IsolateCoverGrammar<Expression>([this] {
+                    return ParseAssignmentExpression();
+                });
+                Expect(JsTokenType::RightBrace);
+                return result;
+            } else {
+                ThrowUnexpectedToken(token);
+            }
+        }
+
         switch (token.type_) {
             case JsTokenType::StringLiteral:
             case JsTokenType::NumericLiteral: {
@@ -599,18 +616,6 @@ namespace parser {
                 return Finalize(marker, node);
             }
 
-            case JsTokenType::Punctuator:
-                if (token.value_ == u"[") {
-                    auto result = IsolateCoverGrammar<Expression>([this] {
-                        return ParseAssignmentExpression();
-                    });
-                    Expect(']');
-                    return result;
-                } else {
-                    ThrowUnexpectedToken(token);
-                    return nullptr;
-                }
-
             default:
                 ThrowUnexpectedToken(token);
                 return nullptr;
@@ -622,22 +627,22 @@ namespace parser {
     Sp<Expression> Parser::ParseObjectInitializer() {
         auto marker = CreateStartMarker();
 
-        Expect(u'{');
+        Expect(JsTokenType::LeftBracket);
         auto node = Alloc<ObjectExpression>();
         bool has_proto = false;
-        while (!Match(u'}')) {
+        while (!Match(JsTokenType::RightBracket)) {
             Sp<SyntaxNode> prop;
-            if (Match(u"...")) {
+            if (Match(JsTokenType::Spread)) {
                 prop = ParseSpreadElement();
             } else {
                 prop = ParseObjectProperty(has_proto);
             }
             node->properties.push_back(std::move(prop));
-            if (!Match(u'}')) {
+            if (!Match(JsTokenType::RightBracket)) {
                 ExpectCommaSeparator();
             }
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         return Finalize(marker, node);
     }
@@ -648,9 +653,9 @@ namespace parser {
         bool is_async = MatchContextualKeyword(u"async");
         if (is_async) NextToken();
 
-        ExpectKeyword(JsTokenType::K_Function);
+        Expect(JsTokenType::K_Function);
 
-        bool is_generator = is_async ? false : Match(u'*');
+        bool is_generator = is_async ? false : Match(JsTokenType::Mul);
         if (is_generator) NextToken();
 
         optional<Sp<Identifier>> id;
@@ -663,10 +668,10 @@ namespace parser {
 
         std::string message;
 
-        if (!Match(u'(')) {
+        if (!Match(JsTokenType::LeftParen)) {
             Token token = lookahead_;
 
-            if (!context_.strict_ && !is_generator && MatchKeyword(JsTokenType::K_Yield)) {
+            if (!context_.strict_ && !is_generator && Match(JsTokenType::K_Yield)) {
                 id = ParseIdentifierName();
             } else {
                 id = ParseVariableIdentifier(VarKind::Invalid);
@@ -746,7 +751,7 @@ namespace parser {
 
         Sp<Expression> expr;
 
-        if (Match(u'.')) {
+        if (Match(JsTokenType::Dot)) {
             NextToken();
             if (lookahead_.type_ == JsTokenType::Identifier && context_.in_function_body && lookahead_.value_ == u"target") {
                 auto node = Alloc<MetaProperty>();
@@ -757,7 +762,7 @@ namespace parser {
                 ThrowUnexpectedToken(lookahead_);
                 return nullptr;
             }
-        } else if (MatchKeyword(JsTokenType::K_Import)) {
+        } else if (Match(JsTokenType::K_Import)) {
             ThrowUnexpectedToken(lookahead_);
             return nullptr;
         } else {
@@ -765,7 +770,7 @@ namespace parser {
             node->callee = IsolateCoverGrammar<Expression>([this] {
                 return ParseLeftHandSideExpression();
             });
-            if (Match(u'(')) {
+            if (Match(JsTokenType::LeftParen)) {
                 node->arguments = ParseArguments();
             }
             expr = node;
@@ -779,13 +784,13 @@ namespace parser {
     Sp<YieldExpression> Parser::ParseYieldExpression() {
 
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Yield);
+        Expect(JsTokenType::K_Yield);
 
         auto node = Alloc<YieldExpression>();
         if (has_line_terminator_) {
             bool prev_allow_yield = context_.allow_yield;
             context_.allow_yield = false;
-            node->delegate = Match(u'*');
+            node->delegate = Match(JsTokenType::Mul);
             if (node->delegate) {
                 NextToken();
                 node->argument = ParseAssignmentExpression();
@@ -800,11 +805,11 @@ namespace parser {
 
     std::vector<Sp<SyntaxNode>> Parser::ParseArguments() {
         std::vector<Sp<SyntaxNode>> result;
-        Expect(u'(');
-        if (!Match(u')')) {
+        Expect(JsTokenType::LeftParen);
+        if (!Match(JsTokenType::RightParen)) {
             Sp<SyntaxNode> expr;
             while (true) {
-                if (Match(u"...")) {
+                if (Match(JsTokenType::Spread)) {
                     expr = ParseSpreadElement();
                 } else {
                     expr = IsolateCoverGrammar<Expression>([this] {
@@ -812,23 +817,23 @@ namespace parser {
                     });
                 }
                 result.push_back(expr);
-                if (Match(u')')) {
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
                 ExpectCommaSeparator();
-                if (Match(u')')) {
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
             }
         }
-        Expect(u')');
+        Expect(JsTokenType::RightParen);
         return result;
     }
 
     Sp<Import> Parser::ParseImportCall() {
         auto marker = CreateStartMarker();
         auto node = Alloc<Import>();
-        ExpectKeyword(JsTokenType::K_Import);
+        Expect(JsTokenType::K_Import);
         return Finalize(marker, node);
     }
 
@@ -862,11 +867,11 @@ namespace parser {
             return ParseAssignmentExpression();
         });
 
-        if (Match(u',')) {
+        if (Match(JsTokenType::Comma)) {
             std::vector<Sp<Expression>> expressions;
             expressions.push_back(expr);
             while (lookahead_.type_ != JsTokenType::EOF_) {
-                if (!Match(u',')) {
+                if (!Match(JsTokenType::Comma)) {
                     break;
                 }
                 NextToken();
@@ -888,7 +893,7 @@ namespace parser {
         auto start_marker = CreateStartMarker();
 
         vector<Sp<SyntaxNode>> body = ParseDirectivePrologues();
-        Expect(u'{');
+        Expect(JsTokenType::LeftBracket);
 
         auto prev_label_set = move(context_.label_set);
         bool prev_in_iteration = context_.in_iteration;
@@ -901,7 +906,7 @@ namespace parser {
         context_.in_function_body = true;
 
         while (lookahead_.type_ != JsTokenType::EOF_) {
-            if (Match(u'}')) {
+            if (Match(JsTokenType::RightBracket)) {
                 break;
             }
 
@@ -909,7 +914,7 @@ namespace parser {
             body.push_back(move(temp));
         }
 
-        Expect('}');
+        Expect(JsTokenType::RightBracket);
 
         context_.label_set = move(prev_label_set);
         context_.in_iteration = prev_in_iteration;
@@ -973,7 +978,7 @@ namespace parser {
 
         bool prev_strict = context_.strict_;
         context_.strict_ = true;
-        ExpectKeyword(JsTokenType::K_Class);
+        Expect(JsTokenType::K_Class);
 
         auto node = Alloc<ClassDeclaration>();
         if (identifier_is_optional && (lookahead_.type_ != JsTokenType::Identifier)) {
@@ -982,7 +987,7 @@ namespace parser {
             node->id = ParseVariableIdentifier(VarKind::Invalid);
         }
 
-        if (MatchKeyword(JsTokenType::K_Extends)) {
+        if (Match(JsTokenType::K_Extends)) {
             NextToken();
             auto temp = IsolateCoverGrammar<Expression>([this] {
                 return ParseLeftHandSideExpressionAllowCall();
@@ -1006,13 +1011,13 @@ namespace parser {
 
         bool prev_strict = context_.strict_;
         context_.strict_ = true;
-        ExpectKeyword(JsTokenType::K_Class);
+        Expect(JsTokenType::K_Class);
 
         if (lookahead_.type_ == JsTokenType::Identifier) {
             node->id = ParseVariableIdentifier(VarKind::Invalid);
         }
 
-        if (MatchKeyword(JsTokenType::K_Extends)) {
+        if (Match(JsTokenType::K_Extends)) {
             NextToken();
             auto temp = IsolateCoverGrammar<Expression>([this] {
                 return ParseLeftHandSideExpressionAllowCall();
@@ -1039,17 +1044,17 @@ namespace parser {
         context_.allow_in = true;
 
         Sp<Expression> expr;
-        if (MatchKeyword(JsTokenType::K_Super) && context_.in_function_body) {
+        if (Match(JsTokenType::K_Super) && context_.in_function_body) {
             auto node = Alloc<Super>();
             auto marker = CreateStartMarker();
             NextToken();
             expr = Finalize(marker, node);
-            if (!Match(u'(') && !Match(u'.') && !Match(u'[')) {
+            if (!Match(JsTokenType::LeftParen) && !Match(JsTokenType::Dot) && !Match(JsTokenType::LeftBrace)) {
                 ThrowUnexpectedToken(lookahead_);
                 return nullptr;
             }
         } else {
-            if (MatchKeyword(JsTokenType::K_New)) {
+            if (Match(JsTokenType::K_New)) {
                 expr = InheritCoverGrammar<Expression>([this] {
                     return ParseNewExpression();
                 });
@@ -1062,15 +1067,15 @@ namespace parser {
         Assert(!!expr, "ParseLeftHandSideExpressionAllowCall: expr should not be nullptr");
 
         while (true) {
-            if (Match(u'.')) {
+            if (Match(JsTokenType::Dot)) {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
-                Expect('.');
+                Expect(JsTokenType::Dot);
                 auto node = Alloc<StaticMemberExpression>();
                 node->property = ParseIdentifierName();
                 node->object = expr;
                 expr = Finalize(StartNode(start_token), node);
-            } else if (Match(u'(')) {
+            } else if (Match(JsTokenType::LeftParen)) {
                 bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);
                 context_.is_binding_element = false;
                 context_.is_assignment_target = false;
@@ -1085,7 +1090,7 @@ namespace parser {
                 }
                 node->callee = expr;
                 expr = Finalize(StartNode(start_token), node);
-                if (async_arrow && Match(u"=>")) {
+                if (async_arrow && Match(JsTokenType::Arrow)) {
                     for (std::size_t i = 0; i < node->arguments.size(); i++) {
                         node->arguments[i] = ReinterpretExpressionAsPattern(node->arguments[i]);
                     }
@@ -1094,15 +1099,15 @@ namespace parser {
                     placeholder->async = true;
                     expr = move(placeholder);
                 }
-            } else if (Match(u'[')) {
+            } else if (Match(JsTokenType::LeftBrace)) {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
-                Expect(u'[');
+                Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<ComputedMemberExpression>();
                 node->property = IsolateCoverGrammar<Expression>([this] {
                     return ParseExpression();
                 });
-                Expect(u']');
+                Expect(JsTokenType::RightBrace);
                 node->object = expr;
                 expr = Finalize(StartNode(start_token), node);
             } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
@@ -1124,30 +1129,30 @@ namespace parser {
         auto node = Alloc<ArrayExpression>();
         Sp<SyntaxNode> element;
 
-        Expect('[');
-        while (!Match(']')) {
-            if (Match(',')) {
+        Expect(JsTokenType::LeftBrace);
+        while (!Match(JsTokenType::RightBrace)) {
+            if (Match(JsTokenType::Comma)) {
                 NextToken();
-                node->elements.push_back(nullopt);
-            } else if (Match(u"...")) {
+                node->elements.emplace_back(nullopt);
+            } else if (Match(JsTokenType::Spread)) {
                 element = ParseSpreadElement();
-                if (!Match(']')) {
+                if (!Match(JsTokenType::RightBrace)) {
                     context_.is_assignment_target = false;
                     context_.is_binding_element = false;
-                    Expect(',');
+                    Expect(JsTokenType::Comma);
                 }
-                node->elements.push_back(element);
+                node->elements.emplace_back(element);
             } else {
                 element = InheritCoverGrammar<SyntaxNode>([this] {
                     return ParseAssignmentExpression();
                 });
-                node->elements.push_back(element);
-                if (!Match(']')) {
-                    Expect(',');
+                node->elements.emplace_back(element);
+                if (!Match(JsTokenType::RightBrace)) {
+                    Expect(JsTokenType::Comma);
                 }
             }
         }
-        Expect(']');
+        Expect(JsTokenType::RightBrace);
 
         return Finalize(marker, node);
     }
@@ -1179,17 +1184,17 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<SwitchCase>();
 
-        if (MatchKeyword(JsTokenType::K_Default)) {
+        if (Match(JsTokenType::K_Default)) {
             NextToken();
             node->test.reset();
         } else {
-            ExpectKeyword(JsTokenType::K_Case);
+            Expect(JsTokenType::K_Case);
             node->test = ParseExpression();
         }
-        Expect(u':');
+        Expect(JsTokenType::Colon);
 
         while (true) {
-            if (Match(u'}') || MatchKeyword(JsTokenType::K_Default) || MatchKeyword(JsTokenType::K_Case)) {
+            if (Match(JsTokenType::RightBracket) || Match(JsTokenType::K_Default) || Match(JsTokenType::K_Case)) {
                 break;
             }
             Sp<Statement> con = ParseStatementListItem();
@@ -1204,18 +1209,18 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<IfStatement>();
 
-        ExpectKeyword(JsTokenType::K_If);
-        Expect('(');
+        Expect(JsTokenType::K_If);
+        Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(u')') && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
             Token token = NextToken();
             ThrowUnexpectedToken(token);
             node->consequent = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
-            Expect(u')');
+            Expect(JsTokenType::RightParen);
             node->consequent = ParseIfClause();
-            if (MatchKeyword(JsTokenType::K_Else)) {
+            if (Match(JsTokenType::K_Else)) {
                 NextToken();
                 node->alternate = ParseIfClause();
             }
@@ -1225,13 +1230,30 @@ namespace parser {
     }
 
     Sp<Statement> Parser::ParseIfClause() {
-        if (context_.strict_ && MatchKeyword(JsTokenType::K_Function)) {
+        if (context_.strict_ && Match(JsTokenType::K_Function)) {
             TolerateError(ParseMessages::StrictFunction);
         }
         return ParseStatement();
     }
 
     Sp<Statement> Parser::ParseStatement() {
+
+        if (IsPunctuatorToken(lookahead_.type_)) {
+            switch (lookahead_.type_) {
+                case JsTokenType::LeftBracket:
+                    return ParseBlock();
+
+                case JsTokenType::LeftParen:
+                    return ParseExpressionStatement();
+
+                case JsTokenType::Semicolon:
+                    return ParseEmptyStatement();
+
+                default:
+                    return ParseExpressionStatement();
+
+            }
+        }
 
         switch (lookahead_.type_) {
             case JsTokenType::BooleanLiteral:
@@ -1241,19 +1263,6 @@ namespace parser {
             case JsTokenType::Template:
             case JsTokenType::RegularExpression:
                 return ParseExpressionStatement();
-
-            case JsTokenType::Punctuator: {
-                auto& value = lookahead_.value_;
-                if (value == u"{") {
-                    return ParseBlock();
-                } else if (value == u"(") {
-                    return ParseExpressionStatement();
-                } else if (value == u";") {
-                    return ParseEmptyStatement();
-                } else {
-                    return ParseExpressionStatement();
-                }
-            }
 
             case JsTokenType::Identifier: {
                 if (MatchAsyncFunction()) {
@@ -1329,15 +1338,15 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
 
-        Expect(u'{');
+        Expect(JsTokenType::LeftBracket);
         while (true) {
-            if (Match(u'}')) {
+            if (Match(JsTokenType::RightBracket)) {
                 break;
             }
             Sp<SyntaxNode> stmt = ParseStatementListItem();
             node->body.push_back(std::move(stmt));
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         return Finalize(marker, node);
     }
@@ -1345,7 +1354,7 @@ namespace parser {
     Sp<EmptyStatement> Parser::ParseEmptyStatement() {
         auto node = Alloc<EmptyStatement>();
         auto marker = CreateStartMarker();
-        Expect(u';');
+        Expect(JsTokenType::Semicolon);
         return Finalize(marker, node);
     }
 
@@ -1357,9 +1366,9 @@ namespace parser {
             NextToken();
         }
 
-        ExpectKeyword(JsTokenType::K_Function);
+        Expect(JsTokenType::K_Function);
 
-        bool is_generator = is_async ? false : Match(u'*');
+        bool is_generator = is_async ? false : Match(JsTokenType::Mul);
         if (is_generator) {
             NextToken();
         }
@@ -1368,7 +1377,7 @@ namespace parser {
         optional<Token> first_restricted;
         string message;
 
-        if (!identifier_is_optional || !Match(u'(')) {
+        if (!identifier_is_optional || !Match(JsTokenType::LeftParen)) {
             Token token = lookahead_;
             id = ParseVariableIdentifier(VarKind::Invalid);
             if (context_.strict_) {
@@ -1440,7 +1449,7 @@ namespace parser {
         Sp<Expression> expr = ParseExpression();
 
         Sp<Statement> statement;
-        if ((expr->type == SyntaxNodeType::Identifier) && Match(u':')) {
+        if ((expr->type == SyntaxNodeType::Identifier) && Match(JsTokenType::Colon)) {
             NextToken();
 
             auto id = dynamic_pointer_cast<Identifier>(expr);
@@ -1452,10 +1461,10 @@ namespace parser {
             context_.label_set->insert(key);
 
             Sp<Statement> body;
-            if (MatchKeyword(JsTokenType::K_Class)) {
+            if (Match(JsTokenType::K_Class)) {
                 TolerateUnexpectedToken(lookahead_);
                 body = ParseClassDeclaration(false);
-            } else if (MatchKeyword(JsTokenType::K_Function)) {
+            } else if (Match(JsTokenType::K_Function)) {
                 Token token = lookahead_;
                 auto declaration = ParseFunctionDeclaration(false);
                 if (context_.strict_) {
@@ -1485,7 +1494,7 @@ namespace parser {
     Sp<BreakStatement> Parser::ParseBreakStatement() {
 
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Break);
+        Expect(JsTokenType::K_Break);
 
         std::optional<Sp<Identifier>> label;
         if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
@@ -1512,7 +1521,7 @@ namespace parser {
 
     Sp<ContinueStatement> Parser::ParseContinueStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Continue);
+        Expect(JsTokenType::K_Continue);
         auto node = Alloc<ContinueStatement>();
 
         if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
@@ -1537,7 +1546,7 @@ namespace parser {
 
     Sp<DebuggerStatement> Parser::ParseDebuggerStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Debugger);
+        Expect(JsTokenType::K_Debugger);
         ConsumeSemicolon();
         auto node = Alloc<DebuggerStatement>();
         return Finalize(marker, node);
@@ -1546,22 +1555,22 @@ namespace parser {
     Sp<DoWhileStatement> Parser::ParseDoWhileStatement() {
         auto marker = CreateStartMarker();
         auto node = Alloc<DoWhileStatement>();
-        ExpectKeyword(JsTokenType::K_Do);
+        Expect(JsTokenType::K_Do);
 
         auto previous_in_interation = context_.in_iteration;
         context_.in_iteration = true;
         node->body = ParseStatement();
         context_.in_iteration = previous_in_interation;
 
-        ExpectKeyword(JsTokenType::K_While);
-        Expect(u'(');
+        Expect(JsTokenType::K_While);
+        Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(u')') && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
             ThrowUnexpectedToken(NextToken());
         } else {
-            Expect(u')');
-            if (Match(u';')) {
+            Expect(JsTokenType::RightParen);
+            if (Match(JsTokenType::Semicolon)) {
                 NextToken();
             }
         }
@@ -1579,13 +1588,13 @@ namespace parser {
         Sp<SyntaxNode> right;
         auto marker = CreateStartMarker();
 
-        ExpectKeyword(JsTokenType::K_For);
-        Expect(u'(');
+        Expect(JsTokenType::K_For);
+        Expect(JsTokenType::LeftParen);
 
-        if (Match(u';')) {
+        if (Match(JsTokenType::Semicolon)) {
             NextToken();
         } else {
-            if (MatchKeyword(JsTokenType::K_Var)) {
+            if (Match(JsTokenType::K_Var)) {
                 auto marker = CreateStartMarker();
                 NextToken();
 
@@ -1594,7 +1603,7 @@ namespace parser {
                 std::vector<Sp<VariableDeclarator>> declarations = ParseVariableDeclarationList(for_in);
                 context_.allow_in = prev_allow_in;
 
-                if (declarations.size() == 1 && MatchKeyword(JsTokenType::K_In)) {
+                if (declarations.size() == 1 && Match(JsTokenType::K_In)) {
                     auto decl = declarations[0];
                     if (decl->init && (decl->id->type == SyntaxNodeType::ArrayPattern || decl->id->type == SyntaxNodeType::ObjectPattern || context_.strict_)) {
                         TolerateError(ParseMessages::ForInOfLoopInitializer);
@@ -1606,7 +1615,7 @@ namespace parser {
                     left = *init;
                     right = ParseExpression();
                     init.reset();
-                } else if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(JsTokenType::Invalid)) { // of
+                } else if (declarations.size() == 1 && !declarations[0]->init && Match(JsTokenType::Invalid)) { // of
                     auto node = Alloc<VariableDeclaration>();
                     node->declarations = declarations;
                     node->kind = VarKind::Var;
@@ -1621,9 +1630,9 @@ namespace parser {
                     node->declarations = declarations;
                     node->kind = VarKind::Var;
                     init = Finalize(marker, node);
-                    Expect(u';');
+                    Expect(JsTokenType::Semicolon);
                 }
-            } else if (MatchKeyword(JsTokenType::K_Const) || MatchKeyword(JsTokenType::K_Let)) {
+            } else if (Match(JsTokenType::K_Const) || Match(JsTokenType::K_Let)) {
                 auto marker = CreateStartMarker();
                 Token token = NextToken();
                 VarKind kind;
@@ -1648,7 +1657,7 @@ namespace parser {
                     std::vector<Sp<VariableDeclarator>> declarations = ParseBindingList(VarKind::Const, in_for);
                     context_.allow_in = prev_allow_in;
 
-                    if (declarations.size() == 1 && !declarations[0]->init && MatchKeyword(JsTokenType::K_In)) {
+                    if (declarations.size() == 1 && !declarations[0]->init && Match(JsTokenType::K_In)) {
                         auto node = Alloc<VariableDeclaration>();
                         node->declarations = declarations;
                         node->kind = kind;
@@ -1685,7 +1694,7 @@ namespace parser {
                 });
                 context_.allow_in = prev_allow_in;
 
-                if (MatchKeyword(JsTokenType::K_In)) {
+                if (Match(JsTokenType::K_In)) {
                     if (!context_.is_assignment_target || (*init)->type == SyntaxNodeType::AssignmentExpression) {
                         TolerateError(ParseMessages::InvalidLHSInForIn);
                     }
@@ -1707,12 +1716,12 @@ namespace parser {
                     init.reset();
                     for_in = false;
                 } else {
-                    if (Match(u',')) {
+                    if (Match(JsTokenType::Comma)) {
                         std::vector<Sp<Expression>> init_seq;
                         Assert(init.has_value() && (*init)->IsExpression(), "init should be an expression");
                         init_seq.push_back(dynamic_pointer_cast<Expression>(*init));
 
-                        while (Match(u',')) {
+                        while (Match(JsTokenType::Comma)) {
                             NextToken();
                             Sp<Expression> node = IsolateCoverGrammar<Expression>([this] {
                                 return ParseAssignmentExpression();
@@ -1724,28 +1733,28 @@ namespace parser {
                         node->expressions = move(init_seq);
                         init = Finalize(start_marker, node);
                     }
-                    Expect(u';');
+                    Expect(JsTokenType::Semicolon);
                 }
             }
         }
 
         if (!left) {
-            if (!Match(u';')) {
+            if (!Match(JsTokenType::Semicolon)) {
                 test = ParseExpression();
             }
-            Expect(u';');
-            if (!Match(u')')) {
+            Expect(JsTokenType::Semicolon);
+            if (!Match(JsTokenType::RightParen)) {
                 update = ParseExpression();
             }
         }
 
         Sp<Statement> body;
-        if (!Match(u')') && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             auto node = Alloc<EmptyStatement>();
             body = Finalize(CreateStartMarker(), node);
         } else {
-            Expect(u')');
+            Expect(JsTokenType::RightParen);
 
             auto prev_in_iter = context_.in_iteration;
             context_.in_iteration = true;
@@ -1784,9 +1793,9 @@ namespace parser {
         }
 
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Return);
+        Expect(JsTokenType::K_Return);
 
-        bool has_arg = (!Match(u';') && !Match(u'}') &&
+        bool has_arg = (!Match(JsTokenType::Semicolon) && !Match(JsTokenType::RightBracket) &&
                         !has_line_terminator_ && lookahead_.type_ != JsTokenType::EOF_) ||
                        lookahead_.type_ == JsTokenType::StringLiteral ||
                        lookahead_.type_ == JsTokenType::Template;
@@ -1803,20 +1812,20 @@ namespace parser {
 
     Sp<SwitchStatement> Parser::ParseSwitchStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Switch);
+        Expect(JsTokenType::K_Switch);
         auto node = Alloc<SwitchStatement>();
 
-        Expect(u'(');
+        Expect(JsTokenType::LeftParen);
         node->discrimiant = ParseExpression();
-        Expect(u')');
+        Expect(JsTokenType::RightParen);
 
         auto prev_in_switch = context_.in_switch;
         context_.in_switch = true;
 
         bool default_found = false;
-        Expect(u'{');
+        Expect(JsTokenType::LeftBracket);
         while (true) {
-            if (Match(u'}')) {
+            if (Match(JsTokenType::RightBracket)) {
                 break;
             }
             Sp<SwitchCase> clause = ParseSwitchCase();
@@ -1829,7 +1838,7 @@ namespace parser {
             }
             node->cases.push_back(clause);
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         context_.in_switch = prev_in_switch;
 
@@ -1838,7 +1847,7 @@ namespace parser {
 
     Sp<ThrowStatement> Parser::ParseThrowStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Throw);
+        Expect(JsTokenType::K_Throw);
 
         if (has_line_terminator_) {
             ThrowError(ParseMessages::NewlineAfterThrow);
@@ -1854,14 +1863,14 @@ namespace parser {
 
     Sp<TryStatement> Parser::ParseTryStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Try);
+        Expect(JsTokenType::K_Try);
         auto node = Alloc<TryStatement>();
 
         node->block = ParseBlock();
-        if (MatchKeyword(JsTokenType::K_Catch)) {
+        if (Match(JsTokenType::K_Catch)) {
             node->handler = ParseCatchClause();
         }
-        if (MatchKeyword(JsTokenType::K_Finally)) {
+        if (Match(JsTokenType::K_Finally)) {
             node->finalizer = ParseFinallyClause();
         }
 
@@ -1871,10 +1880,10 @@ namespace parser {
     Sp<CatchClause> Parser::ParseCatchClause() {
         auto marker = CreateStartMarker();
 
-        ExpectKeyword(JsTokenType::K_Catch);
+        Expect(JsTokenType::K_Catch);
 
-        Expect(u'(');
-        if (Match(u')')) {
+        Expect(JsTokenType::LeftParen);
+        if (Match(JsTokenType::RightParen)) {
             ThrowUnexpectedToken(lookahead_);
             return nullptr;
         }
@@ -1900,20 +1909,20 @@ namespace parser {
             }
         }
 
-        Expect(u')');
+        Expect(JsTokenType::RightParen);
         node->body = ParseBlock();
 
         return Finalize(marker, node);
     }
 
     Sp<BlockStatement> Parser::ParseFinallyClause() {
-        ExpectKeyword(JsTokenType::K_Finally);
+        Expect(JsTokenType::K_Finally);
         return ParseBlock();
     }
 
     Sp<VariableDeclaration> Parser::ParseVariableStatement() {
         auto marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Var);
+        Expect(JsTokenType::K_Var);
 
         auto node = Alloc<VariableDeclaration>();
         node->declarations = ParseVariableDeclarationList(false);
@@ -1938,13 +1947,13 @@ namespace parser {
         }
 
         optional<Sp<Expression>> init;
-        if (Match(u'=')) {
+        if (Match(JsTokenType::Assign)) {
             NextToken();
             init = IsolateCoverGrammar<Expression>([this] {
                 return ParseAssignmentExpression();
             });
         } else if (id->type != SyntaxNodeType::Identifier && !in_for) {
-            Expect(u'=');
+            Expect(JsTokenType::Assign);
         }
 
         node->id = move(id);
@@ -1956,7 +1965,7 @@ namespace parser {
     std::vector<Sp<VariableDeclarator>> Parser::ParseVariableDeclarationList(bool in_for) {
         std::vector<Sp<VariableDeclarator>> list;
         list.push_back(ParseVariableDeclaration(in_for));
-        while (Match(u',')) {
+        while (Match(JsTokenType::Comma)) {
             NextToken();
             list.push_back(ParseVariableDeclaration(in_for));
         }
@@ -1968,15 +1977,15 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<WhileStatement>();
 
-        ExpectKeyword(JsTokenType::K_While);
-        Expect(u'(');
+        Expect(JsTokenType::K_While);
+        Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(u')') && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             node->body = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
-            Expect(u')');
+            Expect(JsTokenType::RightParen);
 
             auto prev_in_interation = context_.in_iteration;
             context_.in_iteration = true;
@@ -1995,17 +2004,17 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<WithStatement>();
 
-        ExpectKeyword(JsTokenType::K_With);
-        Expect(u'(');
+        Expect(JsTokenType::K_With);
+        Expect(JsTokenType::LeftParen);
 
         node->object = ParseExpression();
 
-        if (!Match(u')') && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             auto empty = Alloc<EmptyStatement>();
             node->body = Finalize(marker, empty);
         } else {
-            Expect(u')');
+            Expect(JsTokenType::RightParen);
             node->body = ParseStatement();
         }
 
@@ -2026,8 +2035,8 @@ namespace parser {
         }
 
         if (kind == VarKind::Const) {
-            if (!MatchKeyword(JsTokenType::K_In) && !MatchContextualKeyword(u"of")) {
-                if (Match(u'=')) {
+            if (!Match(JsTokenType::K_In) && !MatchContextualKeyword(u"of")) {
+                if (Match(JsTokenType::Assign)) {
                     NextToken();
                     node->init = IsolateCoverGrammar<Expression>([this] {
                         return ParseAssignmentExpression();
@@ -2036,8 +2045,8 @@ namespace parser {
                     ThrowError(ParseMessages::DeclarationMissingInitializer);
                 }
             }
-        } else if ((!in_for && node->id->type != SyntaxNodeType::Identifier) || Match(u'=')) {
-            Expect(u'=');
+        } else if ((!in_for && node->id->type != SyntaxNodeType::Identifier) || Match(JsTokenType::Assign)) {
+            Expect(JsTokenType::Assign);
             node->init = IsolateCoverGrammar<Expression>([this] {
                 return ParseAssignmentExpression();
             });
@@ -2050,7 +2059,7 @@ namespace parser {
         std::vector<Sp<VariableDeclarator>> list;
         list.push_back(ParseLexicalBinding(kind, in_for));
 
-        while (Match(u',')) {
+        while (Match(JsTokenType::Comma)) {
             NextToken();
             list.push_back(ParseLexicalBinding(kind, in_for));
         }
@@ -2062,13 +2071,13 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<RestElement>();
 
-        Expect(u"...");
+        Expect(JsTokenType::Spread);
         node->argument = ParsePattern(params, VarKind::Invalid);
-        if (Match('=')) {
+        if (Match(JsTokenType::Assign)) {
             ThrowError(ParseMessages::DefaultRestParameter);
             return nullptr;
         }
-        if (!Match(')')) {
+        if (!Match(JsTokenType::RightParen)) {
             ThrowError(ParseMessages::ParameterAfterRestParameter);
             return nullptr;
         }
@@ -2140,16 +2149,16 @@ namespace parser {
         }
 
         auto start_marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Export);
+        Expect(JsTokenType::K_Export);
 
         Sp<Declaration> export_decl;
-        if (MatchKeyword(JsTokenType::K_Default)) {
+        if (Match(JsTokenType::K_Default)) {
             NextToken();
-            if (MatchKeyword(JsTokenType::K_Function)) {
+            if (Match(JsTokenType::K_Function)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
                 node->declaration = ParseFunctionDeclaration(true);
                 export_decl = Finalize(start_marker, node);
-            } else if (MatchKeyword(JsTokenType::K_Class)) {
+            } else if (Match(JsTokenType::K_Class)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
                 node->declaration = ParseClassExpression();
                 export_decl = Finalize(start_marker, node);
@@ -2166,9 +2175,9 @@ namespace parser {
                     ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(lookahead_.value_));
                 }
                 Sp<SyntaxNode> decl;
-                if (Match(u'{')) {
+                if (Match(JsTokenType::LeftBracket)) {
                     decl = ParseObjectInitializer();
-                } else if (Match(u'[')) {
+                } else if (Match(JsTokenType::LeftBrace)) {
                     decl = ParseArrayInitializer();
                 } else {
                     decl = ParseAssignmentExpression();
@@ -2179,7 +2188,7 @@ namespace parser {
                 export_decl = Finalize(start_marker, node);
             }
 
-        } else if (Match(u'*')) {
+        } else if (Match(JsTokenType::Mul)) {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
                 string message;
@@ -2217,15 +2226,15 @@ namespace parser {
             auto node = Alloc<ExportNamedDeclaration>();
             bool is_export_from_id = false;
 
-            Expect(u'{');
-            while (!Match(u'}')) {
-                is_export_from_id = is_export_from_id || MatchKeyword(JsTokenType::K_Default);
+            Expect(JsTokenType::LeftBracket);
+            while (!Match(JsTokenType::RightBracket)) {
+                is_export_from_id = is_export_from_id || Match(JsTokenType::K_Default);
                 node->specifiers.push_back(ParseExportSpecifier());
-                if (!Match(u'}')) {
-                    Expect(u',');
+                if (!Match(JsTokenType::RightBracket)) {
+                    Expect(JsTokenType::Comma);
                 }
             }
-            Expect(u'}');
+            Expect(JsTokenType::RightBracket);
 
             if (MatchContextualKeyword(u"from")) {
                 NextToken();
@@ -2252,7 +2261,7 @@ namespace parser {
     Sp<Expression> Parser::ParseAssignmentExpression() {
         Sp<Expression> expr;
 
-        if (context_.allow_yield && MatchKeyword(JsTokenType::K_Yield)) {
+        if (context_.allow_yield && Match(JsTokenType::K_Yield)) {
             expr = ParseYieldExpression();
         } else {
             auto start_marker = CreateStartMarker();
@@ -2260,7 +2269,7 @@ namespace parser {
             expr = ParseConditionalExpression();
 
             if (token.type_ == JsTokenType::Identifier && (token.line_number_ == lookahead_.line_number_) && token.value_ == u"async") {
-                if (lookahead_.type_ == JsTokenType::Identifier || MatchKeyword(JsTokenType::K_Yield)) {
+                if (lookahead_.type_ == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
                     Sp<SyntaxNode> arg = ParsePrimaryExpression();
                     arg = ReinterpretExpressionAsPattern(arg);
 
@@ -2272,7 +2281,7 @@ namespace parser {
                 }
             }
 
-            if (expr->type == SyntaxNodeType::ArrowParameterPlaceHolder || Match(u"=>")) {
+            if (expr->type == SyntaxNodeType::ArrowParameterPlaceHolder || Match(JsTokenType::Arrow)) {
 
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
@@ -2297,10 +2306,10 @@ namespace parser {
                     context_.await = is_async;
 
                     auto marker = CreateStartMarker();
-                    Expect(u"=>");
+                    Expect(JsTokenType::Arrow);
                     Sp<SyntaxNode> body;
 
-                    if (Match(u'{')) {
+                    if (Match(JsTokenType::LeftBracket)) {
                         bool prev_allow_in = context_.allow_in;
                         context_.allow_in = true;
                         body = ParseFunctionSourceElements();
@@ -2357,7 +2366,7 @@ namespace parser {
 
                     auto temp = Alloc<AssignmentExpression>();
 
-                    if (!Match(u'=')) {
+                    if (!Match(JsTokenType::Assign)) {
                         context_.is_assignment_target = false;
                         context_.is_binding_element = false;
                     } else {
@@ -2389,7 +2398,7 @@ namespace parser {
             return ParseBinaryExpression();
         });
 
-        if (Match(u'?')) {
+        if (Match(JsTokenType::Ask)) {
             NextToken();
             auto node = Alloc<ConditionalExpression>();
 
@@ -2401,7 +2410,7 @@ namespace parser {
             });
             context_.allow_in = prev_allow_in;
 
-            Expect(u':');
+            Expect(JsTokenType::Colon);
             node->alternate = IsolateCoverGrammar<Expression>([this] {
                 return ParseAssignmentExpression();
             });
@@ -2419,7 +2428,7 @@ namespace parser {
     Sp<Expression> Parser::ParseBinaryExpression() {
         Token start_token = lookahead_;
 
-        Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
+        auto expr = InheritCoverGrammar<Expression>([this] {
             return ParseExponentiationExpression();
         });
 
@@ -2461,6 +2470,8 @@ namespace parser {
                     auto operator_ = move(op_stack.top());
                     op_stack.pop();
 
+                    precedences.pop();
+
                     left = expr_stack.top();
                     expr_stack.pop();
 
@@ -2479,7 +2490,7 @@ namespace parser {
                 op_stack.push(next_.value_);
                 precedences.push(prec);
                 markers.push(lookahead_);
-                Sp<Expression> temp_expr = IsolateCoverGrammar<Expression>([this] {
+                auto temp_expr = IsolateCoverGrammar<Expression>([this] {
                     return ParseExponentiationExpression();
                 });
                 expr_stack.push(temp_expr);
@@ -2496,14 +2507,15 @@ namespace parser {
                 auto last_line_start = last_marker.line_start_;
                 auto operator_ = move(op_stack.top());
                 op_stack.pop();
-                auto start_marker = StartNode(marker, last_line_start);
+                auto start_marker = StartNode(last_marker, last_line_start);
                 auto node = Alloc<BinaryExpression>();
                 node->operator_ = operator_;
+                node->right = expr;
+                expr_stack.pop();
                 node->left = expr_stack.top();
                 expr_stack.pop();
-                node->right = expr;
                 expr = Finalize(start_marker, node);
-                last_marker = marker;
+                last_marker = last_marker;
             }
         }
 
@@ -2519,7 +2531,7 @@ namespace parser {
 
         Assert(!!expr, "ParseExponentiationExpression: expr should not be null");
 
-        if (expr->type != SyntaxNodeType::UnaryExpression && Match(u"**")) {
+        if (expr->type != SyntaxNodeType::UnaryExpression && Match(JsTokenType::Pow)) {
             NextToken();
             context_.is_assignment_target = false;
             context_.is_binding_element = false;
@@ -2539,8 +2551,8 @@ namespace parser {
         Sp<Expression> expr;
 
         if (
-            Match(u'+') || Match(u'-') || Match(u'~') || Match(u'!') ||
-            MatchKeyword(JsTokenType::K_Delete) || MatchKeyword(JsTokenType::K_Void) || MatchKeyword(JsTokenType::K_Typeof)
+            Match(JsTokenType::Plus) || Match(JsTokenType::Minus) || Match(JsTokenType::Wave) || Match(JsTokenType::Not) ||
+            Match(JsTokenType::K_Delete) || Match(JsTokenType::K_Void) || Match(JsTokenType::K_Typeof)
             ) {
             auto marker = CreateStartMarker();
             Token token = lookahead_;
@@ -2578,7 +2590,7 @@ namespace parser {
         Sp<Expression> expr;
         auto start_marker = CreateStartMarker();
 
-        if (Match(u"++") || Match(u"--")) {
+        if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
             auto marker = CreateStartMarker();
             Token token = NextToken();
             expr = InheritCoverGrammar<Expression>([this] {
@@ -2604,8 +2616,8 @@ namespace parser {
             expr = InheritCoverGrammar<Expression>([this] {
                 return ParseLeftHandSideExpressionAllowCall();
             });
-            if (!has_line_terminator_ && lookahead_.type_ == JsTokenType::Punctuator) {
-                if (Match(u"++") || Match(u"--")) {
+            if (!has_line_terminator_ && IsPunctuatorToken(lookahead_.type_)) {
+                if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
                     if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
                         if (scanner_->IsRestrictedWord(id->name)) {
@@ -2635,11 +2647,11 @@ namespace parser {
 
         auto start_marker = CreateStartMarker();
         Sp<Expression> expr;
-        if (MatchKeyword(JsTokenType::K_Super) && context_.in_function_body) {
+        if (Match(JsTokenType::K_Super) && context_.in_function_body) {
             expr = ParseSuper();
         } else {
             expr = InheritCoverGrammar<Expression>([this] {
-                if (MatchKeyword(JsTokenType::K_New)) {
+                if (Match(JsTokenType::K_New)) {
                     return ParseNewExpression();
                 } else {
                     return ParsePrimaryExpression();
@@ -2648,21 +2660,21 @@ namespace parser {
         }
 
         while (true) {
-            if (Match(u'[')) {
+            if (Match(JsTokenType::LeftBrace)) {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
-                Expect(u'[');
+                Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<ComputedMemberExpression>();
                 node->property = IsolateCoverGrammar<Expression>([this] {
                     return ParseExpression();
                 });
-                Expect(u']');
+                Expect(JsTokenType::RightBrace);
                 node->object = move(expr);
                 expr = Finalize(start_marker, node);
-            } else if (Match(u'.')) {
+            } else if (Match(JsTokenType::Dot)) {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
-                Expect('.');
+                Expect(JsTokenType::Dot);
                 auto node = Alloc<StaticMemberExpression>();
                 node->property = ParseIdentifierName();
                 node->object = move(expr);
@@ -2683,8 +2695,8 @@ namespace parser {
     Sp<Super> Parser::ParseSuper() {
         auto start_marker = CreateStartMarker();
 
-        ExpectKeyword(JsTokenType::K_Super);
-        if (!Match(u'[') && !Match(u'.')) {
+        Expect(JsTokenType::K_Super);
+        if (!Match(JsTokenType::LeftBrace) && !Match(JsTokenType::Dot)) {
             ThrowUnexpectedToken(lookahead_);
             return nullptr;
         }
@@ -2699,7 +2711,7 @@ namespace parser {
         }
 
         auto start_marker = CreateStartMarker();
-        ExpectKeyword(JsTokenType::K_Import);
+        Expect(JsTokenType::K_Import);
 
         Sp<Literal> src;
         std::vector<Sp<SyntaxNode>> specifiers;
@@ -2707,20 +2719,20 @@ namespace parser {
         if (lookahead_.type_ == JsTokenType::StringLiteral) {
             src = ParseModuleSpecifier();
         } else {
-            if (Match(u'{')) {
+            if (Match(JsTokenType::LeftBracket)) {
                 auto children = ParseNamedImports();
                 specifiers.insert(specifiers.end(), children.begin(), children.end());
-            } else if (Match(u'*')) {
+            } else if (Match(JsTokenType::Mul)) {
                 specifiers.push_back(ParseImportNamespaceSpecifier());
-            } else if (IsIdentifierName(lookahead_) && !MatchKeyword(JsTokenType::K_Default)) {
+            } else if (IsIdentifierName(lookahead_) && !Match(JsTokenType::K_Default)) {
                 auto default_ = ParseImportDefaultSpecifier();
                 specifiers.push_back(move(default_));
 
-                if (Match(u',')) {
+                if (Match(JsTokenType::Comma)) {
                     NextToken();
-                    if (Match(u'*')) {
+                    if (Match(JsTokenType::Mul)) {
                         specifiers.push_back(ParseImportNamespaceSpecifier());
-                    } else if (Match(u'*')) {
+                    } else if (Match(JsTokenType::LeftBracket)) {
                         auto children = ParseNamedImports();
                         specifiers.insert(specifiers.end(), children.begin(), children.end());
                     } else {
@@ -2753,15 +2765,15 @@ namespace parser {
     }
 
     std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports() {
-        Expect(u'{');
+        Expect(JsTokenType::LeftBracket);
         std::vector<Sp<SyntaxNode>> specifiers;
-        while (!Match(u'}')) {
+        while (!Match(JsTokenType::RightBracket)) {
             specifiers.push_back(ParseImportSpecifier());
-            if (!Match(u'}')) {
-                Expect(u',');
+            if (!Match(JsTokenType::RightBracket)) {
+                Expect(JsTokenType::Comma);
             }
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         return specifiers;
     }
@@ -2820,7 +2832,7 @@ namespace parser {
     Sp<ImportNamespaceSpecifier> Parser::ParseImportNamespaceSpecifier() {
         auto start_marker = CreateStartMarker();
 
-        Expect(u'*');
+        Expect(JsTokenType::Mul);
         if (MatchContextualKeyword(u"as")) {
             ThrowError(ParseMessages::NoAsAfterImportNamespace);
         }
@@ -2854,7 +2866,7 @@ namespace parser {
         auto marker = CreateStartMarker();
 
         Token token = NextToken();
-        if (MatchKeyword(JsTokenType::K_Yield)) {
+        if (Match(JsTokenType::K_Yield)) {
             if (context_.strict_) {
                 TolerateUnexpectedToken(token, ParseMessages::StrictReservedWord);
             } else if (!context_.allow_yield) {
@@ -2876,12 +2888,12 @@ namespace parser {
     Sp<SyntaxNode> Parser::ParsePattern(std::vector<Token> &params, VarKind kind) {
         Sp<SyntaxNode> pattern;
 
-        if (Match(u'[')) {
+        if (Match(JsTokenType::LeftBrace)) {
             pattern = ParseArrayPattern(params, kind);
-        } else if (Match(u'{')) {
+        } else if (Match(JsTokenType::LeftBracket)) {
             pattern = ParseObjectPattern(params, kind);
         } else {
-            if (MatchKeyword(JsTokenType::K_Let) && (kind == VarKind::Const || kind == VarKind::Let)) {
+            if (Match(JsTokenType::K_Let) && (kind == VarKind::Const || kind == VarKind::Let)) {
                 TolerateUnexpectedToken(lookahead_, ParseMessages::LetInLexicalBinding);
             }
             params.push_back(lookahead_);
@@ -2895,7 +2907,7 @@ namespace parser {
         Token start_token_ = lookahead_;
 
         auto pattern = ParsePattern(params, kind);
-        if (Match(u'=')) {
+        if (Match(JsTokenType::Assign)) {
             NextToken();
             bool prev_allow_yield = context_.allow_yield;
             context_.allow_yield = true;
@@ -2915,7 +2927,7 @@ namespace parser {
     Sp<RestElement> Parser::ParseBindingRestElement(std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
-        Expect(u"...");
+        Expect(JsTokenType::Spread);
         auto node = Alloc<RestElement>();
         node->argument = ParsePattern(params, kind);
 
@@ -2925,25 +2937,25 @@ namespace parser {
     Sp<ArrayPattern> Parser::ParseArrayPattern(std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
-        Expect(u'[');
+        Expect(JsTokenType::LeftBrace);
         std::vector<optional<Sp<SyntaxNode>>> elements;
-        while (!Match(u']')) {
-            if (Match(u',')) {
+        while (!Match(JsTokenType::RightBrace)) {
+            if (Match(JsTokenType::Comma)) {
                 NextToken();
-                elements.push_back(nullopt);
+                elements.emplace_back(nullopt);
             } else {
-                if (Match(u"...")) {
-                    elements.push_back(ParseBindingRestElement(params, kind));
+                if (Match(JsTokenType::Spread)) {
+                    elements.emplace_back(ParseBindingRestElement(params, kind));
                     break;
                 } else {
-                    elements.push_back(ParsePatternWithDefault(params, kind));
+                    elements.emplace_back(ParsePatternWithDefault(params, kind));
                 }
-                if (!Match(u']')) {
-                    Expect(u',');
+                if (!Match(JsTokenType::RightBrace)) {
+                    Expect(JsTokenType::Comma);
                 }
             }
         }
-        Expect(u']');
+        Expect(JsTokenType::RightBrace);
 
         auto node = Alloc<ArrayPattern>();
         node->elements = move(elements);
@@ -2964,7 +2976,7 @@ namespace parser {
             auto id_ = Alloc<Identifier>();
             id_->name = keyToken.value_;
             auto init = Finalize(start_marker, id_);
-            if (Match(u'=')) {
+            if (Match(JsTokenType::Assign)) {
                 params.push_back(keyToken);
                 node->shorthand = true;
                 NextToken();
@@ -2973,18 +2985,18 @@ namespace parser {
                 assign->left = move(init);
                 assign->right = move(expr);
                 node->value = Finalize(StartNode(keyToken), assign);
-            } else if (!Match(u':')) {
+            } else if (!Match(JsTokenType::Colon)) {
                 params.push_back(keyToken);
                 node->shorthand = true;
                 node->value = move(init);
             } else {
-                Expect(u':');
+                Expect(JsTokenType::Colon);
                 node->value = ParsePatternWithDefault(params, kind);
             }
         } else {
-            node->computed = Match(u'[');
+            node->computed = Match(JsTokenType::LeftBrace);
             node->key = ParseObjectPropertyKey();
-            Expect(u':');
+            Expect(JsTokenType::Colon);
             node->value = ParsePatternWithDefault(params, kind);
         }
 
@@ -2993,12 +3005,12 @@ namespace parser {
 
     Sp<RestElement> Parser::ParseRestProperty(std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
-        Expect(u"...");
+        Expect(JsTokenType::Spread);
         auto arg = ParsePattern(params, VarKind::Invalid);
-        if (Match(u'=')) {
+        if (Match(JsTokenType::Assign)) {
             ThrowError(ParseMessages::DefaultRestProperty);
         }
-        if (!Match(u'}')) {
+        if (!Match(JsTokenType::RightBracket)) {
             ThrowError(ParseMessages::PropertyAfterRestProperty);
         }
         auto node = Alloc<RestElement>();
@@ -3010,19 +3022,19 @@ namespace parser {
         auto start_marker = CreateStartMarker();
         std::vector<Sp<SyntaxNode>> props;
 
-        Expect(u'{');
-        while (!Match(u'}')) {
-            if (Match(u"...")) {
+        Expect(JsTokenType::LeftBracket);
+        while (!Match(JsTokenType::RightBracket)) {
+            if (Match(JsTokenType::Spread)) {
                 props.push_back(ParseRestProperty(params, kind));
             } else {
                 props.push_back(ParsePropertyPattern(params, kind));
             }
 
-            if (!Match(u'}')) {
-                Expect(u',');
+            if (!Match(JsTokenType::RightBracket)) {
+                Expect(JsTokenType::Comma);
             }
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         auto node = Alloc<ObjectPattern>();
         node->properties = move(props);
@@ -3036,27 +3048,27 @@ namespace parser {
     }
 
     std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments() {
-        Expect(u'(');
+        Expect(JsTokenType::LeftParen);
         std::vector<Sp<SyntaxNode>> result;
-        if (!Match(u')')) {
+        if (!Match(JsTokenType::RightParen)) {
             while (true) {
-                if (Match(u"...")) {
+                if (Match(JsTokenType::Spread)) {
                     result.push_back(ParseSpreadElement());
                 } else {
                     result.push_back(IsolateCoverGrammar<SyntaxNode>([this] {
                         return ParseAsyncArgument();
                     }));
                 }
-                if (Match(u')')) {
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
                 ExpectCommaSeparator();
-                if (Match(u')')) {
+                if (Match(JsTokenType::RightParen)) {
                     break;
                 }
             }
         }
-        Expect(u')');
+        Expect(JsTokenType::RightParen);
 
         return result;
     }
@@ -3064,11 +3076,11 @@ namespace parser {
     Sp<Expression> Parser::ParseGroupExpression() {
         Sp<Expression> expr;
 
-        Expect(u'(');
-        if (Match(u')')) {
+        Expect(JsTokenType::LeftParen);
+        if (Match(JsTokenType::RightParen)) {
             NextToken();
-            if (!Match(u"=>")) {
-                Expect(u"=>");
+            if (!Match(JsTokenType::Arrow)) {
+                Expect(JsTokenType::Arrow);
             }
             auto node = Alloc<ArrowParameterPlaceHolder>();
             node->async = false;
@@ -3077,11 +3089,11 @@ namespace parser {
             auto start_token = lookahead_;
 
             std::vector<Token> params;
-            if (Match(u"...")) {
+            if (Match(JsTokenType::Spread)) {
                 expr = ParseRestElement(params);
-                Expect(u')');
-                if (!Match(u"=>")) {
-                    Expect(u"=>");
+                Expect(JsTokenType::RightParen);
+                if (!Match(JsTokenType::Arrow)) {
+                    Expect(JsTokenType::Arrow);
                 }
                 auto node = Alloc<ArrowParameterPlaceHolder>();
                 node->params.push_back(move(expr));
@@ -3095,17 +3107,17 @@ namespace parser {
                     return ParseAssignmentExpression();
                 });
 
-                if (Match(u',')) {
+                if (Match(JsTokenType::Comma)) {
                     std::vector<Sp<Expression>> expressions;
 
                     context_.is_assignment_target = false;
                     expressions.push_back(expr);
                     while (lookahead_.type_ != JsTokenType::EOF_) {
-                        if (!Match(u',')) {
+                        if (!Match(JsTokenType::Comma)) {
                             break;
                         }
                         NextToken();
-                        if (Match(u')')) {
+                        if (Match(JsTokenType::RightParen)) {
                             NextToken();
                             for (auto& i : expressions) {
                                 ReinterpretExpressionAsPattern(i);
@@ -3117,14 +3129,14 @@ namespace parser {
                             }
                             node->async = false;
                             expr = move(node);
-                        } else if (Match(u"...")) {
+                        } else if (Match(JsTokenType::Spread)) {
                             if (!context_.is_binding_element) {
                                 ThrowUnexpectedToken(lookahead_);
                             }
                             expressions.push_back(ParseRestElement(params));
-                            Expect(u')');
-                            if (!Match(u"=>")) {
-                                Expect(u"=>");
+                            Expect(JsTokenType::RightParen);
+                            if (!Match(JsTokenType::Arrow)) {
+                                Expect(JsTokenType::Arrow);
                             }
                             context_.is_binding_element = false;
                             for (auto& i : expressions) {
@@ -3155,8 +3167,8 @@ namespace parser {
                 }
 
                 if (!arrow) {
-                    Expect(u')');
-                    if (Match(u"=>")) {
+                    Expect(JsTokenType::RightParen);
+                    if (Match(JsTokenType::Arrow)) {
                         if (expr->type == SyntaxNodeType::Identifier && dynamic_pointer_cast<Identifier>(expr)->name == u"yield") {
                             arrow = true;
                             auto node = Alloc<ArrowParameterPlaceHolder>();
@@ -3258,25 +3270,24 @@ namespace parser {
         bool is_async = false;
         VarKind kind = VarKind::Invalid;
 
-        if (Match(u'*')) {
+        if (Match(JsTokenType::Mul)) {
             NextToken();
         } else {
-            computed = Match(u'[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             auto id = dynamic_pointer_cast<Identifier>(*key);
-            if (id && id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(u'*'))) {
+            if (id && id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(JsTokenType::Mul))) {
                 token = lookahead_;
                 is_static = true;
-                computed = Match(u'[');
-                if (Match(u'*')) {
+                computed = Match(JsTokenType::LeftBrace);
+                if (Match(JsTokenType::Mul)) {
                     NextToken();
                 } else {
                     key = ParseObjectPropertyKey();
                 }
             }
             if ((token.type_ == JsTokenType::Identifier) && !has_line_terminator_ && (token.value_ == u"async")) {
-                auto punctuator = lookahead_.value_;
-                if (punctuator != u":" && punctuator != u"(" && punctuator != u"*") {
+                if (token.type_ != JsTokenType::Colon && token.type_ != JsTokenType::LeftParen && token.type_ != JsTokenType::Mul) {
                     is_async = true;
                     token = lookahead_;
                     key = ParseObjectPropertyKey();
@@ -3291,25 +3302,25 @@ namespace parser {
         if (token.type_ == JsTokenType::Identifier) {
             if (token.value_ == u"get" && lookahead_prop_key) {
                 kind = VarKind::Get;
-                computed = Match(u'[');
+                computed = Match(JsTokenType::LeftBrace);
                 key = ParseObjectPropertyKey();
                 context_.allow_yield = false;
                 value = ParseGetterMethod();
             } else if (token.value_ == u"set" && lookahead_prop_key) {
                 kind = VarKind::Set;
-                computed = Match(u'[');
+                computed = Match(JsTokenType::LeftBrace);
                 key = ParseObjectPropertyKey();
                 value = ParseSetterMethod();
             }
-        } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u"*" && lookahead_prop_key) {
+        } else if (token.type_ == JsTokenType::Mul && lookahead_prop_key) {
             kind = VarKind::Init;
-            computed = Match(u'[');
+            computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             value = ParseGeneratorMethod();
             method = true;
         }
 
-        if (kind == VarKind::Invalid && key.has_value() && Match(u'(')) {
+        if (kind == VarKind::Invalid && key.has_value() && Match(JsTokenType::LeftParen)) {
             kind = VarKind::Init;
             if (is_async) {
                 value = ParsePropertyMethodAsyncFunction();
@@ -3356,15 +3367,15 @@ namespace parser {
         std::vector<Sp<MethodDefinition>> body;
         bool has_ctor = false;
 
-        Expect(u'{');
-        while (!Match(u'}')) {
-            if (Match(u';')) {
+        Expect(JsTokenType::LeftBracket);
+        while (!Match(JsTokenType::RightBracket)) {
+            if (Match(JsTokenType::Semicolon)) {
                 NextToken();
             } else {
                 body.push_back(ParseClassElement(has_ctor));
             }
         }
-        Expect(u'}');
+        Expect(JsTokenType::RightBracket);
 
         return body;
     }
@@ -3498,10 +3509,8 @@ namespace parser {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
+            case JsTokenType::LeftBrace:
                 return true;
-
-            case JsTokenType::Punctuator:
-                return token.value_ == u"[";
 
             default:
                 break;

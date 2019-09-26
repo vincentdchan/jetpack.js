@@ -529,9 +529,19 @@ Token Scanner::ScanPunctuator() {
     char16_t ch = (*source_)[index_];
     UString str;
     str.push_back(ch);
+
+    JsTokenType t;
     switch (ch) {
         case '(':
+            t = JsTokenType::LeftParen;
+            if (ch == '{') {
+                curly_stack_.push(u"{");
+            }
+            ++index_;
+            break;
+
         case '{':
+            t = JsTokenType::LeftBracket;
             if (ch == '{') {
                 curly_stack_.push(u"{");
             }
@@ -539,72 +549,227 @@ Token Scanner::ScanPunctuator() {
             break;
 
         case '.':
+            t = JsTokenType::Dot;
             ++index_;
             if ((*source_)[index_] == '.' && (*source_)[index_ + 1] == '.') {
                 // Spread operator: ...
+                t = JsTokenType::Spread;
                 index_ += 2;
                 str = u"...";
             }
             break;
 
         case '}':
+            t = JsTokenType::RightBracket;
             ++index_;
             curly_stack_.pop();
             break;
 
         case ')':
-        case ';':
-        case ',':
-        case '[':
-        case ']':
-        case ':':
-        case '?':
-        case '~':
+            t = JsTokenType::RightParen;
             ++index_;
             break;
 
-        default:
-            // 4-character punctuator.
-            str = source_->substr(index_, 4);
-            if (str == u">>>=") {
-                index_ += 4;
-            } else {
+        case ';':
+            t = JsTokenType::Semicolon;
+            ++index_;
+            break;
 
-                // 3-character punctuators.
-                str = str.substr(0, 3);
-                if (str == u"===" || str == u"!==" || str == u">>>" ||
-                                                              str == u"<<=" || str == u">>=" || str == u"**=") {
-                    index_ += 3;
+        case ',':
+            t = JsTokenType::Comma;
+            ++index_;
+            break;
+
+        case '[':
+            t = JsTokenType::LeftBrace;
+            ++index_;
+            break;
+
+        case ']':
+            t = JsTokenType::RightBrace;
+            ++index_;
+            break;
+
+        case ':':
+            t = JsTokenType::Colon;
+            ++index_;
+            break;
+
+        case '?':
+            t = JsTokenType::Ask;
+            ++index_;
+            break;
+
+        case '~':
+            t = JsTokenType::Wave;
+            ++index_;
+            break;
+
+        case '<':
+            ++index_;
+            if ((*source_)[index_] == '<') { // <<
+                index_ ++;
+                if ((*source_)[index_] == '=') { // <<=
+                    index_ ++;
+                    t = JsTokenType::LeftShiftAssign;
                 } else {
-
-                    // 2-character punctuators.
-                    str = str.substr(0, 2);
-                    if (str == u"&&" || str == u"||" || str == u"==" || str == u"!=" ||
-                        str == u"+=" || str == u"-=" || str == u"*=" || str == u"/=" ||
-                        str == u"++" || str == u"--" ||
-                        str == u"<<" || str == u">>" ||
-                        str == u"&=" ||
-                        str == u"|=" ||
-                        str == u"^=" ||
-                        str == u"%=" ||
-                        str == u"<=" ||
-                        str == u">=" ||
-                        str == u"=>" ||
-                        str == u"**") {
-                        index_ += 2;
-                    } else {
-
-                        // 1-character punctuators.
-                        ch = (*source_)[index_];
-                        if (UString(u"<>=!+-*%&|^/").find(ch) >= 0) {
-                            ++index_;
-                        }
-                        str.clear();
-                        str.shrink_to_fit();
-                        str.push_back(ch);
-                    }
+                    t = JsTokenType::LeftShift;
                 }
+            } else if ((*source_)[index_] == '=') { // <=
+                index_++;
+                t = JsTokenType::LessEqual;
+            } else {
+                t = JsTokenType::LessThan;
             }
+            break;
+
+        case '>':
+            ++index_;
+            if ((*source_)[index_] == '>') { // >>
+                index_++;
+                if ((*source_)[index_] == '>') { // >>>
+                    index_++;
+                    if ((*source_)[index_] == '=') {
+                        index_++;
+                        t = JsTokenType::ZeroFillRightShiftAssign;
+                    } else {
+                        t = JsTokenType::ZeroFillRightShift;
+                    }
+                } else {
+                    t = JsTokenType::RightShift;
+                }
+            } else if ((*source_)[index_] == '=') {
+                index_++;
+                t = JsTokenType::GreaterEqual;
+            } else {
+                t = JsTokenType::GreaterThan;
+            }
+            break;
+
+        case '=':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                if ((*source_)[index_] == '=') {
+                    ++index_;
+                    t = JsTokenType::StrictEqual;
+                } else {
+                    t = JsTokenType::Equal;
+                }
+            } else {
+                t = JsTokenType::Assign;
+            }
+            break;
+
+        case '!':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                if ((*source_)[index_] == '=') {
+                    ++index_;
+                    t = JsTokenType::StrictNotEqual;
+                } else {
+                    t = JsTokenType::NotEqual;
+                }
+            } else {
+                t = JsTokenType::Not;
+            }
+            break;
+
+        case '+':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::PlusAssign;
+            } else if ((*source_)[index_] == '+') {
+                ++index_;
+                t = JsTokenType::Increase;
+            } else {
+                t = JsTokenType::Plus;
+            }
+            break;
+
+        case '-':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::MinusAssign;
+            } else if ((*source_)[index_] == '-') {
+                ++index_;
+                t = JsTokenType::Decrease;
+            } else {
+                t = JsTokenType::Minus;
+            }
+            break;
+
+        case '*':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::MulAssign;
+            } else if ((*source_)[index_] == '*') {
+                ++index_;
+                if ((*source_)[index_] == '=') {
+                    ++index_;
+                    t = JsTokenType::PowAssign;
+                } else {
+                    t = JsTokenType::Pow;
+                }
+            } else {
+                t = JsTokenType::Mul;
+            }
+            break;
+
+        case '%':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::ModAssign;
+            } else {
+                t = JsTokenType::Mod;
+            }
+            break;
+
+        case '/':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::DivAssign;
+            } else {
+                t = JsTokenType::Div;
+            }
+            break;
+
+        case '^':
+            ++index_;
+            if ((*source_)[index_] == '=') {
+                ++index_;
+                t = JsTokenType::BitXorAssign;
+            } else {
+                t = JsTokenType::Xor;
+            }
+            break;
+
+        case '&':
+            ++index_;
+            if ((*source_)[index_] == '&') {
+                ++index_;
+                t = JsTokenType::And;
+            } else {
+                t = JsTokenType::BitAnd;
+            }
+            break;
+
+        case '|':
+            ++index_;
+            if ((*source_)[index_] == '|') {
+                ++index_;
+                t = JsTokenType::Or;
+            } else {
+                t = JsTokenType::BitOr;
+            }
+            break;
+
     }
 
     if (index_ == start) {
@@ -612,7 +777,7 @@ Token Scanner::ScanPunctuator() {
     }
 
     return {
-        JsTokenType::Punctuator,
+        t,
         str,
         SourceLocation(),
         line_number_,

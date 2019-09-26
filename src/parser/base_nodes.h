@@ -38,6 +38,8 @@ public:
     virtual bool IsExpression() const { return false; }
     virtual bool IsStatement() const { return false; }
 
+    virtual ~SyntaxNode() = default;
+
 };
 
 class Expression: virtual public SyntaxNode {

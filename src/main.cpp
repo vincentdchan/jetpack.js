@@ -23,17 +23,24 @@ int main(int argc, char** argv) {
 
     (*src) = ReadFileStream(argv[1]);
 
-    std::cout << utils::To_UTF8(*src) << std::endl;
+//    std::cout << utils::To_UTF8(*src) << std::endl;
 
-    try {
-        Parser parser(src);
-        auto script = parser.ParseScript();
-        auto json_result = dumper::AstToJson::Dump(script);
-        std::cout << json_result.dump(2) << std::endl;
-    } catch (ParseError& err) {
-        std::cerr << err.ErrorMessage() << std::endl;
-    } catch (std::exception& ex) {
-        std::cerr << ex.what() << std::endl;
+    std::vector<Sp<SyntaxNode>> content;
+    int64_t begin = utils::GetCurrentMs();
+    for (int i = 0; i < 10; i++) {
+        try {
+            Parser parser(src);
+            auto script = parser.ParseScript();
+            content.push_back(script);
+//            auto json_result = dumper::AstToJson::Dump(script);
+//            std::cout << json_result.dump(2) << std::endl;
+        } catch (ParseError& err) {
+            std::cerr << err.ErrorMessage() << std::endl;
+        } catch (std::exception& ex) {
+            std::cerr << ex.what() << std::endl;
+        }
     }
+    int64_t end = utils::GetCurrentMs();
+    std::cout << end - begin << std::endl;
     return 0;
 }

@@ -224,37 +224,23 @@ namespace parser {
         };
     }
 
-    void ParserCommon::Expect(char16_t t) {
-        Token token = NextToken();
-        if (token.type_ != JsTokenType::Punctuator || token.value_.size() != 1 || token.value_[0] != t) {
-            ThrowUnexpectedToken(token);
-        }
-    }
-
-     void ParserCommon::Expect(const UString &keyword) {
-        Token token = NextToken();
-        if (token.type_ != JsTokenType::Punctuator || token.value_ != keyword) {
-            ThrowUnexpectedToken(token);
-        }
-    }
-
     void ParserCommon::ExpectCommaSeparator() {
         if (config_.tolerant) {
             Token token = lookahead_;
-            if (token.type_ == JsTokenType::Punctuator && token.value_ == u",") {
+            if (token.type_ == JsTokenType::Comma) {
                 NextToken();
-            } else if (token.type_ == JsTokenType::Punctuator && token.value_ == u";") {
+            } else if (token.type_ == JsTokenType::Semicolon) {
                 NextToken();
                 ThrowUnexpectedToken(token);
             } else {
                 ThrowUnexpectedToken(token);
             }
         } else {
-            Expect(u',');
+            Expect(JsTokenType::Comma);
         }
     }
 
-    void ParserCommon::ExpectKeyword(JsTokenType t) {
+    void ParserCommon::Expect(JsTokenType t) {
         Token token = NextToken();
 
         if (token.type_ != t) {
@@ -262,43 +248,37 @@ namespace parser {
         }
     }
 
-    bool ParserCommon::Match(char16_t t) {
-        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_.size() == 1 && lookahead_.value_[0] == t;
-    }
-
-    bool ParserCommon::Match(const UString& t) {
-        return lookahead_.type_ == JsTokenType::Punctuator && lookahead_.value_ == t;
-    }
-
-    bool ParserCommon::MatchKeyword(JsTokenType t) {
+    bool ParserCommon::Match(JsTokenType t) {
         return lookahead_.type_ == t;
     }
 
     bool ParserCommon::MatchAssign() {
-        if (lookahead_.type_ != JsTokenType::Punctuator) {
-            return false;
+        switch (lookahead_.type_) {
+            case JsTokenType::Assign:
+            case JsTokenType::MulAssign:
+            case JsTokenType::PowAssign:
+            case JsTokenType::DivAssign:
+            case JsTokenType::ModAssign:
+            case JsTokenType::PlusAssign:
+            case JsTokenType::MinusAssign:
+            case JsTokenType::LeftShiftAssign:
+            case JsTokenType::RightShiftAssign:
+            case JsTokenType::ZeroFillRightShiftAssign:
+            case JsTokenType::BitAndAssign:
+            case JsTokenType::BitOrAssign:
+            case JsTokenType::BitXorAssign:
+                return true;
+
+            default:
+                return false;
         }
-        auto& op = lookahead_.value_;
-        return op == u"=" ||
-               op == u"*=" ||
-               op == u"**=" ||
-               op == u"/=" ||
-               op == u"%=" ||
-               op == u"+=" ||
-               op == u"-=" ||
-               op == u"<<=" ||
-               op == u">>=" ||
-               op == u">>>=" ||
-               op == u"&=" ||
-               op == u"^=" ||
-               op == u"|=";
     }
 
     void ParserCommon::ConsumeSemicolon() {
-        if (Match(';')) {
+        if (Match(JsTokenType::Semicolon)) {
             NextToken();
         } else if (!has_line_terminator_) {
-            if (lookahead_.type_ != JsTokenType::EOF_ && !Match('}')) {
+            if (lookahead_.type_ != JsTokenType::EOF_ && !Match(JsTokenType::RightBracket)) {
                 ThrowUnexpectedToken(lookahead_);
             }
             last_marker_.index = start_marker_.index;
@@ -317,50 +297,66 @@ namespace parser {
 
     int ParserCommon::BinaryPrecedence(const Token& token) const {
         auto op = token.value_;
-        int precedence = 0;
-        if (token.type_ == JsTokenType::Punctuator) {
-            if (
-                op == u")" || op == u";" || op == u"," ||
-                op == u"=" || op == u"]"
-                ) {
-                precedence = 0;
-            } else if (op == u"||") {
-                precedence = 1;
-            } else if (op == u"&&") {
-                precedence = 2;
-            } else if (op == u"|") {
-                precedence = 3;
-            } else if (op == u"^") {
-                precedence = 4;
-            } else if (op == u"&") {
-                precedence = 5;
-            } else if (
-                op == u"==" || op == u"!=" || op == u"===" ||
-                op == u"!=="
-                ) {
-                precedence = 6;
-            } else if (
-                op == u"<" || op == u">" || op == u"<=" ||
-                op == u">="
-                ) {
-                precedence = 7;
-            } else if (op == u"<<" || op == u">>" || op == u">>>") {
-                precedence = 8;
-            } else if (op == u"+" || op == u"-") {
-                precedence = 9;
-            } else if (
-                op == u"*" || op == u"/" || op == u"%"
-                ) {
-                precedence = 11;
-            }
-        } else if (IsKeywordToken(token.type_)) {
-            if (token.type_ == JsTokenType::K_Instanceof|| (context_.allow_in && token.type_ == JsTokenType::K_In)) {
-                precedence = 7;
-            } else {
-                precedence = 0;
-            }
+        switch (token.type_) {
+            case JsTokenType::RightParen:
+            case JsTokenType::Semicolon:
+            case JsTokenType::Comma:
+            case JsTokenType::Assign:
+            case JsTokenType::RightBrace:
+                return 0;
+
+            case JsTokenType::Or:
+                return 1;
+
+            case JsTokenType::And:
+                return 2;
+
+            case JsTokenType::BitOr:
+                return 3;
+
+            case JsTokenType::Xor:
+                return 4;
+
+            case JsTokenType::BitAnd:
+                return 5;
+
+            case JsTokenType::Equal:
+            case JsTokenType::NotEqual:
+            case JsTokenType::StrictEqual:
+            case JsTokenType::StrictNotEqual:
+                return 6;
+
+            case JsTokenType::LessThan:
+            case JsTokenType::GreaterThan:
+            case JsTokenType::LessEqual:
+            case JsTokenType::GreaterEqual:
+                return 7;
+
+            case JsTokenType::RightShift:
+            case JsTokenType::LeftShift:
+            case JsTokenType::ZeroFillRightShift:
+                return 8;
+
+            case JsTokenType::Plus:
+            case JsTokenType::Minus:
+                return 9;
+
+            case JsTokenType::Mul:
+            case JsTokenType::Div:
+            case JsTokenType::Mod:
+                return 11;
+
+            default:
+                if (IsKeywordToken(token.type_)) {
+                    if (token.type_ == JsTokenType::K_Instanceof|| (context_.allow_in && token.type_ == JsTokenType::K_In)) {
+                        return 7;
+                    } else {
+                        return 0;
+                    }
+                }
+
         }
-        return precedence;
+        return 0;
     }
 
     bool ParserCommon::IsIdentifierName(Token &token) {

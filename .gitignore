@@ -1,6 +1,7 @@
 
 /cmake-build-debug
+/cmake-build-release
 /.idea
 .DS_Store
 
-/test.js
+test.js

@@ -13,10 +13,61 @@
     D(Identifier) \
     D(NullLiteral) \
     D(NumericLiteral) \
-    D(Punctuator) \
     D(StringLiteral) \
     D(RegularExpression) \
     D(Template) \
+    D(LeftParen) \
+    D(RightParen) \
+    D(LeftBracket)\
+    D(RightBracket) \
+    D(LeftBrace) \
+    D(RightBrace) \
+    D(Dot) \
+    D(Spread) \
+    D(Semicolon) \
+    D(Comma) \
+    D(Colon) \
+    D(Ask) \
+    D(Wave) \
+    D(LessThan) \
+    D(GreaterThan) \
+    D(StrictEqual) \
+    D(StrictNotEqual) \
+    D(Equal) \
+    D(NotEqual) \
+    D(LessEqual) \
+    D(GreaterEqual) \
+    D(Mod) \
+    D(Xor) \
+    D(BitAnd) \
+    D(BitOr) \
+    D(And) \
+    D(Or) \
+    D(Assign) \
+    D(BitAndAssign) \
+    D(BitOrAssign) \
+    D(BitXorAssign) \
+    D(ModAssign) \
+    D(PlusAssign) \
+    D(MinusAssign) \
+    D(MulAssign) \
+    D(DivAssign) \
+    D(PowAssign) \
+    D(LeftShiftAssign) \
+    D(RightShiftAssign) \
+    D(ZeroFillRightShiftAssign) \
+    D(Plus) \
+    D(Minus) \
+    D(Mul) \
+    D(Div) \
+    D(Pow) \
+    D(Increase) \
+    D(Decrease) \
+    D(LeftShift) \
+    D(RightShift) \
+    D(ZeroFillRightShift) \
+    D(Not) \
+    D(Arrow) \
     D(K_If) \
     D(K_In) \
     D(K_Do) \
@@ -71,6 +122,10 @@ enum class JsTokenType {
 };
 
 #undef DD
+
+inline bool IsPunctuatorToken(JsTokenType t) {
+    return t >= JsTokenType::LeftParen && t <= JsTokenType::Arrow;
+}
 
 inline bool IsKeywordToken(JsTokenType t) {
     return t >= JsTokenType::K_If && t <= JsTokenType::KS_Static;

@@ -100,14 +100,10 @@ namespace parser {
         Marker CreateStartMarker();
         Marker StartNode(Token& tok, uint32_t last_line_start = 0);
 
-        void Expect(char16_t t);
-        void Expect(const UString& str);
         void ExpectCommaSeparator();
-        void ExpectKeyword(JsTokenType t);
+        void Expect(JsTokenType t);
 
-        bool Match(char16_t t);
-        bool Match(const UString& str);
-        bool MatchKeyword(JsTokenType t);
+        bool Match(JsTokenType t);
         bool MatchContextualKeyword(const UString& keyword);
         bool MatchAssign();
 

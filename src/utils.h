@@ -6,10 +6,19 @@
 #include <locale>
 #include <codecvt>
 #include <string>
+#include <chrono>
 
 typedef std::u16string UString;
 
 namespace utils {
+
+    inline int64_t GetCurrentMs() {
+        using namespace std::chrono;
+        milliseconds ms = duration_cast< milliseconds >(
+            system_clock::now().time_since_epoch()
+        );
+        return ms.count();
+    }
 
     inline UString FromCodePoint(char32_t cp) {
         UString result;
