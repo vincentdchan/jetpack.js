@@ -371,3 +371,34 @@ puts '
     };
 }
 '
+
+$stdout.reopen('src/parser/nodes_size.h', 'w')
+
+print_title
+puts '
+
+#pragma once
+
+#include <algorithm>
+#include "base_nodes.h"
+#include "syntax_nodes.h"
+
+namespace node_size {
+
+    constexpr int nodes_size_array[] = {
+'
+
+SyntaxFactory.syntaxes.each do |item|
+  id = item.class_id.to_s
+  puts "         sizeof(#{id}),"
+end
+
+
+puts "
+    };
+
+    constexpr int max_node_size = *std::max_element(std::begin(nodes_size_array), std::end(nodes_size_array));
+
+}
+
+"

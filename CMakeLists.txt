@@ -27,6 +27,8 @@ file(GLOB source_files
         "src/tokenizer/*.cpp"
         )
 
+include_directories(boost/include)
+
 add_executable(BestPack ${source_files})
 target_link_libraries(BestPack PUBLIC -ljemalloc PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
 

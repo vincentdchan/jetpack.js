@@ -7,7 +7,6 @@
 #include <optional>
 #include <vector>
 #include <variant>
-#include <iostream>
 
 
 class ArrayExpression: public Expression {
@@ -36,10 +35,6 @@ public:
     bool generator = false;
     bool expression = false;
     bool async = false;
-
-    ~ArrowFunctionExpression() override {
-        std::cout << "dctor" << std::endl;
-    }
 
 };
 

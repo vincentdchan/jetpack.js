@@ -5,7 +5,6 @@
 #include "node_types.h"
 #include "../macros.h"
 #include "../tokenizer/token.h"
-#include <jemalloc/jemalloc.h>
 
 template <typename T>
 using Sp = std::shared_ptr<T>;
@@ -34,13 +33,13 @@ public:
     std::pair<std::uint32_t, std::uint32_t> range;
     SourceLocation location;
 
-    void* operator new(std::size_t count) {
-        return je_malloc(count);
-    }
-
-    void operator delete  (void* ptr) {
-        je_free(ptr);
-    }
+//    void* operator new(std::size_t count) {
+//        return je_malloc(count);
+//    }
+//
+//    void operator delete  (void* ptr) {
+//        je_free(ptr);
+//    }
 
     virtual bool IsPattern() const { return false; }
     virtual bool IsDeclaration() const { return false; }

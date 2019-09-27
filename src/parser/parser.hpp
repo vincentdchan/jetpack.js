@@ -4,9 +4,12 @@
 #pragma once
 
 #include <iostream>
+#include <boost/pool/poolfwd.hpp>
+#include <boost/pool/pool.hpp>
 #include "../tokenizer/token.h"
 #include "parser_common.h"
 #include "error_message.h"
+#include "nodes_size.h"
 
 #define ASSERT_NOT_NULL(EXPR, MSG) if ((EXPR) == nullptr) { \
         LogError(std::string(#EXPR) + " should not be nullptr " + MSG); \
@@ -16,13 +19,26 @@
 namespace parser {
 
     class Parser final: private ParserCommon {
+    private:
+
+        struct tc_allocator {
+            // types
+            typedef std::size_t    size_type;        // An unsigned integral type that can represent the size of the largest object to be allocated.
+            typedef std::ptrdiff_t difference_type;  // A signed integral type that can represent the difference of any two pointers.
+
+            // public static functions
+            static char * malloc(const size_type);
+            static void free(char *const);
+        };
+
+        boost::pool<Parser::tc_allocator> nodes_pool;
+
     public:
 
         Parser(
             shared_ptr<u16string> source,
             const Config& config
-        ): ParserCommon(source, config) {
-
+        ): ParserCommon(source, config), nodes_pool(node_size::max_node_size) {
         }
 
         Parser(shared_ptr<u16string> source): Parser(std::move(source), ParserCommon::Config::Default()) {
@@ -33,8 +49,11 @@ namespace parser {
         Sp<T> Alloc(Args && ...args) {
             static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
 
-            T* ptr = new T;
-            return Sp<T>(ptr);
+            void* space = nodes_pool.malloc();
+            T* ptr = new(space) T(std::forward<Args>(args)...);
+            return Sp<T>(ptr, [this](void* chunk) {
+                nodes_pool.free(chunk);
+            });
         }
 
         template <typename T>

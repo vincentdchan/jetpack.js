@@ -3,9 +3,18 @@
 //
 
 #include "parser.hpp"
+#include <jemalloc/jemalloc.h>
 #include "../tokenizer/token.h"
 
 namespace parser {
+
+    char* Parser::tc_allocator::malloc(const parser::Parser::tc_allocator::size_type size) {
+        return reinterpret_cast<char*>(je_malloc(size));
+    }
+
+    void Parser::tc_allocator::free(char *const ptr) {
+        je_free(ptr);
+    }
 
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
         switch (expr->type) {
