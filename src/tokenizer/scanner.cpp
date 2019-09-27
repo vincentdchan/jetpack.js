@@ -344,12 +344,19 @@ JsTokenType Scanner::ToKeyword(const UString &str_) {
 
 #undef MAYBE_WORD
 
+inline uint32_t HexValue(char32_t ch) {
+    if (ch >= 'A' && ch <= 'F') {
+        ch = 'a' + (ch - 'A');
+    }
+    return string("0123456789abcdef").find(ch);
+}
+
 bool Scanner::ScanHexEscape(char16_t ch, char32_t& code) {
     std::uint32_t len = (ch == 'u') ? 4 : 2;
 
     for (std::uint32_t i = 0; i < len; ++i) {
         if (!IsEnd() && utils::IsHexDigit(CodePointAt(index_))) {
-            code = code * 16 + (CodePointAt(index_++) - '0');
+            code = code * 16 + HexValue(CodePointAt(index_++));
         } else {
             return false;
         }

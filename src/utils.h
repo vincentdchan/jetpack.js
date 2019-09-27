@@ -46,7 +46,7 @@ namespace utils {
         return conv.to_bytes(s);
     }
 
-    inline void AddU32ToUtf16(std::u16string& target, char32_t code) {
+    inline void AddU32ToUtf16(UString& target, char32_t code) {
         if (code < 0x10000) {
             target.push_back(code);
         }

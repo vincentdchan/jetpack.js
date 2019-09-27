@@ -97,13 +97,30 @@ namespace parser {
         void ThrowError(const std::string& message);
         void ThrowError(const std::string& message, const std::string& arg);
 
-        Marker CreateStartMarker();
         Marker StartNode(Token& tok, uint32_t last_line_start = 0);
 
-        void ExpectCommaSeparator();
-        void Expect(JsTokenType t);
+        inline Marker CreateStartMarker() {
+            return {
+                start_marker_.index,
+                start_marker_.line,
+                start_marker_.column
+            };
+        }
 
-        bool Match(JsTokenType t);
+        void ExpectCommaSeparator();
+
+        inline void Expect(JsTokenType t) {
+            Token token = NextToken();
+
+            if (token.type_ != t) {
+                ThrowUnexpectedToken(token);
+            }
+        }
+
+        inline bool Match(JsTokenType t) {
+            return lookahead_.type_ == t;
+        }
+
         bool MatchContextualKeyword(const UString& keyword);
         bool MatchAssign();
 

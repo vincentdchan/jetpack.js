@@ -28,7 +28,7 @@ file(GLOB source_files
         )
 
 add_executable(BestPack ${source_files})
-target_link_libraries(BestPack PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
+target_link_libraries(BestPack PUBLIC -ljemalloc PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
 
 add_library(jsci STATIC ${source_files})
-target_link_libraries(jsci PUBLIC nlohmann_json::nlohmann_json tsl::ordered_map)
+target_link_libraries(jsci PUBLIC -ljemalloc nlohmann_json::nlohmann_json tsl::ordered_map)

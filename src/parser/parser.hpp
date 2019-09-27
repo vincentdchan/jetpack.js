@@ -33,7 +33,8 @@ namespace parser {
         Sp<T> Alloc(Args && ...args) {
             static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
 
-            return Sp<T>(new T);
+            T* ptr = new T;
+            return Sp<T>(ptr);
         }
 
         template <typename T>

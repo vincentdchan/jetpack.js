@@ -202,14 +202,6 @@ namespace parser {
         return scanner_->Source()->substr(token.range_.first, token.range_.second);
     }
 
-    ParserCommon::Marker ParserCommon::CreateStartMarker() {
-        return {
-            start_marker_.index,
-            start_marker_.line,
-            start_marker_.column
-        };
-    }
-
     ParserCommon::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {
         auto column = tok.range_.first - tok.line_start_;
         auto line = tok.line_number_;
@@ -238,18 +230,6 @@ namespace parser {
         } else {
             Expect(JsTokenType::Comma);
         }
-    }
-
-    void ParserCommon::Expect(JsTokenType t) {
-        Token token = NextToken();
-
-        if (token.type_ != t) {
-            ThrowUnexpectedToken(token);
-        }
-    }
-
-    bool ParserCommon::Match(JsTokenType t) {
-        return lookahead_.type_ == t;
     }
 
     bool ParserCommon::MatchAssign() {
