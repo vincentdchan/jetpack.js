@@ -402,3 +402,94 @@ puts "
 }
 
 "
+
+$stdout.reopen('src/codegen/node_traverser.h', 'w')
+
+print_title
+puts '
+
+#pragma once
+#include "../parser/syntax_nodes.h"
+
+class NodeTraverser {
+public:
+
+    NodeTraverser() = default;
+    
+    void TraverseNode(const Sp<SyntaxNode>& node);
+
+'
+
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "    virtual bool TraverseBefore(const Sp<#{id}>& node) { return true; }"
+    puts "    virtual void TraverseAfter(const Sp<#{id}>& node) {}"
+  end
+end
+
+puts '
+    virtual ~NodeTraverser() = default;
+
+};
+'
+
+$stdout.reopen('src/codegen/node_traverser.cpp', 'w')
+
+puts '
+#include "./node_traverser.h"
+
+void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+    switch (node->type) {'
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "
+        case SyntaxNodeType::#{id}: {
+            auto child = std::dynamic_pointer_cast<#{id}>(node);
+            if (!this->TraverseBefore(child)) return;"
+
+    item.props.each do |item|
+      if [:String, :Boolean, :Number, :VarKind, :Variant].include? item.prop_type then
+        # nothing
+      elsif item.prop_type.is_a? Variant then
+        # nothing
+      elsif item.prop_type.is_a? Array then
+        if item.prop_type[0].is_a? Option then
+          puts "
+            for (auto& i : child->#{item.name}) {
+                if (i.has_value()) {
+                    TraverseNode(*i);
+                } 
+            }"
+        else
+          puts "
+              for (auto& i : child->#{item.name}) {
+                  TraverseNode(i);
+              }"
+        end
+      elsif item.prop_type.is_a? Option then
+        puts "            if (child->#{item.pretty_name}) {"
+        puts "                TraverseNode(*child->#{item.pretty_name});"
+        puts "            }"
+      else
+        puts "            TraverseNode(child->#{item.pretty_name});"
+      end
+    end
+
+    puts "
+            this->TraverseAfter(child);
+        }"
+
+  end
+end
+
+puts "
+        default:
+            return;
+
+    }
+}
+"

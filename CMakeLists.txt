@@ -25,6 +25,8 @@ file(GLOB source_files
         "src/dumper/*.cpp"
         "src/tokenizer/*.h"
         "src/tokenizer/*.cpp"
+        "src/codegen/*.h"
+        "src/codegen/*.cpp"
         )
 
 include_directories(boost/include)

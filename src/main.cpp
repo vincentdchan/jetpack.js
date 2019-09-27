@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "codegen/codegen.h"
 #include "parser/parser.hpp"
 #include "dumper/ast_to_json.h"
 #include "tokenizer/scanner.h"
