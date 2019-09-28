@@ -104,7 +104,18 @@ public:
     void Traverse(const Sp<ExportDefaultDeclaration>& node) override;
     void Traverse(const Sp<ExportNamedDeclaration>& node) override;
     void Traverse(const Sp<ExportAllDeclaration>& node) override;
-    void Traverse(const Sp<MethodDefinition>& node);
+    void Traverse(const Sp<MethodDefinition>& node) override;
+    void Traverse(const Sp<ArrowFunctionExpression>& node) override;
+    void Traverse(const Sp<ObjectExpression>& node) override;
+    void Traverse(const Sp<ThisExpression>& node) override;
+    void Traverse(const Sp<Super>& node) override;
+    void Traverse(const Sp<RestElement>& node) override;
+    void Traverse(const Sp<SpreadElement>& node) override;
+    void Traverse(const Sp<YieldExpression>& node) override;
+    void Traverse(const Sp<AwaitExpression>& node) override;
+    void Traverse(const Sp<TemplateLiteral>& node) override;
+    void Traverse(const Sp<TaggedTemplateExpression>& node) override;
+    void Traverse(const Sp<Property>& node) override;
 
 private:
     Config config_;

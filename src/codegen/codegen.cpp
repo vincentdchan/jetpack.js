@@ -479,4 +479,124 @@ void CodeGen::Traverse(const Sp<MethodDefinition> &node) {
             break;
 
     }
+    // TODO: implementation;
+}
+
+void CodeGen::Traverse(const Sp<ArrowFunctionExpression> &node) {
+    if (node->async) {
+        Write("async ", node);
+    }
+    auto& params = node->params;
+    if (!params.empty()) {
+        if (params.size() == 1 && params[0]->type == SyntaxNodeType::Identifier) {
+            auto id = dynamic_pointer_cast<Identifier>(params[0]);
+            Write(id->name, id);
+        } else {
+            FormatSequence(params);
+        }
+    }
+    Write(" => ");
+    if (node->body->type == SyntaxNodeType::ObjectExpression) {
+        Write("(");
+        Sp<ObjectExpression> oe = dynamic_pointer_cast<ObjectExpression>(node->body);
+        this->Traverse(oe);
+        Write(")");
+    } else {
+        TraverseNode(node->body);
+    }
+}
+
+void CodeGen::Traverse(const Sp<ThisExpression> &node) {
+    Write("this", node);
+}
+
+void CodeGen::Traverse(const Sp<Super> &node) {
+    Write("super", node);
+}
+
+void CodeGen::Traverse(const Sp<RestElement> &node) {
+    Write("...");
+    TraverseNode(node->argument);
+}
+
+void CodeGen::Traverse(const Sp<SpreadElement> &node) {
+    Write("...");
+    TraverseNode(node->argument);
+}
+
+void CodeGen::Traverse(const Sp<YieldExpression> &node) {
+    if (node->delegate) {
+        Write("yield*");
+    } else {
+        Write("yield");
+    }
+
+    if (node->argument.has_value()) {
+        Write(" ");
+        TraverseNode(*node->argument);
+    }
+}
+
+void CodeGen::Traverse(const Sp<AwaitExpression> &node) {
+    Write("await ");
+    TraverseNode(node->argument);
+}
+
+void CodeGen::Traverse(const Sp<TemplateLiteral> &node) {
+    Write("`");
+    for (std::size_t i = 0; i < node->expressions.size(); i++) {
+        auto expr = node->expressions[i];
+        Write(node->quasis[i]->raw);
+        Write("${");
+        TraverseNode(expr);
+        Write("}");
+    }
+    Write("`");
+}
+
+void CodeGen::Traverse(const Sp<TaggedTemplateExpression> &node) {
+    TraverseNode(node->tag);
+    TraverseNode(node->quasi);
+}
+
+void CodeGen::Traverse(const Sp<ObjectExpression> &node) {
+    state_.indent_level++;
+    Write("{");
+    if (!node->properties.empty()) {
+        WriteLineEnd();
+        string comma = "," + config_.line_end;
+        std::size_t i = 0;
+        while (true) {
+            auto prop = node->properties[i];
+            WriteIndent();
+            TraverseNode(prop);
+            if (++i < node->properties.size()) {
+                Write(comma);
+            } else {
+                break;
+            }
+        }
+        WriteLineEnd();
+        WriteIndent();
+        Write("}");
+    } else {
+        Write("}");
+    }
+    state_.indent_level--;
+}
+
+void CodeGen::Traverse(const Sp<Property> &node) {
+    if (!node->shorthand) {
+        if (node->computed) {
+            Write("[");
+            TraverseNode(node->key);
+            Write("]");
+        } else {
+            TraverseNode(node->key);
+        }
+        Write(": ");
+    }
+    if (node->value.has_value()) {
+        TraverseNode(*node->value);
+    }
 }
