@@ -14,7 +14,6 @@ CodeGen::CodeGen(const Config& config) {
     config_ = config;
 }
 
-
 int CodeGen::ExpressionPrecedence(SyntaxNodeType t) {
     switch (t) {
         case SyntaxNodeType::ArrayExpression:
@@ -76,6 +75,70 @@ int CodeGen::ExpressionPrecedence(SyntaxNodeType t) {
             return 0;
 
     }
+}
+
+void CodeGen::FormatVariableDeclaration(const Sp<VariableDeclaration> &node) {
+    if (!node->declarations.empty()) {
+        for (std::size_t i = 0; i < node->declarations.size(); i++) {
+            this->Traverse(node->declarations[i]);
+            if (i < node->declarations.size() - 1) {
+                Write(", ");
+            }
+        }
+    }
+}
+
+void CodeGen::FormatBinaryExpression(const Sp<Expression> &expr, const Sp<BinaryExpression> &parent, bool is_right) {
+    if (ExpressionNeedsParenthesis(expr, parent, is_right)) {
+        Write("(");
+        TraverseNode(expr);
+        Write(")");
+    } else {
+        TraverseNode(expr);
+    }
+}
+
+bool CodeGen::HasCallExpression(const Sp<SyntaxNode>& node) {
+    HasCallExpressionTraverser traverser;
+    traverser.TraverseNode(node);
+    return traverser.has_call;
+}
+
+void CodeGen::FormatSequence(std::vector<Sp<SyntaxNode>> &params) {
+    Write("(");
+    for (std::size_t i = 0; i < params.size(); i++) {
+        TraverseNode(params[i]);
+        if (i < params.size() - 1) {
+            Write(", ");
+        }
+    }
+    Write(")");
+}
+
+bool CodeGen::ExpressionNeedsParenthesis(const Sp<Expression> &node, const Sp<BinaryExpression> &parent,
+                                         bool is_right) {
+    int prec = ExpressionPrecedence(node->type);
+    if (prec == needs_parentheses) {
+        return true;
+    }
+    int parent_prec = ExpressionPrecedence(parent->type);
+    if (prec != parent_prec) {
+        return (
+            (!is_right &&
+            prec == 15 &&
+            parent_prec == 14 &&
+            parent->operator_ == u"**") ||
+            prec < parent_prec
+        );
+    }
+    if (prec != 13 && prec != 14) {
+        return false;
+    }
+    if (auto cb = dynamic_pointer_cast<BinaryExpression>(node); cb && cb->operator_ == u"**" && parent->operator_ == u"**") {
+        return !is_right;
+    }
+    // TODO:
+    return true;
 }
 
 void CodeGen::Traverse(const Sp<ArrayExpression> &node) {
@@ -416,7 +479,7 @@ void CodeGen::Traverse(const Sp<ImportDeclaration> &node) {
         Write(" from ");
     }
 
-    Literal(node->source);
+    this->Traverse(node->source);
     Write("; ");
 }
 
@@ -453,7 +516,7 @@ void CodeGen::Traverse(const Sp<ExportNamedDeclaration> &node) {
         Write("}");
         if (node->source.has_value()) {
             Write(" from ");
-            Literal(*node->source);
+            this->Traverse(*node->source);
         }
         Write(";");
     }
@@ -461,7 +524,7 @@ void CodeGen::Traverse(const Sp<ExportNamedDeclaration> &node) {
 
 void CodeGen::Traverse(const Sp<ExportAllDeclaration> &node) {
     Write("export * from ");
-    Literal(node->source);
+    this->Traverse(node->source);
     Write(";");
 }
 
@@ -476,6 +539,9 @@ void CodeGen::Traverse(const Sp<MethodDefinition> &node) {
 
         case VarKind::Set:
             Write("set ");
+            break;
+
+        default:
             break;
 
     }
@@ -599,4 +665,108 @@ void CodeGen::Traverse(const Sp<Property> &node) {
     if (node->value.has_value()) {
         TraverseNode(*node->value);
     }
+}
+
+void CodeGen::Traverse(const Sp<SequenceExpression> &node) {
+    // TODO:
+}
+
+void CodeGen::Traverse(const Sp<UnaryExpression> &node) {
+    if (node->prefix) {
+        Write(node->operator_);
+        if (node->operator_.size() > 1) {
+            Write(" ");
+        }
+        if (ExpressionPrecedence(node->argument->type) <
+            ExpressionPrecedence(SyntaxNodeType::UnaryExpression)
+        ) {
+            Write("(");
+            TraverseNode(node->argument);
+            Write(")");
+        } else {
+            TraverseNode(node->argument);
+        }
+    } else {
+        TraverseNode(node->argument);
+        Write(node->operator_);
+    }
+}
+
+void CodeGen::Traverse(const Sp<AssignmentExpression> &node) {
+    TraverseNode(node->left);
+    Write(UString(u" ") + node->operator_ + u" ");
+    TraverseNode(node->right);
+}
+
+void CodeGen::Traverse(const Sp<AssignmentPattern> &node) {
+    TraverseNode(node->left);
+    Write(" = ");
+    TraverseNode(node->right);
+}
+
+void CodeGen::Traverse(const Sp<BinaryExpression> &node) {
+    bool is_in = node->operator_ == u"in";
+    if (is_in) {
+        Write("(");
+    }
+    FormatBinaryExpression(node->left, node, false);
+    Write(u" " + node->operator_ + u" ");
+    FormatBinaryExpression(node->right, node, true);
+    if (is_in) {
+        Write(")");
+    }
+}
+
+void CodeGen::Traverse(const Sp<ConditionalExpression> &node) {
+    if (ExpressionPrecedence(node->test->type) >
+        ExpressionPrecedence(SyntaxNodeType::ConditionalExpression)
+    ) {
+        TraverseNode(node->test);
+    } else {
+        Write("(");
+        TraverseNode(node->test);
+        Write(")");
+    }
+    Write(" ? ");
+    TraverseNode(node->consequent);
+    Write(" : ");
+    TraverseNode(node->alternate);
+}
+
+void CodeGen::Traverse(const Sp<NewExpression> &node) {
+    Write("new ");
+    if (
+        ExpressionPrecedence(node->callee->type) <
+            ExpressionPrecedence(SyntaxNodeType::CallExpression) ||
+        HasCallExpression(node->callee)
+    ) {
+        Write("(");
+        TraverseNode(node->callee);
+        Write(")");
+    } else {
+        TraverseNode(node->callee);
+    }
+    FormatSequence(node->arguments);
+}
+
+void CodeGen::Traverse(const Sp<CallExpression> &node) {
+    if (
+        ExpressionPrecedence(node->callee->type) <
+        ExpressionPrecedence(SyntaxNodeType::CallExpression)
+    ) {
+        Write("(");
+        TraverseNode(node->callee);
+        Write(")");
+    } else {
+        TraverseNode(node->callee);
+    }
+    FormatSequence(node->arguments);
+}
+
+void CodeGen::Traverse(const Sp<Identifier> &node) {
+    Write(node->name, node);
+}
+
+void CodeGen::Traverse(const Sp<Literal> &lit) {
+    Write(lit->raw, lit);
 }

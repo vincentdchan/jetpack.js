@@ -19,6 +19,17 @@ private:
         std::uint32_t indent_level = 0;
     };
 
+    class HasCallExpressionTraverser: public AutoNodeTraverser {
+    public:
+        bool has_call = false;
+
+        bool TraverseBefore(const Sp<CallExpression>& node) override  {
+            has_call = true;
+            return false;
+        }
+
+    };
+
 public:
     struct Config {
         std::uint32_t start_indent_level = 0;
@@ -31,6 +42,7 @@ public:
     CodeGen();
     CodeGen(const Config& config);
 
+private:
     inline void Write(char ch) {
         output << ch;
     }
@@ -74,8 +86,12 @@ public:
 
     void FormatVariableDeclaration(const Sp<VariableDeclaration>& node);
     void FormatSequence(std::vector<Sp<SyntaxNode>>& params);
-    void Literal(const Sp<Literal>& lit);
+    void FormatBinaryExpression(const Sp<Expression>& expr, const Sp<BinaryExpression>& parent, bool is_right);
+    bool HasCallExpression(const Sp<SyntaxNode>&);
+    bool ExpressionNeedsParenthesis(const Sp<Expression>& node, const Sp<BinaryExpression>& parent, bool is_right);
 
+public:
+    void Traverse(const Sp<Literal>& lit) override;
     void Traverse(const Sp<ArrayExpression>& node) override;
     void Traverse(const Sp<BlockStatement>& node) override;
     void Traverse(const Sp<EmptyStatement>& node) override;
@@ -116,8 +132,18 @@ public:
     void Traverse(const Sp<TemplateLiteral>& node) override;
     void Traverse(const Sp<TaggedTemplateExpression>& node) override;
     void Traverse(const Sp<Property>& node) override;
+    void Traverse(const Sp<SequenceExpression>& node) override;
+    void Traverse(const Sp<UnaryExpression>& node) override;
+    void Traverse(const Sp<AssignmentExpression>& node) override;
+    void Traverse(const Sp<AssignmentPattern>& node) override;
+    void Traverse(const Sp<BinaryExpression>& node) override;
+    void Traverse(const Sp<ConditionalExpression>& node) override;
+    void Traverse(const Sp<NewExpression>& node) override;
+    void Traverse(const Sp<CallExpression>& node) override;
+    void Traverse(const Sp<Identifier>& node) override;
 
 private:
+
     Config config_;
 
     State state_;
