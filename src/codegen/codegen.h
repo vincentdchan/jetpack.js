@@ -8,188 +8,109 @@
 #include <string>
 #include <sstream>
 #include <cinttypes>
+#include "../utils.h"
 #include "node_traverser.h"
 
 class CodeGen: public NodeTraverser {
+private:
+    struct State {
+        std::int32_t line = 1;
+        std::int32_t column = 0;
+        std::uint32_t indent_level = 0;
+    };
+
 public:
-    struct Config;
+    struct Config {
+        std::uint32_t start_indent_level = 0;
+        std::string indent = "  ";
+        std::string line_end = "\n";
+        bool source_map = false;
+        bool comments = true;
+    };
 
     CodeGen();
-    CodeGen(Config config);
-
-    bool TraverseBefore(const Sp<ArrayExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ArrayPattern> &node) override;
-
-    bool TraverseBefore(const Sp<ArrowFunctionExpression> &node) override;
-
-    bool TraverseBefore(const Sp<AssignmentExpression> &node) override;
-
-    bool TraverseBefore(const Sp<AssignmentPattern> &node) override;
-
-    bool TraverseBefore(const Sp<AwaitExpression> &node) override;
-
-    bool TraverseBefore(const Sp<BinaryExpression> &node) override;
-
-    bool TraverseBefore(const Sp<BlockStatement> &node) override;
-
-    bool TraverseBefore(const Sp<BreakStatement> &node) override;
-
-    bool TraverseBefore(const Sp<CallExpression> &node) override;
-
-    bool TraverseBefore(const Sp<CatchClause> &node) override;
-
-    bool TraverseBefore(const Sp<ClassBody> &node) override;
-
-    bool TraverseBefore(const Sp<ClassDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<ClassExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ComputedMemberExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ConditionalExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ContinueStatement> &node) override;
-
-    bool TraverseBefore(const Sp<DebuggerStatement> &node) override;
-
-    bool TraverseBefore(const Sp<Directive> &node) override;
-
-    bool TraverseBefore(const Sp<DoWhileStatement> &node) override;
-
-    bool TraverseBefore(const Sp<EmptyStatement> &node) override;
-
-    bool TraverseBefore(const Sp<ExportAllDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<ExportDefaultDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<ExportNamedDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<ExportSpecifier> &node) override;
-
-    bool TraverseBefore(const Sp<ExpressionStatement> &node) override;
-
-    bool TraverseBefore(const Sp<ForInStatement> &node) override;
-
-    bool TraverseBefore(const Sp<ForOfStatement> &node) override;
-
-
-    bool TraverseBefore(const Sp<ForStatement> &node) override;
-
-    bool TraverseBefore(const Sp<FunctionDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<FunctionExpression> &node) override;
-
-    bool TraverseBefore(const Sp<Identifier> &node) override;
-
-    bool TraverseBefore(const Sp<IfStatement> &node) override;
-
-    bool TraverseBefore(const Sp<Import> &node) override;
-
-    bool TraverseBefore(const Sp<ImportDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<ImportDefaultSpecifier> &node) override;
-
-    bool TraverseBefore(const Sp<ImportNamespaceSpecifier> &node) override;
-
-    bool TraverseBefore(const Sp<ImportSpecifier> &node) override;
-
-    bool TraverseBefore(const Sp<LabeledStatement> &node) override;
-
-    bool TraverseBefore(const Sp<Literal> &node) override;
-
-    bool TraverseBefore(const Sp<MetaProperty> &node) override;
-
-    bool TraverseBefore(const Sp<MethodDefinition> &node) override;
-
-    bool TraverseBefore(const Sp<Module> &node) override;
-
-    bool TraverseBefore(const Sp<NewExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ObjectExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ObjectPattern> &node) override;
-
-    bool TraverseBefore(const Sp<Property> &node) override;
-
-    bool TraverseBefore(const Sp<RegexLiteral> &node) override;
-
-    bool TraverseBefore(const Sp<RestElement> &node) override;
-
-    bool TraverseBefore(const Sp<ReturnStatement> &node) override;
-
-    bool TraverseBefore(const Sp<Script> &node) override;
-
-    bool TraverseBefore(const Sp<SequenceExpression> &node) override;
-
-    bool TraverseBefore(const Sp<SpreadElement> &node) override;
-
-    bool TraverseBefore(const Sp<StaticMemberExpression> &node) override;
-
-    bool TraverseBefore(const Sp<Super> &node) override;
-
-    bool TraverseBefore(const Sp<SwitchCase> &node) override;
-
-    bool TraverseBefore(const Sp<SwitchStatement> &node) override;
-
-    bool TraverseBefore(const Sp<TaggedTemplateExpression> &node) override;
-
-    bool TraverseBefore(const Sp<TemplateElement> &node) override;
-
-    bool TraverseBefore(const Sp<TemplateLiteral> &node) override;
-
-    bool TraverseBefore(const Sp<ThisExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ThrowStatement> &node) override;
-
-    bool TraverseBefore(const Sp<TryStatement> &node) override;
-
-    bool TraverseBefore(const Sp<UnaryExpression> &node) override;
-
-    bool TraverseBefore(const Sp<UpdateExpression> &node) override;
-
-    bool TraverseBefore(const Sp<VariableDeclaration> &node) override;
-
-    bool TraverseBefore(const Sp<VariableDeclarator> &node) override;
-
-    bool TraverseBefore(const Sp<WhileStatement> &node) override;
-
-    bool TraverseBefore(const Sp<WithStatement> &node) override;
-
-    bool TraverseBefore(const Sp<YieldExpression> &node) override;
-
-    bool TraverseBefore(const Sp<ArrowParameterPlaceHolder> &node) override;
+    CodeGen(const Config& config);
+
+    inline void Write(char ch) {
+        output << ch;
+    }
+
+    inline void Write(const char* c_str) {
+        output << c_str;
+    }
+
+    inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
+        output << str;
+    }
+
+    inline void Write(const UString& w_str, Sp<SyntaxNode> node = nullptr) {
+        Write(utils::To_UTF8(w_str), node);
+    }
+
+    inline void WriteLineEnd() {
+        output << config_.line_end;
+        state_.line++;
+    }
+
+    inline void WriteIndent() {
+        for (std::uint32_t i = 0; i < state_.indent_level; i++) {
+            Write(config_.indent);
+        }
+    }
+
+    inline void WriteIndentWith(const char* c_str) {
+        WriteIndent();
+        Write(c_str);
+    }
+
+    inline void WriteIndentWith(const std::string& str) {
+        WriteIndent();
+        Write(str);
+    }
+
+    static const int needs_parentheses = 17;
+
+    static int ExpressionPrecedence(SyntaxNodeType t);
+
+    void FormatVariableDeclaration(const Sp<VariableDeclaration>& node);
+    void FormatSequence(std::vector<Sp<SyntaxNode>>& params);
+    void Literal(const Sp<Literal>& lit);
+
+    void Traverse(const Sp<ArrayExpression>& node) override;
+    void Traverse(const Sp<BlockStatement>& node) override;
+    void Traverse(const Sp<EmptyStatement>& node) override;
+    void Traverse(const Sp<ExpressionStatement>& node) override;
+    void Traverse(const Sp<IfStatement>& node) override;
+    void Traverse(const Sp<LabeledStatement>& node) override;
+    void Traverse(const Sp<BreakStatement>& node) override;
+    void Traverse(const Sp<ContinueStatement>& node) override;
+    void Traverse(const Sp<WithStatement>& node) override;
+    void Traverse(const Sp<SwitchStatement>& node) override;
+    void Traverse(const Sp<ReturnStatement>& node) override;
+    void Traverse(const Sp<ThrowStatement>& node) override;
+    void Traverse(const Sp<TryStatement>& node) override;
+    void Traverse(const Sp<WhileStatement>& node) override;
+    void Traverse(const Sp<DoWhileStatement>& node) override;
+    void Traverse(const Sp<ForStatement>& node) override;
+    void Traverse(const Sp<ForInStatement>& node) override;
+    void Traverse(const Sp<ForOfStatement>& node) override;
+    void Traverse(const Sp<DebuggerStatement>& node) override;
+    void Traverse(const Sp<FunctionDeclaration>& node) override;
+    void Traverse(const Sp<FunctionExpression>& node) override;
+    void Traverse(const Sp<VariableDeclaration>& node) override;
+    void Traverse(const Sp<VariableDeclarator>& node) override;
+    void Traverse(const Sp<ClassDeclaration>& node) override;
+    void Traverse(const Sp<ImportDeclaration>& node) override;
+    void Traverse(const Sp<ExportDefaultDeclaration>& node) override;
+    void Traverse(const Sp<ExportNamedDeclaration>& node) override;
+    void Traverse(const Sp<ExportAllDeclaration>& node) override;
+    void Traverse(const Sp<MethodDefinition>& node);
 
 private:
-    class State;
+    Config config_;
 
-    std::unique_ptr<State> state;
+    State state_;
 
-};
-
-struct CodeGen::Config {
-    std::uint32_t start_indent_level = 0;
-    std::uint32_t indent_level = 2;
-    bool source_map = false;
-    bool comments = true;
-
-};
-
-class CodeGen::State {
-public:
-
-    State() = default;
-
-    State(const State&) = delete;
-    State& operator=(const State&) = delete;
-
-    State(State&& state) = default;
-    State& operator=(State&&) = default;
-
-    std::int64_t line = 1;
-    std::int64_t column = 0;
     std::stringstream output;
-
-    void Write(const std::string& content);
 
 };

@@ -411,10 +411,10 @@ puts '
 #pragma once
 #include "../parser/syntax_nodes.h"
 
-class NodeTraverser {
+class AutoNodeTraverser {
 public:
 
-    NodeTraverser() = default;
+  AutoNodeTraverser() = default;
     
     void TraverseNode(const Sp<SyntaxNode>& node);
 
@@ -430,6 +430,31 @@ SyntaxFactory.syntaxes.each do |item|
 end
 
 puts '
+    virtual ~AutoNodeTraverser() = default;
+
+};
+'
+
+puts '
+
+class NodeTraverser {
+public:
+
+    NodeTraverser() = default;
+    
+    void TraverseNode(const Sp<SyntaxNode>& node);
+
+'
+
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "    virtual void Traverse(const Sp<#{id}>& node) {}"
+  end
+end
+
+puts '
     virtual ~NodeTraverser() = default;
 
 };
@@ -440,7 +465,7 @@ $stdout.reopen('src/codegen/node_traverser.cpp', 'w')
 puts '
 #include "./node_traverser.h"
 
-void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
     switch (node->type) {'
 
 SyntaxFactory.syntaxes.each do |item|
@@ -493,3 +518,27 @@ puts "
     }
 }
 "
+
+puts '
+void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+    switch (node->type) {'
+
+SyntaxFactory.syntaxes.each do |item|
+  if !item.is_virtual then
+    id = item.class_id.to_s
+    puts "
+        case SyntaxNodeType::#{id}: {
+            this->Traverse(std::dynamic_pointer_cast<#{id}>(node));
+        }"
+
+  end
+end
+
+puts "
+        default:
+            return;
+
+    }
+}
+"
+

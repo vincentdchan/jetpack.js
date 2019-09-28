@@ -4,10 +4,10 @@
 #pragma once
 #include "../parser/syntax_nodes.h"
 
-class NodeTraverser {
+class AutoNodeTraverser {
 public:
 
-    NodeTraverser() = default;
+  AutoNodeTraverser() = default;
     
     void TraverseNode(const Sp<SyntaxNode>& node);
 
@@ -153,6 +153,90 @@ public:
     virtual void TraverseAfter(const Sp<YieldExpression>& node) {}
     virtual bool TraverseBefore(const Sp<ArrowParameterPlaceHolder>& node) { return true; }
     virtual void TraverseAfter(const Sp<ArrowParameterPlaceHolder>& node) {}
+
+    virtual ~AutoNodeTraverser() = default;
+
+};
+
+
+class NodeTraverser {
+public:
+
+    NodeTraverser() = default;
+    
+    void TraverseNode(const Sp<SyntaxNode>& node);
+
+    virtual void Traverse(const Sp<ArrayExpression>& node) {}
+    virtual void Traverse(const Sp<ArrayPattern>& node) {}
+    virtual void Traverse(const Sp<ArrowFunctionExpression>& node) {}
+    virtual void Traverse(const Sp<AssignmentExpression>& node) {}
+    virtual void Traverse(const Sp<AssignmentPattern>& node) {}
+    virtual void Traverse(const Sp<AwaitExpression>& node) {}
+    virtual void Traverse(const Sp<BinaryExpression>& node) {}
+    virtual void Traverse(const Sp<BlockStatement>& node) {}
+    virtual void Traverse(const Sp<BreakStatement>& node) {}
+    virtual void Traverse(const Sp<CallExpression>& node) {}
+    virtual void Traverse(const Sp<CatchClause>& node) {}
+    virtual void Traverse(const Sp<ClassBody>& node) {}
+    virtual void Traverse(const Sp<ClassDeclaration>& node) {}
+    virtual void Traverse(const Sp<ClassExpression>& node) {}
+    virtual void Traverse(const Sp<ComputedMemberExpression>& node) {}
+    virtual void Traverse(const Sp<ConditionalExpression>& node) {}
+    virtual void Traverse(const Sp<ContinueStatement>& node) {}
+    virtual void Traverse(const Sp<DebuggerStatement>& node) {}
+    virtual void Traverse(const Sp<Directive>& node) {}
+    virtual void Traverse(const Sp<DoWhileStatement>& node) {}
+    virtual void Traverse(const Sp<EmptyStatement>& node) {}
+    virtual void Traverse(const Sp<ExportAllDeclaration>& node) {}
+    virtual void Traverse(const Sp<ExportDefaultDeclaration>& node) {}
+    virtual void Traverse(const Sp<ExportNamedDeclaration>& node) {}
+    virtual void Traverse(const Sp<ExportSpecifier>& node) {}
+    virtual void Traverse(const Sp<ExpressionStatement>& node) {}
+    virtual void Traverse(const Sp<ForInStatement>& node) {}
+    virtual void Traverse(const Sp<ForOfStatement>& node) {}
+    virtual void Traverse(const Sp<ForStatement>& node) {}
+    virtual void Traverse(const Sp<FunctionDeclaration>& node) {}
+    virtual void Traverse(const Sp<FunctionExpression>& node) {}
+    virtual void Traverse(const Sp<Identifier>& node) {}
+    virtual void Traverse(const Sp<IfStatement>& node) {}
+    virtual void Traverse(const Sp<Import>& node) {}
+    virtual void Traverse(const Sp<ImportDeclaration>& node) {}
+    virtual void Traverse(const Sp<ImportDefaultSpecifier>& node) {}
+    virtual void Traverse(const Sp<ImportNamespaceSpecifier>& node) {}
+    virtual void Traverse(const Sp<ImportSpecifier>& node) {}
+    virtual void Traverse(const Sp<LabeledStatement>& node) {}
+    virtual void Traverse(const Sp<Literal>& node) {}
+    virtual void Traverse(const Sp<MetaProperty>& node) {}
+    virtual void Traverse(const Sp<MethodDefinition>& node) {}
+    virtual void Traverse(const Sp<Module>& node) {}
+    virtual void Traverse(const Sp<NewExpression>& node) {}
+    virtual void Traverse(const Sp<ObjectExpression>& node) {}
+    virtual void Traverse(const Sp<ObjectPattern>& node) {}
+    virtual void Traverse(const Sp<Property>& node) {}
+    virtual void Traverse(const Sp<RegexLiteral>& node) {}
+    virtual void Traverse(const Sp<RestElement>& node) {}
+    virtual void Traverse(const Sp<ReturnStatement>& node) {}
+    virtual void Traverse(const Sp<Script>& node) {}
+    virtual void Traverse(const Sp<SequenceExpression>& node) {}
+    virtual void Traverse(const Sp<SpreadElement>& node) {}
+    virtual void Traverse(const Sp<StaticMemberExpression>& node) {}
+    virtual void Traverse(const Sp<Super>& node) {}
+    virtual void Traverse(const Sp<SwitchCase>& node) {}
+    virtual void Traverse(const Sp<SwitchStatement>& node) {}
+    virtual void Traverse(const Sp<TaggedTemplateExpression>& node) {}
+    virtual void Traverse(const Sp<TemplateElement>& node) {}
+    virtual void Traverse(const Sp<TemplateLiteral>& node) {}
+    virtual void Traverse(const Sp<ThisExpression>& node) {}
+    virtual void Traverse(const Sp<ThrowStatement>& node) {}
+    virtual void Traverse(const Sp<TryStatement>& node) {}
+    virtual void Traverse(const Sp<UnaryExpression>& node) {}
+    virtual void Traverse(const Sp<UpdateExpression>& node) {}
+    virtual void Traverse(const Sp<VariableDeclaration>& node) {}
+    virtual void Traverse(const Sp<VariableDeclarator>& node) {}
+    virtual void Traverse(const Sp<WhileStatement>& node) {}
+    virtual void Traverse(const Sp<WithStatement>& node) {}
+    virtual void Traverse(const Sp<YieldExpression>& node) {}
+    virtual void Traverse(const Sp<ArrowParameterPlaceHolder>& node) {}
 
     virtual ~NodeTraverser() = default;
 

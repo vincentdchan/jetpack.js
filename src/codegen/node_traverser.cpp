@@ -1,7 +1,7 @@
 
 #include "./node_traverser.h"
 
-void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
     switch (node->type) {
 
         case SyntaxNodeType::ArrayExpression: {
@@ -729,6 +729,299 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+        }
+
+        default:
+            return;
+
+    }
+}
+
+void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+    switch (node->type) {
+
+        case SyntaxNodeType::ArrayExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ArrayExpression>(node));
+        }
+
+        case SyntaxNodeType::ArrayPattern: {
+            this->Traverse(std::dynamic_pointer_cast<ArrayPattern>(node));
+        }
+
+        case SyntaxNodeType::ArrowFunctionExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ArrowFunctionExpression>(node));
+        }
+
+        case SyntaxNodeType::AssignmentExpression: {
+            this->Traverse(std::dynamic_pointer_cast<AssignmentExpression>(node));
+        }
+
+        case SyntaxNodeType::AssignmentPattern: {
+            this->Traverse(std::dynamic_pointer_cast<AssignmentPattern>(node));
+        }
+
+        case SyntaxNodeType::AwaitExpression: {
+            this->Traverse(std::dynamic_pointer_cast<AwaitExpression>(node));
+        }
+
+        case SyntaxNodeType::BinaryExpression: {
+            this->Traverse(std::dynamic_pointer_cast<BinaryExpression>(node));
+        }
+
+        case SyntaxNodeType::BlockStatement: {
+            this->Traverse(std::dynamic_pointer_cast<BlockStatement>(node));
+        }
+
+        case SyntaxNodeType::BreakStatement: {
+            this->Traverse(std::dynamic_pointer_cast<BreakStatement>(node));
+        }
+
+        case SyntaxNodeType::CallExpression: {
+            this->Traverse(std::dynamic_pointer_cast<CallExpression>(node));
+        }
+
+        case SyntaxNodeType::CatchClause: {
+            this->Traverse(std::dynamic_pointer_cast<CatchClause>(node));
+        }
+
+        case SyntaxNodeType::ClassBody: {
+            this->Traverse(std::dynamic_pointer_cast<ClassBody>(node));
+        }
+
+        case SyntaxNodeType::ClassDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<ClassDeclaration>(node));
+        }
+
+        case SyntaxNodeType::ClassExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ClassExpression>(node));
+        }
+
+        case SyntaxNodeType::ComputedMemberExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ComputedMemberExpression>(node));
+        }
+
+        case SyntaxNodeType::ConditionalExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ConditionalExpression>(node));
+        }
+
+        case SyntaxNodeType::ContinueStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ContinueStatement>(node));
+        }
+
+        case SyntaxNodeType::DebuggerStatement: {
+            this->Traverse(std::dynamic_pointer_cast<DebuggerStatement>(node));
+        }
+
+        case SyntaxNodeType::Directive: {
+            this->Traverse(std::dynamic_pointer_cast<Directive>(node));
+        }
+
+        case SyntaxNodeType::DoWhileStatement: {
+            this->Traverse(std::dynamic_pointer_cast<DoWhileStatement>(node));
+        }
+
+        case SyntaxNodeType::EmptyStatement: {
+            this->Traverse(std::dynamic_pointer_cast<EmptyStatement>(node));
+        }
+
+        case SyntaxNodeType::ExportAllDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<ExportAllDeclaration>(node));
+        }
+
+        case SyntaxNodeType::ExportDefaultDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<ExportDefaultDeclaration>(node));
+        }
+
+        case SyntaxNodeType::ExportNamedDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<ExportNamedDeclaration>(node));
+        }
+
+        case SyntaxNodeType::ExportSpecifier: {
+            this->Traverse(std::dynamic_pointer_cast<ExportSpecifier>(node));
+        }
+
+        case SyntaxNodeType::ExpressionStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ExpressionStatement>(node));
+        }
+
+        case SyntaxNodeType::ForInStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ForInStatement>(node));
+        }
+
+        case SyntaxNodeType::ForOfStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ForOfStatement>(node));
+        }
+
+        case SyntaxNodeType::ForStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ForStatement>(node));
+        }
+
+        case SyntaxNodeType::FunctionDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<FunctionDeclaration>(node));
+        }
+
+        case SyntaxNodeType::FunctionExpression: {
+            this->Traverse(std::dynamic_pointer_cast<FunctionExpression>(node));
+        }
+
+        case SyntaxNodeType::Identifier: {
+            this->Traverse(std::dynamic_pointer_cast<Identifier>(node));
+        }
+
+        case SyntaxNodeType::IfStatement: {
+            this->Traverse(std::dynamic_pointer_cast<IfStatement>(node));
+        }
+
+        case SyntaxNodeType::Import: {
+            this->Traverse(std::dynamic_pointer_cast<Import>(node));
+        }
+
+        case SyntaxNodeType::ImportDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<ImportDeclaration>(node));
+        }
+
+        case SyntaxNodeType::ImportDefaultSpecifier: {
+            this->Traverse(std::dynamic_pointer_cast<ImportDefaultSpecifier>(node));
+        }
+
+        case SyntaxNodeType::ImportNamespaceSpecifier: {
+            this->Traverse(std::dynamic_pointer_cast<ImportNamespaceSpecifier>(node));
+        }
+
+        case SyntaxNodeType::ImportSpecifier: {
+            this->Traverse(std::dynamic_pointer_cast<ImportSpecifier>(node));
+        }
+
+        case SyntaxNodeType::LabeledStatement: {
+            this->Traverse(std::dynamic_pointer_cast<LabeledStatement>(node));
+        }
+
+        case SyntaxNodeType::Literal: {
+            this->Traverse(std::dynamic_pointer_cast<Literal>(node));
+        }
+
+        case SyntaxNodeType::MetaProperty: {
+            this->Traverse(std::dynamic_pointer_cast<MetaProperty>(node));
+        }
+
+        case SyntaxNodeType::MethodDefinition: {
+            this->Traverse(std::dynamic_pointer_cast<MethodDefinition>(node));
+        }
+
+        case SyntaxNodeType::Module: {
+            this->Traverse(std::dynamic_pointer_cast<Module>(node));
+        }
+
+        case SyntaxNodeType::NewExpression: {
+            this->Traverse(std::dynamic_pointer_cast<NewExpression>(node));
+        }
+
+        case SyntaxNodeType::ObjectExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ObjectExpression>(node));
+        }
+
+        case SyntaxNodeType::ObjectPattern: {
+            this->Traverse(std::dynamic_pointer_cast<ObjectPattern>(node));
+        }
+
+        case SyntaxNodeType::Property: {
+            this->Traverse(std::dynamic_pointer_cast<Property>(node));
+        }
+
+        case SyntaxNodeType::RegexLiteral: {
+            this->Traverse(std::dynamic_pointer_cast<RegexLiteral>(node));
+        }
+
+        case SyntaxNodeType::RestElement: {
+            this->Traverse(std::dynamic_pointer_cast<RestElement>(node));
+        }
+
+        case SyntaxNodeType::ReturnStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ReturnStatement>(node));
+        }
+
+        case SyntaxNodeType::Script: {
+            this->Traverse(std::dynamic_pointer_cast<Script>(node));
+        }
+
+        case SyntaxNodeType::SequenceExpression: {
+            this->Traverse(std::dynamic_pointer_cast<SequenceExpression>(node));
+        }
+
+        case SyntaxNodeType::SpreadElement: {
+            this->Traverse(std::dynamic_pointer_cast<SpreadElement>(node));
+        }
+
+        case SyntaxNodeType::StaticMemberExpression: {
+            this->Traverse(std::dynamic_pointer_cast<StaticMemberExpression>(node));
+        }
+
+        case SyntaxNodeType::Super: {
+            this->Traverse(std::dynamic_pointer_cast<Super>(node));
+        }
+
+        case SyntaxNodeType::SwitchCase: {
+            this->Traverse(std::dynamic_pointer_cast<SwitchCase>(node));
+        }
+
+        case SyntaxNodeType::SwitchStatement: {
+            this->Traverse(std::dynamic_pointer_cast<SwitchStatement>(node));
+        }
+
+        case SyntaxNodeType::TaggedTemplateExpression: {
+            this->Traverse(std::dynamic_pointer_cast<TaggedTemplateExpression>(node));
+        }
+
+        case SyntaxNodeType::TemplateElement: {
+            this->Traverse(std::dynamic_pointer_cast<TemplateElement>(node));
+        }
+
+        case SyntaxNodeType::TemplateLiteral: {
+            this->Traverse(std::dynamic_pointer_cast<TemplateLiteral>(node));
+        }
+
+        case SyntaxNodeType::ThisExpression: {
+            this->Traverse(std::dynamic_pointer_cast<ThisExpression>(node));
+        }
+
+        case SyntaxNodeType::ThrowStatement: {
+            this->Traverse(std::dynamic_pointer_cast<ThrowStatement>(node));
+        }
+
+        case SyntaxNodeType::TryStatement: {
+            this->Traverse(std::dynamic_pointer_cast<TryStatement>(node));
+        }
+
+        case SyntaxNodeType::UnaryExpression: {
+            this->Traverse(std::dynamic_pointer_cast<UnaryExpression>(node));
+        }
+
+        case SyntaxNodeType::UpdateExpression: {
+            this->Traverse(std::dynamic_pointer_cast<UpdateExpression>(node));
+        }
+
+        case SyntaxNodeType::VariableDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<VariableDeclaration>(node));
+        }
+
+        case SyntaxNodeType::VariableDeclarator: {
+            this->Traverse(std::dynamic_pointer_cast<VariableDeclarator>(node));
+        }
+
+        case SyntaxNodeType::WhileStatement: {
+            this->Traverse(std::dynamic_pointer_cast<WhileStatement>(node));
+        }
+
+        case SyntaxNodeType::WithStatement: {
+            this->Traverse(std::dynamic_pointer_cast<WithStatement>(node));
+        }
+
+        case SyntaxNodeType::YieldExpression: {
+            this->Traverse(std::dynamic_pointer_cast<YieldExpression>(node));
+        }
+
+        case SyntaxNodeType::ArrowParameterPlaceHolder: {
+            this->Traverse(std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node));
         }
 
         default:
