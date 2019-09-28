@@ -47,9 +47,6 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::ClassExpression:
             return "ClassExpression";
 
-        case SyntaxNodeType::ComputedMemberExpression:
-            return "ComputedMemberExpression";
-
         case SyntaxNodeType::ConditionalExpression:
             return "ConditionalExpression";
 
@@ -164,8 +161,8 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::SpreadElement:
             return "SpreadElement";
 
-        case SyntaxNodeType::StaticMemberExpression:
-            return "StaticMemberExpression";
+        case SyntaxNodeType::MemberExpression:
+            return "MemberExpression";
 
         case SyntaxNodeType::Super:
             return "Super";

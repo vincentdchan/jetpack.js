@@ -169,12 +169,6 @@ SyntaxFactory.def_syntax :ClassExpression, base: :Expression do
   def_prop :ClassBody.opt, "body"
 end
 
-SyntaxFactory.def_syntax :ComputedMemberExpression, base: [:Expression, :Pattern] do
-  def_prop :Boolean, "computed"
-  def_prop :Expression, "object"
-  def_prop :Expression, "property"
-end
-
 SyntaxFactory.def_syntax :ConditionalExpression, base: :Expression do
   def_prop :Expression, "test"
   def_prop :Expression, "consequent"
@@ -369,7 +363,7 @@ SyntaxFactory.def_syntax :SpreadElement, base: :SyntaxNode do
   def_prop :Expression, "argument"
 end
 
-SyntaxFactory.def_syntax :StaticMemberExpression, base: [:Expression, :Pattern] do
+SyntaxFactory.def_syntax :MemberExpression, base: [:Expression, :Pattern] do
   def_prop :Boolean, "computed"
   def_prop :Expression, "object"
   def_prop :Expression, "property"

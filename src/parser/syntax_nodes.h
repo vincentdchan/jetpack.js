@@ -137,16 +137,6 @@ public:
 
 };
 
-class ComputedMemberExpression: public Expression, public Pattern {
-public:
-    ComputedMemberExpression();
-
-    bool computed = false;
-    Sp<Expression> object;
-    Sp<Expression> property;
-
-};
-
 class ConditionalExpression: public Expression {
 public:
     ConditionalExpression();
@@ -493,9 +483,9 @@ public:
 
 };
 
-class StaticMemberExpression: public Expression, public Pattern {
+class MemberExpression: public Expression, public Pattern {
 public:
-    StaticMemberExpression();
+    MemberExpression();
 
     bool computed = false;
     Sp<Expression> object;

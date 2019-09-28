@@ -19,7 +19,6 @@ enum class SyntaxNodeType {
     ClassBody,
     ClassDeclaration,
     ClassExpression,
-    ComputedMemberExpression,
     ConditionalExpression,
     ContinueStatement,
     DebuggerStatement,
@@ -58,7 +57,7 @@ enum class SyntaxNodeType {
     Script,
     SequenceExpression,
     SpreadElement,
-    StaticMemberExpression,
+    MemberExpression,
     Super,
     SwitchCase,
     SwitchStatement,
@@ -95,7 +94,6 @@ class CatchClause;
 class ClassBody;
 class ClassDeclaration;
 class ClassExpression;
-class ComputedMemberExpression;
 class ConditionalExpression;
 class ContinueStatement;
 class DebuggerStatement;
@@ -134,7 +132,7 @@ class ReturnStatement;
 class Script;
 class SequenceExpression;
 class SpreadElement;
-class StaticMemberExpression;
+class MemberExpression;
 class Super;
 class SwitchCase;
 class SwitchStatement;

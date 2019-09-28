@@ -39,8 +39,6 @@ public:
     virtual void TraverseAfter(const Sp<ClassDeclaration>& node) {}
     virtual bool TraverseBefore(const Sp<ClassExpression>& node) { return true; }
     virtual void TraverseAfter(const Sp<ClassExpression>& node) {}
-    virtual bool TraverseBefore(const Sp<ComputedMemberExpression>& node) { return true; }
-    virtual void TraverseAfter(const Sp<ComputedMemberExpression>& node) {}
     virtual bool TraverseBefore(const Sp<ConditionalExpression>& node) { return true; }
     virtual void TraverseAfter(const Sp<ConditionalExpression>& node) {}
     virtual bool TraverseBefore(const Sp<ContinueStatement>& node) { return true; }
@@ -117,8 +115,8 @@ public:
     virtual void TraverseAfter(const Sp<SequenceExpression>& node) {}
     virtual bool TraverseBefore(const Sp<SpreadElement>& node) { return true; }
     virtual void TraverseAfter(const Sp<SpreadElement>& node) {}
-    virtual bool TraverseBefore(const Sp<StaticMemberExpression>& node) { return true; }
-    virtual void TraverseAfter(const Sp<StaticMemberExpression>& node) {}
+    virtual bool TraverseBefore(const Sp<MemberExpression>& node) { return true; }
+    virtual void TraverseAfter(const Sp<MemberExpression>& node) {}
     virtual bool TraverseBefore(const Sp<Super>& node) { return true; }
     virtual void TraverseAfter(const Sp<Super>& node) {}
     virtual bool TraverseBefore(const Sp<SwitchCase>& node) { return true; }
@@ -180,7 +178,6 @@ public:
     virtual void Traverse(const Sp<ClassBody>& node) {}
     virtual void Traverse(const Sp<ClassDeclaration>& node) {}
     virtual void Traverse(const Sp<ClassExpression>& node) {}
-    virtual void Traverse(const Sp<ComputedMemberExpression>& node) {}
     virtual void Traverse(const Sp<ConditionalExpression>& node) {}
     virtual void Traverse(const Sp<ContinueStatement>& node) {}
     virtual void Traverse(const Sp<DebuggerStatement>& node) {}
@@ -219,7 +216,7 @@ public:
     virtual void Traverse(const Sp<Script>& node) {}
     virtual void Traverse(const Sp<SequenceExpression>& node) {}
     virtual void Traverse(const Sp<SpreadElement>& node) {}
-    virtual void Traverse(const Sp<StaticMemberExpression>& node) {}
+    virtual void Traverse(const Sp<MemberExpression>& node) {}
     virtual void Traverse(const Sp<Super>& node) {}
     virtual void Traverse(const Sp<SwitchCase>& node) {}
     virtual void Traverse(const Sp<SwitchStatement>& node) {}

@@ -163,15 +163,6 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             this->TraverseAfter(child);
         }
 
-        case SyntaxNodeType::ComputedMemberExpression: {
-            auto child = std::dynamic_pointer_cast<ComputedMemberExpression>(node);
-            if (!this->TraverseBefore(child)) return;
-            TraverseNode(child->object);
-            TraverseNode(child->property);
-
-            this->TraverseAfter(child);
-        }
-
         case SyntaxNodeType::ConditionalExpression: {
             auto child = std::dynamic_pointer_cast<ConditionalExpression>(node);
             if (!this->TraverseBefore(child)) return;
@@ -552,8 +543,8 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             this->TraverseAfter(child);
         }
 
-        case SyntaxNodeType::StaticMemberExpression: {
-            auto child = std::dynamic_pointer_cast<StaticMemberExpression>(node);
+        case SyntaxNodeType::MemberExpression: {
+            auto child = std::dynamic_pointer_cast<MemberExpression>(node);
             if (!this->TraverseBefore(child)) return;
             TraverseNode(child->object);
             TraverseNode(child->property);
@@ -796,10 +787,6 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             this->Traverse(std::dynamic_pointer_cast<ClassExpression>(node));
         }
 
-        case SyntaxNodeType::ComputedMemberExpression: {
-            this->Traverse(std::dynamic_pointer_cast<ComputedMemberExpression>(node));
-        }
-
         case SyntaxNodeType::ConditionalExpression: {
             this->Traverse(std::dynamic_pointer_cast<ConditionalExpression>(node));
         }
@@ -952,8 +939,8 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             this->Traverse(std::dynamic_pointer_cast<SpreadElement>(node));
         }
 
-        case SyntaxNodeType::StaticMemberExpression: {
-            this->Traverse(std::dynamic_pointer_cast<StaticMemberExpression>(node));
+        case SyntaxNodeType::MemberExpression: {
+            this->Traverse(std::dynamic_pointer_cast<MemberExpression>(node));
         }
 
         case SyntaxNodeType::Super: {

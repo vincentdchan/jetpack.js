@@ -29,8 +29,7 @@ int CodeGen::ExpressionPrecedence(SyntaxNodeType t) {
             return 18;
 
         // Operations
-        case SyntaxNodeType::ComputedMemberExpression:
-        case SyntaxNodeType::StaticMemberExpression:
+        case SyntaxNodeType::MemberExpression:
         case SyntaxNodeType::CallExpression:
         case SyntaxNodeType::NewExpression:
             return 19;

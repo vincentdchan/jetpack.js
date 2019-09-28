@@ -116,11 +116,6 @@ namespace dumper {
                     return Dump(child);
                 }
 
-                case SyntaxNodeType::ComputedMemberExpression: {
-                    auto child = std::dynamic_pointer_cast<ComputedMemberExpression>(node);
-                    return Dump(child);
-                }
-
                 case SyntaxNodeType::ConditionalExpression: {
                     auto child = std::dynamic_pointer_cast<ConditionalExpression>(node);
                     return Dump(child);
@@ -311,8 +306,8 @@ namespace dumper {
                     return Dump(child);
                 }
 
-                case SyntaxNodeType::StaticMemberExpression: {
-                    auto child = std::dynamic_pointer_cast<StaticMemberExpression>(node);
+                case SyntaxNodeType::MemberExpression: {
+                    auto child = std::dynamic_pointer_cast<MemberExpression>(node);
                     return Dump(child);
                 }
 
@@ -597,17 +592,6 @@ namespace dumper {
             if (node->body) {
                 result["body"] = Dump(*node->body);
             }
-
-            return result;
-        }
-
-        static json Dump(const Sp<ComputedMemberExpression>& node) {
-            json result = json::object();
-            result["type"] = "ComputedMemberExpression";
-            DumpBaseInfo(result, node);
-            result["computed"] = node->computed;
-            result["object"] = Dump(node->object);
-            result["property"] = Dump(node->property);
 
             return result;
         }
@@ -1074,9 +1058,9 @@ namespace dumper {
             return result;
         }
 
-        static json Dump(const Sp<StaticMemberExpression>& node) {
+        static json Dump(const Sp<MemberExpression>& node) {
             json result = json::object();
-            result["type"] = "StaticMemberExpression";
+            result["type"] = "MemberExpression";
             DumpBaseInfo(result, node);
             result["computed"] = node->computed;
             result["object"] = Dump(node->object);

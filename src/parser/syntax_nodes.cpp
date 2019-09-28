@@ -58,10 +58,6 @@ ClassExpression::ClassExpression(): Expression() {
     type = SyntaxNodeType::ClassExpression;
 }
 
-ComputedMemberExpression::ComputedMemberExpression(): Expression(), Pattern() {
-    type = SyntaxNodeType::ComputedMemberExpression;
-}
-
 ConditionalExpression::ConditionalExpression(): Expression() {
     type = SyntaxNodeType::ConditionalExpression;
 }
@@ -214,8 +210,8 @@ SpreadElement::SpreadElement(): SyntaxNode() {
     type = SyntaxNodeType::SpreadElement;
 }
 
-StaticMemberExpression::StaticMemberExpression(): Expression(), Pattern() {
-    type = SyntaxNodeType::StaticMemberExpression;
+MemberExpression::MemberExpression(): Expression(), Pattern() {
+    type = SyntaxNodeType::MemberExpression;
 }
 
 Super::Super(): Expression() {

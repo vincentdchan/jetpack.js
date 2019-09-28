@@ -24,11 +24,8 @@ namespace parser {
             case SyntaxNodeType::RestElement:
                 return dynamic_pointer_cast<RestElement>(expr);
 
-            case SyntaxNodeType::ComputedMemberExpression:
-                return dynamic_pointer_cast<ComputedMemberExpression>(expr);
-
-            case SyntaxNodeType::StaticMemberExpression:
-                return dynamic_pointer_cast<StaticMemberExpression>(expr);
+            case SyntaxNodeType::MemberExpression:
+                return dynamic_pointer_cast<MemberExpression>(expr);
 
             case SyntaxNodeType::AssignmentPattern:
                 return dynamic_pointer_cast<AssignmentPattern>(expr);
@@ -1080,9 +1077,10 @@ namespace parser {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
                 Expect(JsTokenType::Dot);
-                auto node = Alloc<StaticMemberExpression>();
+                auto node = Alloc<MemberExpression>();
                 node->property = ParseIdentifierName();
                 node->object = expr;
+                node->computed = false;
                 expr = Finalize(StartNode(start_token), node);
             } else if (Match(JsTokenType::LeftParen)) {
                 bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);
@@ -1112,7 +1110,8 @@ namespace parser {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
                 Expect(JsTokenType::LeftBrace);
-                auto node = Alloc<ComputedMemberExpression>();
+                auto node = Alloc<MemberExpression>();
+                node->computed = true;
                 node->property = IsolateCoverGrammar<Expression>([this] {
                     return ParseExpression();
                 });
@@ -2673,7 +2672,8 @@ namespace parser {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
                 Expect(JsTokenType::LeftBrace);
-                auto node = Alloc<ComputedMemberExpression>();
+                auto node = Alloc<MemberExpression>();
+                node->computed = true;
                 node->property = IsolateCoverGrammar<Expression>([this] {
                     return ParseExpression();
                 });
@@ -2684,7 +2684,8 @@ namespace parser {
                 context_.is_binding_element = false;
                 context_.is_assignment_target = true;
                 Expect(JsTokenType::Dot);
-                auto node = Alloc<StaticMemberExpression>();
+                auto node = Alloc<MemberExpression>();
+                node->computed = false;
                 node->property = ParseIdentifierName();
                 node->object = move(expr);
                 expr = Finalize(start_marker, node);
