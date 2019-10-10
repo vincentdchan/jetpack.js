@@ -506,6 +506,7 @@ SyntaxFactory.syntaxes.each do |item|
 
     puts "
             this->TraverseAfter(child);
+            break;
         }"
 
   end
@@ -529,6 +530,7 @@ SyntaxFactory.syntaxes.each do |item|
     puts "
         case SyntaxNodeType::#{id}: {
             this->Traverse(std::dynamic_pointer_cast<#{id}>(node));
+            break;
         }"
 
   end

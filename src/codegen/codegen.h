@@ -40,34 +40,52 @@ public:
     };
 
     CodeGen();
-    CodeGen(const Config& config);
+    CodeGen(const Config& config, std::ostream& output_stream);
 
 private:
     inline void Write(char ch) {
         output << ch;
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void Write(const char* c_str) {
         output << c_str;
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
         output << str;
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void Write(const UString& w_str, Sp<SyntaxNode> node = nullptr) {
         Write(utils::To_UTF8(w_str), node);
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void WriteLineEnd() {
         output << config_.line_end;
         state_.line++;
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void WriteIndent() {
         for (std::uint32_t i = 0; i < state_.indent_level; i++) {
             Write(config_.indent);
         }
+#ifdef DEBUG
+        output.flush();
+#endif
     }
 
     inline void WriteIndentWith(const char* c_str) {
@@ -91,6 +109,8 @@ private:
     bool ExpressionNeedsParenthesis(const Sp<Expression>& node, const Sp<BinaryExpression>& parent, bool is_right);
 
 public:
+    void Traverse(const Sp<Script>& node) override;
+    void Traverse(const Sp<Module>& node) override;
     void Traverse(const Sp<Literal>& lit) override;
     void Traverse(const Sp<ArrayExpression>& node) override;
     void Traverse(const Sp<BlockStatement>& node) override;
@@ -140,7 +160,12 @@ public:
     void Traverse(const Sp<ConditionalExpression>& node) override;
     void Traverse(const Sp<NewExpression>& node) override;
     void Traverse(const Sp<CallExpression>& node) override;
+    void Traverse(const Sp<MemberExpression>& node) override;
     void Traverse(const Sp<Identifier>& node) override;
+
+    inline std::ostream& Stream() {
+        return output;
+    }
 
 private:
 
@@ -148,6 +173,6 @@ private:
 
     State state_;
 
-    std::stringstream output;
+    std::ostream& output;
 
 };

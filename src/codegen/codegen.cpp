@@ -3,16 +3,15 @@
 //
 
 #include "codegen.h"
+#include <iostream>
 
 using namespace std;
 
-CodeGen::CodeGen() {
-    CodeGen(Config());
+CodeGen::CodeGen(): CodeGen(Config(), std::cout) {
 }
 
-CodeGen::CodeGen(const Config& config) {
-    config_ = config;
-}
+CodeGen::CodeGen(const Config& config, std::ostream& output_stream):
+    config_(config), output(output_stream) {}
 
 int CodeGen::ExpressionPrecedence(SyntaxNodeType t) {
     switch (t) {
@@ -140,6 +139,22 @@ bool CodeGen::ExpressionNeedsParenthesis(const Sp<Expression> &node, const Sp<Bi
     return true;
 }
 
+void CodeGen::Traverse(const Sp<Script> &node) {
+    for (auto& stmt : node->body) {
+        WriteIndent();
+        TraverseNode(stmt);
+        WriteLineEnd();
+    }
+}
+
+void CodeGen::Traverse(const Sp<Module> &node) {
+    for (auto& stmt : node->body) {
+        WriteIndent();
+        TraverseNode(stmt);
+        WriteLineEnd();
+    }
+}
+
 void CodeGen::Traverse(const Sp<ArrayExpression> &node) {
     output << '[';
     std::size_t count = 0;
@@ -157,7 +172,7 @@ void CodeGen::Traverse(const Sp<ArrayExpression> &node) {
 }
 
 void CodeGen::Traverse(const Sp<BlockStatement> &node) {
-    output << '{';
+    WriteIndentWith("{");
     state_.indent_level++;
 
     if (!node->body.empty()) {
@@ -170,7 +185,7 @@ void CodeGen::Traverse(const Sp<BlockStatement> &node) {
     }
 
     state_.indent_level--;
-    output << '}';
+    WriteIndentWith("}");
 }
 
 void CodeGen::Traverse(const Sp<EmptyStatement> &node) {
@@ -194,9 +209,9 @@ void CodeGen::Traverse(const Sp<ExpressionStatement> &node) {
 void CodeGen::Traverse(const Sp<IfStatement> &node) {
     Write("if (");
     TraverseNode(node->test);
-    Write(")");
+    Write(") ");
     TraverseNode(node->consequent);
-    if (!node->alternate.has_value()) {
+    if (node->alternate.has_value()) {
         Write(" else ");
         TraverseNode(*node->alternate);
     }
@@ -642,12 +657,9 @@ void CodeGen::Traverse(const Sp<ObjectExpression> &node) {
             }
         }
         WriteLineEnd();
-        WriteIndent();
-        Write("}");
-    } else {
-        Write("}");
     }
     state_.indent_level--;
+    WriteIndentWith("}");
 }
 
 void CodeGen::Traverse(const Sp<Property> &node) {
@@ -667,7 +679,11 @@ void CodeGen::Traverse(const Sp<Property> &node) {
 }
 
 void CodeGen::Traverse(const Sp<SequenceExpression> &node) {
-    // TODO:
+    std::vector<Sp<SyntaxNode>> nodes;
+    for (auto& i : node->expressions) {
+        nodes.push_back(i);
+    }
+    FormatSequence(nodes);
 }
 
 void CodeGen::Traverse(const Sp<UnaryExpression> &node) {
@@ -746,6 +762,24 @@ void CodeGen::Traverse(const Sp<NewExpression> &node) {
         TraverseNode(node->callee);
     }
     FormatSequence(node->arguments);
+}
+
+void CodeGen::Traverse(const Sp<MemberExpression> &node) {
+    if (ExpressionPrecedence(node->object->type) < ExpressionPrecedence(SyntaxNodeType::MemberExpression)) {
+        Write('(');
+        TraverseNode(node->object);
+        Write(')');
+    } else {
+        TraverseNode(node->object);
+    }
+    if (node->computed) {
+        Write('[');
+        TraverseNode(node->property);
+        Write(']');
+    } else {
+        Write('.');
+        TraverseNode(node->property);
+    }
 }
 
 void CodeGen::Traverse(const Sp<CallExpression> &node) {

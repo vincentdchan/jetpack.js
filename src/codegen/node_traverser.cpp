@@ -15,6 +15,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ArrayPattern: {
@@ -28,6 +29,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ArrowFunctionExpression: {
@@ -43,6 +45,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::AssignmentExpression: {
@@ -52,6 +55,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->right);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::AssignmentPattern: {
@@ -61,6 +65,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->right);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::AwaitExpression: {
@@ -69,6 +74,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::BinaryExpression: {
@@ -78,6 +84,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->right);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::BlockStatement: {
@@ -89,6 +96,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::BreakStatement: {
@@ -99,6 +107,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::CallExpression: {
@@ -111,6 +120,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::CatchClause: {
@@ -120,6 +130,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ClassBody: {
@@ -131,6 +142,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ClassDeclaration: {
@@ -145,6 +157,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ClassExpression: {
@@ -161,6 +174,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ConditionalExpression: {
@@ -171,6 +185,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->alternate);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ContinueStatement: {
@@ -181,6 +196,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::DebuggerStatement: {
@@ -188,6 +204,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Directive: {
@@ -196,6 +213,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->expression);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::DoWhileStatement: {
@@ -205,6 +223,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->test);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::EmptyStatement: {
@@ -212,6 +231,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ExportAllDeclaration: {
@@ -220,6 +240,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->source);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ExportDefaultDeclaration: {
@@ -228,6 +249,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->declaration);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ExportNamedDeclaration: {
@@ -245,6 +267,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ExportSpecifier: {
@@ -254,6 +277,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->local);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ExpressionStatement: {
@@ -262,6 +286,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->expression);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ForInStatement: {
@@ -272,6 +297,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ForOfStatement: {
@@ -282,6 +308,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ForStatement: {
@@ -299,6 +326,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::FunctionDeclaration: {
@@ -314,6 +342,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::FunctionExpression: {
@@ -329,6 +358,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Identifier: {
@@ -336,6 +366,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::IfStatement: {
@@ -348,6 +379,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Import: {
@@ -355,6 +387,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ImportDeclaration: {
@@ -367,6 +400,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->source);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ImportDefaultSpecifier: {
@@ -375,6 +409,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->local);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ImportNamespaceSpecifier: {
@@ -383,6 +418,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->local);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ImportSpecifier: {
@@ -392,6 +428,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->imported);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::LabeledStatement: {
@@ -401,6 +438,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Literal: {
@@ -408,6 +446,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::MetaProperty: {
@@ -417,6 +456,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->property);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::MethodDefinition: {
@@ -430,6 +470,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Module: {
@@ -441,6 +482,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::NewExpression: {
@@ -453,6 +495,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ObjectExpression: {
@@ -464,6 +507,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ObjectPattern: {
@@ -475,6 +519,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Property: {
@@ -486,6 +531,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::RegexLiteral: {
@@ -493,6 +539,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::RestElement: {
@@ -501,6 +548,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ReturnStatement: {
@@ -511,6 +559,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Script: {
@@ -522,6 +571,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::SequenceExpression: {
@@ -533,6 +583,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::SpreadElement: {
@@ -541,6 +592,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::MemberExpression: {
@@ -550,6 +602,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->property);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::Super: {
@@ -557,6 +610,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::SwitchCase: {
@@ -571,6 +625,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::SwitchStatement: {
@@ -583,6 +638,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::TaggedTemplateExpression: {
@@ -592,6 +648,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->quasi);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::TemplateElement: {
@@ -599,6 +656,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::TemplateLiteral: {
@@ -614,6 +672,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ThisExpression: {
@@ -621,6 +680,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             if (!this->TraverseBefore(child)) return;
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ThrowStatement: {
@@ -629,6 +689,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::TryStatement: {
@@ -643,6 +704,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::UnaryExpression: {
@@ -651,6 +713,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::UpdateExpression: {
@@ -659,6 +722,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->argument);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::VariableDeclaration: {
@@ -670,6 +734,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::VariableDeclarator: {
@@ -681,6 +746,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::WhileStatement: {
@@ -690,6 +756,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::WithStatement: {
@@ -699,6 +766,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             TraverseNode(child->body);
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::YieldExpression: {
@@ -709,6 +777,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             }
 
             this->TraverseAfter(child);
+            break;
         }
 
         case SyntaxNodeType::ArrowParameterPlaceHolder: {
@@ -720,6 +789,7 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
               }
 
             this->TraverseAfter(child);
+            break;
         }
 
         default:
@@ -733,282 +803,352 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
 
         case SyntaxNodeType::ArrayExpression: {
             this->Traverse(std::dynamic_pointer_cast<ArrayExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ArrayPattern: {
             this->Traverse(std::dynamic_pointer_cast<ArrayPattern>(node));
+            break;
         }
 
         case SyntaxNodeType::ArrowFunctionExpression: {
             this->Traverse(std::dynamic_pointer_cast<ArrowFunctionExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::AssignmentExpression: {
             this->Traverse(std::dynamic_pointer_cast<AssignmentExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::AssignmentPattern: {
             this->Traverse(std::dynamic_pointer_cast<AssignmentPattern>(node));
+            break;
         }
 
         case SyntaxNodeType::AwaitExpression: {
             this->Traverse(std::dynamic_pointer_cast<AwaitExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::BinaryExpression: {
             this->Traverse(std::dynamic_pointer_cast<BinaryExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::BlockStatement: {
             this->Traverse(std::dynamic_pointer_cast<BlockStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::BreakStatement: {
             this->Traverse(std::dynamic_pointer_cast<BreakStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::CallExpression: {
             this->Traverse(std::dynamic_pointer_cast<CallExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::CatchClause: {
             this->Traverse(std::dynamic_pointer_cast<CatchClause>(node));
+            break;
         }
 
         case SyntaxNodeType::ClassBody: {
             this->Traverse(std::dynamic_pointer_cast<ClassBody>(node));
+            break;
         }
 
         case SyntaxNodeType::ClassDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<ClassDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::ClassExpression: {
             this->Traverse(std::dynamic_pointer_cast<ClassExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ConditionalExpression: {
             this->Traverse(std::dynamic_pointer_cast<ConditionalExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ContinueStatement: {
             this->Traverse(std::dynamic_pointer_cast<ContinueStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::DebuggerStatement: {
             this->Traverse(std::dynamic_pointer_cast<DebuggerStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::Directive: {
             this->Traverse(std::dynamic_pointer_cast<Directive>(node));
+            break;
         }
 
         case SyntaxNodeType::DoWhileStatement: {
             this->Traverse(std::dynamic_pointer_cast<DoWhileStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::EmptyStatement: {
             this->Traverse(std::dynamic_pointer_cast<EmptyStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::ExportAllDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<ExportAllDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::ExportDefaultDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<ExportDefaultDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::ExportNamedDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<ExportNamedDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::ExportSpecifier: {
             this->Traverse(std::dynamic_pointer_cast<ExportSpecifier>(node));
+            break;
         }
 
         case SyntaxNodeType::ExpressionStatement: {
             this->Traverse(std::dynamic_pointer_cast<ExpressionStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::ForInStatement: {
             this->Traverse(std::dynamic_pointer_cast<ForInStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::ForOfStatement: {
             this->Traverse(std::dynamic_pointer_cast<ForOfStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::ForStatement: {
             this->Traverse(std::dynamic_pointer_cast<ForStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::FunctionDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<FunctionDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::FunctionExpression: {
             this->Traverse(std::dynamic_pointer_cast<FunctionExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::Identifier: {
             this->Traverse(std::dynamic_pointer_cast<Identifier>(node));
+            break;
         }
 
         case SyntaxNodeType::IfStatement: {
             this->Traverse(std::dynamic_pointer_cast<IfStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::Import: {
             this->Traverse(std::dynamic_pointer_cast<Import>(node));
+            break;
         }
 
         case SyntaxNodeType::ImportDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<ImportDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::ImportDefaultSpecifier: {
             this->Traverse(std::dynamic_pointer_cast<ImportDefaultSpecifier>(node));
+            break;
         }
 
         case SyntaxNodeType::ImportNamespaceSpecifier: {
             this->Traverse(std::dynamic_pointer_cast<ImportNamespaceSpecifier>(node));
+            break;
         }
 
         case SyntaxNodeType::ImportSpecifier: {
             this->Traverse(std::dynamic_pointer_cast<ImportSpecifier>(node));
+            break;
         }
 
         case SyntaxNodeType::LabeledStatement: {
             this->Traverse(std::dynamic_pointer_cast<LabeledStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::Literal: {
             this->Traverse(std::dynamic_pointer_cast<Literal>(node));
+            break;
         }
 
         case SyntaxNodeType::MetaProperty: {
             this->Traverse(std::dynamic_pointer_cast<MetaProperty>(node));
+            break;
         }
 
         case SyntaxNodeType::MethodDefinition: {
             this->Traverse(std::dynamic_pointer_cast<MethodDefinition>(node));
+            break;
         }
 
         case SyntaxNodeType::Module: {
             this->Traverse(std::dynamic_pointer_cast<Module>(node));
+            break;
         }
 
         case SyntaxNodeType::NewExpression: {
             this->Traverse(std::dynamic_pointer_cast<NewExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ObjectExpression: {
             this->Traverse(std::dynamic_pointer_cast<ObjectExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ObjectPattern: {
             this->Traverse(std::dynamic_pointer_cast<ObjectPattern>(node));
+            break;
         }
 
         case SyntaxNodeType::Property: {
             this->Traverse(std::dynamic_pointer_cast<Property>(node));
+            break;
         }
 
         case SyntaxNodeType::RegexLiteral: {
             this->Traverse(std::dynamic_pointer_cast<RegexLiteral>(node));
+            break;
         }
 
         case SyntaxNodeType::RestElement: {
             this->Traverse(std::dynamic_pointer_cast<RestElement>(node));
+            break;
         }
 
         case SyntaxNodeType::ReturnStatement: {
             this->Traverse(std::dynamic_pointer_cast<ReturnStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::Script: {
             this->Traverse(std::dynamic_pointer_cast<Script>(node));
+            break;
         }
 
         case SyntaxNodeType::SequenceExpression: {
             this->Traverse(std::dynamic_pointer_cast<SequenceExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::SpreadElement: {
             this->Traverse(std::dynamic_pointer_cast<SpreadElement>(node));
+            break;
         }
 
         case SyntaxNodeType::MemberExpression: {
             this->Traverse(std::dynamic_pointer_cast<MemberExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::Super: {
             this->Traverse(std::dynamic_pointer_cast<Super>(node));
+            break;
         }
 
         case SyntaxNodeType::SwitchCase: {
             this->Traverse(std::dynamic_pointer_cast<SwitchCase>(node));
+            break;
         }
 
         case SyntaxNodeType::SwitchStatement: {
             this->Traverse(std::dynamic_pointer_cast<SwitchStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::TaggedTemplateExpression: {
             this->Traverse(std::dynamic_pointer_cast<TaggedTemplateExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::TemplateElement: {
             this->Traverse(std::dynamic_pointer_cast<TemplateElement>(node));
+            break;
         }
 
         case SyntaxNodeType::TemplateLiteral: {
             this->Traverse(std::dynamic_pointer_cast<TemplateLiteral>(node));
+            break;
         }
 
         case SyntaxNodeType::ThisExpression: {
             this->Traverse(std::dynamic_pointer_cast<ThisExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ThrowStatement: {
             this->Traverse(std::dynamic_pointer_cast<ThrowStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::TryStatement: {
             this->Traverse(std::dynamic_pointer_cast<TryStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::UnaryExpression: {
             this->Traverse(std::dynamic_pointer_cast<UnaryExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::UpdateExpression: {
             this->Traverse(std::dynamic_pointer_cast<UpdateExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::VariableDeclaration: {
             this->Traverse(std::dynamic_pointer_cast<VariableDeclaration>(node));
+            break;
         }
 
         case SyntaxNodeType::VariableDeclarator: {
             this->Traverse(std::dynamic_pointer_cast<VariableDeclarator>(node));
+            break;
         }
 
         case SyntaxNodeType::WhileStatement: {
             this->Traverse(std::dynamic_pointer_cast<WhileStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::WithStatement: {
             this->Traverse(std::dynamic_pointer_cast<WithStatement>(node));
+            break;
         }
 
         case SyntaxNodeType::YieldExpression: {
             this->Traverse(std::dynamic_pointer_cast<YieldExpression>(node));
+            break;
         }
 
         case SyntaxNodeType::ArrowParameterPlaceHolder: {
             this->Traverse(std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node));
+            break;
         }
 
         default:

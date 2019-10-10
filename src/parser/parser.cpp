@@ -9,11 +9,11 @@
 namespace parser {
 
     char* Parser::tc_allocator::malloc(const parser::Parser::tc_allocator::size_type size) {
-        return reinterpret_cast<char*>(je_malloc(size));
+        return reinterpret_cast<char*>(::malloc(size));
     }
 
     void Parser::tc_allocator::free(char *const ptr) {
-        je_free(ptr);
+        ::free(ptr);
     }
 
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
@@ -2571,6 +2571,7 @@ namespace parser {
             auto node = Alloc<UnaryExpression>();
             node->operator_ = token.value_;
             node->argument = expr;
+            node->prefix = true;
             expr = Finalize(marker, node);
             if (context_.strict_ && node->operator_ == u"delete" && node->argument->type == SyntaxNodeType::Identifier) {
                 TolerateError(ParseMessages::StrictDelete);
