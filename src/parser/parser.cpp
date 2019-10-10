@@ -3,18 +3,9 @@
 //
 
 #include "parser.hpp"
-#include <jemalloc/jemalloc.h>
 #include "../tokenizer/token.h"
 
 namespace parser {
-
-    char* Parser::tc_allocator::malloc(const parser::Parser::tc_allocator::size_type size) {
-        return reinterpret_cast<char*>(::malloc(size));
-    }
-
-    void Parser::tc_allocator::free(char *const ptr) {
-        ::free(ptr);
-    }
 
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
         switch (expr->type) {
@@ -193,7 +184,7 @@ namespace parser {
 
     bool Parser::IsLexicalDeclaration() {
         auto state = scanner_->SaveState();
-        std::vector<Comment> comments;
+        std::vector<Sp<Comment>> comments;
         scanner_->ScanComments(comments);
         Token next = scanner_->Lex();
         scanner_->RestoreState(state);
@@ -209,7 +200,7 @@ namespace parser {
         bool match = Match(JsTokenType::K_Import);
         if (match) {
             auto state = scanner_->SaveState();
-            std::vector<Comment> comments;
+            std::vector<Sp<Comment>> comments;
             Token next = scanner_->Lex();
             scanner_->ScanComments(comments);
             scanner_->RestoreState(state);
@@ -392,9 +383,9 @@ namespace parser {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
                 token = NextToken();
-//            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
+                node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
 
@@ -402,9 +393,9 @@ namespace parser {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
                 token = NextToken();
-//            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
+                node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
 
@@ -412,9 +403,9 @@ namespace parser {
                 context_.is_assignment_target = false;
                 context_.is_binding_element = false;
                 token = NextToken();
-//            raw = this.getTokenRaw(token);
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
+                node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
 
@@ -1174,6 +1165,12 @@ namespace parser {
         while (lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
         }
+        if (config_.comment) {
+            node->comments = move(comments_);
+        } else {
+            comments_.clear();
+            comments_.shrink_to_fit();
+        }
         return Finalize(marker, node);
     }
 
@@ -1183,6 +1180,12 @@ namespace parser {
         node->body = ParseDirectivePrologues();
         while (lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
+        }
+        if (config_.comment) {
+            node->comments = move(comments_);
+        } else {
+            comments_.clear();
+            comments_.shrink_to_fit();
         }
         return Finalize(start_marker, node);
     }

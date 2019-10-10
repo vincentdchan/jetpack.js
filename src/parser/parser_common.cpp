@@ -4,8 +4,17 @@
 
 #include "parser_common.h"
 #include "error_message.h"
+#include <jemalloc/jemalloc.h>
 
 namespace parser {
+
+    char* ParserCommon::tc_allocator::malloc(const parser::ParserCommon::tc_allocator::size_type size) {
+        return reinterpret_cast<char*>(::malloc(size));
+    }
+
+    void ParserCommon::tc_allocator::free(char *const ptr) {
+        ::free(ptr);
+    }
 
     ParserCommon::Config ParserCommon::Config::Default() {
         return {
@@ -22,7 +31,6 @@ namespace parser {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
         scanner_ = make_unique<Scanner>(source, error_handler_);
-        scanner_->SetTrackComment(config_.comment);
         has_line_terminator_ = false;
 
         lookahead_.type_ = JsTokenType::EOF_;
@@ -199,7 +207,7 @@ namespace parser {
     }
 
     UString ParserCommon::GetTokenRaw(const Token& token) {
-        return scanner_->Source()->substr(token.range_.first, token.range_.second);
+        return scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
     }
 
     ParserCommon::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {

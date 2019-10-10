@@ -9,6 +9,8 @@
 #include <stack>
 #include <functional>
 #include <unordered_set>
+#include <boost/pool/poolfwd.hpp>
+#include <boost/pool/pool.hpp>
 #include "../tokenizer/token.h"
 #include "parse_error_handler.h"
 #include "../utils.h"
@@ -21,6 +23,16 @@ namespace parser {
 
     class ParserCommon {
     public:
+        struct tc_allocator {
+            // types
+            typedef std::size_t    size_type;        // An unsigned integral type that can represent the size of the largest object to be allocated.
+            typedef std::ptrdiff_t difference_type;  // A signed integral type that can represent the difference of any two pointers.
+
+            // public static functions
+            static char * malloc(const size_type);
+            static void free(char *const);
+        };
+
         struct Config {
         public:
             static Config Default();
@@ -161,8 +173,7 @@ namespace parser {
         bool has_line_terminator_;
 
         stack<Token> tokens_;
-
-        vector<Comment> comments_;
+        vector<Sp<Comment>> comments_;
 
     private:
 

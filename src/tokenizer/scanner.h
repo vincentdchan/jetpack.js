@@ -9,13 +9,7 @@
 #include "../parser/parse_error_handler.h"
 #include "../utils.h"
 #include "token.h"
-
-struct Comment {
-    bool multi_line_;
-    std::pair<std::uint32_t, std::uint32_t> slice_;
-    std::pair<std::uint32_t, std::uint32_t> range_;
-    SourceLocation loc_;
-};
+#include "comment.h"
 
 class Scanner final {
 public:
@@ -34,10 +28,6 @@ public:
 
     inline std::int32_t Length() const {
         return source_->size();
-    }
-
-    inline void SetTrackComment(bool tc) {
-        track_comment_ = tc;
     }
 
     ScannerState SaveState();
@@ -73,9 +63,9 @@ public:
         return line_start_;
     }
 
-    void SkipSingleLineComment(std::uint32_t offset, std::vector<Comment>& result);
-    void SkipMultiLineComment(std::vector<Comment>& result);
-    void ScanComments(std::vector<Comment>& result);
+    std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(std::uint32_t offset);
+    std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
+    void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
     static bool IsFutureReservedWord(JsTokenType t);
     static JsTokenType IsStrictModeReservedWord(const UString& str_);
     static bool IsRestrictedWord(const UString& str_);
@@ -117,7 +107,6 @@ private:
 
     std::shared_ptr<parser::ParseErrorHandler> error_handler_;
     std::shared_ptr<std::u16string> source_;
-    bool track_comment_ = false;
     bool is_module_ = false;
 
 };

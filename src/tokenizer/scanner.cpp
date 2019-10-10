@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "scanner.h"
-#include "../macros.h"
+#include "../utils.h"
 #include "../parser/error_message.h"
 
 using namespace std;
@@ -47,65 +47,61 @@ void Scanner::TolerateUnexpectedToken(const std::string &message) {
     error_handler_->TolerateError(error);
 }
 
-void Scanner::SkipSingleLineComment(std::uint32_t offset, std::vector<Comment> &result) {
+std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(std::uint32_t offset) {
+    std::vector<std::shared_ptr<Comment>> result;
     std::uint32_t start = 0;
     SourceLocation loc;
 
-    if (track_comment_) {
-        start = index_ - offset;
-        loc.start_.line_ = line_number_;
-        loc.start_.column_ = index_ - line_start_ - offset;
-    }
+    start = index_ - offset;
+    loc.start_.line_ = line_number_;
+    loc.start_.column_ = index_ - line_start_ - offset;
 
     while (!IsEnd()) {
         char32_t ch = CodePointAt(index_);
         index_++;
 
         if (utils::IsLineTerminator(ch)) {
-            if (track_comment_) {
-                loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
-                Comment comment {
-                    false,
-                    make_pair(start + offset, index_ - 1),
-                    make_pair(start, index_ - 1),
-                    loc
-                };
-                result.push_back(comment);
-            }
+            loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
+            auto comment = new Comment {
+                false,
+                make_pair(start + offset, index_ - 1),
+                make_pair(start, index_ - 1),
+                loc
+            };
+            result.emplace_back(comment);
             if (ch == 13 && CodePointAt(index_) == 10) {
                 ++index_;
             }
             ++line_number_;
             line_start_ = index_;
-            return;
+            return result;
         }
 
     }
 
-    if (track_comment_) {
-        loc.end_ = Position { line_number_, index_ - line_start_ };
-        Comment comment {
-            false,
-            make_pair(start + offset, index_),
-            make_pair(start, index_),
-            loc,
-        };
-        result.push_back(comment);
-    }
+    loc.end_ = Position { line_number_, index_ - line_start_ };
+    auto comment = new Comment {
+        false,
+        make_pair(start + offset, index_),
+        make_pair(start, index_),
+        loc,
+    };
+    result.emplace_back(comment);
+
+    return result;
 }
 
-void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
+std::vector<std::shared_ptr<Comment>> Scanner::SkipMultiLineComment() {
+    std::vector<std::shared_ptr<Comment>> result;
     std::uint32_t start = 0;
     SourceLocation loc;
 
-    if (track_comment_) {
-        start = index_ - 2;
-        loc.start_ = Position {
-            line_number_,
-            index_ - line_start_ - 2,
-        };
-        loc.end_ = Position { 0, 0 };
-    }
+    start = index_ - 2;
+    loc.start_ = Position {
+        line_number_,
+        index_ - line_start_ - 2,
+    };
+    loc.end_ = Position { 0, 0 };
 
     while (!IsEnd()) {
         char32_t ch = CodePointAt(index_);
@@ -119,20 +115,18 @@ void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
         } else if (ch == 0x2A) {
             if (CodePointAt(index_ + 1) == 0x2F) {
                 index_ += 2;
-                if (track_comment_) {
-                    loc.end_ = Position {
-                        line_number_,
-                        index_ - line_start_,
-                    };
-                    Comment comment {
-                        true,
-                        make_pair(start + 2, index_ -2),
-                        make_pair(start, index_),
-                        loc,
-                    };
-                    result.push_back(comment);
-                }
-                return;
+                loc.end_ = Position {
+                    line_number_,
+                    index_ - line_start_,
+                };
+                auto comment = new Comment {
+                    true,
+                    make_pair(start + 2, index_ -2),
+                    make_pair(start, index_),
+                    loc,
+                };
+                result.emplace_back(comment);
+                return result;
             }
 
             ++index_;
@@ -141,24 +135,23 @@ void Scanner::SkipMultiLineComment(std::vector<Comment> &result) {
         }
     }
 
-    if (track_comment_) {
-        loc.end_ = Position {
-            line_number_,
-            index_ - line_start_,
-        };
-        Comment comment {
-            true,
-            make_pair(start + 2, index_),
-            make_pair(start, index_),
-            loc,
-        };
-        result.push_back(comment);
-    }
+    loc.end_ = Position {
+        line_number_,
+        index_ - line_start_,
+    };
+    auto comment = new Comment {
+        true,
+        make_pair(start + 2, index_),
+        make_pair(start, index_),
+        loc,
+    };
+    result.emplace_back(comment);
 
     TolerateUnexpectedToken();
+    return result;
 }
 
-void Scanner::ScanComments(std::vector<Comment> &result) {
+void Scanner::ScanComments(std::vector<std::shared_ptr<Comment>> &result) {
     bool start = index_ == 0;
 
     while (!IsEnd()) {
@@ -179,40 +172,28 @@ void Scanner::ScanComments(std::vector<Comment> &result) {
             ch = CodePointAt(index_ + 1);
             if (ch == 0x2F) {
                 index_ += 2;
-                vector<Comment> comments;
-                SkipSingleLineComment(2, comments);
-                if (track_comment_) {
-                    result.insert(result.end(), comments.begin(), comments.end());
-                }
+                auto comments = SkipSingleLineComment(2);
+                result.insert(result.end(), comments.begin(), comments.end());
                 start = true;
             } else if (ch == 0x2A) {  // U+002A is '*'
                 index_ += 2;
-                vector<Comment> comments;
-                SkipMultiLineComment(comments);
-                if (track_comment_) {
-                    result.insert(result.end(), comments.begin(), comments.end());
-                }
+                auto comments = SkipMultiLineComment();
+                result.insert(result.end(), comments.begin(), comments.end());
             } else if (start && ch == 0x2D) { // U+002D is '-'
                 // U+003E is '>'
                 if ((CodePointAt(index_ + 1) == 0x2D) && (CodePointAt(index_ + 2) == 0x3E)) {
                     // '-->' is a single-line comment
                     index_ += 3;
-                    vector<Comment> comments;
-                    SkipSingleLineComment(3, comments);
-                    if (track_comment_) {
-                        result.insert(result.end(), comments.begin(), comments.end());
-                    }
+                    auto comments = SkipSingleLineComment(3);
+                    result.insert(result.end(), comments.begin(), comments.end());
                 } else {
                     break;
                 }
             } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
                 if (source_->substr(index_ + 1, index_ + 4) == u"!--") {
                     index_ += 4; // `<!--`
-                    vector<Comment> comments;
-                    SkipSingleLineComment(4, comments);
-                    if (track_comment_) {
-                        result.insert(result.end(), comments.begin(), comments.end());
-                    }
+                    auto comments = SkipSingleLineComment(4);
+                    result.insert(result.end(), comments.begin(), comments.end());
                 } else {
                     break;
                 }
@@ -522,7 +503,7 @@ Token Scanner::ScanIdentifier() {
         index_ = restore;
     }
 
-    tok.value_ = id;
+    tok.value_ = move(id);
     tok.range_ = make_pair(start, index_);
     tok.line_number_ = line_number_;
     tok.line_start_ = line_start_;
@@ -535,7 +516,6 @@ Token Scanner::ScanPunctuator() {
 
     char16_t ch = (*source_)[index_];
     UString str;
-    str.push_back(ch);
 
     JsTokenType t;
     switch (ch) {
@@ -782,6 +762,8 @@ Token Scanner::ScanPunctuator() {
     if (index_ == start) {
         ThrowUnexpectedToken();
     }
+
+    str = source_->substr(start, index_ - start);
 
     return {
         t,

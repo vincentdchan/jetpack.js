@@ -313,6 +313,7 @@ end
 SyntaxFactory.def_syntax :Module, base: :SyntaxNode do
   def_prop [:SyntaxNode], "body"
   def_prop :String, "sourceType"
+  def_prop [:Comment], "comments"
 end
 
 SyntaxFactory.def_syntax :NewExpression, base: :Expression do
@@ -353,6 +354,7 @@ end
 SyntaxFactory.def_syntax :Script, base: :SyntaxNode do
   def_prop [:SyntaxNode], "body"
   def_prop :String, "sourceType"
+  def_prop [:Comment], "comments"
 end
 
 SyntaxFactory.def_syntax :SequenceExpression, base: :Expression do

@@ -392,6 +392,7 @@ public:
 
     std::vector<Sp<SyntaxNode>> body;
     UString source_type;
+    std::vector<Sp<Comment>> comments;
 
 };
 
@@ -464,6 +465,7 @@ public:
 
     std::vector<Sp<SyntaxNode>> body;
     UString source_type;
+    std::vector<Sp<Comment>> comments;
 
 };
 

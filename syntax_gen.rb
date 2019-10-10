@@ -325,7 +325,9 @@ SyntaxFactory.syntaxes.each do |item|
       elsif item.prop_type.is_a? Array then
         array_name = "array_#{item.name}"
         puts "            json #{array_name} = json::array();"
-        if item.prop_type[0].is_a? Option then
+        if item.prop_type[0] == :Comment then
+          #nothing
+        elsif item.prop_type[0].is_a? Option then
           puts "
             for (auto& i : node->#{item.name}) {
                 if (i.has_value()) {
@@ -482,7 +484,9 @@ SyntaxFactory.syntaxes.each do |item|
       elsif item.prop_type.is_a? Variant then
         # nothing
       elsif item.prop_type.is_a? Array then
-        if item.prop_type[0].is_a? Option then
+        if item.prop_type[0] == :Comment then
+          # nothing
+        elsif item.prop_type[0].is_a? Option then
           puts "
             for (auto& i : child->#{item.name}) {
                 if (i.has_value()) {

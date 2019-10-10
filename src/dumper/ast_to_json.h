@@ -927,6 +927,8 @@ namespace dumper {
               }
             result["body"] = std::move(array_body);
             result["sourceType"] = utils::To_UTF8(node->source_type);
+            json array_comments = json::array();
+            result["comments"] = std::move(array_comments);
 
             return result;
         }
@@ -1031,6 +1033,8 @@ namespace dumper {
               }
             result["body"] = std::move(array_body);
             result["sourceType"] = utils::To_UTF8(node->source_type);
+            json array_comments = json::array();
+            result["comments"] = std::move(array_comments);
 
             return result;
         }
