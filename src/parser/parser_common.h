@@ -81,7 +81,6 @@ namespace parser {
             string message;
         };
 
-
         ParserCommon(
             shared_ptr<u16string> source,
             const Config& config
@@ -176,7 +175,6 @@ namespace parser {
         vector<Sp<Comment>> comments_;
 
     private:
-
         ParseError UnexpectedToken(const Token& tok);
         ParseError UnexpectedToken(const Token& tok, const string& message);
 

@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <cinttypes>
+#include <deque>
 #include "../utils.h"
 #include "node_traverser.h"
 
@@ -168,6 +169,17 @@ public:
     }
 
 private:
+
+    inline void WriteCommentBefore(const Sp<SyntaxNode>& node) {
+        if (!config_.comments) return;
+
+        WriteTopCommentBefore_(node);
+    }
+
+    void WriteTopCommentBefore_(const Sp<SyntaxNode>& node);
+
+    std::deque<Sp<Comment>> ordered_comments_;
+    void SortComments(std::vector<Sp<Comment>> comments);
 
     Config config_;
 

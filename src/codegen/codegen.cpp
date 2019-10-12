@@ -4,6 +4,7 @@
 
 #include "codegen.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -140,19 +141,29 @@ bool CodeGen::ExpressionNeedsParenthesis(const Sp<Expression> &node, const Sp<Bi
 }
 
 void CodeGen::Traverse(const Sp<Script> &node) {
+    SortComments(node->comments);
+
     for (auto& stmt : node->body) {
         WriteIndent();
         TraverseNode(stmt);
         WriteLineEnd();
     }
+
+    ordered_comments_.clear();
+    ordered_comments_.shrink_to_fit();
 }
 
 void CodeGen::Traverse(const Sp<Module> &node) {
+    SortComments(node->comments);
+
     for (auto& stmt : node->body) {
         WriteIndent();
         TraverseNode(stmt);
         WriteLineEnd();
     }
+
+    ordered_comments_.clear();
+    ordered_comments_.shrink_to_fit();
 }
 
 void CodeGen::Traverse(const Sp<ArrayExpression> &node) {
@@ -178,6 +189,7 @@ void CodeGen::Traverse(const Sp<BlockStatement> &node) {
     if (!node->body.empty()) {
         WriteLineEnd();
         for (auto& elem : node->body) {
+            WriteCommentBefore(elem);
             WriteIndent();
             TraverseNode(elem);
             WriteLineEnd();
@@ -802,4 +814,38 @@ void CodeGen::Traverse(const Sp<Identifier> &node) {
 
 void CodeGen::Traverse(const Sp<Literal> &lit) {
     Write(lit->raw, lit);
+}
+
+void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {
+    std::sort(comments.begin(), comments.end(), [](const Sp<Comment>& a, const Sp<Comment>& b) {
+        return a->range_.first < b->range_.first;
+    });
+
+//    for (auto& i : comments) {
+//        std::cout << "comment " << i->range_.first << " " << utils::To_UTF8(i->value_) << std::endl;
+//    }
+
+    for (auto& i : comments) {
+        ordered_comments_.push_back(i);
+    }
+}
+
+void CodeGen::WriteTopCommentBefore_(const Sp<SyntaxNode> &node) {
+    while (!ordered_comments_.empty()) {
+        auto& top = ordered_comments_.front();
+        if (top->range_.second < node->range.first) {
+            if (top->multi_line_) {
+                Write("/*");
+                Write(top->value_);
+                Write("*/");
+            } else {
+                WriteIndent();
+                Write("//");
+                Write(top->value_);
+            }
+            ordered_comments_.pop_front();
+        } else {
+            break;
+        }
+    }
 }

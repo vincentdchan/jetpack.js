@@ -3,6 +3,7 @@
 //
 #pragma once
 
+#include <vector>
 #include <iostream>
 #include "../tokenizer/token.h"
 #include <boost/pool/poolfwd.hpp>
@@ -19,11 +20,8 @@
 namespace parser {
 
     class Parser final: private ParserCommon {
-    private:
-
-//        boost::pool<ParserCommon::tc_allocator> nodes_pool;
-
     public:
+        typedef std::function<void (const Sp<ImportDeclaration>&)> ImportDeclarationCreatedCallback;
 
         Parser(
             shared_ptr<u16string> source,
@@ -34,6 +32,8 @@ namespace parser {
         Parser(shared_ptr<u16string> source): Parser(std::move(source), ParserCommon::Config::Default()) {
 
         }
+
+        void OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback);
 
         template<typename T, typename ...Args>
         Sp<T> Alloc(Args && ...args) {
@@ -299,6 +299,9 @@ namespace parser {
         }
 
         ~Parser() = default;
+
+    private:
+        std::vector<ImportDeclarationCreatedCallback> import_decl_handlers_;
 
     };
 

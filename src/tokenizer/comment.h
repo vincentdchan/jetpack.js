@@ -9,7 +9,7 @@
 
 struct Comment {
     bool multi_line_;
-    std::pair<std::uint32_t, std::uint32_t> slice_;
+    UString value_;
     std::pair<std::uint32_t, std::uint32_t> range_;
     SourceLocation loc_;
 

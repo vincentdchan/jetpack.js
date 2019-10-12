@@ -64,7 +64,7 @@ std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(std::uint32
             loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
             auto comment = new Comment {
                 false,
-                make_pair(start + offset, index_ - 1),
+                source_->substr(start + offset, index_ - start - offset),
                 make_pair(start, index_ - 1),
                 loc
             };
@@ -82,7 +82,7 @@ std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(std::uint32
     loc.end_ = Position { line_number_, index_ - line_start_ };
     auto comment = new Comment {
         false,
-        make_pair(start + offset, index_),
+        source_->substr(start + offset, index_ - start - offset),
         make_pair(start, index_),
         loc,
     };
@@ -121,7 +121,7 @@ std::vector<std::shared_ptr<Comment>> Scanner::SkipMultiLineComment() {
                 };
                 auto comment = new Comment {
                     true,
-                    make_pair(start + 2, index_ -2),
+                    source_->substr(start + 2, index_ - start - 4),
                     make_pair(start, index_),
                     loc,
                 };
@@ -141,7 +141,7 @@ std::vector<std::shared_ptr<Comment>> Scanner::SkipMultiLineComment() {
     };
     auto comment = new Comment {
         true,
-        make_pair(start + 2, index_),
+        source_->substr(start + 2, index_ - start - 2),
         make_pair(start, index_),
         loc,
     };

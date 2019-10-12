@@ -7,3 +7,6 @@
 [submodule "ordered-map"]
 	path = ordered-map
 	url = https://github.com/Tessil/ordered-map.git
+[submodule "ThreadPool"]
+	path = ThreadPool
+	url = https://github.com/progschj/ThreadPool.git

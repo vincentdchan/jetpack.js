@@ -2775,7 +2775,13 @@ namespace parser {
         node->specifiers = move(specifiers);
         node->source = move(src);
 
-        return Finalize(start_marker, node);
+        {
+            auto finalized_node = Finalize(start_marker, node);
+            for (auto& callback : import_decl_handlers_) {
+                callback(finalized_node);
+            }
+            return finalized_node;
+        }
     }
 
     std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports() {
@@ -3542,6 +3548,10 @@ namespace parser {
             return std::holds_alternative<UString>(lit->value) && std::get<UString>(lit->value) == name;
         }
         return false;
+    }
+
+    void Parser::OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback) {
+        import_decl_handlers_.push_back(callback);
     }
 
 }

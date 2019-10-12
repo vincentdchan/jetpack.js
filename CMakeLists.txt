@@ -12,8 +12,9 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # discouraged (although not necessarily well documented as such) to use
 # include(...) for pulling in other CMake projects anyways.
 add_subdirectory(nlohmann_json)
-
 add_subdirectory(ordered-map)
+
+include_directories(ThreadPool)
 
 file(GLOB source_files
         "src/*.h"
@@ -34,14 +35,18 @@ execute_process(COMMAND jemalloc-config "--libdir" OUTPUT_VARIABLE JEMALLOC_LIBD
 execute_process(COMMAND jemalloc-config "--cxxflags" OUTPUT_VARIABLE JEMALLOC_CXXFLAGS)
 string(STRIP ${JEMALLOC_LIBDIR} JEMALLOC_LIBDIR)
 
-include_directories(boost/include)
+set(Boost_NO_BOOST_CMAKE TRUE)
+find_package(Boost COMPONENTS program_options REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARY_DIR})
+
 include_directories(${JEMALLOC_INCLUDE})
 
 add_executable(BestPack ${source_files})
-target_link_libraries(BestPack PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
+target_link_libraries(BestPack PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
 
 add_library(jsci STATIC ${source_files})
-target_link_libraries(jsci PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} nlohmann_json::nlohmann_json tsl::ordered_map)
+target_link_libraries(jsci PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES} nlohmann_json::nlohmann_json tsl::ordered_map)
 
 IF (CMAKE_BUILD_TYPE STREQUAL Debug)
   ADD_DEFINITIONS(-DDEBUG)
