@@ -1,6 +1,6 @@
 # Zhong's ECMAScript Parser
 
-ZEP(Zhong's ES Parser) is a ECMAScript parsser
+ZEP(Zhong's ES Parser) is a ECMAScript parser
 implemented in C++ aimed for excellent performance and
 scalability.
 
