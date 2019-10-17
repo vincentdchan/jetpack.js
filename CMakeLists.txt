@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(BestPack)
+project(ZEP)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -43,14 +43,14 @@ link_directories(${Boost_LIBRARY_DIR})
 
 include_directories(${JEMALLOC_INCLUDE})
 
-add_executable(BestPack ${source_files} "src/entry/main.cpp")
-target_link_libraries(BestPack
+add_executable(zep-cli ${source_files} "src/entry/main.cpp")
+target_link_libraries(zep-cli
         PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
         PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map
 )
 
-add_library(jsci STATIC ${source_files})
-target_link_libraries(jsci
+add_library(zep STATIC ${source_files})
+target_link_libraries(zep
         PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
         nlohmann_json::nlohmann_json tsl::ordered_map
 )
