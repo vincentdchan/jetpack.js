@@ -13,8 +13,10 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # include(...) for pulling in other CMake projects anyways.
 add_subdirectory(nlohmann_json)
 add_subdirectory(ordered-map)
+add_subdirectory(spdlog)
 
 include_directories(ThreadPool)
+include_directories(robin-hood-hashing/src/include)
 
 file(GLOB source_files
         "src/*.h"
@@ -42,11 +44,17 @@ link_directories(${Boost_LIBRARY_DIR})
 
 include_directories(${JEMALLOC_INCLUDE})
 
-add_executable(BestPack ${source_files})
-target_link_libraries(BestPack PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map)
+add_executable(BestPack ${source_files} "src/entry/main.cpp")
+target_link_libraries(BestPack
+        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
+        PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map spdlog::spdlog
+)
 
 add_library(jsci STATIC ${source_files})
-target_link_libraries(jsci PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES} nlohmann_json::nlohmann_json tsl::ordered_map)
+target_link_libraries(jsci
+        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
+        nlohmann_json::nlohmann_json tsl::ordered_map spdlog::spdlog
+)
 
 IF (CMAKE_BUILD_TYPE STREQUAL Debug)
   ADD_DEFINITIONS(-DDEBUG)

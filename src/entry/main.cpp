@@ -4,16 +4,24 @@
 
 #include <boost/program_options.hpp>
 
-#include "codegen/codegen.h"
-#include "parser/parser.hpp"
-#include "dumper/ast_to_json.h"
-#include "artery.h"
+#include "spdlog/spdlog.h"
+#include "../codegen/codegen.h"
+#include "../parser/parser.hpp"
+#include "../dumper/ast_to_json.h"
+#include "../artery.h"
 
 namespace po = boost::program_options;
 
 using namespace parser;
 
 int main(int argc, char** argv) {
+#ifdef DEBUG
+    spdlog::set_level(spdlog::level::debug);
+#else
+    spdlog::set_level(spdlog::level::warn);
+#endif
+    spdlog::debug("hello world");
+
     std::string entry_file;
 
     po::options_description desc("Allowed options");

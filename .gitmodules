@@ -10,3 +10,9 @@
 [submodule "ThreadPool"]
 	path = ThreadPool
 	url = https://github.com/progschj/ThreadPool.git
+[submodule "robin-hood-hashing"]
+	path = robin-hood-hashing
+	url = https://github.com/martinus/robin-hood-hashing.git
+[submodule "spdlog"]
+	path = spdlog
+	url = https://github.com/gabime/spdlog.git
