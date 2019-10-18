@@ -19,13 +19,13 @@ ES source code in your project.
 Parse a ES file:
 
 ```shell script
-zep --input=./test.js
+zep --entry=./test.js
 ```
 
 Dump AST as a file:
 
 ```shell script
-zep --input=./test.js --output=ast.json
+zep --entry=./test.js >> ast.json
 ```
 
 Help:
@@ -35,11 +35,10 @@ zep --help
 
 ## Use ZEP as a library
 
-ZEP use jemalloc to alloc memory.
-Please install jemalloc on your mac:
+Please install jemalloc and boost on your mac:
 
 ```shell script
-brew install jemalloc
+brew install jemalloc boost
 ```
 
 ZEP is built with CMake, so it can be
