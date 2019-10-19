@@ -5,6 +5,7 @@
 #include "parser_common.h"
 #include "error_message.h"
 #include <jemalloc/jemalloc.h>
+#include <fmt/format.h>
 
 namespace parser {
 
@@ -108,7 +109,8 @@ namespace parser {
         }
         value = token.value_;
 
-        return UnexpectedToken(token, msg);
+        string final_message = fmt::format(msg, utils::To_UTF8(value));
+        return UnexpectedToken(token, final_message);
     }
 
     ParseError ParserCommon::UnexpectedToken(const Token &token, const std::string& message) {

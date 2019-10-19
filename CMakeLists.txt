@@ -13,7 +13,9 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # include(...) for pulling in other CMake projects anyways.
 add_subdirectory(nlohmann_json)
 add_subdirectory(ordered-map)
+add_subdirectory(fmt)
 
+include_directories(fmt/include)
 include_directories(ThreadPool)
 include_directories(robin-hood-hashing/src/include)
 
@@ -46,7 +48,7 @@ include_directories(${JEMALLOC_INCLUDE})
 add_executable(zep-cli ${source_files} "src/entry/main.cpp")
 target_link_libraries(zep-cli
         PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
-        PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map
+        PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map fmt
 )
 
 add_library(zep STATIC ${source_files})

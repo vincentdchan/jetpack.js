@@ -62,7 +62,7 @@ namespace ParseMessages {
     static const char* UnexpectedReserved = "Unexpected reserved word";
     static const char* UnexpectedString = "Unexpected string";
     static const char* UnexpectedTemplate = "Unexpected quasi %0";
-    static const char* UnexpectedToken = "Unexpected token %0";
+    static const char* UnexpectedToken = "Unexpected token {}";
     static const char* UnexpectedTokenIllegal = "Unexpected token ILLEGAL";
     static const char* UnknownLabel = "Undefined label \"%0\"";
     static const char* UnterminatedRegExp = "Invalid regular expression: missing /";
