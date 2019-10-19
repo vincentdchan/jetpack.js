@@ -11,13 +11,13 @@ namespace ParseMessages {
     static const char* BadSetterRestParameter = "Setter function argument must not be a rest parameter";
     static const char* ConstructorIsAsync = "Class constructor may not be an async method";
     static const char* ConstructorSpecialMethod = "Class constructor may not be an accessor";
-    static const char* DeclarationMissingInitializer = "Missing initializer in %0 declaration";
+    static const char* DeclarationMissingInitializer = "Missing initializer in {} declaration";
     static const char* DefaultRestParameter = "Unexpected token =";
     static const char* DefaultRestProperty = "Unexpected token =";
-    static const char* DuplicateBinding = "Duplicate binding %0";
+    static const char* DuplicateBinding = "Duplicate binding {}";
     static const char* DuplicateConstructor = "A class may only have one constructor";
     static const char* DuplicateProtoProperty = "Duplicate __proto__ fields are not allowed in object literals";
-    static const char* ForInOfLoopInitializer = "%0 loop variable declaration may not have an initializer";
+    static const char* ForInOfLoopInitializer = "{} loop variable declaration may not have an initializer";
     static const char* GeneratorInLegacyContext = "Generator declarations are not allowed in legacy contexts";
     static const char* IllegalBreak = "Illegal break statement";
     static const char* IllegalContinue = "Illegal continue statement";
@@ -40,7 +40,7 @@ namespace ParseMessages {
     static const char* NoCatchOrFinally = "Missing catch or finally after try";
     static const char* ParameterAfterRestParameter = "Rest parameter must be last formal parameter";
     static const char* PropertyAfterRestProperty = "Unexpected token";
-    static const char* Redeclaration = "%0 \"%1\" has already been declared";
+    static const char* Redeclaration = "{} \"{}\" has already been declared";
     static const char* StaticPrototype = "Classes may not have static property named prototype";
     static const char* StrictCatchVariable = "Catch variable may not be eval or arguments in strict mode";
     static const char* StrictDelete = "Delete of an unqualified identifier in strict mode.";
@@ -61,10 +61,10 @@ namespace ParseMessages {
     static const char* UnexpectedNumber = "Unexpected number";
     static const char* UnexpectedReserved = "Unexpected reserved word";
     static const char* UnexpectedString = "Unexpected string";
-    static const char* UnexpectedTemplate = "Unexpected quasi %0";
+    static const char* UnexpectedTemplate = "Unexpected quasi {}";
     static const char* UnexpectedToken = "Unexpected token {}";
     static const char* UnexpectedTokenIllegal = "Unexpected token ILLEGAL";
-    static const char* UnknownLabel = "Undefined label \"%0\"";
+    static const char* UnknownLabel = "Undefined label \"{}\"";
     static const char* UnterminatedRegExp = "Invalid regular expression: missing /";
     
 }
