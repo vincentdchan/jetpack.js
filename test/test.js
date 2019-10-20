@@ -1,5 +1,6 @@
 const fs = require('fs');
 const cp = require('child_process');
+const chalk = require('./chalk');
 const { join } = require('path');
 
 const cliName = 'zep-cli';
@@ -29,16 +30,48 @@ async function readDirList(path) {
  * @param {TestContext} ctx
  */
 async function testJSFile(filePath, ctx) {
-  console.log('testing file: ' + filePath);
+  const prefix = filePath.slice(0, filePath.length - '.js'.length);
 
-  const result = cp.spawnSync(ctx.cliPath, [`--entry=${filePath}`]);
-  if (result.status == 0) {
-    // console.log(result.stdout.toString('utf8'));
-    ctx.successCount++;
-  } else {
-    console.error(result.stderr.toString('utf8'));
-    ctx.errorCount++;
+  const failureFilePath = `${prefix}.failure.json`;
+
+  /* @type {boolean} */
+  let hasFailure = false;
+  try {
+    await fs.promises.stat(failureFilePath)
+    hasFailure = true;
+  } catch (err) {
+    // ignore
   }
+
+  const args = [`--entry=${filePath}`];
+
+  if (filePath.indexOf('tolerant-parse') >= 0) {
+    args.push('--tolerant');
+  }
+
+  const result = cp.spawnSync(ctx.cliPath, args);
+
+  if (hasFailure) {
+    if (result.status !== 0) {
+      // console.log(result.stdout.toString('utf8'));
+      console.log(`testing file: ${filePath} ${chalk.green('PASS')}`);
+      ctx.successCount++;
+    } else {
+      // console.error(result.stderr.toString('utf8'));
+      console.log(`testing file: ${filePath} ${chalk.red('SHOULD NOT PASS')}`);
+      ctx.errorCount++;
+    }
+  } else {
+    if (result.status === 0) {
+      console.log(`testing file: ${filePath} ${chalk.green('PASS')}`);
+      ctx.successCount++;
+    } else {
+      console.log(`testing file: ${filePath} ${chalk.red('REJECT')}`);
+      console.error(result.stderr.toString('utf8'));
+      ctx.errorCount++;
+    }
+  }
+
 }
 
 /**
