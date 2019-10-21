@@ -1162,6 +1162,7 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = make_shared<Module>();
         node->body = ParseDirectivePrologues();
+        node->source_type = u"module";
         while (lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
         }
@@ -1178,6 +1179,7 @@ namespace parser {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<Script>();
         node->body = ParseDirectivePrologues();
+        node->source_type = u"script";
         while (lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
         }

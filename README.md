@@ -16,10 +16,16 @@ ES source code in your project.
 
 ## Command line
 
-Parse a ES file:
+Parse a ES file as a script:
 
 ```shell script
 zep --entry=./test.js
+```
+
+Parse a ES file as a module:
+
+```shell script
+zep --entry=./test.js --es-module
 ```
 
 Dump AST as a file:
