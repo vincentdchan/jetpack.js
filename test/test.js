@@ -45,6 +45,8 @@ async function testJSFile(filePath, ctx) {
 
   const args = [`--entry=${filePath}`];
 
+  if (filePath.indexOf('JSX') >= 0) return;
+
   if (filePath.indexOf('tolerant-parse') >= 0) {
     args.push('--tolerant');
   }

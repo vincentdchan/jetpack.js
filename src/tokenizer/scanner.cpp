@@ -549,7 +549,9 @@ Token Scanner::ScanPunctuator() {
         case '}':
             t = JsTokenType::RightBracket;
             ++index_;
-            curly_stack_.pop();
+            if (!curly_stack_.empty()) {
+                curly_stack_.pop();
+            }
             break;
 
         case ')':
@@ -643,6 +645,9 @@ Token Scanner::ScanPunctuator() {
                 } else {
                     t = JsTokenType::Equal;
                 }
+            } else if ((*source_)[index_] == '>') {
+                ++index_;
+                t = JsTokenType::Arrow;
             } else {
                 t = JsTokenType::Assign;
             }
@@ -780,17 +785,17 @@ Token Scanner::ScanHexLiteral(std::uint32_t start) {
     Token tok;
 
     while (!IsEnd()) {
-        if (!utils::IsHexDigit(source_->at(index_))) {
+        if (!utils::IsHexDigit(CharAt(index_))) {
             break;
         }
-        num += source_->at(index_++);
+        num += CharAt(index_++);
     }
 
     if (num.size() == 0) {
         ThrowUnexpectedToken();
     }
 
-    if (utils::IsIdentifierStart(source_->at(index_))) {
+    if (utils::IsIdentifierStart(CharAt(index_))) {
         ThrowUnexpectedToken();
     }
 
@@ -943,22 +948,22 @@ Token Scanner::ScanNumericLiteral() {
     }
 
     if (ch == 'e' || ch == 'E') {
-        num.push_back(source_->at(index_++));
+        num.push_back(CharAt(index_++));
 
-        ch = source_->at(index_);
+        ch = CharAt(index_);
         if (ch == '+' || ch == '-') {
-            num.push_back(source_->at(index_++));
+            num.push_back(CharAt(index_++));
         }
-        if (utils::IsDecimalDigit(source_->at(index_))) {
-            while (utils::IsDecimalDigit(source_->at(index_))) {
-                num.push_back(source_->at(index_++));
+        if (utils::IsDecimalDigit(CharAt(index_))) {
+            while (utils::IsDecimalDigit(CharAt(index_))) {
+                num.push_back(CharAt(index_++));
             }
         } else {
             ThrowUnexpectedToken();
         }
     }
 
-    if (utils::IsIdentifierStart(source_->at(index_))) {
+    if (utils::IsIdentifierStart(CharAt(index_))) {
         ThrowUnexpectedToken();
     }
 
@@ -974,7 +979,7 @@ Token Scanner::ScanNumericLiteral() {
 
 Token Scanner::ScanStringLiteral() {
     auto start = index_;
-    char16_t quote = source_->at(start);
+    char16_t quote = CharAt(start);
 
     if (!(quote == '\'' || quote == '"')) {
         auto err = error_handler_->CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
@@ -986,18 +991,18 @@ Token Scanner::ScanStringLiteral() {
     UString str;
 
     while (!IsEnd()) {
-        char16_t ch = source_->at(index_++);
+        char16_t ch = CharAt(index_++);
 
         if (ch == quote) {
             quote = 0;
             break;
         } else if (ch == '\\') {
-            ch = source_->at(index_++);
+            ch = CharAt(index_++);
             if (!ch || !utils::IsLineTerminator(ch)) {
                 char32_t unescaped = 0;
                 switch (ch) {
                     case 'u':
-                        if (source_->at(index_) == '{') {
+                        if (CharAt(index_) == '{') {
                             ++index_;
                             char32_t tmp = ScanUnicodeCodePointEscape();
 
@@ -1055,7 +1060,7 @@ Token Scanner::ScanStringLiteral() {
                 }
             } else {
                 ++line_number_;
-                if (ch == '\r' && source_->at(index_) == '\n') {
+                if (ch == '\r' && CharAt(index_) == '\n') {
                     ++index_;
                 }
                 line_start_ = index_;
@@ -1157,7 +1162,7 @@ Token Scanner::ScanTemplate() {
 
                     default:
                         if (ch == '0') {
-                            if (utils::IsDecimalDigit(source_->at(index_))) {
+                            if (utils::IsDecimalDigit(CharAt(index_))) {
                                 // Illegal: \01 \02 and so on
                                 ThrowUnexpectedToken();
                             }
@@ -1172,14 +1177,14 @@ Token Scanner::ScanTemplate() {
                 }
             } else {
                 ++line_number_;
-                if (ch == '\r' && source_->at(index_) == '\n') {
+                if (ch == '\r' && CharAt(index_) == '\n') {
                     ++index_;
                 }
                 line_start_ = index_;
             }
         } else if (utils::IsLineTerminator(ch)) {
             ++line_number_;
-            if (ch == '\r' && source_->at(index_) == '\n') {
+            if (ch == '\r' && CharAt(index_) == '\n') {
                 ++index_;
             }
             line_start_  = index_;
@@ -1348,7 +1353,7 @@ Token Scanner::Lex() {
 
     // Template literals start with ` (U+0060) for template head
     // or } (U+007D) for template middle or template tail.
-    if (cp == 0x60 || (cp == 0x7D && curly_stack_.top() == u"${")) {
+    if (cp == 0x60 || (cp == 0x7D && !curly_stack_.empty() && curly_stack_.top() == u"${")) {
         return ScanTemplate();
     }
 

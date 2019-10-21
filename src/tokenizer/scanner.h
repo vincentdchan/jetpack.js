@@ -94,6 +94,11 @@ public:
 
     char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
 
+    inline char16_t CharAt(std::uint32_t index) {
+        if (index >= source_->size()) return u'\0';
+        return (*source_)[index];
+    }
+
     [[nodiscard]] std::shared_ptr<std::u16string> Source() const {
         return source_;
     }
