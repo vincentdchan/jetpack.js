@@ -1,7 +1,7 @@
 # Zhong's ECMAScript Parser
 
 ZEP(Zhong's ES Parser) is a ECMAScript parser
-implemented in C++ aimed for excellent performance and
+implemented in C++ aimed at excellent performance and
 scalability.
 
 # Usage
@@ -49,6 +49,32 @@ add_subdirectory(ZEP)
 target_include_directories(${PROJECT_NAME} ./ZEP/src)
 target_link_libraries(${PROJECT_NAME} zep)
 ```
+
+### Example
+
+```cpp
+ParserCommon::Config config = ParserCommon::Config::Default();
+Parser parser(src, config);
+
+auto script = parser.ParseScript();
+// or
+auto module = parser.ParseModule();
+
+```
+
+# Performance
+
+ZEP(release version)'s parsing performance would be nearly 1x faster than
+other ES parsers implemented in ES(Running on Node.js).
+
+And ZEP's performance is equal to other ES parser implemented in Rust with jemalloc.
+
+# Compatibility
+
+The json output of ZEP would as same as esprima. So I think maybe ZEP can be
+a faster alternative to some ES parsers.
+
+And the WASM version is in the roadmap. The web version of ZEP would be released ASAP.
 
 # Platform
 
