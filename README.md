@@ -70,10 +70,11 @@ auto module = parser.ParseModule();
 
 # Performance
 
-ZEP(release version)'s parsing performance would be nearly 1x faster than
+ZEP(release version)'s parsing speed would be nearly 1x faster than
 other ES parsers implemented in ES(Running on Node.js).
 
-And ZEP's performance is equal to other ES parser implemented in Rust with jemalloc.
+With the power of jemalloc,
+ZEP's performance is equal to other ES parsers implemented in Rust.
 
 # Compatibility
 
