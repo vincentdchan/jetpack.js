@@ -33,14 +33,13 @@ async function testJSFile(filePath, ctx) {
   const prefix = filePath.slice(0, filePath.length - '.js'.length);
 
   const failureFilePath = `${prefix}.failure.json`;
+  const tokensPath = `${prefix}.tokens.json`;
 
   /* @type {boolean} */
-  let hasFailure = false;
-  try {
-    await fs.promises.stat(failureFilePath)
-    hasFailure = true;
-  } catch (err) {
-    // ignore
+  let hasFailure = fs.existsSync(failureFilePath);
+
+  if (fs.existsSync(tokensPath)) {
+    return;
   }
 
   const args = [`--entry=${filePath}`];

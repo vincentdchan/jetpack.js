@@ -287,7 +287,7 @@ namespace parser {
         if (Match(JsTokenType::Spread)) {
             param = ParseRestElement(params);
         } else {
-            param = ParsePattern(params, VarKind::Invalid);
+            param = ParsePatternWithDefault(params, VarKind::Invalid);
         }
 
         for (auto& i : params) {
@@ -508,7 +508,7 @@ namespace parser {
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             context_.allow_yield = false;
-            value = ParseGetterMethod();
+            value = ParseSetterMethod();
         } else if (token.type_ == JsTokenType::Mul && !is_async && lookahead_prop_key) {
             kind = VarKind::Init;
             computed = Match(JsTokenType::LeftBrace);
@@ -784,7 +784,7 @@ namespace parser {
         Expect(JsTokenType::K_Yield);
 
         auto node = Alloc<YieldExpression>();
-        if (has_line_terminator_) {
+        if (!has_line_terminator_) {
             bool prev_allow_yield = context_.allow_yield;
             context_.allow_yield = false;
             node->delegate = Match(JsTokenType::Mul);
@@ -1628,7 +1628,7 @@ namespace parser {
                     left = *init;
                     right = ParseExpression();
                     init.reset();
-                } else if (declarations.size() == 1 && !declarations[0]->init && Match(JsTokenType::Invalid)) { // of
+                } else if (declarations.size() == 1 && !declarations[0]->init && MatchContextualKeyword(u"of")) { // of
                     auto node = Alloc<VariableDeclaration>();
                     node->declarations = declarations;
                     node->kind = VarKind::Var;
@@ -2274,7 +2274,7 @@ namespace parser {
     Sp<Expression> Parser::ParseAssignmentExpression() {
         Sp<Expression> expr;
 
-        if (context_.allow_yield && Match(JsTokenType::K_Yield)) {
+        if (!context_.allow_yield && Match(JsTokenType::K_Yield)) {
             expr = ParseYieldExpression();
         } else {
             auto start_marker = CreateStartMarker();
