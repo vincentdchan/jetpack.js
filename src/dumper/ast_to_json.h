@@ -396,6 +396,61 @@ namespace dumper {
                     return Dump(child);
                 }
 
+                case SyntaxNodeType::JSXClosingElement: {
+                    auto child = std::dynamic_pointer_cast<JSXClosingElement>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXElement: {
+                    auto child = std::dynamic_pointer_cast<JSXElement>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXEmptyExpression: {
+                    auto child = std::dynamic_pointer_cast<JSXEmptyExpression>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXExpressionContainer: {
+                    auto child = std::dynamic_pointer_cast<JSXExpressionContainer>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXIdentifier: {
+                    auto child = std::dynamic_pointer_cast<JSXIdentifier>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXMemberExpression: {
+                    auto child = std::dynamic_pointer_cast<JSXMemberExpression>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXAttribute: {
+                    auto child = std::dynamic_pointer_cast<JSXAttribute>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXNamespacedName: {
+                    auto child = std::dynamic_pointer_cast<JSXNamespacedName>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXOpeningElement: {
+                    auto child = std::dynamic_pointer_cast<JSXOpeningElement>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXSpreadAttribute: {
+                    auto child = std::dynamic_pointer_cast<JSXSpreadAttribute>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::JSXText: {
+                    auto child = std::dynamic_pointer_cast<JSXText>(node);
+                    return Dump(child);
+                }
+
                 default:
                     return json::object();
 
@@ -1278,6 +1333,124 @@ namespace dumper {
               }
             result["params"] = std::move(array_params);
             result["async"] = node->async;
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXClosingElement>& node) {
+            json result = json::object();
+            result["type"] = "JSXClosingElement";
+            DumpBaseInfo(result, node);
+            result["name"] = Dump(node->name);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXElement>& node) {
+            json result = json::object();
+            result["type"] = "JSXElement";
+            DumpBaseInfo(result, node);
+            result["openingElement"] = Dump(node->opening_element);
+            json array_children = json::array();
+
+              for (auto& i : node->children) {
+                  array_children.push_back(Dump(i));
+              }
+            result["children"] = std::move(array_children);
+            if (node->closing_element) {
+                result["closingElement"] = Dump(*node->closing_element);
+            }
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXEmptyExpression>& node) {
+            json result = json::object();
+            result["type"] = "JSXEmptyExpression";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXExpressionContainer>& node) {
+            json result = json::object();
+            result["type"] = "JSXExpressionContainer";
+            DumpBaseInfo(result, node);
+            result["expression"] = Dump(node->expression);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXIdentifier>& node) {
+            json result = json::object();
+            result["type"] = "JSXIdentifier";
+            DumpBaseInfo(result, node);
+            result["name"] = utils::To_UTF8(node->name);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXMemberExpression>& node) {
+            json result = json::object();
+            result["type"] = "JSXMemberExpression";
+            DumpBaseInfo(result, node);
+            result["object"] = Dump(node->object);
+            result["property"] = Dump(node->property);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXAttribute>& node) {
+            json result = json::object();
+            result["type"] = "JSXAttribute";
+            DumpBaseInfo(result, node);
+            result["name"] = Dump(node->name);
+            result["value"] = Dump(node->value);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXNamespacedName>& node) {
+            json result = json::object();
+            result["type"] = "JSXNamespacedName";
+            DumpBaseInfo(result, node);
+            result["namespace_"] = Dump(node->namespace_);
+            result["name"] = Dump(node->name);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXOpeningElement>& node) {
+            json result = json::object();
+            result["type"] = "JSXOpeningElement";
+            DumpBaseInfo(result, node);
+            result["name"] = Dump(node->name);
+            result["selfClosing"] = node->self_closing;
+            json array_attributes = json::array();
+
+              for (auto& i : node->attributes) {
+                  array_attributes.push_back(Dump(i));
+              }
+            result["attributes"] = std::move(array_attributes);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXSpreadAttribute>& node) {
+            json result = json::object();
+            result["type"] = "JSXSpreadAttribute";
+            DumpBaseInfo(result, node);
+            result["argument"] = Dump(node->argument);
+
+            return result;
+        }
+
+        static json Dump(const Sp<JSXText>& node) {
+            json result = json::object();
+            result["type"] = "JSXText";
+            DumpBaseInfo(result, node);
+            result["value"] = utils::To_UTF8(node->value);
+            result["raw"] = utils::To_UTF8(node->raw);
 
             return result;
         }

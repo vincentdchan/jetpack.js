@@ -41,6 +41,7 @@ namespace parser {
             bool tokens;
             bool comment;
             bool tolerant;
+            bool jsx;
 
         private:
             Config() = default;

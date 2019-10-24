@@ -454,3 +454,54 @@ SyntaxFactory.def_syntax :ArrowParameterPlaceHolder, base: :Expression do
   def_prop [:SyntaxNode], "params"
   def_prop :Boolean, "async"
 end
+
+SyntaxFactory.def_syntax :JSXClosingElement, base: :SyntaxNode do
+  def_prop :SyntaxNode, "name"
+end
+
+SyntaxFactory.def_syntax :JSXElement, base: :Expression do
+  def_prop :JSXOpeningElement, "openingElement"
+  def_prop [:SyntaxNode], "children"
+  def_prop :JSXClosingElement.opt, "closingElement"
+end
+
+SyntaxFactory.def_syntax :JSXEmptyExpression, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :JSXExpressionContainer, base: :SyntaxNode do
+  def_prop :Expression, "expression"
+end
+
+SyntaxFactory.def_syntax :JSXIdentifier, base: :SyntaxNode do
+  def_prop :String, "name"
+end
+
+SyntaxFactory.def_syntax :JSXMemberExpression, base: :SyntaxNode do
+  def_prop :JSXMemberExpression, "object"
+  def_prop :JSXIdentifier, "property"
+end
+
+SyntaxFactory.def_syntax :JSXAttribute, base: :SyntaxNode do
+  def_prop :SyntaxNode, "name"
+  def_prop :SyntaxNode, "value"
+end
+
+SyntaxFactory.def_syntax :JSXNamespacedName, base: :SyntaxNode do
+  def_prop :JSXIdentifier, "namespace_"
+  def_prop :JSXIdentifier, "name"
+end
+
+SyntaxFactory.def_syntax :JSXOpeningElement, base: :SyntaxNode do
+  def_prop :SyntaxNode, "name"
+  def_prop :Boolean, "selfClosing"
+  def_prop [:SyntaxNode], "attributes"
+end
+
+SyntaxFactory.def_syntax :JSXSpreadAttribute, base: :SyntaxNode do
+  def_prop :Expression, "argument"
+end
+
+SyntaxFactory.def_syntax :JSXText, base: :SyntaxNode do
+  def_prop :String, "value"
+  def_prop :String, "raw"
+end

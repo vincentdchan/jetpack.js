@@ -85,6 +85,17 @@ namespace node_size {
          sizeof(WithStatement),
          sizeof(YieldExpression),
          sizeof(ArrowParameterPlaceHolder),
+         sizeof(JSXClosingElement),
+         sizeof(JSXElement),
+         sizeof(JSXEmptyExpression),
+         sizeof(JSXExpressionContainer),
+         sizeof(JSXIdentifier),
+         sizeof(JSXMemberExpression),
+         sizeof(JSXAttribute),
+         sizeof(JSXNamespacedName),
+         sizeof(JSXOpeningElement),
+         sizeof(JSXSpreadAttribute),
+         sizeof(JSXText),
 
     };
 

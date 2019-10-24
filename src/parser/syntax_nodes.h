@@ -646,3 +646,98 @@ public:
     bool async = false;
 
 };
+
+class JSXClosingElement: public SyntaxNode {
+public:
+    JSXClosingElement();
+
+    Sp<SyntaxNode> name;
+
+};
+
+class JSXElement: public Expression {
+public:
+    JSXElement();
+
+    Sp<JSXOpeningElement> opening_element;
+    std::vector<Sp<SyntaxNode>> children;
+    std::optional<Sp<JSXClosingElement>> closing_element;
+
+};
+
+class JSXEmptyExpression: public SyntaxNode {
+public:
+    JSXEmptyExpression();
+
+
+};
+
+class JSXExpressionContainer: public SyntaxNode {
+public:
+    JSXExpressionContainer();
+
+    Sp<Expression> expression;
+
+};
+
+class JSXIdentifier: public SyntaxNode {
+public:
+    JSXIdentifier();
+
+    UString name;
+
+};
+
+class JSXMemberExpression: public SyntaxNode {
+public:
+    JSXMemberExpression();
+
+    Sp<JSXMemberExpression> object;
+    Sp<JSXIdentifier> property;
+
+};
+
+class JSXAttribute: public SyntaxNode {
+public:
+    JSXAttribute();
+
+    Sp<SyntaxNode> name;
+    Sp<SyntaxNode> value;
+
+};
+
+class JSXNamespacedName: public SyntaxNode {
+public:
+    JSXNamespacedName();
+
+    Sp<JSXIdentifier> namespace_;
+    Sp<JSXIdentifier> name;
+
+};
+
+class JSXOpeningElement: public SyntaxNode {
+public:
+    JSXOpeningElement();
+
+    Sp<SyntaxNode> name;
+    bool self_closing = false;
+    std::vector<Sp<SyntaxNode>> attributes;
+
+};
+
+class JSXSpreadAttribute: public SyntaxNode {
+public:
+    JSXSpreadAttribute();
+
+    Sp<Expression> argument;
+
+};
+
+class JSXText: public SyntaxNode {
+public:
+    JSXText();
+
+    UString value;
+    UString raw;
+
+};

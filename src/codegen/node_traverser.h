@@ -151,6 +151,28 @@ public:
     virtual void TraverseAfter(const Sp<YieldExpression>& node) {}
     virtual bool TraverseBefore(const Sp<ArrowParameterPlaceHolder>& node) { return true; }
     virtual void TraverseAfter(const Sp<ArrowParameterPlaceHolder>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXClosingElement>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXClosingElement>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXElement>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXElement>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXEmptyExpression>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXEmptyExpression>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXExpressionContainer>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXExpressionContainer>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXIdentifier>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXIdentifier>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXMemberExpression>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXMemberExpression>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXAttribute>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXAttribute>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXNamespacedName>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXNamespacedName>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXOpeningElement>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXOpeningElement>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXSpreadAttribute>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXSpreadAttribute>& node) {}
+    virtual bool TraverseBefore(const Sp<JSXText>& node) { return true; }
+    virtual void TraverseAfter(const Sp<JSXText>& node) {}
 
     virtual ~AutoNodeTraverser() = default;
 
@@ -234,6 +256,17 @@ public:
     virtual void Traverse(const Sp<WithStatement>& node) {}
     virtual void Traverse(const Sp<YieldExpression>& node) {}
     virtual void Traverse(const Sp<ArrowParameterPlaceHolder>& node) {}
+    virtual void Traverse(const Sp<JSXClosingElement>& node) {}
+    virtual void Traverse(const Sp<JSXElement>& node) {}
+    virtual void Traverse(const Sp<JSXEmptyExpression>& node) {}
+    virtual void Traverse(const Sp<JSXExpressionContainer>& node) {}
+    virtual void Traverse(const Sp<JSXIdentifier>& node) {}
+    virtual void Traverse(const Sp<JSXMemberExpression>& node) {}
+    virtual void Traverse(const Sp<JSXAttribute>& node) {}
+    virtual void Traverse(const Sp<JSXNamespacedName>& node) {}
+    virtual void Traverse(const Sp<JSXOpeningElement>& node) {}
+    virtual void Traverse(const Sp<JSXSpreadAttribute>& node) {}
+    virtual void Traverse(const Sp<JSXText>& node) {}
 
     virtual ~NodeTraverser() = default;
 
