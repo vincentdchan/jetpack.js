@@ -47,6 +47,10 @@ public:
         return line_number_;
     }
 
+    inline void SetLineNumber(std::uint32_t ln) {
+        line_number_ = ln;
+    }
+
     inline std::uint32_t Index() const {
         return index_;
     }
@@ -55,12 +59,20 @@ public:
         index_ = index;
     }
 
+    inline void IncreaseIndex() {
+        index_++;
+    }
+
     inline std::uint32_t Column() const {
         return index_ - line_start_;
     }
 
     inline std::uint32_t LineStart() const {
         return line_start_;
+    }
+
+    inline void SetLineStart(std::uint32_t ls) {
+        line_start_ = ls;
     }
 
     std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(std::uint32_t offset);

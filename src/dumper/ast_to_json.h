@@ -1405,7 +1405,9 @@ namespace dumper {
             result["type"] = "JSXAttribute";
             DumpBaseInfo(result, node);
             result["name"] = Dump(node->name);
-            result["value"] = Dump(node->value);
+            if (node->value) {
+                result["value"] = Dump(*node->value);
+            }
 
             return result;
         }

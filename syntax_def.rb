@@ -477,13 +477,13 @@ SyntaxFactory.def_syntax :JSXIdentifier, base: :SyntaxNode do
 end
 
 SyntaxFactory.def_syntax :JSXMemberExpression, base: :SyntaxNode do
-  def_prop :JSXMemberExpression, "object"
+  def_prop :SyntaxNode, "object"
   def_prop :JSXIdentifier, "property"
 end
 
 SyntaxFactory.def_syntax :JSXAttribute, base: :SyntaxNode do
   def_prop :SyntaxNode, "name"
-  def_prop :SyntaxNode, "value"
+  def_prop :SyntaxNode.opt, "value"
 end
 
 SyntaxFactory.def_syntax :JSXNamespacedName, base: :SyntaxNode do

@@ -4,6 +4,19 @@ ZEP(Zhong's ES Parser) is a ECMAScript parser
 implemented in C++ aimed at excellent performance and
 scalability.
 
+# Features
+
+- Implemented in C++ with excellent performance
+- Full support for ECMAScript 2017([ECMA-262 8th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
+- JSON output of sensible [syntax tree](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
+- Experimental support for [JSX](https://facebook.github.io/jsx/), a syntax extension for [React](https://facebook.github.io/react/)
+- Syntax node location (index-based and line-column)
+
+# WIP Features
+
+- [ ] TypeScript Support.
+- [ ] Refactor AST with C++ template, better to do type-checking and static anslysis.
+
 # Usage
 
 ZEP contains a cli tool and a C++ library.
@@ -26,6 +39,12 @@ Parse a ES file as a module:
 
 ```shell script
 zep --entry=./test.js --es-module
+```
+
+Parse a jsx file as a module:
+
+```shell script
+zep --entry=./test.js --es-module --jsx
 ```
 
 Dump AST as a file:

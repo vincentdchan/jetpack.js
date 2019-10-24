@@ -692,7 +692,7 @@ class JSXMemberExpression: public SyntaxNode {
 public:
     JSXMemberExpression();
 
-    Sp<JSXMemberExpression> object;
+    Sp<SyntaxNode> object;
     Sp<JSXIdentifier> property;
 
 };
@@ -702,7 +702,7 @@ public:
     JSXAttribute();
 
     Sp<SyntaxNode> name;
-    Sp<SyntaxNode> value;
+    std::optional<Sp<SyntaxNode>> value;
 
 };
 

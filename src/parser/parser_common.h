@@ -97,7 +97,11 @@ namespace parser {
         Token NextToken();
 
         Token NextRegexToken();
-        UString GetTokenRaw(const Token&);
+
+        template <typename TokenType>
+        UString GetTokenRaw(const TokenType& token) {
+            return scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
+        }
 
         void TolerateError(const string& message);
 
@@ -148,8 +152,16 @@ namespace parser {
 
         static bool IsIdentifierName(Token&);
 
+        inline void SetLastMarker(const Marker& marker) {
+            last_marker_ = marker;
+        }
+
         [[nodiscard]] inline Marker LastMarker() const {
             return last_marker_;
+        }
+
+        inline void SetStartMarker(const Marker& marker) {
+            start_marker_ = marker;
         }
 
         [[nodiscard]] inline Marker StartMarker() const {

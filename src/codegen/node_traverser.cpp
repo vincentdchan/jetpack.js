@@ -856,7 +856,9 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             auto child = std::dynamic_pointer_cast<JSXAttribute>(node);
             if (!this->TraverseBefore(child)) return;
             TraverseNode(child->name);
-            TraverseNode(child->value);
+            if (child->value) {
+                TraverseNode(*child->value);
+            }
 
             this->TraverseAfter(child);
             break;
