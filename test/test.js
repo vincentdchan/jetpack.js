@@ -30,6 +30,7 @@ async function readDirList(path) {
  * @param {TestContext} ctx
  */
 async function testJSFile(filePath, ctx) {
+  console.log(filePath);
   const prefix = filePath.slice(0, filePath.length - '.js'.length);
 
   const failureFilePath = `${prefix}.failure.json`;
@@ -44,7 +45,9 @@ async function testJSFile(filePath, ctx) {
 
   const args = [`--entry=${filePath}`];
 
-  if (filePath.indexOf('JSX') >= 0) return;
+  if (filePath.indexOf('JSX') >= 0){
+    args.push('--jsx');
+  } 
 
   if (filePath.indexOf('tolerant-parse') >= 0) {
     args.push('--tolerant');

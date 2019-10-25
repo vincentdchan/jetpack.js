@@ -23,6 +23,7 @@ namespace parser {
             false,
             true,
             false,
+            false,
         };
     }
 
@@ -206,10 +207,6 @@ namespace parser {
         NextToken();
 
         return token;
-    }
-
-    UString ParserCommon::GetTokenRaw(const Token& token) {
-        return scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
     }
 
     ParserCommon::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {

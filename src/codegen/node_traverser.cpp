@@ -792,6 +792,118 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             break;
         }
 
+        case SyntaxNodeType::JSXClosingElement: {
+            auto child = std::dynamic_pointer_cast<JSXClosingElement>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->name);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXElement: {
+            auto child = std::dynamic_pointer_cast<JSXElement>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->opening_element);
+
+              for (auto& i : child->children) {
+                  TraverseNode(i);
+              }
+            if (child->closing_element) {
+                TraverseNode(*child->closing_element);
+            }
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXEmptyExpression: {
+            auto child = std::dynamic_pointer_cast<JSXEmptyExpression>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXExpressionContainer: {
+            auto child = std::dynamic_pointer_cast<JSXExpressionContainer>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->expression);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXIdentifier: {
+            auto child = std::dynamic_pointer_cast<JSXIdentifier>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXMemberExpression: {
+            auto child = std::dynamic_pointer_cast<JSXMemberExpression>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->object);
+            TraverseNode(child->property);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXAttribute: {
+            auto child = std::dynamic_pointer_cast<JSXAttribute>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->name);
+            if (child->value) {
+                TraverseNode(*child->value);
+            }
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXNamespacedName: {
+            auto child = std::dynamic_pointer_cast<JSXNamespacedName>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->namespace_);
+            TraverseNode(child->name);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXOpeningElement: {
+            auto child = std::dynamic_pointer_cast<JSXOpeningElement>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->name);
+
+              for (auto& i : child->attributes) {
+                  TraverseNode(i);
+              }
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXSpreadAttribute: {
+            auto child = std::dynamic_pointer_cast<JSXSpreadAttribute>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->argument);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::JSXText: {
+            auto child = std::dynamic_pointer_cast<JSXText>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
         default:
             return;
 
@@ -1148,6 +1260,61 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
 
         case SyntaxNodeType::ArrowParameterPlaceHolder: {
             this->Traverse(std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXClosingElement: {
+            this->Traverse(std::dynamic_pointer_cast<JSXClosingElement>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXElement: {
+            this->Traverse(std::dynamic_pointer_cast<JSXElement>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXEmptyExpression: {
+            this->Traverse(std::dynamic_pointer_cast<JSXEmptyExpression>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXExpressionContainer: {
+            this->Traverse(std::dynamic_pointer_cast<JSXExpressionContainer>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXIdentifier: {
+            this->Traverse(std::dynamic_pointer_cast<JSXIdentifier>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXMemberExpression: {
+            this->Traverse(std::dynamic_pointer_cast<JSXMemberExpression>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXAttribute: {
+            this->Traverse(std::dynamic_pointer_cast<JSXAttribute>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXNamespacedName: {
+            this->Traverse(std::dynamic_pointer_cast<JSXNamespacedName>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXOpeningElement: {
+            this->Traverse(std::dynamic_pointer_cast<JSXOpeningElement>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXSpreadAttribute: {
+            this->Traverse(std::dynamic_pointer_cast<JSXSpreadAttribute>(node));
+            break;
+        }
+
+        case SyntaxNodeType::JSXText: {
+            this->Traverse(std::dynamic_pointer_cast<JSXText>(node));
             break;
         }
 

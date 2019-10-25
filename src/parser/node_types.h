@@ -75,6 +75,17 @@ enum class SyntaxNodeType {
     WithStatement,
     YieldExpression,
     ArrowParameterPlaceHolder,
+    JSXClosingElement,
+    JSXElement,
+    JSXEmptyExpression,
+    JSXExpressionContainer,
+    JSXIdentifier,
+    JSXMemberExpression,
+    JSXAttribute,
+    JSXNamespacedName,
+    JSXOpeningElement,
+    JSXSpreadAttribute,
+    JSXText,
 
 };
 
@@ -150,3 +161,14 @@ class WhileStatement;
 class WithStatement;
 class YieldExpression;
 class ArrowParameterPlaceHolder;
+class JSXClosingElement;
+class JSXElement;
+class JSXEmptyExpression;
+class JSXExpressionContainer;
+class JSXIdentifier;
+class JSXMemberExpression;
+class JSXAttribute;
+class JSXNamespacedName;
+class JSXOpeningElement;
+class JSXSpreadAttribute;
+class JSXText;

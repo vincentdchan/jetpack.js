@@ -215,6 +215,39 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::ArrowParameterPlaceHolder:
             return "ArrowParameterPlaceHolder";
 
+        case SyntaxNodeType::JSXClosingElement:
+            return "JSXClosingElement";
+
+        case SyntaxNodeType::JSXElement:
+            return "JSXElement";
+
+        case SyntaxNodeType::JSXEmptyExpression:
+            return "JSXEmptyExpression";
+
+        case SyntaxNodeType::JSXExpressionContainer:
+            return "JSXExpressionContainer";
+
+        case SyntaxNodeType::JSXIdentifier:
+            return "JSXIdentifier";
+
+        case SyntaxNodeType::JSXMemberExpression:
+            return "JSXMemberExpression";
+
+        case SyntaxNodeType::JSXAttribute:
+            return "JSXAttribute";
+
+        case SyntaxNodeType::JSXNamespacedName:
+            return "JSXNamespacedName";
+
+        case SyntaxNodeType::JSXOpeningElement:
+            return "JSXOpeningElement";
+
+        case SyntaxNodeType::JSXSpreadAttribute:
+            return "JSXSpreadAttribute";
+
+        case SyntaxNodeType::JSXText:
+            return "JSXText";
+
         default:
             return "<Invalid>";
 

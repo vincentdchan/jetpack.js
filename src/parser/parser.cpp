@@ -3,6 +3,7 @@
 //
 
 #include "parser.hpp"
+#include "jsx_parser.h"
 #include "../tokenizer/token.h"
 
 namespace parser {
@@ -328,6 +329,10 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParsePrimaryExpression() {
+        if (config_.jsx && Match(JsTokenType::LessThan)) {
+            JSXParser jsxParser(this);
+            return jsxParser.ParseJSXRoot();
+        }
         auto marker = CreateStartMarker();
         Token token;
 

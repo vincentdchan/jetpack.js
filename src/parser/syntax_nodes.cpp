@@ -281,3 +281,47 @@ YieldExpression::YieldExpression(): Expression() {
 ArrowParameterPlaceHolder::ArrowParameterPlaceHolder(): Expression() {
     type = SyntaxNodeType::ArrowParameterPlaceHolder;
 }
+
+JSXClosingElement::JSXClosingElement(): SyntaxNode() {
+    type = SyntaxNodeType::JSXClosingElement;
+}
+
+JSXElement::JSXElement(): Expression() {
+    type = SyntaxNodeType::JSXElement;
+}
+
+JSXEmptyExpression::JSXEmptyExpression(): SyntaxNode() {
+    type = SyntaxNodeType::JSXEmptyExpression;
+}
+
+JSXExpressionContainer::JSXExpressionContainer(): SyntaxNode() {
+    type = SyntaxNodeType::JSXExpressionContainer;
+}
+
+JSXIdentifier::JSXIdentifier(): SyntaxNode() {
+    type = SyntaxNodeType::JSXIdentifier;
+}
+
+JSXMemberExpression::JSXMemberExpression(): SyntaxNode() {
+    type = SyntaxNodeType::JSXMemberExpression;
+}
+
+JSXAttribute::JSXAttribute(): SyntaxNode() {
+    type = SyntaxNodeType::JSXAttribute;
+}
+
+JSXNamespacedName::JSXNamespacedName(): SyntaxNode() {
+    type = SyntaxNodeType::JSXNamespacedName;
+}
+
+JSXOpeningElement::JSXOpeningElement(): SyntaxNode() {
+    type = SyntaxNodeType::JSXOpeningElement;
+}
+
+JSXSpreadAttribute::JSXSpreadAttribute(): SyntaxNode() {
+    type = SyntaxNodeType::JSXSpreadAttribute;
+}
+
+JSXText::JSXText(): SyntaxNode() {
+    type = SyntaxNodeType::JSXText;
+}
