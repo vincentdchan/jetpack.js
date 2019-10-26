@@ -6,8 +6,6 @@
 #include <vector>
 #include <iostream>
 #include "../tokenizer/token.h"
-#include <boost/pool/poolfwd.hpp>
-#include <boost/pool/pool.hpp>
 #include "parser_common.h"
 #include "error_message.h"
 #include "nodes_size.h"

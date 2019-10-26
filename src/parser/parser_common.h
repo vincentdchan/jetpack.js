@@ -9,8 +9,6 @@
 #include <stack>
 #include <functional>
 #include <unordered_set>
-#include <boost/pool/poolfwd.hpp>
-#include <boost/pool/pool.hpp>
 #include "../tokenizer/token.h"
 #include "parse_error_handler.h"
 #include "../utils.h"

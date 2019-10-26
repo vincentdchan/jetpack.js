@@ -15,6 +15,7 @@ add_subdirectory(nlohmann_json)
 add_subdirectory(ordered-map)
 add_subdirectory(fmt)
 
+include_directories(cxxopts/include)
 include_directories(fmt/include)
 include_directories(ThreadPool)
 include_directories(robin-hood-hashing/src/include)
@@ -38,22 +39,22 @@ execute_process(COMMAND jemalloc-config "--libdir" OUTPUT_VARIABLE JEMALLOC_LIBD
 execute_process(COMMAND jemalloc-config "--cxxflags" OUTPUT_VARIABLE JEMALLOC_CXXFLAGS)
 string(STRIP ${JEMALLOC_LIBDIR} JEMALLOC_LIBDIR)
 
-set(Boost_NO_BOOST_CMAKE TRUE)
-find_package(Boost COMPONENTS program_options REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIR})
+#set(Boost_NO_BOOST_CMAKE TRUE)
+#find_package(Boost COMPONENTS program_options REQUIRED)
+#include_directories(${Boost_INCLUDE_DIR})
+#link_directories(${Boost_LIBRARY_DIR})
 
 include_directories(${JEMALLOC_INCLUDE})
 
 add_executable(zep-cli ${source_files} "src/entry/main.cpp")
 target_link_libraries(zep-cli
-        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
+        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR}
         PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map fmt
 )
 
 add_library(zep STATIC ${source_files})
 target_link_libraries(zep
-        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR} ${Boost_LIBRARIES}
+        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR}
         nlohmann_json::nlohmann_json tsl::ordered_map
 )
 
