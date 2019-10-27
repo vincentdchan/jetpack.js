@@ -9,14 +9,6 @@
 
 namespace parser {
 
-    void* JSXParser::MetaJSXElement::operator new(std::size_t size) {
-        return malloc(size);
-    }
-
-    void JSXParser::MetaJSXElement::operator delete(void* ptr){
-        free(ptr);
-    }
-
     JSXParser::JSXParser(parser::Parser* parser): parser_(*parser) {
     }
 

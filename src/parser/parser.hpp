@@ -38,9 +38,8 @@ namespace parser {
         void OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback);
 
         template<typename T, typename ...Args>
-        Sp<T> Alloc(Args && ...args) {
-            static_assert(std::is_base_of<SyntaxNode, T>::value, "T not derived from AstNode");
-
+        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
+        Alloc(Args && ...args) {
             T* ptr = new T(std::forward<Args>(args)...);
             return Sp<T>(ptr);
         }

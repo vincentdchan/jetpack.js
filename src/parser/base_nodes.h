@@ -34,9 +34,6 @@ public:
     std::pair<std::uint32_t, std::uint32_t> range;
     SourceLocation location;
 
-    void* operator new(std::size_t count);
-    void operator delete  (void* ptr);
-
     virtual bool IsPattern() const { return false; }
     virtual bool IsDeclaration() const { return false; }
     virtual bool IsExpression() const { return false; }

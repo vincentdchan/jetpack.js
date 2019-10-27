@@ -21,9 +21,6 @@ namespace parser {
             std::optional<Sp<JSXClosingElement>> closing_;
             std::vector<Sp<SyntaxNode>> children_;
 
-            void* operator new(std::size_t size);
-            void operator delete(void* ptr);
-
         };
 
         static UString GetQualifiedElementName(const Sp<SyntaxNode>& node);
