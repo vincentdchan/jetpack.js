@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <chrono>
 
 #include <cxxopts.hpp>
 
@@ -66,32 +67,44 @@ int main(int argc, char** argv) {
 
         (*src) = Artery::ReadFileStream(entry_file);
 
-        ParserCommon::Config config = ParserCommon::Config::Default();
-        config.tolerant = result[OPT_TOLERANT].count();
-        config.jsx = result[OPT_JSX].count();
+        auto start = std::chrono::system_clock::now();
 
-        Parser parser(src, config);
-        if (result[OPT_ES_MODULE].count()) {
-            auto module = parser.ParseModule();
+        for (int i = 0; i < 5; i++) {
+            ParserCommon::Config config = ParserCommon::Config::Default();
+            config.tolerant = result[OPT_TOLERANT].count();
+            config.jsx = result[OPT_JSX].count();
 
-            if (result[OPT_PRETTY_PRINT].count()) {
-                CodeGen codegen;
-                codegen.TraverseNode(module);
+            Parser parser(src, config);
+            if (result[OPT_ES_MODULE].count()) {
+                auto module = parser.ParseModule();
+
+                if (result[OPT_PRETTY_PRINT].count()) {
+                    CodeGen codegen;
+                    codegen.TraverseNode(module);
+                } else {
+                    auto json_result = dumper::AstToJson::Dump(module);
+                    std::cout << json_result.dump(2) << std::endl;
+                }
             } else {
-                auto json_result = dumper::AstToJson::Dump(module);
-                std::cout << json_result.dump(2) << std::endl;
-            }
-        } else {
-            auto script = parser.ParseScript();
+                auto script = parser.ParseScript();
 
-            if (result[OPT_PRETTY_PRINT].count()) {
-                CodeGen codegen;
-                codegen.TraverseNode(script);
-            } else {
-                auto json_result = dumper::AstToJson::Dump(script);
-                std::cout << json_result.dump(2) << std::endl;
+//                if (result[OPT_PRETTY_PRINT].count()) {
+//                    CodeGen codegen;
+//                    codegen.TraverseNode(script);
+//                } else {
+//                    auto json_result = dumper::AstToJson::Dump(script);
+//                    std::cout << json_result.dump(2) << std::endl;
+//                }
             }
+
         }
+        auto end = std::chrono::system_clock::now();
+
+        std::chrono::duration<double> elapsed_seconds = end-start;
+        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
+        std::cout << "finished computation at " << std::ctime(&end_time)
+                  << "elapsed time: " << elapsed_seconds.count() << "s\n";
     } catch (ParseError& err) {
         std::cerr << err.ErrorMessage() << std::endl;
         return 1;

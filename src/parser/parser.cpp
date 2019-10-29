@@ -4,6 +4,7 @@
 
 #include "parser.hpp"
 #include "jsx_parser.h"
+#include "typescript_parser.h"
 #include "../tokenizer/token.h"
 
 namespace parser {

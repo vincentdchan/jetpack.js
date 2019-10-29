@@ -741,3 +741,438 @@ public:
     UString raw;
 
 };
+
+class TSParameterProperty: public SyntaxNode {
+public:
+    TSParameterProperty();
+
+    bool readonly_ = false;
+    Sp<SyntaxNode> parameter;
+
+};
+
+class TSDeclareFunction: public Declaration {
+public:
+    TSDeclareFunction();
+
+    Sp<Identifier> id;
+    bool decare = false;
+    Sp<TSTypeAnnotation> return_type;
+
+};
+
+class TSDeclareMethod: public SyntaxNode {
+public:
+    TSDeclareMethod();
+
+
+};
+
+class TSQualifiedName: public SyntaxNode {
+public:
+    TSQualifiedName();
+
+
+};
+
+class TSCallSignatureDeclaration: public SyntaxNode {
+public:
+    TSCallSignatureDeclaration();
+
+
+};
+
+class TSConstructSignatureDeclaration: public SyntaxNode {
+public:
+    TSConstructSignatureDeclaration();
+
+
+};
+
+class TSPropertySignature: public SyntaxNode {
+public:
+    TSPropertySignature();
+
+
+};
+
+class TSMethodSignature: public SyntaxNode {
+public:
+    TSMethodSignature();
+
+
+};
+
+class TSIndexSignature: public SyntaxNode {
+public:
+    TSIndexSignature();
+
+
+};
+
+class TSAnyKeyword: public TSType {
+public:
+    TSAnyKeyword();
+
+
+};
+
+class TSBooleanKeyword: public TSType {
+public:
+    TSBooleanKeyword();
+
+
+};
+
+class TSBigIntKeyword: public TSType {
+public:
+    TSBigIntKeyword();
+
+
+};
+
+class TSNeverKeyword: public TSType {
+public:
+    TSNeverKeyword();
+
+
+};
+
+class TSNullKeyword: public TSType {
+public:
+    TSNullKeyword();
+
+
+};
+
+class TSNumberKeyword: public TSType {
+public:
+    TSNumberKeyword();
+
+
+};
+
+class TSObjectKeyword: public TSType {
+public:
+    TSObjectKeyword();
+
+
+};
+
+class TSStringKeyword: public TSType {
+public:
+    TSStringKeyword();
+
+
+};
+
+class TSSymbolKeyword: public TSType {
+public:
+    TSSymbolKeyword();
+
+
+};
+
+class TSUndefinedKeyword: public TSType {
+public:
+    TSUndefinedKeyword();
+
+
+};
+
+class TSUnknownKeyword: public TSType {
+public:
+    TSUnknownKeyword();
+
+
+};
+
+class TSVoidKeyword: public TSType {
+public:
+    TSVoidKeyword();
+
+
+};
+
+class TSThisType: public TSType {
+public:
+    TSThisType();
+
+
+};
+
+class TSFunctionType: public TSType {
+public:
+    TSFunctionType();
+
+
+};
+
+class TSConstructorType: public TSType {
+public:
+    TSConstructorType();
+
+
+};
+
+class TSTypeReference: public TSType {
+public:
+    TSTypeReference();
+
+
+};
+
+class TSTypePredicate: public TSType {
+public:
+    TSTypePredicate();
+
+
+};
+
+class TSTypeQuery: public TSType {
+public:
+    TSTypeQuery();
+
+
+};
+
+class TSTypeLiteral: public TSType {
+public:
+    TSTypeLiteral();
+
+
+};
+
+class TSArrayType: public TSType {
+public:
+    TSArrayType();
+
+
+};
+
+class TSTupleType: public TSType {
+public:
+    TSTupleType();
+
+
+};
+
+class TSOptionalType: public TSType {
+public:
+    TSOptionalType();
+
+
+};
+
+class TSRestType: public TSType {
+public:
+    TSRestType();
+
+
+};
+
+class TSUnionType: public TSType {
+public:
+    TSUnionType();
+
+
+};
+
+class TSIntersectionType: public TSType {
+public:
+    TSIntersectionType();
+
+
+};
+
+class TSConditionalType: public TSType {
+public:
+    TSConditionalType();
+
+
+};
+
+class TSInferType: public TSType {
+public:
+    TSInferType();
+
+
+};
+
+class TSParenthesizedType: public TSType {
+public:
+    TSParenthesizedType();
+
+
+};
+
+class TSTypeOperator: public TSType {
+public:
+    TSTypeOperator();
+
+
+};
+
+class TSIndexedAccessType: public TSType {
+public:
+    TSIndexedAccessType();
+
+
+};
+
+class TSMappedType: public TSType {
+public:
+    TSMappedType();
+
+
+};
+
+class TSLiteralType: public TSType {
+public:
+    TSLiteralType();
+
+
+};
+
+class TSExpressionWithTypeArguments: public TSType {
+public:
+    TSExpressionWithTypeArguments();
+
+
+};
+
+class TSInterfaceDeclaration: public Declaration {
+public:
+    TSInterfaceDeclaration();
+
+
+};
+
+class TSInterfaceBody: public SyntaxNode {
+public:
+    TSInterfaceBody();
+
+
+};
+
+class TSTypeAliasDeclaration: public Declaration {
+public:
+    TSTypeAliasDeclaration();
+
+    Sp<Identifier> id;
+    std::optional<Sp<TSTypeParameterDeclaration>> type_parameters;
+    Sp<TSType> type_annotation;
+
+};
+
+class TSAsExpression: public Expression {
+public:
+    TSAsExpression();
+
+
+};
+
+class TSTypeAssertion: public Expression {
+public:
+    TSTypeAssertion();
+
+
+};
+
+class TSEnumDeclaration: public Declaration {
+public:
+    TSEnumDeclaration();
+
+
+};
+
+class TSEnumMember: public SyntaxNode {
+public:
+    TSEnumMember();
+
+
+};
+
+class TSModuleDeclaration: public Declaration {
+public:
+    TSModuleDeclaration();
+
+
+};
+
+class TSModuleBlock: public SyntaxNode {
+public:
+    TSModuleBlock();
+
+
+};
+
+class TSImportType: public TSType {
+public:
+    TSImportType();
+
+
+};
+
+class TSImportEqualsDeclaration: public Declaration {
+public:
+    TSImportEqualsDeclaration();
+
+
+};
+
+class TSExternalModuleReference: public SyntaxNode {
+public:
+    TSExternalModuleReference();
+
+
+};
+
+class TSNonNullExpression: public Expression {
+public:
+    TSNonNullExpression();
+
+
+};
+
+class TSExportAssignment: public Statement {
+public:
+    TSExportAssignment();
+
+
+};
+
+class TSNamespaceExportDeclaration: public Statement {
+public:
+    TSNamespaceExportDeclaration();
+
+
+};
+
+class TSTypeAnnotation: public SyntaxNode {
+public:
+    TSTypeAnnotation();
+
+
+};
+
+class TSTypeParameterInstantiation: public SyntaxNode {
+public:
+    TSTypeParameterInstantiation();
+
+
+};
+
+class TSTypeParameterDeclaration: public SyntaxNode {
+public:
+    TSTypeParameterDeclaration();
+
+
+};
+
+class TSTypeParameter: public SyntaxNode {
+public:
+    TSTypeParameter();
+
+
+};

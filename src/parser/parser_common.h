@@ -21,16 +21,6 @@ namespace parser {
 
     class ParserCommon {
     public:
-        struct tc_allocator {
-            // types
-            typedef std::size_t    size_type;        // An unsigned integral type that can represent the size of the largest object to be allocated.
-            typedef std::ptrdiff_t difference_type;  // A signed integral type that can represent the difference of any two pointers.
-
-            // public static functions
-            static char * malloc(const size_type);
-            static void free(char *const);
-        };
-
         struct Config {
         public:
             static Config Default();
@@ -40,6 +30,7 @@ namespace parser {
             bool comment;
             bool tolerant;
             bool jsx;
+            bool typescript;
 
         private:
             Config() = default;

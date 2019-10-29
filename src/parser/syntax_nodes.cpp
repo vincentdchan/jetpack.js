@@ -325,3 +325,247 @@ JSXSpreadAttribute::JSXSpreadAttribute(): SyntaxNode() {
 JSXText::JSXText(): SyntaxNode() {
     type = SyntaxNodeType::JSXText;
 }
+
+TSParameterProperty::TSParameterProperty(): SyntaxNode() {
+    type = SyntaxNodeType::TSParameterProperty;
+}
+
+TSDeclareFunction::TSDeclareFunction(): Declaration() {
+    type = SyntaxNodeType::TSDeclareFunction;
+}
+
+TSDeclareMethod::TSDeclareMethod(): SyntaxNode() {
+    type = SyntaxNodeType::TSDeclareMethod;
+}
+
+TSQualifiedName::TSQualifiedName(): SyntaxNode() {
+    type = SyntaxNodeType::TSQualifiedName;
+}
+
+TSCallSignatureDeclaration::TSCallSignatureDeclaration(): SyntaxNode() {
+    type = SyntaxNodeType::TSCallSignatureDeclaration;
+}
+
+TSConstructSignatureDeclaration::TSConstructSignatureDeclaration(): SyntaxNode() {
+    type = SyntaxNodeType::TSConstructSignatureDeclaration;
+}
+
+TSPropertySignature::TSPropertySignature(): SyntaxNode() {
+    type = SyntaxNodeType::TSPropertySignature;
+}
+
+TSMethodSignature::TSMethodSignature(): SyntaxNode() {
+    type = SyntaxNodeType::TSMethodSignature;
+}
+
+TSIndexSignature::TSIndexSignature(): SyntaxNode() {
+    type = SyntaxNodeType::TSIndexSignature;
+}
+
+TSAnyKeyword::TSAnyKeyword(): TSType() {
+    type = SyntaxNodeType::TSAnyKeyword;
+}
+
+TSBooleanKeyword::TSBooleanKeyword(): TSType() {
+    type = SyntaxNodeType::TSBooleanKeyword;
+}
+
+TSBigIntKeyword::TSBigIntKeyword(): TSType() {
+    type = SyntaxNodeType::TSBigIntKeyword;
+}
+
+TSNeverKeyword::TSNeverKeyword(): TSType() {
+    type = SyntaxNodeType::TSNeverKeyword;
+}
+
+TSNullKeyword::TSNullKeyword(): TSType() {
+    type = SyntaxNodeType::TSNullKeyword;
+}
+
+TSNumberKeyword::TSNumberKeyword(): TSType() {
+    type = SyntaxNodeType::TSNumberKeyword;
+}
+
+TSObjectKeyword::TSObjectKeyword(): TSType() {
+    type = SyntaxNodeType::TSObjectKeyword;
+}
+
+TSStringKeyword::TSStringKeyword(): TSType() {
+    type = SyntaxNodeType::TSStringKeyword;
+}
+
+TSSymbolKeyword::TSSymbolKeyword(): TSType() {
+    type = SyntaxNodeType::TSSymbolKeyword;
+}
+
+TSUndefinedKeyword::TSUndefinedKeyword(): TSType() {
+    type = SyntaxNodeType::TSUndefinedKeyword;
+}
+
+TSUnknownKeyword::TSUnknownKeyword(): TSType() {
+    type = SyntaxNodeType::TSUnknownKeyword;
+}
+
+TSVoidKeyword::TSVoidKeyword(): TSType() {
+    type = SyntaxNodeType::TSVoidKeyword;
+}
+
+TSThisType::TSThisType(): TSType() {
+    type = SyntaxNodeType::TSThisType;
+}
+
+TSFunctionType::TSFunctionType(): TSType() {
+    type = SyntaxNodeType::TSFunctionType;
+}
+
+TSConstructorType::TSConstructorType(): TSType() {
+    type = SyntaxNodeType::TSConstructorType;
+}
+
+TSTypeReference::TSTypeReference(): TSType() {
+    type = SyntaxNodeType::TSTypeReference;
+}
+
+TSTypePredicate::TSTypePredicate(): TSType() {
+    type = SyntaxNodeType::TSTypePredicate;
+}
+
+TSTypeQuery::TSTypeQuery(): TSType() {
+    type = SyntaxNodeType::TSTypeQuery;
+}
+
+TSTypeLiteral::TSTypeLiteral(): TSType() {
+    type = SyntaxNodeType::TSTypeLiteral;
+}
+
+TSArrayType::TSArrayType(): TSType() {
+    type = SyntaxNodeType::TSArrayType;
+}
+
+TSTupleType::TSTupleType(): TSType() {
+    type = SyntaxNodeType::TSTupleType;
+}
+
+TSOptionalType::TSOptionalType(): TSType() {
+    type = SyntaxNodeType::TSOptionalType;
+}
+
+TSRestType::TSRestType(): TSType() {
+    type = SyntaxNodeType::TSRestType;
+}
+
+TSUnionType::TSUnionType(): TSType() {
+    type = SyntaxNodeType::TSUnionType;
+}
+
+TSIntersectionType::TSIntersectionType(): TSType() {
+    type = SyntaxNodeType::TSIntersectionType;
+}
+
+TSConditionalType::TSConditionalType(): TSType() {
+    type = SyntaxNodeType::TSConditionalType;
+}
+
+TSInferType::TSInferType(): TSType() {
+    type = SyntaxNodeType::TSInferType;
+}
+
+TSParenthesizedType::TSParenthesizedType(): TSType() {
+    type = SyntaxNodeType::TSParenthesizedType;
+}
+
+TSTypeOperator::TSTypeOperator(): TSType() {
+    type = SyntaxNodeType::TSTypeOperator;
+}
+
+TSIndexedAccessType::TSIndexedAccessType(): TSType() {
+    type = SyntaxNodeType::TSIndexedAccessType;
+}
+
+TSMappedType::TSMappedType(): TSType() {
+    type = SyntaxNodeType::TSMappedType;
+}
+
+TSLiteralType::TSLiteralType(): TSType() {
+    type = SyntaxNodeType::TSLiteralType;
+}
+
+TSExpressionWithTypeArguments::TSExpressionWithTypeArguments(): TSType() {
+    type = SyntaxNodeType::TSExpressionWithTypeArguments;
+}
+
+TSInterfaceDeclaration::TSInterfaceDeclaration(): Declaration() {
+    type = SyntaxNodeType::TSInterfaceDeclaration;
+}
+
+TSInterfaceBody::TSInterfaceBody(): SyntaxNode() {
+    type = SyntaxNodeType::TSInterfaceBody;
+}
+
+TSTypeAliasDeclaration::TSTypeAliasDeclaration(): Declaration() {
+    type = SyntaxNodeType::TSTypeAliasDeclaration;
+}
+
+TSAsExpression::TSAsExpression(): Expression() {
+    type = SyntaxNodeType::TSAsExpression;
+}
+
+TSTypeAssertion::TSTypeAssertion(): Expression() {
+    type = SyntaxNodeType::TSTypeAssertion;
+}
+
+TSEnumDeclaration::TSEnumDeclaration(): Declaration() {
+    type = SyntaxNodeType::TSEnumDeclaration;
+}
+
+TSEnumMember::TSEnumMember(): SyntaxNode() {
+    type = SyntaxNodeType::TSEnumMember;
+}
+
+TSModuleDeclaration::TSModuleDeclaration(): Declaration() {
+    type = SyntaxNodeType::TSModuleDeclaration;
+}
+
+TSModuleBlock::TSModuleBlock(): SyntaxNode() {
+    type = SyntaxNodeType::TSModuleBlock;
+}
+
+TSImportType::TSImportType(): TSType() {
+    type = SyntaxNodeType::TSImportType;
+}
+
+TSImportEqualsDeclaration::TSImportEqualsDeclaration(): Declaration() {
+    type = SyntaxNodeType::TSImportEqualsDeclaration;
+}
+
+TSExternalModuleReference::TSExternalModuleReference(): SyntaxNode() {
+    type = SyntaxNodeType::TSExternalModuleReference;
+}
+
+TSNonNullExpression::TSNonNullExpression(): Expression() {
+    type = SyntaxNodeType::TSNonNullExpression;
+}
+
+TSExportAssignment::TSExportAssignment(): Statement() {
+    type = SyntaxNodeType::TSExportAssignment;
+}
+
+TSNamespaceExportDeclaration::TSNamespaceExportDeclaration(): Statement() {
+    type = SyntaxNodeType::TSNamespaceExportDeclaration;
+}
+
+TSTypeAnnotation::TSTypeAnnotation(): SyntaxNode() {
+    type = SyntaxNodeType::TSTypeAnnotation;
+}
+
+TSTypeParameterInstantiation::TSTypeParameterInstantiation(): SyntaxNode() {
+    type = SyntaxNodeType::TSTypeParameterInstantiation;
+}
+
+TSTypeParameterDeclaration::TSTypeParameterDeclaration(): SyntaxNode() {
+    type = SyntaxNodeType::TSTypeParameterDeclaration;
+}
+
+TSTypeParameter::TSTypeParameter(): SyntaxNode() {
+    type = SyntaxNodeType::TSTypeParameter;
+}

@@ -904,6 +904,502 @@ void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
             break;
         }
 
+        case SyntaxNodeType::TSParameterProperty: {
+            auto child = std::dynamic_pointer_cast<TSParameterProperty>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->parameter);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSDeclareFunction: {
+            auto child = std::dynamic_pointer_cast<TSDeclareFunction>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->id);
+            TraverseNode(child->return_type);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSDeclareMethod: {
+            auto child = std::dynamic_pointer_cast<TSDeclareMethod>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSQualifiedName: {
+            auto child = std::dynamic_pointer_cast<TSQualifiedName>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSCallSignatureDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSCallSignatureDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSConstructSignatureDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSConstructSignatureDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSPropertySignature: {
+            auto child = std::dynamic_pointer_cast<TSPropertySignature>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSMethodSignature: {
+            auto child = std::dynamic_pointer_cast<TSMethodSignature>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSIndexSignature: {
+            auto child = std::dynamic_pointer_cast<TSIndexSignature>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSAnyKeyword: {
+            auto child = std::dynamic_pointer_cast<TSAnyKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSBooleanKeyword: {
+            auto child = std::dynamic_pointer_cast<TSBooleanKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSBigIntKeyword: {
+            auto child = std::dynamic_pointer_cast<TSBigIntKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSNeverKeyword: {
+            auto child = std::dynamic_pointer_cast<TSNeverKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSNullKeyword: {
+            auto child = std::dynamic_pointer_cast<TSNullKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSNumberKeyword: {
+            auto child = std::dynamic_pointer_cast<TSNumberKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSObjectKeyword: {
+            auto child = std::dynamic_pointer_cast<TSObjectKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSStringKeyword: {
+            auto child = std::dynamic_pointer_cast<TSStringKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSSymbolKeyword: {
+            auto child = std::dynamic_pointer_cast<TSSymbolKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSUndefinedKeyword: {
+            auto child = std::dynamic_pointer_cast<TSUndefinedKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSUnknownKeyword: {
+            auto child = std::dynamic_pointer_cast<TSUnknownKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSVoidKeyword: {
+            auto child = std::dynamic_pointer_cast<TSVoidKeyword>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSThisType: {
+            auto child = std::dynamic_pointer_cast<TSThisType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSFunctionType: {
+            auto child = std::dynamic_pointer_cast<TSFunctionType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSConstructorType: {
+            auto child = std::dynamic_pointer_cast<TSConstructorType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeReference: {
+            auto child = std::dynamic_pointer_cast<TSTypeReference>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypePredicate: {
+            auto child = std::dynamic_pointer_cast<TSTypePredicate>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeQuery: {
+            auto child = std::dynamic_pointer_cast<TSTypeQuery>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeLiteral: {
+            auto child = std::dynamic_pointer_cast<TSTypeLiteral>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSArrayType: {
+            auto child = std::dynamic_pointer_cast<TSArrayType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTupleType: {
+            auto child = std::dynamic_pointer_cast<TSTupleType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSOptionalType: {
+            auto child = std::dynamic_pointer_cast<TSOptionalType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSRestType: {
+            auto child = std::dynamic_pointer_cast<TSRestType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSUnionType: {
+            auto child = std::dynamic_pointer_cast<TSUnionType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSIntersectionType: {
+            auto child = std::dynamic_pointer_cast<TSIntersectionType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSConditionalType: {
+            auto child = std::dynamic_pointer_cast<TSConditionalType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSInferType: {
+            auto child = std::dynamic_pointer_cast<TSInferType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSParenthesizedType: {
+            auto child = std::dynamic_pointer_cast<TSParenthesizedType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeOperator: {
+            auto child = std::dynamic_pointer_cast<TSTypeOperator>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSIndexedAccessType: {
+            auto child = std::dynamic_pointer_cast<TSIndexedAccessType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSMappedType: {
+            auto child = std::dynamic_pointer_cast<TSMappedType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSLiteralType: {
+            auto child = std::dynamic_pointer_cast<TSLiteralType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSExpressionWithTypeArguments: {
+            auto child = std::dynamic_pointer_cast<TSExpressionWithTypeArguments>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSInterfaceDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSInterfaceDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSInterfaceBody: {
+            auto child = std::dynamic_pointer_cast<TSInterfaceBody>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAliasDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSTypeAliasDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+            TraverseNode(child->id);
+            if (child->type_parameters) {
+                TraverseNode(*child->type_parameters);
+            }
+            TraverseNode(child->type_annotation);
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSAsExpression: {
+            auto child = std::dynamic_pointer_cast<TSAsExpression>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAssertion: {
+            auto child = std::dynamic_pointer_cast<TSTypeAssertion>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSEnumDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSEnumDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSEnumMember: {
+            auto child = std::dynamic_pointer_cast<TSEnumMember>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSModuleDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSModuleDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSModuleBlock: {
+            auto child = std::dynamic_pointer_cast<TSModuleBlock>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSImportType: {
+            auto child = std::dynamic_pointer_cast<TSImportType>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSImportEqualsDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSImportEqualsDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSExternalModuleReference: {
+            auto child = std::dynamic_pointer_cast<TSExternalModuleReference>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSNonNullExpression: {
+            auto child = std::dynamic_pointer_cast<TSNonNullExpression>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSExportAssignment: {
+            auto child = std::dynamic_pointer_cast<TSExportAssignment>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSNamespaceExportDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSNamespaceExportDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAnnotation: {
+            auto child = std::dynamic_pointer_cast<TSTypeAnnotation>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameterInstantiation: {
+            auto child = std::dynamic_pointer_cast<TSTypeParameterInstantiation>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameterDeclaration: {
+            auto child = std::dynamic_pointer_cast<TSTypeParameterDeclaration>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameter: {
+            auto child = std::dynamic_pointer_cast<TSTypeParameter>(node);
+            if (!this->TraverseBefore(child)) return;
+
+            this->TraverseAfter(child);
+            break;
+        }
+
         default:
             return;
 
@@ -1315,6 +1811,311 @@ void NodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
 
         case SyntaxNodeType::JSXText: {
             this->Traverse(std::dynamic_pointer_cast<JSXText>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSParameterProperty: {
+            this->Traverse(std::dynamic_pointer_cast<TSParameterProperty>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSDeclareFunction: {
+            this->Traverse(std::dynamic_pointer_cast<TSDeclareFunction>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSDeclareMethod: {
+            this->Traverse(std::dynamic_pointer_cast<TSDeclareMethod>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSQualifiedName: {
+            this->Traverse(std::dynamic_pointer_cast<TSQualifiedName>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSCallSignatureDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSCallSignatureDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSConstructSignatureDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSConstructSignatureDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSPropertySignature: {
+            this->Traverse(std::dynamic_pointer_cast<TSPropertySignature>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSMethodSignature: {
+            this->Traverse(std::dynamic_pointer_cast<TSMethodSignature>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSIndexSignature: {
+            this->Traverse(std::dynamic_pointer_cast<TSIndexSignature>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSAnyKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSAnyKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSBooleanKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSBooleanKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSBigIntKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSBigIntKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSNeverKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSNeverKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSNullKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSNullKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSNumberKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSNumberKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSObjectKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSObjectKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSStringKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSStringKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSSymbolKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSSymbolKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSUndefinedKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSUndefinedKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSUnknownKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSUnknownKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSVoidKeyword: {
+            this->Traverse(std::dynamic_pointer_cast<TSVoidKeyword>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSThisType: {
+            this->Traverse(std::dynamic_pointer_cast<TSThisType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSFunctionType: {
+            this->Traverse(std::dynamic_pointer_cast<TSFunctionType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSConstructorType: {
+            this->Traverse(std::dynamic_pointer_cast<TSConstructorType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeReference: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeReference>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypePredicate: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypePredicate>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeQuery: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeQuery>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeLiteral: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeLiteral>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSArrayType: {
+            this->Traverse(std::dynamic_pointer_cast<TSArrayType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTupleType: {
+            this->Traverse(std::dynamic_pointer_cast<TSTupleType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSOptionalType: {
+            this->Traverse(std::dynamic_pointer_cast<TSOptionalType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSRestType: {
+            this->Traverse(std::dynamic_pointer_cast<TSRestType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSUnionType: {
+            this->Traverse(std::dynamic_pointer_cast<TSUnionType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSIntersectionType: {
+            this->Traverse(std::dynamic_pointer_cast<TSIntersectionType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSConditionalType: {
+            this->Traverse(std::dynamic_pointer_cast<TSConditionalType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSInferType: {
+            this->Traverse(std::dynamic_pointer_cast<TSInferType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSParenthesizedType: {
+            this->Traverse(std::dynamic_pointer_cast<TSParenthesizedType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeOperator: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeOperator>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSIndexedAccessType: {
+            this->Traverse(std::dynamic_pointer_cast<TSIndexedAccessType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSMappedType: {
+            this->Traverse(std::dynamic_pointer_cast<TSMappedType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSLiteralType: {
+            this->Traverse(std::dynamic_pointer_cast<TSLiteralType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSExpressionWithTypeArguments: {
+            this->Traverse(std::dynamic_pointer_cast<TSExpressionWithTypeArguments>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSInterfaceDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSInterfaceDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSInterfaceBody: {
+            this->Traverse(std::dynamic_pointer_cast<TSInterfaceBody>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAliasDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeAliasDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSAsExpression: {
+            this->Traverse(std::dynamic_pointer_cast<TSAsExpression>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAssertion: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeAssertion>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSEnumDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSEnumDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSEnumMember: {
+            this->Traverse(std::dynamic_pointer_cast<TSEnumMember>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSModuleDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSModuleDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSModuleBlock: {
+            this->Traverse(std::dynamic_pointer_cast<TSModuleBlock>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSImportType: {
+            this->Traverse(std::dynamic_pointer_cast<TSImportType>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSImportEqualsDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSImportEqualsDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSExternalModuleReference: {
+            this->Traverse(std::dynamic_pointer_cast<TSExternalModuleReference>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSNonNullExpression: {
+            this->Traverse(std::dynamic_pointer_cast<TSNonNullExpression>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSExportAssignment: {
+            this->Traverse(std::dynamic_pointer_cast<TSExportAssignment>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSNamespaceExportDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSNamespaceExportDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeAnnotation: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeAnnotation>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameterInstantiation: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeParameterInstantiation>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameterDeclaration: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeParameterDeclaration>(node));
+            break;
+        }
+
+        case SyntaxNodeType::TSTypeParameter: {
+            this->Traverse(std::dynamic_pointer_cast<TSTypeParameter>(node));
             break;
         }
 

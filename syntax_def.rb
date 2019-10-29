@@ -505,3 +505,197 @@ SyntaxFactory.def_syntax :JSXText, base: :SyntaxNode do
   def_prop :String, "value"
   def_prop :String, "raw"
 end
+
+# TypeScript
+
+SyntaxFactory.def_syntax :TSParameterProperty, base: :SyntaxNode do
+  # def_prop :TSAccessibility.opt, "accessibility"
+  def_prop :Boolean, "readonly_"
+  def_prop :SyntaxNode, "parameter"
+end
+
+SyntaxFactory.def_syntax :TSDeclareFunction, base: :Declaration do
+  def_prop :Identifier, "id"
+  def_prop :Boolean, "decare"
+  def_prop :TSTypeAnnotation, "returnType"
+end
+
+SyntaxFactory.def_syntax :TSDeclareMethod, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSQualifiedName, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSCallSignatureDeclaration, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSConstructSignatureDeclaration, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSPropertySignature, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSMethodSignature, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSIndexSignature, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSAnyKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSBooleanKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSBigIntKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSNeverKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSNullKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSNumberKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSObjectKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSStringKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSSymbolKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSUndefinedKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSUnknownKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSVoidKeyword, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSThisType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSFunctionType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSConstructorType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTypeReference, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTypePredicate, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTypeQuery, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTypeLiteral, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSArrayType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTupleType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSOptionalType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSRestType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSUnionType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSIntersectionType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSConditionalType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSInferType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSParenthesizedType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSTypeOperator, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSIndexedAccessType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSMappedType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSLiteralType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSExpressionWithTypeArguments, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSInterfaceDeclaration, base: :Declaration do
+end
+
+SyntaxFactory.def_syntax :TSInterfaceBody, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSTypeAliasDeclaration, base: :Declaration do
+  def_prop :Identifier, "id"
+  def_prop :TSTypeParameterDeclaration.opt, "typeParameters"
+  def_prop :TSType, "typeAnnotation"
+end
+
+SyntaxFactory.def_syntax :TSAsExpression, base: :Expression do
+end
+
+SyntaxFactory.def_syntax :TSTypeAssertion, base: :Expression do
+end
+
+SyntaxFactory.def_syntax :TSEnumDeclaration, base: :Declaration do
+end
+
+SyntaxFactory.def_syntax :TSEnumMember, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSModuleDeclaration, base: :Declaration do
+end
+
+SyntaxFactory.def_syntax :TSModuleBlock, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSImportType, base: :TSType do
+end
+
+SyntaxFactory.def_syntax :TSImportEqualsDeclaration, base: :Declaration do
+end
+
+SyntaxFactory.def_syntax :TSExternalModuleReference, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSNonNullExpression, base: :Expression do
+end
+
+SyntaxFactory.def_syntax :TSExportAssignment, base: :Statement do
+end
+
+SyntaxFactory.def_syntax :TSNamespaceExportDeclaration, base: :Statement do
+end
+
+SyntaxFactory.def_syntax :TSTypeAnnotation, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSTypeParameterInstantiation, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSTypeParameterDeclaration, base: :SyntaxNode do
+end
+
+SyntaxFactory.def_syntax :TSTypeParameter, base: :SyntaxNode do
+end

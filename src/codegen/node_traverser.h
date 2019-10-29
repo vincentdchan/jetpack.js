@@ -173,6 +173,128 @@ public:
     virtual void TraverseAfter(const Sp<JSXSpreadAttribute>& node) {}
     virtual bool TraverseBefore(const Sp<JSXText>& node) { return true; }
     virtual void TraverseAfter(const Sp<JSXText>& node) {}
+    virtual bool TraverseBefore(const Sp<TSParameterProperty>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSParameterProperty>& node) {}
+    virtual bool TraverseBefore(const Sp<TSDeclareFunction>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSDeclareFunction>& node) {}
+    virtual bool TraverseBefore(const Sp<TSDeclareMethod>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSDeclareMethod>& node) {}
+    virtual bool TraverseBefore(const Sp<TSQualifiedName>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSQualifiedName>& node) {}
+    virtual bool TraverseBefore(const Sp<TSCallSignatureDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSCallSignatureDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSConstructSignatureDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSConstructSignatureDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSPropertySignature>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSPropertySignature>& node) {}
+    virtual bool TraverseBefore(const Sp<TSMethodSignature>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSMethodSignature>& node) {}
+    virtual bool TraverseBefore(const Sp<TSIndexSignature>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSIndexSignature>& node) {}
+    virtual bool TraverseBefore(const Sp<TSAnyKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSAnyKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSBooleanKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSBooleanKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSBigIntKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSBigIntKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSNeverKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSNeverKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSNullKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSNullKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSNumberKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSNumberKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSObjectKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSObjectKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSStringKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSStringKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSSymbolKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSSymbolKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSUndefinedKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSUndefinedKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSUnknownKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSUnknownKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSVoidKeyword>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSVoidKeyword>& node) {}
+    virtual bool TraverseBefore(const Sp<TSThisType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSThisType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSFunctionType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSFunctionType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSConstructorType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSConstructorType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeReference>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeReference>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypePredicate>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypePredicate>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeQuery>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeQuery>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeLiteral>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeLiteral>& node) {}
+    virtual bool TraverseBefore(const Sp<TSArrayType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSArrayType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTupleType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTupleType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSOptionalType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSOptionalType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSRestType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSRestType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSUnionType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSUnionType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSIntersectionType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSIntersectionType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSConditionalType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSConditionalType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSInferType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSInferType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSParenthesizedType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSParenthesizedType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeOperator>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeOperator>& node) {}
+    virtual bool TraverseBefore(const Sp<TSIndexedAccessType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSIndexedAccessType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSMappedType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSMappedType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSLiteralType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSLiteralType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSExpressionWithTypeArguments>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSExpressionWithTypeArguments>& node) {}
+    virtual bool TraverseBefore(const Sp<TSInterfaceDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSInterfaceDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSInterfaceBody>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSInterfaceBody>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeAliasDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeAliasDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSAsExpression>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSAsExpression>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeAssertion>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeAssertion>& node) {}
+    virtual bool TraverseBefore(const Sp<TSEnumDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSEnumDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSEnumMember>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSEnumMember>& node) {}
+    virtual bool TraverseBefore(const Sp<TSModuleDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSModuleDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSModuleBlock>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSModuleBlock>& node) {}
+    virtual bool TraverseBefore(const Sp<TSImportType>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSImportType>& node) {}
+    virtual bool TraverseBefore(const Sp<TSImportEqualsDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSImportEqualsDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSExternalModuleReference>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSExternalModuleReference>& node) {}
+    virtual bool TraverseBefore(const Sp<TSNonNullExpression>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSNonNullExpression>& node) {}
+    virtual bool TraverseBefore(const Sp<TSExportAssignment>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSExportAssignment>& node) {}
+    virtual bool TraverseBefore(const Sp<TSNamespaceExportDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSNamespaceExportDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeAnnotation>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeAnnotation>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeParameterInstantiation>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeParameterInstantiation>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeParameterDeclaration>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeParameterDeclaration>& node) {}
+    virtual bool TraverseBefore(const Sp<TSTypeParameter>& node) { return true; }
+    virtual void TraverseAfter(const Sp<TSTypeParameter>& node) {}
 
     virtual ~AutoNodeTraverser() = default;
 
@@ -267,6 +389,67 @@ public:
     virtual void Traverse(const Sp<JSXOpeningElement>& node) {}
     virtual void Traverse(const Sp<JSXSpreadAttribute>& node) {}
     virtual void Traverse(const Sp<JSXText>& node) {}
+    virtual void Traverse(const Sp<TSParameterProperty>& node) {}
+    virtual void Traverse(const Sp<TSDeclareFunction>& node) {}
+    virtual void Traverse(const Sp<TSDeclareMethod>& node) {}
+    virtual void Traverse(const Sp<TSQualifiedName>& node) {}
+    virtual void Traverse(const Sp<TSCallSignatureDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSConstructSignatureDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSPropertySignature>& node) {}
+    virtual void Traverse(const Sp<TSMethodSignature>& node) {}
+    virtual void Traverse(const Sp<TSIndexSignature>& node) {}
+    virtual void Traverse(const Sp<TSAnyKeyword>& node) {}
+    virtual void Traverse(const Sp<TSBooleanKeyword>& node) {}
+    virtual void Traverse(const Sp<TSBigIntKeyword>& node) {}
+    virtual void Traverse(const Sp<TSNeverKeyword>& node) {}
+    virtual void Traverse(const Sp<TSNullKeyword>& node) {}
+    virtual void Traverse(const Sp<TSNumberKeyword>& node) {}
+    virtual void Traverse(const Sp<TSObjectKeyword>& node) {}
+    virtual void Traverse(const Sp<TSStringKeyword>& node) {}
+    virtual void Traverse(const Sp<TSSymbolKeyword>& node) {}
+    virtual void Traverse(const Sp<TSUndefinedKeyword>& node) {}
+    virtual void Traverse(const Sp<TSUnknownKeyword>& node) {}
+    virtual void Traverse(const Sp<TSVoidKeyword>& node) {}
+    virtual void Traverse(const Sp<TSThisType>& node) {}
+    virtual void Traverse(const Sp<TSFunctionType>& node) {}
+    virtual void Traverse(const Sp<TSConstructorType>& node) {}
+    virtual void Traverse(const Sp<TSTypeReference>& node) {}
+    virtual void Traverse(const Sp<TSTypePredicate>& node) {}
+    virtual void Traverse(const Sp<TSTypeQuery>& node) {}
+    virtual void Traverse(const Sp<TSTypeLiteral>& node) {}
+    virtual void Traverse(const Sp<TSArrayType>& node) {}
+    virtual void Traverse(const Sp<TSTupleType>& node) {}
+    virtual void Traverse(const Sp<TSOptionalType>& node) {}
+    virtual void Traverse(const Sp<TSRestType>& node) {}
+    virtual void Traverse(const Sp<TSUnionType>& node) {}
+    virtual void Traverse(const Sp<TSIntersectionType>& node) {}
+    virtual void Traverse(const Sp<TSConditionalType>& node) {}
+    virtual void Traverse(const Sp<TSInferType>& node) {}
+    virtual void Traverse(const Sp<TSParenthesizedType>& node) {}
+    virtual void Traverse(const Sp<TSTypeOperator>& node) {}
+    virtual void Traverse(const Sp<TSIndexedAccessType>& node) {}
+    virtual void Traverse(const Sp<TSMappedType>& node) {}
+    virtual void Traverse(const Sp<TSLiteralType>& node) {}
+    virtual void Traverse(const Sp<TSExpressionWithTypeArguments>& node) {}
+    virtual void Traverse(const Sp<TSInterfaceDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSInterfaceBody>& node) {}
+    virtual void Traverse(const Sp<TSTypeAliasDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSAsExpression>& node) {}
+    virtual void Traverse(const Sp<TSTypeAssertion>& node) {}
+    virtual void Traverse(const Sp<TSEnumDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSEnumMember>& node) {}
+    virtual void Traverse(const Sp<TSModuleDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSModuleBlock>& node) {}
+    virtual void Traverse(const Sp<TSImportType>& node) {}
+    virtual void Traverse(const Sp<TSImportEqualsDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSExternalModuleReference>& node) {}
+    virtual void Traverse(const Sp<TSNonNullExpression>& node) {}
+    virtual void Traverse(const Sp<TSExportAssignment>& node) {}
+    virtual void Traverse(const Sp<TSNamespaceExportDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSTypeAnnotation>& node) {}
+    virtual void Traverse(const Sp<TSTypeParameterInstantiation>& node) {}
+    virtual void Traverse(const Sp<TSTypeParameterDeclaration>& node) {}
+    virtual void Traverse(const Sp<TSTypeParameter>& node) {}
 
     virtual ~NodeTraverser() = default;
 

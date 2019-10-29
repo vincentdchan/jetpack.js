@@ -26,6 +26,12 @@ enum class VarKind {
     Set,
 };
 
+enum class TSAccessibility {
+    Private,
+    Public,
+    Protected,
+};
+
 class SyntaxNode {
 public:
     SyntaxNodeType type = SyntaxNodeType::Invalid;
@@ -38,8 +44,17 @@ public:
     virtual bool IsDeclaration() const { return false; }
     virtual bool IsExpression() const { return false; }
     virtual bool IsStatement() const { return false; }
+    virtual bool IsTSType() const { return false; }
 
     virtual ~SyntaxNode() = default;
+
+};
+
+class TSType: virtual public SyntaxNode {
+public:
+    TSType() = default;
+
+    [[nodiscard]] bool IsTSType() const override { return true; }
 
 };
 

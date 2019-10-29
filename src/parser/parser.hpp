@@ -18,10 +18,12 @@
 namespace parser {
 
     class JSXParser;
+    class TypeScriptParser;
 
     class Parser final: private ParserCommon {
     public:
         friend class JSXParser;
+        friend class TypeScriptParser;
 
         typedef std::function<void (const Sp<ImportDeclaration>&)> ImportDeclarationCreatedCallback;
 

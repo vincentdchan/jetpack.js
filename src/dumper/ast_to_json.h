@@ -451,6 +451,311 @@ namespace dumper {
                     return Dump(child);
                 }
 
+                case SyntaxNodeType::TSParameterProperty: {
+                    auto child = std::dynamic_pointer_cast<TSParameterProperty>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSDeclareFunction: {
+                    auto child = std::dynamic_pointer_cast<TSDeclareFunction>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSDeclareMethod: {
+                    auto child = std::dynamic_pointer_cast<TSDeclareMethod>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSQualifiedName: {
+                    auto child = std::dynamic_pointer_cast<TSQualifiedName>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSCallSignatureDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSCallSignatureDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSConstructSignatureDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSConstructSignatureDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSPropertySignature: {
+                    auto child = std::dynamic_pointer_cast<TSPropertySignature>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSMethodSignature: {
+                    auto child = std::dynamic_pointer_cast<TSMethodSignature>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSIndexSignature: {
+                    auto child = std::dynamic_pointer_cast<TSIndexSignature>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSAnyKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSAnyKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSBooleanKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSBooleanKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSBigIntKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSBigIntKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSNeverKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSNeverKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSNullKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSNullKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSNumberKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSNumberKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSObjectKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSObjectKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSStringKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSStringKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSSymbolKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSSymbolKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSUndefinedKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSUndefinedKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSUnknownKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSUnknownKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSVoidKeyword: {
+                    auto child = std::dynamic_pointer_cast<TSVoidKeyword>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSThisType: {
+                    auto child = std::dynamic_pointer_cast<TSThisType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSFunctionType: {
+                    auto child = std::dynamic_pointer_cast<TSFunctionType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSConstructorType: {
+                    auto child = std::dynamic_pointer_cast<TSConstructorType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeReference: {
+                    auto child = std::dynamic_pointer_cast<TSTypeReference>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypePredicate: {
+                    auto child = std::dynamic_pointer_cast<TSTypePredicate>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeQuery: {
+                    auto child = std::dynamic_pointer_cast<TSTypeQuery>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeLiteral: {
+                    auto child = std::dynamic_pointer_cast<TSTypeLiteral>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSArrayType: {
+                    auto child = std::dynamic_pointer_cast<TSArrayType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTupleType: {
+                    auto child = std::dynamic_pointer_cast<TSTupleType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSOptionalType: {
+                    auto child = std::dynamic_pointer_cast<TSOptionalType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSRestType: {
+                    auto child = std::dynamic_pointer_cast<TSRestType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSUnionType: {
+                    auto child = std::dynamic_pointer_cast<TSUnionType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSIntersectionType: {
+                    auto child = std::dynamic_pointer_cast<TSIntersectionType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSConditionalType: {
+                    auto child = std::dynamic_pointer_cast<TSConditionalType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSInferType: {
+                    auto child = std::dynamic_pointer_cast<TSInferType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSParenthesizedType: {
+                    auto child = std::dynamic_pointer_cast<TSParenthesizedType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeOperator: {
+                    auto child = std::dynamic_pointer_cast<TSTypeOperator>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSIndexedAccessType: {
+                    auto child = std::dynamic_pointer_cast<TSIndexedAccessType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSMappedType: {
+                    auto child = std::dynamic_pointer_cast<TSMappedType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSLiteralType: {
+                    auto child = std::dynamic_pointer_cast<TSLiteralType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSExpressionWithTypeArguments: {
+                    auto child = std::dynamic_pointer_cast<TSExpressionWithTypeArguments>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSInterfaceDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSInterfaceDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSInterfaceBody: {
+                    auto child = std::dynamic_pointer_cast<TSInterfaceBody>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeAliasDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSTypeAliasDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSAsExpression: {
+                    auto child = std::dynamic_pointer_cast<TSAsExpression>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeAssertion: {
+                    auto child = std::dynamic_pointer_cast<TSTypeAssertion>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSEnumDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSEnumDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSEnumMember: {
+                    auto child = std::dynamic_pointer_cast<TSEnumMember>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSModuleDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSModuleDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSModuleBlock: {
+                    auto child = std::dynamic_pointer_cast<TSModuleBlock>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSImportType: {
+                    auto child = std::dynamic_pointer_cast<TSImportType>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSImportEqualsDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSImportEqualsDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSExternalModuleReference: {
+                    auto child = std::dynamic_pointer_cast<TSExternalModuleReference>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSNonNullExpression: {
+                    auto child = std::dynamic_pointer_cast<TSNonNullExpression>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSExportAssignment: {
+                    auto child = std::dynamic_pointer_cast<TSExportAssignment>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSNamespaceExportDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSNamespaceExportDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeAnnotation: {
+                    auto child = std::dynamic_pointer_cast<TSTypeAnnotation>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeParameterInstantiation: {
+                    auto child = std::dynamic_pointer_cast<TSTypeParameterInstantiation>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeParameterDeclaration: {
+                    auto child = std::dynamic_pointer_cast<TSTypeParameterDeclaration>(node);
+                    return Dump(child);
+                }
+
+                case SyntaxNodeType::TSTypeParameter: {
+                    auto child = std::dynamic_pointer_cast<TSTypeParameter>(node);
+                    return Dump(child);
+                }
+
                 default:
                     return json::object();
 
@@ -1453,6 +1758,504 @@ namespace dumper {
             DumpBaseInfo(result, node);
             result["value"] = utils::To_UTF8(node->value);
             result["raw"] = utils::To_UTF8(node->raw);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSParameterProperty>& node) {
+            json result = json::object();
+            result["type"] = "TSParameterProperty";
+            DumpBaseInfo(result, node);
+            result["readonly_"] = node->readonly_;
+            result["parameter"] = Dump(node->parameter);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSDeclareFunction>& node) {
+            json result = json::object();
+            result["type"] = "TSDeclareFunction";
+            DumpBaseInfo(result, node);
+            result["id"] = Dump(node->id);
+            result["decare"] = node->decare;
+            result["returnType"] = Dump(node->return_type);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSDeclareMethod>& node) {
+            json result = json::object();
+            result["type"] = "TSDeclareMethod";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSQualifiedName>& node) {
+            json result = json::object();
+            result["type"] = "TSQualifiedName";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSCallSignatureDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSCallSignatureDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSConstructSignatureDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSConstructSignatureDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSPropertySignature>& node) {
+            json result = json::object();
+            result["type"] = "TSPropertySignature";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSMethodSignature>& node) {
+            json result = json::object();
+            result["type"] = "TSMethodSignature";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSIndexSignature>& node) {
+            json result = json::object();
+            result["type"] = "TSIndexSignature";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSAnyKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSAnyKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSBooleanKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSBooleanKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSBigIntKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSBigIntKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSNeverKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSNeverKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSNullKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSNullKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSNumberKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSNumberKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSObjectKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSObjectKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSStringKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSStringKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSSymbolKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSSymbolKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSUndefinedKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSUndefinedKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSUnknownKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSUnknownKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSVoidKeyword>& node) {
+            json result = json::object();
+            result["type"] = "TSVoidKeyword";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSThisType>& node) {
+            json result = json::object();
+            result["type"] = "TSThisType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSFunctionType>& node) {
+            json result = json::object();
+            result["type"] = "TSFunctionType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSConstructorType>& node) {
+            json result = json::object();
+            result["type"] = "TSConstructorType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeReference>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeReference";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypePredicate>& node) {
+            json result = json::object();
+            result["type"] = "TSTypePredicate";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeQuery>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeQuery";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeLiteral>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeLiteral";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSArrayType>& node) {
+            json result = json::object();
+            result["type"] = "TSArrayType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTupleType>& node) {
+            json result = json::object();
+            result["type"] = "TSTupleType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSOptionalType>& node) {
+            json result = json::object();
+            result["type"] = "TSOptionalType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSRestType>& node) {
+            json result = json::object();
+            result["type"] = "TSRestType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSUnionType>& node) {
+            json result = json::object();
+            result["type"] = "TSUnionType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSIntersectionType>& node) {
+            json result = json::object();
+            result["type"] = "TSIntersectionType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSConditionalType>& node) {
+            json result = json::object();
+            result["type"] = "TSConditionalType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSInferType>& node) {
+            json result = json::object();
+            result["type"] = "TSInferType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSParenthesizedType>& node) {
+            json result = json::object();
+            result["type"] = "TSParenthesizedType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeOperator>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeOperator";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSIndexedAccessType>& node) {
+            json result = json::object();
+            result["type"] = "TSIndexedAccessType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSMappedType>& node) {
+            json result = json::object();
+            result["type"] = "TSMappedType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSLiteralType>& node) {
+            json result = json::object();
+            result["type"] = "TSLiteralType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSExpressionWithTypeArguments>& node) {
+            json result = json::object();
+            result["type"] = "TSExpressionWithTypeArguments";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSInterfaceDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSInterfaceDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSInterfaceBody>& node) {
+            json result = json::object();
+            result["type"] = "TSInterfaceBody";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeAliasDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeAliasDeclaration";
+            DumpBaseInfo(result, node);
+            result["id"] = Dump(node->id);
+            if (node->type_parameters) {
+                result["typeParameters"] = Dump(*node->type_parameters);
+            }
+            result["typeAnnotation"] = Dump(node->type_annotation);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSAsExpression>& node) {
+            json result = json::object();
+            result["type"] = "TSAsExpression";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeAssertion>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeAssertion";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSEnumDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSEnumDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSEnumMember>& node) {
+            json result = json::object();
+            result["type"] = "TSEnumMember";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSModuleDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSModuleDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSModuleBlock>& node) {
+            json result = json::object();
+            result["type"] = "TSModuleBlock";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSImportType>& node) {
+            json result = json::object();
+            result["type"] = "TSImportType";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSImportEqualsDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSImportEqualsDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSExternalModuleReference>& node) {
+            json result = json::object();
+            result["type"] = "TSExternalModuleReference";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSNonNullExpression>& node) {
+            json result = json::object();
+            result["type"] = "TSNonNullExpression";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSExportAssignment>& node) {
+            json result = json::object();
+            result["type"] = "TSExportAssignment";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSNamespaceExportDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSNamespaceExportDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeAnnotation>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeAnnotation";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeParameterInstantiation>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeParameterInstantiation";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeParameterDeclaration>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeParameterDeclaration";
+            DumpBaseInfo(result, node);
+
+            return result;
+        }
+
+        static json Dump(const Sp<TSTypeParameter>& node) {
+            json result = json::object();
+            result["type"] = "TSTypeParameter";
+            DumpBaseInfo(result, node);
 
             return result;
         }

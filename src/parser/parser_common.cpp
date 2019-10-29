@@ -9,19 +9,12 @@
 
 namespace parser {
 
-    char* ParserCommon::tc_allocator::malloc(const parser::ParserCommon::tc_allocator::size_type size) {
-        return reinterpret_cast<char*>(::malloc(size));
-    }
-
-    void ParserCommon::tc_allocator::free(char *const ptr) {
-        ::free(ptr);
-    }
-
     ParserCommon::Config ParserCommon::Config::Default() {
         return {
             nullopt,
             false,
             true,
+            false,
             false,
             false,
         };
