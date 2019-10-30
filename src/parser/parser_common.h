@@ -15,66 +15,22 @@
 #include "../macros.h"
 #include "../tokenizer/scanner.h"
 #include "syntax_nodes.h"
+#include "parser_context.h"
 
 namespace parser {
-    using namespace std;
 
     class ParserCommon {
     public:
-        struct Config {
-        public:
-            static Config Default();
-
-            optional<UString> source;
-            bool tokens;
-            bool comment;
-            bool tolerant;
-            bool jsx;
-            bool typescript;
-
-        private:
-            Config() = default;
-        };
-
-        struct Context {
-            bool is_module = false;
-            bool allow_in = false;
-            bool allow_strict_directive = false;
-            bool allow_yield = false;
-            bool await = false;
-            optional<Token> first_cover_initialized_name_error;
-            bool is_assignment_target = false;
-            bool is_binding_element = false;
-            bool in_function_body = false;
-            bool in_iteration = false;
-            bool in_switch = false;
-            unique_ptr<unordered_set<UString>> label_set;
-            bool strict_ = false;
-
-            Context() {
-                label_set = make_unique<unordered_set<UString>>();
-            }
-        };
-
-        struct Marker {
-            uint32_t index = 0;
-            uint32_t line = 0;
-            uint32_t column = 0;
-        };
-
         struct FormalParameterOptions {
             bool simple = true;
-            vector<Sp<SyntaxNode>> params;
+            std::vector<Sp<SyntaxNode>> params;
             std::unordered_set<UString> param_set;
-            optional<Token> stricted;
-            optional<Token> first_restricted;
-            string message;
+            std::optional<Token> stricted;
+            std::optional<Token> first_restricted;
+            std::string message;
         };
 
-        ParserCommon(
-            shared_ptr<u16string> source,
-            const Config& config
-        );
+        ParserCommon(std::shared_ptr<ParserContext> state);
         ParserCommon(const ParserCommon&) = delete;
         ParserCommon(ParserCommon&&) = delete;
 
@@ -87,28 +43,31 @@ namespace parser {
 
         Token NextRegexToken();
 
-        template <typename TokenType>
-        UString GetTokenRaw(const TokenType& token) {
-            return scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
+        inline UString GetTokenRaw(const Token& token) {
+            return ctx->scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
         }
 
-        void TolerateError(const string& message);
+        void TolerateError(const std::string& message);
 
         void ThrowUnexpectedToken(const Token& tok);
-        void ThrowUnexpectedToken(const Token& tok, const string& message);
+        void ThrowUnexpectedToken(const Token& tok, const std::string& message);
         void TolerateUnexpectedToken(const Token& tok);
-        void TolerateUnexpectedToken(const Token& tok, const string& message);
+        void TolerateUnexpectedToken(const Token& tok, const std::string& message);
 
         void ThrowError(const std::string& message);
         void ThrowError(const std::string& message, const std::string& arg);
 
-        Marker StartNode(Token& tok, uint32_t last_line_start = 0);
+        ParserContext::Marker StartNode(Token& tok, uint32_t last_line_start = 0);
 
-        inline Marker CreateStartMarker() {
+        inline Token& Lookahead() {
+            return ctx->lookahead_;
+        }
+
+        inline ParserContext::Marker CreateStartMarker() {
             return {
-                start_marker_.index,
-                start_marker_.line,
-                start_marker_.column
+                ctx->start_marker_.index,
+                ctx->start_marker_.line,
+                ctx->start_marker_.column
             };
         }
 
@@ -123,7 +82,7 @@ namespace parser {
         }
 
         inline bool Match(JsTokenType t) {
-            return lookahead_.type_ == t;
+            return ctx->lookahead_.type_ == t;
         }
 
         bool MatchContextualKeyword(const UString& keyword);
@@ -133,55 +92,67 @@ namespace parser {
 
         void CollectComments();
 
-        inline Sp<ParseErrorHandler> ErrorHandler() {
-            return error_handler_;
-        }
-
         [[nodiscard]] int BinaryPrecedence(const Token& token) const;
 
         static bool IsIdentifierName(Token&);
 
-        inline void SetLastMarker(const Marker& marker) {
-            last_marker_ = marker;
+        inline void SetLastMarker(const ParserContext::Marker& marker) {
+            ctx->last_marker_ = marker;
         }
 
-        [[nodiscard]] inline Marker LastMarker() const {
-            return last_marker_;
+        [[nodiscard]] inline ParserContext::Marker LastMarker() const {
+            return ctx->last_marker_;
         }
 
-        inline void SetStartMarker(const Marker& marker) {
-            start_marker_ = marker;
+        inline void SetStartMarker(const ParserContext::Marker& marker) {
+            ctx->start_marker_ = marker;
         }
 
-        [[nodiscard]] inline Marker StartMarker() const {
-            return start_marker_;
+        [[nodiscard]] inline ParserContext::Marker StartMarker() const {
+            return ctx->start_marker_;
         }
 
         inline void Assert(bool value, std::string message) {
             if (!value) {
-                throw ParseAssertFailed(std::move(message), last_marker_.line, last_marker_.column);
+                throw ParseAssertFailed(
+                    std::move(message), ctx->last_marker_.line,
+                    ctx->last_marker_.column
+                );
             }
         }
 
-    protected:
-        Config config_;
-        Context context_;
-        Token lookahead_;
-        unique_ptr<Scanner> scanner_;
-
-        Sp<ParseErrorHandler> error_handler_;
-        Sp<UString> source_;
-        bool has_line_terminator_;
-
-        stack<Token> tokens_;
-        vector<Sp<Comment>> comments_;
-
     private:
         ParseError UnexpectedToken(const Token& tok);
-        ParseError UnexpectedToken(const Token& tok, const string& message);
+        ParseError UnexpectedToken(const Token& tok, const std::string& message);
 
-        Marker start_marker_;
-        Marker last_marker_;
+    protected:
+        template<typename T, typename ...Args>
+        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
+        Alloc(Args && ...args) {
+            T* ptr = new T(std::forward<Args>(args)...);
+            return Sp<T>(ptr);
+        }
+
+        template<typename T>
+        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
+        Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
+            from->range = std::make_pair(marker.index, LastMarker().index);
+
+            from->location.start_ = Position {
+                marker.line,
+                marker.column,
+            };
+
+            from->location.end_ = Position {
+                LastMarker().line,
+                LastMarker().column,
+            };
+
+            return from;
+        }
+
+
+        std::shared_ptr<ParserContext> ctx;
 
     };
 

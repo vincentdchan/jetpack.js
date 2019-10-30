@@ -3,13 +3,14 @@
 //
 #pragma once
 
-#include "parser.hpp"
+#include <memory>
+#include "parser_common.h"
 
 namespace parser {
 
-    class TypeScriptParser {
+    class TypeScriptParser: private ParserCommon {
     public:
-        TypeScriptParser(Parser* parser);
+        TypeScriptParser(std::shared_ptr<ParserContext> state);
 
         TypeScriptParser(const TypeScriptParser& tsParser) = delete;
         TypeScriptParser(TypeScriptParser&& tsParser) = delete;
@@ -37,8 +38,6 @@ namespace parser {
 
     private:
         bool IsStartOfFunctionType();
-
-        Parser& parser_;
 
     };
 

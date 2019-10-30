@@ -11,6 +11,7 @@
 #include "../artery.h"
 
 using namespace parser;
+using namespace std;
 
 #define OPT_HELP "help"
 #define OPT_ENTRY "entry"
@@ -69,42 +70,43 @@ int main(int argc, char** argv) {
 
         auto start = std::chrono::system_clock::now();
 
-        for (int i = 0; i < 5; i++) {
-            ParserCommon::Config config = ParserCommon::Config::Default();
-            config.tolerant = result[OPT_TOLERANT].count();
-            config.jsx = result[OPT_JSX].count();
+//        for (int i = 0; i < 5; i++) {
+        auto config = ParserContext::Config::Default();
+        config.tolerant = result[OPT_TOLERANT].count();
+        config.jsx = result[OPT_JSX].count();
 
-            Parser parser(src, config);
-            if (result[OPT_ES_MODULE].count()) {
-                auto module = parser.ParseModule();
+        auto ctx = std::make_shared<ParserContext>(src, config);
+        Parser parser(ctx);
+        if (result[OPT_ES_MODULE].count()) {
+            auto module = parser.ParseModule();
 
-                if (result[OPT_PRETTY_PRINT].count()) {
-                    CodeGen codegen;
-                    codegen.TraverseNode(module);
-                } else {
-                    auto json_result = dumper::AstToJson::Dump(module);
-                    std::cout << json_result.dump(2) << std::endl;
-                }
+            if (result[OPT_PRETTY_PRINT].count()) {
+                CodeGen codegen;
+                codegen.TraverseNode(module);
             } else {
-                auto script = parser.ParseScript();
-
-//                if (result[OPT_PRETTY_PRINT].count()) {
-//                    CodeGen codegen;
-//                    codegen.TraverseNode(script);
-//                } else {
-//                    auto json_result = dumper::AstToJson::Dump(script);
-//                    std::cout << json_result.dump(2) << std::endl;
-//                }
+                auto json_result = dumper::AstToJson::Dump(module);
+                std::cout << json_result.dump(2) << std::endl;
             }
+        } else {
+            auto script = parser.ParseScript();
 
+            if (result[OPT_PRETTY_PRINT].count()) {
+                CodeGen codegen;
+                codegen.TraverseNode(script);
+            } else {
+                auto json_result = dumper::AstToJson::Dump(script);
+                std::cout << json_result.dump(2) << std::endl;
+            }
         }
-        auto end = std::chrono::system_clock::now();
 
-        std::chrono::duration<double> elapsed_seconds = end-start;
-        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+//        }
+//        auto end = std::chrono::system_clock::now();
 
-        std::cout << "finished computation at " << std::ctime(&end_time)
-                  << "elapsed time: " << elapsed_seconds.count() << "s\n";
+//        std::chrono::duration<double> elapsed_seconds = end-start;
+//        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+//
+//        std::cout << "finished computation at " << std::ctime(&end_time)
+//                  << "elapsed time: " << elapsed_seconds.count() << "s\n";
     } catch (ParseError& err) {
         std::cerr << err.ErrorMessage() << std::endl;
         return 1;

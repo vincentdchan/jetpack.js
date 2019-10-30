@@ -3,34 +3,37 @@
 //
 
 #include "typescript_parser.h"
+#include "parser.hpp"
 
 namespace parser {
 
-    TypeScriptParser::TypeScriptParser(parser::Parser *parser): parser_(*parser) {
+    TypeScriptParser::TypeScriptParser(std::shared_ptr<ParserContext> state):
+    ParserCommon(std::move(state)) {
     }
 
     Sp<TSTypeAliasDeclaration> TypeScriptParser::ParseTypeAliasDeclaration() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        if (!parser_.MatchContextualKeyword(u"type")) {
-            parser_.ThrowUnexpectedToken(parser_.lookahead_);
+        if (!MatchContextualKeyword(u"type")) {
+            ThrowUnexpectedToken(ctx->lookahead_);
         }
 
-        parser_.NextToken();
+        NextToken();
 
-        auto node = parser_.Alloc<TSTypeAliasDeclaration>();
+        auto node = Alloc<TSTypeAliasDeclaration>();
 
-        node->id = parser_.ParseIdentifierName();
+        Parser parser(ctx);
+        node->id = parser.ParseIdentifierName();
 
-        if (parser_.Match(JsTokenType::LessThan)) {
+        if (Match(JsTokenType::LessThan)) {
             node->type_parameters = { ParseTypeParameterDeclaration() };
         }
 
-        parser_.Expect(JsTokenType::Assign);
+        Expect(JsTokenType::Assign);
 
         node->type_annotation = ParseType();
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<TSType> TypeScriptParser::ParseType() {
@@ -42,45 +45,59 @@ namespace parser {
         if (IsStartOfFunctionType()) {
             return ParseFunctionType();
         }
-        if (parser_.Match(JsTokenType::K_New)) {
+        if (Match(JsTokenType::K_New)) {
             return ParseConstructorType();
         }
         return ParseUnionTypeOrHigher();
     }
 
     Sp<TSFunctionType> TypeScriptParser::ParseFunctionType() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        auto node = parser_.Alloc<TSFunctionType>();
+        auto node = Alloc<TSFunctionType>();
 
         // TODO: function type
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<TSConstructorType> TypeScriptParser::ParseConstructorType() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        auto node = parser_.Alloc<TSConstructorType>();
+        auto node = Alloc<TSConstructorType>();
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<TSThisType> TypeScriptParser::ParseThisType() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        parser_.Expect(JsTokenType::K_This);
+        Expect(JsTokenType::K_This);
 
-        auto node = parser_.Alloc<TSThisType>();
-        return parser_.Finalize(start_marker, node);
+        auto node = Alloc<TSThisType>();
+        return Finalize(start_marker, node);
     }
 
     Sp<TSLiteralType> TypeScriptParser::ParseLiteralTypeNode() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        auto node = parser_.Alloc<TSLiteralType>();
+        auto node = Alloc<TSLiteralType>();
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
+    }
+
+    bool TypeScriptParser::IsStartOfFunctionType() {
+        return false;
+    }
+
+    Sp<TSType> TypeScriptParser::ParseUnionTypeOrHigher() {
+        ThrowUnexpectedToken(ctx->lookahead_);
+        return nullptr;
+    }
+
+    Sp<TSTypeParameterDeclaration> TypeScriptParser::ParseTypeParameterDeclaration() {
+        ThrowUnexpectedToken(ctx->lookahead_);
+        return nullptr;
     }
 
 }

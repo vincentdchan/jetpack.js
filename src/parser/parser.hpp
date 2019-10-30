@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include "../tokenizer/token.h"
+#include "parser_context.h"
 #include "parser_common.h"
 #include "error_message.h"
 #include "nodes_size.h"
@@ -27,71 +28,55 @@ namespace parser {
 
         typedef std::function<void (const Sp<ImportDeclaration>&)> ImportDeclarationCreatedCallback;
 
-        Parser(
-            shared_ptr<u16string> source,
-            const Config& config
-        ): ParserCommon(source, config) {}
+        Parser(std::shared_ptr<ParserContext> state):
+        ParserCommon(state) {}
 //            nodes_pool(node_size::max_node_size) {}
-
-        Parser(shared_ptr<u16string> source): Parser(std::move(source), ParserCommon::Config::Default()) {
-
-        }
 
         void OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback);
 
-        template<typename T, typename ...Args>
-        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
-        Alloc(Args && ...args) {
-            T* ptr = new T(std::forward<Args>(args)...);
-            return Sp<T>(ptr);
-        }
-
         template <typename T>
         Sp<T> IsolateCoverGrammar(std::function<Sp<T>()> cb) {
-            auto previousIsBindingElement = context_.is_binding_element;
-            auto previousIsAssignmentTarget = context_.is_assignment_target;
-            auto previousFirstCoverInitializedNameError = context_.first_cover_initialized_name_error;
+            auto previousIsBindingElement = ctx->is_binding_element_;
+            auto previousIsAssignmentTarget = ctx->is_assignment_target_;
+            auto previousFirstCoverInitializedNameError = ctx->first_cover_initialized_name_error_;
 
-            context_.is_binding_element = true;
-            context_.is_assignment_target = true;
-            context_.first_cover_initialized_name_error.reset();
+            ctx->is_binding_element_ = true;
+            ctx->is_assignment_target_ = true;
+            ctx->first_cover_initialized_name_error_.reset();
 
             Sp<T> result = cb();
-            if (context_.first_cover_initialized_name_error) {
+            if (ctx->first_cover_initialized_name_error_) {
                 ThrowUnexpectedToken(Token(), "firstCoverInitializedNameError");
                 return nullptr;
             }
 
-            context_.is_binding_element = previousIsBindingElement;
-            context_.is_assignment_target = previousIsAssignmentTarget;
-            context_.first_cover_initialized_name_error = previousFirstCoverInitializedNameError;
+            ctx->is_binding_element_ = previousIsBindingElement;
+            ctx->is_assignment_target_ = previousIsAssignmentTarget;
+            ctx->first_cover_initialized_name_error_ = previousFirstCoverInitializedNameError;
 
             return result;
         }
 
         template <typename T>
         Sp<T> InheritCoverGrammar(std::function<Sp<T>()> cb) {
-            auto previousIsBindingElement = context_.is_binding_element;
-            auto previousIsAssignmentTarget = context_.is_assignment_target;
-            auto previousFirstCoverInitializedNameError = context_.first_cover_initialized_name_error;
+            auto previousIsBindingElement = ctx->is_binding_element_;
+            auto previousIsAssignmentTarget = ctx->is_assignment_target_;
+            auto previousFirstCoverInitializedNameError = ctx->first_cover_initialized_name_error_;
 
-            context_.is_binding_element = true;
-            context_.is_assignment_target = true;
-            context_.first_cover_initialized_name_error.reset();
+            ctx->is_binding_element_ = true;
+            ctx->is_assignment_target_ = true;
+            ctx->first_cover_initialized_name_error_.reset();
 
             Sp<T> result = cb();
 
-            context_.is_binding_element &= previousIsBindingElement;
-            context_.is_assignment_target &= previousIsAssignmentTarget;
-            context_.first_cover_initialized_name_error =
+            ctx->is_binding_element_ &= previousIsBindingElement;
+            ctx->is_assignment_target_ &= previousIsAssignmentTarget;
+            ctx->first_cover_initialized_name_error_ =
                 previousFirstCoverInitializedNameError ?
-                previousFirstCoverInitializedNameError : context_.first_cover_initialized_name_error;
+                previousFirstCoverInitializedNameError : ctx->first_cover_initialized_name_error_;
 
             return result;
         }
-
-        template<typename T>
-        Sp<T> Finalize(const Marker& marker, const Sp<T>& from);
 
         Sp<Expression> ParsePrimaryExpression();
 
@@ -180,7 +165,7 @@ namespace parser {
 
         Sp<Expression> ParseArrayInitializer();
 
-        FormalParameterOptions ParseFormalParameters(optional<Token> first_restricted = nullopt);
+        FormalParameterOptions ParseFormalParameters(std::optional<Token> first_restricted = std::nullopt);
         void ParseFormalParameter(FormalParameterOptions& option);
         void ValidateParam(FormalParameterOptions& option, const Token& param, const UString& name);
         bool IsStartOfExpression();
@@ -297,8 +282,8 @@ namespace parser {
 
         inline bool MatchAsyncFunction();
 
-        inline vector<Sp<Comment>>& Comments() {
-            return comments_;
+        inline std::vector<Sp<Comment>>& Comments() {
+            return ctx->comments_;
         }
 
         ~Parser() = default;
@@ -308,34 +293,14 @@ namespace parser {
 
     };
 
-
-//    template<typename FromT, typename ToT>
-//    bool Finalize(const Marker& marker, FromT from, ToT& to);
-    template<typename T>
-    Sp<T> Parser::Finalize(const Parser::Marker &marker, const Sp<T>& from) {
-        from->range = std::make_pair(marker.index, LastMarker().index);
-
-        from->location.start_ = Position {
-            marker.line,
-            marker.column,
-        };
-
-        from->location.end_ = Position {
-            LastMarker().line,
-            LastMarker().column,
-        };
-
-        return from;
-    }
-
     inline bool Parser::MatchAsyncFunction() {
         bool match = MatchContextualKeyword(u"async");
         if (match) {
-            auto state = scanner_->SaveState();
+            auto state = ctx->scanner_->SaveState();
             std::vector<Sp<Comment>> comments;
-            scanner_->ScanComments(comments);
-            Token next = scanner_->Lex();
-            scanner_->RestoreState(state);
+            ctx->scanner_->ScanComments(comments);
+            Token next = ctx->scanner_->Lex();
+            ctx->scanner_->RestoreState(state);
 
             match = (state.line_number_ == next.line_number_) && IsKeywordToken(next.type_) && (next.value_ == u"function");
         }
