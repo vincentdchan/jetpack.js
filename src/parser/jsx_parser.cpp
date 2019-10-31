@@ -8,8 +8,9 @@
 #include "jsx_parser.h"
 
 namespace parser {
+    using namespace std;
 
-    JSXParser::JSXParser(parser::Parser* parser): parser_(*parser) {
+    JSXParser::JSXParser(std::shared_ptr<ParserContext> ctx): ParserCommon(ctx)  {
     }
 
     UString JSXParser::GetQualifiedElementName(const Sp<SyntaxNode> &node) {
@@ -55,9 +56,9 @@ namespace parser {
     }
 
     Sp<JSXElement> JSXParser::ParseJSXElement() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        auto node = parser_.Alloc<JSXElement>();
+        auto node = Alloc<JSXElement>();
         node->opening_element = ParseJSXOpeningElement();
 
         if (!node->opening_element->self_closing) {
@@ -72,43 +73,43 @@ namespace parser {
             node->closing_element = el->closing_;
         }
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<JSXOpeningElement> JSXParser::ParseJSXOpeningElement() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        Expect(JsTokenType::LessThan);
-        auto node = parser_.Alloc<JSXOpeningElement>();
+        JSXExpect(JsTokenType::LessThan);
+        auto node = Alloc<JSXOpeningElement>();
         node->name = ParseJSXElementName();
         node->attributes = ParseJSXAttributes();
-        node->self_closing = Match(JsTokenType::Div);
+        node->self_closing = JSXMatch(JsTokenType::Div);
         if (node->self_closing) {
-            Expect(JsTokenType::Div);
+            JSXExpect(JsTokenType::Div);
         }
-        Expect(JsTokenType::GreaterThan);
+        JSXExpect(JsTokenType::GreaterThan);
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<SyntaxNode> JSXParser::ParseJSXElementName() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
         auto element_name = ParseJSXIdentifier();
 
-        if (Match(JsTokenType::Colon)) {
-            Expect(JsTokenType::Colon);
-            auto node = parser_.Alloc<JSXNamespacedName>();
+        if (JSXMatch(JsTokenType::Colon)) {
+            JSXExpect(JsTokenType::Colon);
+            auto node = Alloc<JSXNamespacedName>();
             node->namespace_ = move(element_name);
             node->name = ParseJSXIdentifier();
-            return parser_.Finalize(start_marker, node);
-        } else if (Match(JsTokenType::Dot)) {
+            return Finalize(start_marker, node);
+        } else if (JSXMatch(JsTokenType::Dot)) {
             Sp<SyntaxNode> object = std::move(element_name);
-            while (Match(JsTokenType::Dot)) {
-                Expect(JsTokenType::Dot);
-                auto node = parser_.Alloc<JSXMemberExpression>();
+            while (JSXMatch(JsTokenType::Dot)) {
+                JSXExpect(JsTokenType::Dot);
+                auto node = Alloc<JSXMemberExpression>();
                 node->object = std::move(object);
                 node->property = ParseJSXIdentifier();
-                object = parser_.Finalize(start_marker, node);
+                object = Finalize(start_marker, node);
             }
             return object;
         }
@@ -119,8 +120,8 @@ namespace parser {
     std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXAttributes() {
         std::vector<Sp<SyntaxNode>> result;
 
-        while (!Match(JsTokenType::Div) && !Match(JsTokenType::GreaterThan)) {
-            if (Match(JsTokenType::LeftBracket)) {
+        while (!JSXMatch(JsTokenType::Div) && !JSXMatch(JsTokenType::GreaterThan)) {
+            if (JSXMatch(JsTokenType::LeftBracket)) {
                 result.push_back(ParseJSXSpreadAttribute());
             } else {
                 result.push_back(ParseJSXNameValueAttribute());
@@ -134,17 +135,17 @@ namespace parser {
         JSXParser::ParseComplexJSXElement(Sp<JSXParser::MetaJSXElement> el) {
         std::stack<Sp<MetaJSXElement>> el_stack;
 
-        while (!parser_.scanner_->IsEnd()) {
+        while (!ctx->scanner_->IsEnd()) {
             auto children = ParseJSXChildren();
             el->children_.insert(el->children_.end(), children.begin(), children.end());
 
-            auto start_marker = parser_.CreateStartMarker();
+            auto start_marker = CreateStartMarker();
             auto element = ParseJSXBoundaryElement();
 
             if (element->type == SyntaxNodeType::JSXOpeningElement) {
                 auto opening = dynamic_pointer_cast<JSXOpeningElement>(element);
                 if (opening->self_closing) {
-                    auto child = parser_.Alloc<JSXElement>();
+                    auto child = Alloc<JSXElement>();
                     child->opening_element = move(opening);
                     el->children_.emplace_back(move(child));
                 } else {
@@ -162,14 +163,14 @@ namespace parser {
                 UString open = GetQualifiedElementName(el->opening_->name);
                 UString close = GetQualifiedElementName(closing->name);
                 if (open != close) {
-                    parser_.TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", utils::To_UTF8(open)));
+                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", utils::To_UTF8(open)));
                 }
                 if (!el_stack.empty()) {
-                    auto node = parser_.Alloc<JSXElement>();
+                    auto node = Alloc<JSXElement>();
                     node->opening_element = el->opening_;
                     node->closing_element = el->closing_;
                     node->children = el->children_;
-                    auto child = parser_.Finalize(el->start_marker_, node);
+                    auto child = Finalize(el->start_marker_, node);
                     el = el_stack.top();
                     el->children_.push_back(child);
                     el_stack.pop();
@@ -183,91 +184,95 @@ namespace parser {
     }
 
     Sp<JSXIdentifier> JSXParser::ParseJSXIdentifier() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
         if (token.type_ != JsTokenType::Identifier) {
-            parser_.ThrowUnexpectedToken(token);
+            ThrowUnexpectedToken(token);
         }
-        auto id = parser_.Alloc<JSXIdentifier>();
+        auto id = Alloc<JSXIdentifier>();
         id->name = token.value_;
-        return parser_.Finalize(start_marker, id);
+        return Finalize(start_marker, id);
     }
 
     Sp<JSXSpreadAttribute> JSXParser::ParseJSXSpreadAttribute() {
-        auto start_marker = parser_.CreateStartMarker();
-        Expect(JsTokenType::LeftBracket);
-        Expect(JsTokenType::Spread);
+        auto start_marker = CreateStartMarker();
+        JSXExpect(JsTokenType::LeftBracket);
+        JSXExpect(JsTokenType::Spread);
 
-        auto node = parser_.Alloc<JSXSpreadAttribute>();
+        auto node = Alloc<JSXSpreadAttribute>();
         FinishJSX();
-        node->argument = parser_.ParseAssignmentExpression();
+
+        Parser parser(ctx);
+        node->argument = parser.ParseAssignmentExpression();
         ReEnterJSX();
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<JSXAttribute> JSXParser::ParseJSXNameValueAttribute() {
-        auto start_marker = parser_.CreateStartMarker();
-        auto node = parser_.Alloc<JSXAttribute>();
+        auto start_marker = CreateStartMarker();
+        auto node = Alloc<JSXAttribute>();
         node->name = ParseJSXAttributeName();
 
-        if (Match(JsTokenType::Assign)) {
-            Expect(JsTokenType::Assign);
+        if (JSXMatch(JsTokenType::Assign)) {
+            JSXExpect(JsTokenType::Assign);
             node->value = { ParseJSXAttributeValue() };
         }
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<SyntaxNode> JSXParser::ParseJSXAttributeName() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
         auto id = ParseJSXIdentifier();
-        if (Match(JsTokenType::Colon)) {
-            Expect(JsTokenType::Colon);
-            auto node = parser_.Alloc<JSXNamespacedName>();
+        if (JSXMatch(JsTokenType::Colon)) {
+            JSXExpect(JsTokenType::Colon);
+            auto node = Alloc<JSXNamespacedName>();
             node->namespace_ = std::move(id);
             node->name = ParseJSXIdentifier();
-            return parser_.Finalize(start_marker, node);
+            return Finalize(start_marker, node);
         }
 
         return id;
     }
 
     Sp<Literal> JSXParser::ParseJSXStringLiteralAttribute() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
         if (token.type_ != JsTokenType::StringLiteral) {
-            parser_.ThrowUnexpectedToken(token);
+            ThrowUnexpectedToken(token);
         }
 
-        auto node = parser_.Alloc<Literal>();
-        node->raw = parser_.GetTokenRaw(token);
+        auto node = Alloc<Literal>();
+        node->raw = GetTokenRaw(token);
         node->value = token.value_;
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionAttribute() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        Expect(JsTokenType::LeftBracket);
+        JSXExpect(JsTokenType::LeftBracket);
         FinishJSX();
 
-        if (parser_.Match(JsTokenType::RightBracket)) {
-            parser_.TolerateError("JSX attributes must only be assigned a non-empty expression");
+        if (Match(JsTokenType::RightBracket)) {
+            TolerateError("JSX attributes must only be assigned a non-empty expression");
         }
 
-        auto node = parser_.Alloc<JSXExpressionContainer>();
-        node->expression = parser_.ParseAssignmentExpression();
+        auto node = Alloc<JSXExpressionContainer>();
+
+        Parser parser(ctx);
+        node->expression = parser.ParseAssignmentExpression();
 
         ReEnterJSX();
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Sp<SyntaxNode> JSXParser::ParseJSXAttributeValue() {
-        if (Match(JsTokenType::LeftBracket)) {
+        if (JSXMatch(JsTokenType::LeftBracket)) {
             return ParseJSXExpressionAttribute();
-        } else if (Match(JsTokenType::LessThan)) {
+        } else if (JSXMatch(JsTokenType::LessThan)) {
             return ParseJSXElement();
         } else {
             return ParseJSXStringLiteralAttribute();
@@ -277,16 +282,16 @@ namespace parser {
     std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXChildren() {
         std::vector<Sp<SyntaxNode>> result;
 
-        while (!parser_.scanner_->IsEnd()) {
-            auto start_marker = parser_.CreateStartMarker();
+        while (!ctx->scanner_->IsEnd()) {
+            auto start_marker = CreateStartMarker();
             auto token = NextJSXText();
             if (token.range_.first < token.range_.second) {
-                auto node = parser_.Alloc<JSXText>();
-                node->raw = parser_.GetTokenRaw(token);
+                auto node = Alloc<JSXText>();
+                node->raw = GetTokenRaw(token);
                 node->value = token.value_;
-                result.push_back(parser_.Finalize(start_marker, node));
+                result.push_back(Finalize(start_marker, node));
             }
-            if (parser_.scanner_->CharAt(parser_.scanner_->Index()) == u'{') {
+            if (ctx->scanner_->CharAt(ctx->scanner_->Index()) == u'{') {
                 auto container = ParseJSXExpressionContainer();
                 result.push_back(container);
             } else {
@@ -298,153 +303,160 @@ namespace parser {
     }
 
     Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionContainer() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        Expect(JsTokenType::LeftBracket);
+        JSXExpect(JsTokenType::LeftBracket);
         FinishJSX();
 
-        if (Match(JsTokenType::RightBracket)) {
-            parser_.TolerateError("JSX attributes must only be assigned a non-empty expression");
+        if (JSXMatch(JsTokenType::RightBracket)) {
+            TolerateError("JSX attributes must only be assigned a non-empty expression");
         }
 
-        auto node = parser_.Alloc<JSXExpressionContainer>();
-        node->expression = parser_.ParseAssignmentExpression();
+        auto node = Alloc<JSXExpressionContainer>();
+
+        Parser parser(ctx);
+        node->expression = parser.ParseAssignmentExpression();
 
         ReEnterJSX();
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     void JSXParser::StartJSX() {
-        parser_.scanner_->SetIndex(parser_.StartMarker().index);
-        parser_.scanner_->SetLineNumber(parser_.StartMarker().line);
-        parser_.scanner_->SetLineStart(parser_.StartMarker().index - parser_.StartMarker().column);
+        ctx->scanner_->SetIndex(StartMarker().index);
+        ctx->scanner_->SetLineNumber(StartMarker().line);
+        ctx->scanner_->SetLineStart(StartMarker().index - StartMarker().column);
     }
 
     void JSXParser::FinishJSX() {
-        parser_.NextToken();
+        NextToken();
     }
 
     void JSXParser::ReEnterJSX() {
         StartJSX();
-        Expect(JsTokenType::RightBracket);
+        JSXExpect(JsTokenType::RightBracket);
     }
 
     Token JSXParser::NextJSXToken() {
-        parser_.CollectComments();
+        CollectComments();
 
-        parser_.SetStartMarker({
-            parser_.scanner_->Index(),
-            parser_.scanner_->LineNumber(),
-            parser_.scanner_->Index() - parser_.scanner_->LineStart(),
+        Scanner& scanner = *ctx->scanner_;
+
+        SetStartMarker({
+            scanner.Index(),
+            scanner.LineNumber(),
+            scanner.Index() - scanner.LineStart(),
         });
 
         Token token = LexJSX();
 
-        parser_.SetLastMarker({
-            parser_.scanner_->Index(),
-            parser_.scanner_->LineNumber(),
-            parser_.scanner_->Index() - parser_.scanner_->LineStart(),
+        SetLastMarker({
+            scanner.Index(),
+            scanner.LineNumber(),
+            scanner.Index() - scanner.LineStart(),
         });
 
         return token;
     }
 
     Token JSXParser::NextJSXText() {
-        parser_.SetStartMarker({
-            parser_.scanner_->Index(),
-            parser_.scanner_->LineNumber(),
-            parser_.scanner_->Index() - parser_.scanner_->LineStart(),
-       });
+        Scanner& scanner = *ctx->scanner_;
 
-        auto start = parser_.scanner_->Index();
+        SetStartMarker({
+            scanner.Index(),
+            scanner.LineNumber(),
+            scanner.Index() - scanner.LineStart(),
+        });
+
+        auto start = scanner.Index();
 
         UString text;
-        while (!parser_.scanner_->IsEnd()) {
-            char16_t ch = parser_.scanner_->CharAt(parser_.scanner_->Index());
+        while (!scanner.IsEnd()) {
+            char16_t ch = scanner.CharAt(scanner.Index());
             if (ch == u'{' || ch == u'<') {
                 break;
             }
-            parser_.scanner_->IncreaseIndex();
+            scanner.IncreaseIndex();
             text.push_back(ch);
             if (utils::IsLineTerminator(ch)) {
-                parser_.scanner_->SetLineNumber(parser_.scanner_->LineNumber() + 1);
-                if (ch == u'\r' && parser_.scanner_->CharAt(parser_.scanner_->Index()) == u'\n') {
-                    parser_.scanner_->IncreaseIndex();
+                scanner.SetLineNumber(scanner.LineNumber() + 1);
+                if (ch == u'\r' && scanner.CharAt(scanner.Index()) == u'\n') {
+                    scanner.IncreaseIndex();
                 }
-                parser_.scanner_->SetLineStart(parser_.scanner_->Index());
+                scanner.SetLineStart(scanner.Index());
             }
         }
 
-
-        parser_.SetLastMarker({
-            parser_.scanner_->Index(),
-            parser_.scanner_->LineNumber(),
-            parser_.scanner_->Index() - parser_.scanner_->LineStart(),
+        SetLastMarker({
+            scanner.Index(),
+            scanner.LineNumber(),
+            scanner.Index() - scanner.LineStart(),
         });
 
         Token token;
         token.value_ = move(text);
-        token.line_number_ = parser_.scanner_->LineNumber();
-        token.line_start_ = parser_.scanner_->LineStart();
+        token.line_number_ = scanner.LineNumber();
+        token.line_start_ = scanner.LineStart();
         token.range_ = {
             start,
-            parser_.scanner_->Index(),
+            scanner.Index(),
         };
 
         return token;
     }
 
     Token JSXParser::LexJSX() {
-        char16_t cp = parser_.scanner_->CharAt(parser_.scanner_->Index());
+        auto& scanner = *ctx->scanner_;
+
+        char16_t cp = scanner.CharAt(scanner.Index());
 
         Token token;
         // < > / : = { }
         switch (cp) {
             case u'<': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::LessThan;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u'>': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::GreaterThan;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u'/': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::Div;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u':': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::Colon;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u'=': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::Assign;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u'{': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::LeftBracket;
                 token.value_.push_back(cp);
                 break;
             }
 
             case u'}': {
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 token.type_ = JsTokenType::RightBracket;
                 token.value_.push_back(cp);
                 break;
@@ -452,13 +464,13 @@ namespace parser {
 
             case u'"':
             case u'\'': {
-                auto start = parser_.scanner_->Index();
+                auto start = scanner.Index();
                 char16_t quote = cp;
-                parser_.scanner_->IncreaseIndex();
+                scanner.IncreaseIndex();
                 UString str;
-                while (!parser_.scanner_->IsEnd()) {
-                    char16_t ch = parser_.scanner_->CharAt(parser_.scanner_->Index());
-                    parser_.scanner_->IncreaseIndex();
+                while (!scanner.IsEnd()) {
+                    char16_t ch = scanner.CharAt(scanner.Index());
+                    scanner.IncreaseIndex();
                     if (ch == quote) {
                         break;
                     } else if (ch == u'&') {
@@ -470,20 +482,20 @@ namespace parser {
 
                 token.type_ = JsTokenType::StringLiteral;
                 token.value_ = move(str);
-                token.line_number_ = parser_.scanner_->LineNumber();
-                token.line_start_ = parser_.scanner_->LineStart();
+                token.line_number_ = scanner.LineNumber();
+                token.line_start_ = scanner.LineStart();
                 token.range_ = {
                     start,
-                    parser_.scanner_->Index(),
+                    scanner.Index(),
                 };
 
                 return token;
             }
 
             case u'.': {
-                auto index = parser_.scanner_->Index();
-                char16_t n1 = parser_.scanner_->CharAt(index + 1);
-                char16_t n2 = parser_.scanner_->CharAt(index + 2);
+                auto index = scanner.Index();
+                char16_t n1 = scanner.CharAt(index + 1);
+                char16_t n2 = scanner.CharAt(index + 2);
                 UString value;
 
                 if (n1 == u'.' && n2 == u'.') {
@@ -494,13 +506,13 @@ namespace parser {
                     value.push_back(u'.');
                 }
 
-                parser_.scanner_->SetIndex(index + value.size());
+                scanner.SetIndex(index + value.size());
 
-                token.line_number_ = parser_.scanner_->LineNumber();
-                token.line_start_ = parser_.scanner_->LineStart();
+                token.line_number_ = scanner.LineNumber();
+                token.line_start_ = scanner.LineStart();
                 token.range_ = {
                     index,
-                    parser_.scanner_->Index(),
+                    scanner.Index(),
                 };
 
                 return token;
@@ -508,11 +520,12 @@ namespace parser {
 
             case u'`': {
                 token.type_ = JsTokenType::Template;
-                token.line_number_ = parser_.scanner_->LineNumber();
-                token.line_start_ = parser_.scanner_->LineStart(),
+                token.line_number_ = scanner.LineNumber();
+                token.line_start_ = scanner.LineStart(),
                 token.range_ = {
-                    parser_.scanner_->Index(),
-                    parser_.scanner_->Index(),
+                    scanner.Index(),
+                    scanner.Index(),
+                    // TODO: + 1?
                 };
                 return token;
             }
@@ -522,45 +535,44 @@ namespace parser {
         }
 
         if (token.type_ != JsTokenType::Invalid) {
-            token.line_number_ = parser_.scanner_->LineNumber();
-            token.line_start_ = parser_.scanner_->LineStart();
+            token.line_number_ = scanner.LineNumber();
+            token.line_start_ = scanner.LineStart();
             token.range_ = {
-                parser_.scanner_->Index() - 1,
-                parser_.scanner_->Index(),
+                scanner.Index() - 1,
+                scanner.Index(),
             };
             return token;
         }
 
         if (utils::IsIdentifierStart(cp) && cp != 92) {
-            auto start = parser_.scanner_->Index();
-            parser_.scanner_->IncreaseIndex();
-            while (!parser_.scanner_->IsEnd()) {
-                char16_t ch = parser_.scanner_->CharAt(parser_.scanner_->Index());
+            auto start = scanner.Index();
+            scanner.IncreaseIndex();
+            while (!scanner.IsEnd()) {
+                char16_t ch = scanner.CharAt(scanner.Index());
                 if (utils::IsIdentifierPart(ch) && (ch != 92)) {
-                    parser_.scanner_->IncreaseIndex();
+                    scanner.IncreaseIndex();
                 } else if (ch == 45) {
                     // Hyphen (char code 45) can be part of an identifier.
-                    parser_.scanner_->IncreaseIndex();
+                    scanner.IncreaseIndex();
                 } else {
                     break;
                 }
             }
-            UString id = parser_.scanner_
-                ->Source()
-                ->substr(start, parser_.scanner_->Index() - start);
+            UString id = scanner.Source()
+                ->substr(start, scanner.Index() - start);
 
             token.type_ = JsTokenType::Identifier;
             token.value_ = move(id);
-            token.line_start_ = parser_.scanner_->LineStart();
-            token.line_number_ = parser_.scanner_->LineNumber();
+            token.line_start_ = scanner.LineStart();
+            token.line_number_ = scanner.LineNumber();
             token.range_ = {
                 start,
-                parser_.scanner_->Index(),
+                scanner.Index(),
             };
             return token;
         }
 
-        return parser_.scanner_->Lex();
+        return scanner.Lex();
     }
 
     UString JSXParser::ScanXHTMLEntity(char16_t quote) {
@@ -571,14 +583,16 @@ namespace parser {
         bool numeric = false;
         bool hex = false;
 
-        while (!parser_.scanner_->IsEnd() && valid && !terminated) {
-            char16_t ch = parser_.scanner_->CharAt(parser_.scanner_->Index());
+        Scanner& scanner = *ctx->scanner_;
+
+        while (!scanner.IsEnd() && valid && !terminated) {
+            char16_t ch = scanner.CharAt(scanner.Index());
             if (ch == quote) {
                 break;
             }
             terminated = (ch == u';');
             result.push_back(ch);
-            parser_.scanner_->IncreaseIndex();
+            scanner.IncreaseIndex();
             if (!terminated) {
                 switch (result.size()) {
                     case 2:
@@ -624,36 +638,36 @@ namespace parser {
     }
 
     Sp<SyntaxNode> JSXParser::ParseJSXBoundaryElement() {
-        auto start_marker = parser_.CreateStartMarker();
+        auto start_marker = CreateStartMarker();
 
-        Expect(JsTokenType::LessThan);
-        if (Match(JsTokenType::Div)) {
-            Expect(JsTokenType::Div);
-            auto node = parser_.Alloc<JSXClosingElement>();
+        JSXExpect(JsTokenType::LessThan);
+        if (JSXMatch(JsTokenType::Div)) {
+            JSXExpect(JsTokenType::Div);
+            auto node = Alloc<JSXClosingElement>();
             node->name = ParseJSXElementName();
-            Expect(JsTokenType::GreaterThan);
-            return parser_.Finalize(start_marker, node);
+            JSXExpect(JsTokenType::GreaterThan);
+            return Finalize(start_marker, node);
         }
 
-        auto node = parser_.Alloc<JSXOpeningElement>();
+        auto node = Alloc<JSXOpeningElement>();
         node->name = ParseJSXElementName();
         node->attributes = ParseJSXAttributes();
-        node->self_closing = Match(JsTokenType::Div);
+        node->self_closing = JSXMatch(JsTokenType::Div);
         if (node->self_closing) {
-            Expect(JsTokenType::Div);
+            JSXExpect(JsTokenType::Div);
         }
-        Expect(JsTokenType::GreaterThan);
+        JSXExpect(JsTokenType::GreaterThan);
 
-        return parser_.Finalize(start_marker, node);
+        return Finalize(start_marker, node);
     }
 
     Token JSXParser::PeekJSXToken() {
-        auto state =  parser_.scanner_->SaveState();
+        auto state =  ctx->scanner_->SaveState();
 
         std::vector<Sp<Comment>> comments;
-        parser_.scanner_->ScanComments(comments);
+        ctx->scanner_->ScanComments(comments);
         Token next = LexJSX();
-        parser_.scanner_->RestoreState(state);
+        ctx->scanner_->RestoreState(state);
 
         return next;
     }

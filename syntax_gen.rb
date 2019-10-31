@@ -15,6 +15,8 @@ class Symbol
       return "double"
     elsif self == :VarKind then
       return "VarKind"
+    elsif self == :TSAccessibility then
+      return "TSAccessibility"
     else
       return "Sp<" + self.to_s + ">"
     end
@@ -107,7 +109,9 @@ print_title
 puts "
 #pragma once
 
-enum class SyntaxNodeType {
+#include <cinttypes>
+
+enum class SyntaxNodeType: std::int16_t {
     Invalid = 0,
 
 "

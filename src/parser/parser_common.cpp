@@ -8,78 +8,39 @@
 #include <fmt/format.h>
 
 namespace parser {
+    using namespace std;
 
-    char* ParserCommon::tc_allocator::malloc(const parser::ParserCommon::tc_allocator::size_type size) {
-        return reinterpret_cast<char*>(::malloc(size));
-    }
+    ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state):
+        ctx(std::move(state)) {
 
-    void ParserCommon::tc_allocator::free(char *const ptr) {
-        ::free(ptr);
-    }
-
-    ParserCommon::Config ParserCommon::Config::Default() {
-        return {
-            nullopt,
-            false,
-            true,
-            false,
-            false,
-        };
-    }
-
-    ParserCommon::ParserCommon(shared_ptr <std::u16string> source, const ParserCommon::Config& config):
-        source_(source), config_(config) {
-
-        error_handler_ = std::make_shared<ParseErrorHandler>();
-
-        scanner_ = make_unique<Scanner>(source, error_handler_);
-        has_line_terminator_ = false;
-
-        lookahead_.type_ = JsTokenType::EOF_;
-        lookahead_.line_number_ = scanner_->LineNumber();
-        lookahead_.line_start_ = 0;
-        lookahead_.range_ = make_pair(0, 0);
-
-        context_.is_module = false;
-        context_.await = false;
-        context_.allow_in = true;
-        context_.allow_strict_directive = true;
-        context_.allow_yield = true;
-        context_.is_assignment_target = false;
-        context_.is_binding_element = false;
-        context_.in_function_body = false;
-        context_.in_iteration = false;
-        context_.in_switch = false;
-        context_.strict_ = false;
-
-        start_marker_ = Marker {
+        ctx->start_marker_ = ParserContext::Marker {
             0,
-            scanner_->LineNumber(),
+            ctx->scanner_->LineNumber(),
             0,
         };
 
-        last_marker_ = Marker {
+        ctx->last_marker_ = ParserContext::Marker {
             0,
-            scanner_->LineNumber(),
+            ctx->scanner_->LineNumber(),
             0,
         };
 
         NextToken();
 
-        last_marker_ = Marker {
-            scanner_->Index(),
-            scanner_->LineNumber(),
-            scanner_->Column(),
+        ctx->last_marker_ = ParserContext::Marker {
+            ctx->scanner_->Index(),
+            ctx->scanner_->LineNumber(),
+            ctx->scanner_->Column(),
         };
     }
 
     void ParserCommon::TolerateError(const std::string &message) {
         ParseError error;
         error.msg_ = message;
-        error.index_ = last_marker_.index;
-        error.line_ = last_marker_.line ;
-        error.col_ = last_marker_.column + 1;
-        error_handler_->TolerateError(error);
+        error.index_ = ctx->last_marker_.index;
+        error.line_ = ctx->last_marker_.line ;
+        error.col_ = ctx->last_marker_.column + 1;
+        ctx->error_handler_->TolerateError(error);
     }
 
     void ParserCommon::TolerateUnexpectedToken(const Token& tok) {
@@ -118,22 +79,22 @@ namespace parser {
         if (token.line_number_ > 0) {
             uint32_t index = token.range_.first;
             uint32_t line = token.line_number_;
-            uint32_t lastMarkerLineStart = last_marker_.index - last_marker_.column;
+            uint32_t lastMarkerLineStart = ctx->last_marker_.index - ctx->last_marker_.column;
             uint32_t column = token.range_.first - lastMarkerLineStart + 1;
-            return error_handler_->CreateError(message, index, line, column);
+            return ctx->error_handler_->CreateError(message, index, line, column);
         } else {
             uint32_t index = token.range_.first;
             uint32_t line = token.line_number_;
-            uint32_t column = last_marker_.column + 1;
-            return error_handler_->CreateError(message, index, line, column);
+            uint32_t column = ctx->last_marker_.column + 1;
+            return ctx->error_handler_->CreateError(message, index, line, column);
         }
     }
 
     void ParserCommon::ThrowError(const std::string &message) {
-        auto index = last_marker_.index;
-        auto line = last_marker_.line;
-        auto column = last_marker_.column + 1;
-        throw error_handler_->CreateError(message, index, line, column);
+        auto index = ctx->last_marker_.index;
+        auto line = ctx->last_marker_.line;
+        auto column = ctx->last_marker_.column + 1;
+        throw ctx->error_handler_->CreateError(message, index, line, column);
     }
 
     void ParserCommon::ThrowError(const std::string &message, const std::string &arg) {
@@ -150,45 +111,50 @@ namespace parser {
 
     void ParserCommon::DecorateToken(Token& token) {
         token.loc_.start_ = Position {
-            start_marker_.line,
-            start_marker_.column,
+            ctx->start_marker_.line,
+            ctx->start_marker_.column,
         };
 
         token.loc_.end_ = Position {
-            scanner_->LineNumber(),
-            scanner_->Column(),
+            ctx->scanner_->LineNumber(),
+            ctx->scanner_->Column(),
         };
     }
 
     Token ParserCommon::NextToken() {
-        Token token = lookahead_;
+        Token token = ctx->lookahead_;
+        Scanner& scanner = *ctx->scanner_.get();
 
-        last_marker_.index = scanner_->Index();
-        last_marker_.line = scanner_->LineNumber();
-        last_marker_.column = scanner_->Column();
+        ctx->last_marker_ = ParserContext::Marker {
+            scanner.Index(),
+            scanner.LineNumber(),
+            scanner.Column(),
+        };
 
         CollectComments();
 
-        if (scanner_->Index() != start_marker_.index) {
-            start_marker_.index = scanner_->Index();
-            start_marker_.line = scanner_->LineNumber();
-            start_marker_.column = scanner_->Index() - scanner_->LineStart();
+        if (scanner.Index() != ctx->start_marker_.index) {
+            ctx->start_marker_ = ParserContext::Marker {
+                scanner.Index(),
+                scanner.LineNumber(),
+                scanner.Index() - scanner.LineStart(),
+            };
         }
 
-        Token next = scanner_->Lex();
+        Token next = scanner.Lex();
 
-        has_line_terminator_ = token.line_number_ != next.line_number_;
+        ctx->has_line_terminator_ = token.line_number_ != next.line_number_;
 
-        if (context_.strict_ && next.type_ == JsTokenType::Identifier) {
+        if (ctx->strict_ && next.type_ == JsTokenType::Identifier) {
             if (JsTokenType t = Scanner::IsStrictModeReservedWord(next.value_); t != JsTokenType::Invalid) {
                 next.type_ = t;
             }
         }
-        lookahead_ = next;
+        ctx->lookahead_ = next;
 
-        if (config_.tokens && next.type_ != JsTokenType::EOF_) {
+        if (ctx->config_.tokens && next.type_ != JsTokenType::EOF_) {
             DecorateToken(next);
-            tokens_.push(next);
+            ctx->tokens_.push(next);
         }
 
         return token;
@@ -197,19 +163,19 @@ namespace parser {
     Token ParserCommon::NextRegexToken() {
         CollectComments();
 
-        Token token = scanner_->ScanRegExp();
-        if (config_.tokens) {
-            tokens_.pop();
-            tokens_.push(token);
+        Token token = ctx->scanner_->ScanRegExp();
+        if (ctx->config_.tokens) {
+            ctx->tokens_.pop();
+            ctx->tokens_.push(token);
         }
 
-        lookahead_ = token;
+        ctx->lookahead_ = token;
         NextToken();
 
         return token;
     }
 
-    ParserCommon::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {
+    ParserContext::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {
         auto column = tok.range_.first - tok.line_start_;
         auto line = tok.line_number_;
         if (column < 0) {
@@ -224,8 +190,8 @@ namespace parser {
     }
 
     void ParserCommon::ExpectCommaSeparator() {
-        if (config_.tolerant) {
-            Token token = lookahead_;
+        if (ctx->config_.tolerant) {
+            Token token = ctx->lookahead_;
             if (token.type_ == JsTokenType::Comma) {
                 NextToken();
             } else if (token.type_ == JsTokenType::Semicolon) {
@@ -240,7 +206,7 @@ namespace parser {
     }
 
     bool ParserCommon::MatchAssign() {
-        switch (lookahead_.type_) {
+        switch (ctx->lookahead_.type_) {
             case JsTokenType::Assign:
             case JsTokenType::MulAssign:
             case JsTokenType::PowAssign:
@@ -264,22 +230,25 @@ namespace parser {
     void ParserCommon::ConsumeSemicolon() {
         if (Match(JsTokenType::Semicolon)) {
             NextToken();
-        } else if (!has_line_terminator_) {
-            if (lookahead_.type_ != JsTokenType::EOF_ && !Match(JsTokenType::RightBracket)) {
-                ThrowUnexpectedToken(lookahead_);
+        } else if (!ctx->has_line_terminator_) {
+            if (ctx->lookahead_.type_ != JsTokenType::EOF_ && !Match(JsTokenType::RightBracket)) {
+                ThrowUnexpectedToken(ctx->lookahead_);
             }
-            last_marker_.index = start_marker_.index;
-            last_marker_.line = start_marker_.line;
-            last_marker_.column = start_marker_.column;
+            ctx->last_marker_ = ParserContext::Marker {
+                ctx->start_marker_.index,
+                ctx->start_marker_.line,
+                ctx->start_marker_.column,
+            };
         }
     }
 
     bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
-        return lookahead_.type_ == JsTokenType::Identifier && lookahead_.value_ == keyword;
+        Token& lookahead = ctx->lookahead_;
+        return lookahead.type_ == JsTokenType::Identifier && lookahead.value_ == keyword;
     }
 
     void ParserCommon::CollectComments() {
-        scanner_->ScanComments(comments_);
+        ctx->scanner_->ScanComments(ctx->comments_);
     }
 
     int ParserCommon::BinaryPrecedence(const Token& token) const {
@@ -335,7 +304,7 @@ namespace parser {
 
             default:
                 if (IsKeywordToken(token.type_)) {
-                    if (token.type_ == JsTokenType::K_Instanceof|| (context_.allow_in && token.type_ == JsTokenType::K_In)) {
+                    if (token.type_ == JsTokenType::K_Instanceof|| (ctx->allow_in_ && token.type_ == JsTokenType::K_In)) {
                         return 7;
                     } else {
                         return 0;

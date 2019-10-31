@@ -248,6 +248,189 @@ const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         case SyntaxNodeType::JSXText:
             return "JSXText";
 
+        case SyntaxNodeType::TSParameterProperty:
+            return "TSParameterProperty";
+
+        case SyntaxNodeType::TSDeclareFunction:
+            return "TSDeclareFunction";
+
+        case SyntaxNodeType::TSDeclareMethod:
+            return "TSDeclareMethod";
+
+        case SyntaxNodeType::TSQualifiedName:
+            return "TSQualifiedName";
+
+        case SyntaxNodeType::TSCallSignatureDeclaration:
+            return "TSCallSignatureDeclaration";
+
+        case SyntaxNodeType::TSConstructSignatureDeclaration:
+            return "TSConstructSignatureDeclaration";
+
+        case SyntaxNodeType::TSPropertySignature:
+            return "TSPropertySignature";
+
+        case SyntaxNodeType::TSMethodSignature:
+            return "TSMethodSignature";
+
+        case SyntaxNodeType::TSIndexSignature:
+            return "TSIndexSignature";
+
+        case SyntaxNodeType::TSAnyKeyword:
+            return "TSAnyKeyword";
+
+        case SyntaxNodeType::TSBooleanKeyword:
+            return "TSBooleanKeyword";
+
+        case SyntaxNodeType::TSBigIntKeyword:
+            return "TSBigIntKeyword";
+
+        case SyntaxNodeType::TSNeverKeyword:
+            return "TSNeverKeyword";
+
+        case SyntaxNodeType::TSNullKeyword:
+            return "TSNullKeyword";
+
+        case SyntaxNodeType::TSNumberKeyword:
+            return "TSNumberKeyword";
+
+        case SyntaxNodeType::TSObjectKeyword:
+            return "TSObjectKeyword";
+
+        case SyntaxNodeType::TSStringKeyword:
+            return "TSStringKeyword";
+
+        case SyntaxNodeType::TSSymbolKeyword:
+            return "TSSymbolKeyword";
+
+        case SyntaxNodeType::TSUndefinedKeyword:
+            return "TSUndefinedKeyword";
+
+        case SyntaxNodeType::TSUnknownKeyword:
+            return "TSUnknownKeyword";
+
+        case SyntaxNodeType::TSVoidKeyword:
+            return "TSVoidKeyword";
+
+        case SyntaxNodeType::TSThisType:
+            return "TSThisType";
+
+        case SyntaxNodeType::TSFunctionType:
+            return "TSFunctionType";
+
+        case SyntaxNodeType::TSConstructorType:
+            return "TSConstructorType";
+
+        case SyntaxNodeType::TSTypeReference:
+            return "TSTypeReference";
+
+        case SyntaxNodeType::TSTypePredicate:
+            return "TSTypePredicate";
+
+        case SyntaxNodeType::TSTypeQuery:
+            return "TSTypeQuery";
+
+        case SyntaxNodeType::TSTypeLiteral:
+            return "TSTypeLiteral";
+
+        case SyntaxNodeType::TSArrayType:
+            return "TSArrayType";
+
+        case SyntaxNodeType::TSTupleType:
+            return "TSTupleType";
+
+        case SyntaxNodeType::TSOptionalType:
+            return "TSOptionalType";
+
+        case SyntaxNodeType::TSRestType:
+            return "TSRestType";
+
+        case SyntaxNodeType::TSUnionType:
+            return "TSUnionType";
+
+        case SyntaxNodeType::TSIntersectionType:
+            return "TSIntersectionType";
+
+        case SyntaxNodeType::TSConditionalType:
+            return "TSConditionalType";
+
+        case SyntaxNodeType::TSInferType:
+            return "TSInferType";
+
+        case SyntaxNodeType::TSParenthesizedType:
+            return "TSParenthesizedType";
+
+        case SyntaxNodeType::TSTypeOperator:
+            return "TSTypeOperator";
+
+        case SyntaxNodeType::TSIndexedAccessType:
+            return "TSIndexedAccessType";
+
+        case SyntaxNodeType::TSMappedType:
+            return "TSMappedType";
+
+        case SyntaxNodeType::TSLiteralType:
+            return "TSLiteralType";
+
+        case SyntaxNodeType::TSExpressionWithTypeArguments:
+            return "TSExpressionWithTypeArguments";
+
+        case SyntaxNodeType::TSInterfaceDeclaration:
+            return "TSInterfaceDeclaration";
+
+        case SyntaxNodeType::TSInterfaceBody:
+            return "TSInterfaceBody";
+
+        case SyntaxNodeType::TSTypeAliasDeclaration:
+            return "TSTypeAliasDeclaration";
+
+        case SyntaxNodeType::TSAsExpression:
+            return "TSAsExpression";
+
+        case SyntaxNodeType::TSTypeAssertion:
+            return "TSTypeAssertion";
+
+        case SyntaxNodeType::TSEnumDeclaration:
+            return "TSEnumDeclaration";
+
+        case SyntaxNodeType::TSEnumMember:
+            return "TSEnumMember";
+
+        case SyntaxNodeType::TSModuleDeclaration:
+            return "TSModuleDeclaration";
+
+        case SyntaxNodeType::TSModuleBlock:
+            return "TSModuleBlock";
+
+        case SyntaxNodeType::TSImportType:
+            return "TSImportType";
+
+        case SyntaxNodeType::TSImportEqualsDeclaration:
+            return "TSImportEqualsDeclaration";
+
+        case SyntaxNodeType::TSExternalModuleReference:
+            return "TSExternalModuleReference";
+
+        case SyntaxNodeType::TSNonNullExpression:
+            return "TSNonNullExpression";
+
+        case SyntaxNodeType::TSExportAssignment:
+            return "TSExportAssignment";
+
+        case SyntaxNodeType::TSNamespaceExportDeclaration:
+            return "TSNamespaceExportDeclaration";
+
+        case SyntaxNodeType::TSTypeAnnotation:
+            return "TSTypeAnnotation";
+
+        case SyntaxNodeType::TSTypeParameterInstantiation:
+            return "TSTypeParameterInstantiation";
+
+        case SyntaxNodeType::TSTypeParameterDeclaration:
+            return "TSTypeParameterDeclaration";
+
+        case SyntaxNodeType::TSTypeParameter:
+            return "TSTypeParameter";
+
         default:
             return "<Invalid>";
 

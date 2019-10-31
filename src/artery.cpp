@@ -35,7 +35,9 @@ void Artery::Enter(const std::string &entry) {
             auto src = make_shared<UString>();
             (*src) = Artery::ReadFileStream(entry);
 
-            parser::Parser parser(src);
+            auto config = parser::ParserContext::Config::Default();
+            auto ctx = make_shared<parser::ParserContext>(src, config);
+            parser::Parser parser(ctx);
 
             parser.OnImportDeclarationCreated([this] (const Sp<ImportDeclaration>& node) {
                 auto source_path = utils::To_UTF8(node->source->raw);

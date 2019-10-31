@@ -10,13 +10,13 @@
 
 namespace parser {
 
-    class JSXParser {
+    class JSXParser: private ParserCommon {
     public:
         struct MetaJSXElement {
         public:
             MetaJSXElement() = default;
 
-            ParserCommon::Marker start_marker_;
+            ParserContext::Marker start_marker_;
             Sp<JSXOpeningElement> opening_;
             std::optional<Sp<JSXClosingElement>> closing_;
             std::vector<Sp<SyntaxNode>> children_;
@@ -25,7 +25,7 @@ namespace parser {
 
         static UString GetQualifiedElementName(const Sp<SyntaxNode>& node);
 
-        JSXParser(Parser* parser);
+        JSXParser(std::shared_ptr<ParserContext> ctx);
         JSXParser(const JSXParser& parser) = delete;
         JSXParser(JSXParser&&) = delete;
 
@@ -69,8 +69,6 @@ namespace parser {
         void ReEnterJSX();
 
     private:
-        Parser& parser_;
-
         Token LexJSX();
         Token NextJSXToken();
         Token NextJSXText();
@@ -83,15 +81,15 @@ namespace parser {
         void InitXHTMLEntities();
 
     public:
-        inline bool Match(JsTokenType jt) {
+        inline bool JSXMatch(JsTokenType jt) {
             auto next = PeekJSXToken();
             return next.type_ == jt;
         }
 
-        inline void Expect(JsTokenType t) {
+        inline void JSXExpect(JsTokenType t) {
             Token token = NextJSXToken();
             if (!IsPunctuatorToken(token.type_)) {
-                parser_.ThrowUnexpectedToken(token);
+                ThrowUnexpectedToken(token);
             }
         }
 

@@ -4,9 +4,11 @@
 
 #include "parser.hpp"
 #include "jsx_parser.h"
+#include "typescript_parser.h"
 #include "../tokenizer/token.h"
 
 namespace parser {
+    using namespace std;
 
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
         switch (expr->type) {
@@ -105,7 +107,7 @@ namespace parser {
                 if (node->right->type == SyntaxNodeType::YieldExpression) {
                     auto right = dynamic_pointer_cast<YieldExpression>(node->right);
                     if (right->argument) {
-                        ThrowUnexpectedToken(lookahead_);
+                        ThrowUnexpectedToken(ctx->lookahead_);
                     }
                     auto new_right = Alloc<Identifier>();
                     new_right->name = u"yield";
@@ -114,22 +116,24 @@ namespace parser {
             } else if (async_arrow && param->type == SyntaxNodeType::Identifier) {
                 auto id = dynamic_pointer_cast<Identifier>(param);
                 if (id->name == u"await") {
-                    ThrowUnexpectedToken(lookahead_);
+                    ThrowUnexpectedToken(ctx->lookahead_);
                 }
             }
             CheckPatternParam(options, param);
         }
 
-        if (context_.strict_ || !context_.allow_yield) {
+        if (ctx->strict_ || !ctx->allow_yield_) {
             for (auto& param : params) {
                 if (param->type == SyntaxNodeType::YieldExpression) {
-                    ThrowUnexpectedToken(lookahead_);
+                    ThrowUnexpectedToken(ctx->lookahead_);
                 }
             }
         }
 
         if (options.message == ParseMessages::StrictParamDupe) {
-            Token token = context_.strict_ ? *options.stricted : *options.first_restricted;
+            Token token = ctx->strict_
+                ? *options.stricted
+                : *options.first_restricted;
             ThrowUnexpectedToken(token, options.message);
         }
 
@@ -184,11 +188,13 @@ namespace parser {
     }
 
     bool Parser::IsLexicalDeclaration() {
-        auto state = scanner_->SaveState();
+        Scanner& scanner = *ctx->scanner_;
+
+        auto state = scanner.SaveState();
         std::vector<Sp<Comment>> comments;
-        scanner_->ScanComments(comments);
-        Token next = scanner_->Lex();
-        scanner_->RestoreState(state);
+        scanner.ScanComments(comments);
+        Token next = scanner.Lex();
+        scanner.RestoreState(state);
 
         return (next.type_ == JsTokenType::Identifier) ||
                (next.type_ == JsTokenType::LeftBrace) ||
@@ -198,23 +204,25 @@ namespace parser {
     }
 
     bool Parser::MatchImportCall() {
+        Scanner& scanner = *ctx->scanner_;
+
         bool match = Match(JsTokenType::K_Import);
         if (match) {
-            auto state = scanner_->SaveState();
+            auto state = scanner.SaveState();
             std::vector<Sp<Comment>> comments;
-            Token next = scanner_->Lex();
-            scanner_->ScanComments(comments);
-            scanner_->RestoreState(state);
+            Token next = scanner.Lex();
+            scanner.ScanComments(comments);
+            scanner.RestoreState(state);
             match = (next.type_ == JsTokenType::LeftParen);
         }
         return match;
     }
 
     bool Parser::IsStartOfExpression() {
-        UString value = lookahead_.value_;
+        UString value = ctx->lookahead_.value_;
 
-        if (IsPunctuatorToken(lookahead_.type_)) {
-            switch (lookahead_.type_) {
+        if (IsPunctuatorToken(ctx->lookahead_.type_)) {
+            switch (ctx->lookahead_.type_) {
                 case JsTokenType::LeftBrace:
                 case JsTokenType::RightParen:
                 case JsTokenType::LeftBracket:
@@ -235,8 +243,8 @@ namespace parser {
 
         }
 
-        if (IsKeywordToken(lookahead_.type_)) {
-            switch (lookahead_.type_) {
+        if (IsKeywordToken(ctx->lookahead_.type_)) {
+            switch (ctx->lookahead_.type_) {
                 case JsTokenType::K_Class:
                 case JsTokenType::K_Delete:
                 case JsTokenType::K_Function:
@@ -266,7 +274,7 @@ namespace parser {
 
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
-            while (lookahead_.type_ != JsTokenType::EOF_) {
+            while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
                 ParseFormalParameter(options);
                 if (Match(JsTokenType::RightParen)) {
                     break;
@@ -301,9 +309,11 @@ namespace parser {
 
     void Parser::ValidateParam(parser::ParserCommon::FormalParameterOptions &options, const Token &param,
                                const UString &name) {
+        Scanner& scanner = *ctx->scanner_;
+
         UString key = UString(u"$") + name;
-        if (context_.strict_) {
-            if (scanner_->IsRestrictedWord(name)) {
+        if (ctx->strict_) {
+            if (scanner.IsRestrictedWord(name)) {
                 options.stricted = param;
                 options.message = ParseMessages::StrictParamName;
             }
@@ -312,7 +322,7 @@ namespace parser {
                 options.message = ParseMessages::StrictParamDupe;
             }
         } else if (!options.first_restricted) {
-            if (scanner_->IsRestrictedWord(name)) {
+            if (scanner.IsRestrictedWord(name)) {
                 options.first_restricted = param;
                 options.message = ParseMessages::StrictParamName;
                 // TOOD:
@@ -329,24 +339,26 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParsePrimaryExpression() {
-        if (config_.jsx && Match(JsTokenType::LessThan)) {
-            JSXParser jsxParser(this);
+        auto& config = ctx->config_;
+
+        if (config.jsx && Match(JsTokenType::LessThan)) {
+            JSXParser jsxParser(ctx);
             return jsxParser.ParseJSXRoot();
         }
         auto marker = CreateStartMarker();
         Token token;
 
-        if (IsKeywordToken(lookahead_.type_)) {
-            if (!context_.strict_ && context_.allow_yield && Match(JsTokenType::K_Yield)) {
+        if (IsKeywordToken(ctx->lookahead_.type_)) {
+            if (!ctx->strict_ && ctx->allow_yield_ && Match(JsTokenType::K_Yield)) {
                 return ParseIdentifierName();
-            } else if (!context_.strict_ && Match(JsTokenType::K_Let)) {
+            } else if (!ctx->strict_ && Match(JsTokenType::K_Let)) {
                 token = NextToken();
                 auto id = Alloc<Identifier>();
                 id->name = token.value_;
                 return Finalize(marker, id);
             } else {
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
                 if (Match(JsTokenType::K_Function)) {
                     return ParseFunctionExpression();
                 } else if (Match(JsTokenType::K_This)) {
@@ -364,10 +376,10 @@ namespace parser {
             }
         }
 
-        switch (lookahead_.type_) {
+        switch (ctx->lookahead_.type_) {
             case JsTokenType::Identifier: {
-                if ((context_.is_module || context_.await) && lookahead_.value_ == u"await") {
-                    ThrowUnexpectedToken(lookahead_);
+                if ((ctx->is_module_ || ctx->await_) && ctx->lookahead_.value_ == u"await") {
+                    ThrowUnexpectedToken(ctx->lookahead_);
                 }
                 if (MatchAsyncFunction()) {
                     return ParseFunctionExpression();
@@ -381,12 +393,12 @@ namespace parser {
 
             case JsTokenType::NumericLiteral:
             case JsTokenType::StringLiteral: {
-                if (context_.strict_ && lookahead_.octal_) {
-                    ThrowUnexpectedToken(lookahead_);
+                if (ctx->strict_ && Lookahead().octal_) {
+                    ThrowUnexpectedToken(Lookahead());
 //                this.tolerateUnexpectedToken(this.lookahead, Messages.StrictOctalLiteral);
                 }
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -395,8 +407,8 @@ namespace parser {
             }
 
             case JsTokenType::BooleanLiteral: {
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -405,8 +417,8 @@ namespace parser {
             }
 
             case JsTokenType::NullLiteral: {
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->value = token.value_;
@@ -418,7 +430,7 @@ namespace parser {
                 return ParseTemplateLiteral();
 
             case JsTokenType::LeftParen:
-                context_.is_binding_element = false;
+                ctx->is_binding_element_ = false;
                 return InheritCoverGrammar<Expression>([this]() {
                     return ParseGroupExpression();
                 });
@@ -435,9 +447,9 @@ namespace parser {
 
             case JsTokenType::Div:
             case JsTokenType::DivAssign: {
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
-                scanner_->SetIndex(StartMarker().index);
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
+                ctx->scanner_->SetIndex(StartMarker().index);
                 token = NextRegexToken();
                 auto node = Alloc<RegexLiteral>();
                 node->value = token.value_;
@@ -470,7 +482,7 @@ namespace parser {
 
     Sp<Property> Parser::ParseObjectProperty(bool &has_proto) {
         auto marker = CreateStartMarker();
-        Token token = lookahead_;
+        Token token = ctx->lookahead_;
         VarKind kind = VarKind::Invalid;
         bool computed = false;
         bool method = false;
@@ -484,7 +496,7 @@ namespace parser {
             auto id = token.value_;
             NextToken();
             computed = Match(JsTokenType::LeftBrace);
-            is_async = !has_line_terminator_ && (id == u"async") &&
+            is_async = !ctx->has_line_terminator_ && (id == u"async") &&
                        !Match(JsTokenType::Colon) && !Match(JsTokenType::LeftParen) && !Match(JsTokenType::Mul) && !Match(JsTokenType::Comma);
             if (is_async) {
                 key = ParseObjectPropertyKey();
@@ -500,19 +512,19 @@ namespace parser {
             key = ParseObjectPropertyKey();
         }
 
-        auto lookahead_prop_key = QualifiedPropertyName(lookahead_);
+        auto lookahead_prop_key = QualifiedPropertyName(ctx->lookahead_);
 
         if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"get" && lookahead_prop_key) {
             kind = VarKind::Get;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
-            context_.allow_yield = false;
+            ctx->allow_yield_ = false;
             value = ParseGetterMethod();
         } else if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"set" && lookahead_prop_key) {
             kind = VarKind::Set;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
-            context_.allow_yield = false;
+            ctx->allow_yield_ = false;
             value = ParseSetterMethod();
         } else if (token.type_ == JsTokenType::Mul && !is_async && lookahead_prop_key) {
             kind = VarKind::Init;
@@ -522,7 +534,7 @@ namespace parser {
             method = true;
         } else {
             if (!key.has_value()) {
-                ThrowUnexpectedToken(lookahead_);
+                ThrowUnexpectedToken(ctx->lookahead_);
             }
 
             kind = VarKind::Init;
@@ -549,7 +561,7 @@ namespace parser {
                 id->name = token.value_;
                 Finalize(marker, id);
                 if (Match(JsTokenType::Assign)) {
-                    context_.first_cover_initialized_name_error = lookahead_;
+                    ctx->first_cover_initialized_name_error_ = {ctx->lookahead_ };
                     NextToken();
                     shorthand = true;
                     auto node = Alloc<AssignmentPattern>();
@@ -602,7 +614,7 @@ namespace parser {
         switch (token.type_) {
             case JsTokenType::StringLiteral:
             case JsTokenType::NumericLiteral: {
-                if (context_.strict_ && token.octal_) {
+                if (ctx->strict_ && token.octal_) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictOctalLiteral);
                 }
                 auto node = Alloc<Literal>();
@@ -663,28 +675,29 @@ namespace parser {
         optional<Sp<Identifier>> id;
         optional<Token> first_restricted;
 
-        bool prev_allow_await = context_.await;
-        bool prev_allow_yield = context_.allow_yield;
-        context_.await = is_async;
-        context_.allow_yield = !is_generator;
+        bool prev_allow_await = ctx->await_;
+        bool prev_allow_yield = ctx->allow_yield_;
+        ctx->await_ = is_async;
+        ctx->allow_yield_ = !is_generator;
 
         std::string message;
 
         if (!Match(JsTokenType::LeftParen)) {
-            Token token = lookahead_;
+            Token token = ctx->lookahead_;
+            auto& scanner = *ctx->scanner_;
 
-            if (!context_.strict_ && !is_generator && Match(JsTokenType::K_Yield)) {
+            if (!ctx->strict_ && !is_generator && Match(JsTokenType::K_Yield)) {
                 id = ParseIdentifierName();
             } else {
                 id = ParseVariableIdentifier(VarKind::Invalid);
             }
 
-            if (context_.strict_) {
-                if (scanner_->IsRestrictedWord(token.value_)) {
+            if (ctx->strict_) {
+                if (scanner.IsRestrictedWord(token.value_)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
                 }
             } else {
-                if (scanner_->IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value_)) {
                     first_restricted = token;
                     message = ParseMessages::StrictFunctionName;
                     // TODO: message
@@ -700,20 +713,20 @@ namespace parser {
             message = formal.message;
         }
 
-        bool prev_strict = context_.strict_;
-        bool prev_allow_strict_directive = context_.allow_strict_directive;
-        context_.allow_strict_directive = formal.simple;
+        bool prev_strict = ctx->strict_;
+        bool prev_allow_strict_directive = ctx->allow_strict_directive_;
+        ctx->allow_strict_directive_ = formal.simple;
         auto body = ParseFunctionSourceElements();
-        if (context_.strict_ && first_restricted.has_value()) {
+        if (ctx->strict_ && first_restricted.has_value()) {
             ThrowUnexpectedToken(*first_restricted, message);
         }
-        if (context_.strict_ && formal.stricted.has_value()) {
+        if (ctx->strict_ && formal.stricted.has_value()) {
             TolerateUnexpectedToken(*formal.stricted, message);
         }
-        context_.strict_ = prev_strict;
-        context_.allow_strict_directive = prev_allow_strict_directive;
-        context_.await = prev_allow_await;
-        context_.allow_yield = prev_allow_yield;
+        ctx->strict_ = prev_strict;
+        ctx->allow_strict_directive_ = prev_allow_strict_directive;
+        ctx->await_ = prev_allow_await;
+        ctx->allow_yield_ = prev_allow_yield;
 
         if (is_async) {
             auto node = Alloc<FunctionExpression>();
@@ -755,17 +768,21 @@ namespace parser {
 
         if (Match(JsTokenType::Dot)) {
             NextToken();
-            if (lookahead_.type_ == JsTokenType::Identifier && context_.in_function_body && lookahead_.value_ == u"target") {
+            if (
+                ctx->lookahead_.type_ == JsTokenType::Identifier &&
+                ctx->in_function_body_ &&
+                ctx->lookahead_.value_ == u"target"
+            ) {
                 auto node = Alloc<MetaProperty>();
                 node->property = ParseIdentifierName();
                 node->meta = id;
                 expr = node;
             } else {
-                ThrowUnexpectedToken(lookahead_);
+                ThrowUnexpectedToken(ctx->lookahead_);
                 return nullptr;
             }
         } else if (Match(JsTokenType::K_Import)) {
-            ThrowUnexpectedToken(lookahead_);
+            ThrowUnexpectedToken(ctx->lookahead_);
             return nullptr;
         } else {
             auto node = Alloc<NewExpression>();
@@ -776,22 +793,21 @@ namespace parser {
                 node->arguments = ParseArguments();
             }
             expr = node;
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
         }
 
         return Finalize(start_marker, expr);
     }
 
     Sp<YieldExpression> Parser::ParseYieldExpression() {
-
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Yield);
 
         auto node = Alloc<YieldExpression>();
-        if (!has_line_terminator_) {
-            bool prev_allow_yield = context_.allow_yield;
-            context_.allow_yield = false;
+        if (!ctx->has_line_terminator_) {
+            bool prev_allow_yield = ctx->allow_yield_;
+            ctx->allow_yield_ = false;
             node->delegate = Match(JsTokenType::Mul);
             if (node->delegate) {
                 NextToken();
@@ -799,7 +815,7 @@ namespace parser {
             } else if (IsStartOfExpression()) {
                 node->argument = ParseAssignmentExpression();
             }
-            context_.allow_yield = prev_allow_yield;
+            ctx->allow_yield_ = prev_allow_yield;
         }
 
         return Finalize(marker, node);
@@ -840,7 +856,7 @@ namespace parser {
     }
 
     Sp<Statement> Parser::ParseDirective() {
-        auto token = lookahead_;
+        auto token = ctx->lookahead_;
 
         auto marker = CreateStartMarker();
         Sp<Expression> expr = ParseExpression();
@@ -863,7 +879,7 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseExpression() {
-        auto start_token = lookahead_;
+        auto start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
         Sp<Expression> expr = IsolateCoverGrammar<Expression>([this] {
             return ParseAssignmentExpression();
@@ -872,7 +888,7 @@ namespace parser {
         if (Match(JsTokenType::Comma)) {
             std::vector<Sp<Expression>> expressions;
             expressions.push_back(expr);
-            while (lookahead_.type_ != JsTokenType::EOF_) {
+            while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
                 if (!Match(JsTokenType::Comma)) {
                     break;
                 }
@@ -897,17 +913,17 @@ namespace parser {
         vector<Sp<SyntaxNode>> body = ParseDirectivePrologues();
         Expect(JsTokenType::LeftBracket);
 
-        auto prev_label_set = move(context_.label_set);
-        bool prev_in_iteration = context_.in_iteration;
-        bool prev_in_switch = context_.in_switch;
-        bool prev_in_fun_body = context_.in_function_body;
+        auto prev_label_set = move(ctx->label_set_);
+        bool prev_in_iteration = ctx->in_iteration_;
+        bool prev_in_switch = ctx->in_switch_;
+        bool prev_in_fun_body = ctx->in_function_body_;
 
-        context_.label_set = make_unique<unordered_set<UString>>();
-        context_.in_iteration = false;
-        context_.in_switch = false;
-        context_.in_function_body = true;
+        ctx->label_set_ = make_unique<unordered_set<UString>>();
+        ctx->in_iteration_ = false;
+        ctx->in_switch_ = false;
+        ctx->in_function_body_ = true;
 
-        while (lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
@@ -918,10 +934,10 @@ namespace parser {
 
         Expect(JsTokenType::RightBracket);
 
-        context_.label_set = move(prev_label_set);
-        context_.in_iteration = prev_in_iteration;
-        context_.in_switch = prev_in_switch;
-        context_.in_function_body = prev_in_fun_body;
+        ctx->label_set_ = move(prev_label_set);
+        ctx->in_iteration_ = prev_in_iteration;
+        ctx->in_switch_ = prev_in_switch;
+        ctx->in_function_body_ = prev_in_fun_body;
 
         auto node = Alloc<BlockStatement>();
         node->body = move(body);
@@ -935,7 +951,7 @@ namespace parser {
 
         Token token;
         while (true) {
-            token = lookahead_;
+            token = ctx->lookahead_;
             if (token.type_ != JsTokenType::StringLiteral) {
                 break;
             }
@@ -948,11 +964,11 @@ namespace parser {
             auto directive_ = reinterpret_cast<Directive*>(statement.get());
 
             if (directive_->directive == u"use strict") {
-                context_.strict_ = true;
+                ctx->strict_ = true;
                 if (first_restrict) {
                     TolerateUnexpectedToken(*first_restrict, ParseMessages::StrictOctalLiteral);
                 }
-                if (!context_.allow_strict_directive) {
+                if (!ctx->allow_strict_directive_) {
                     TolerateUnexpectedToken(token, ParseMessages::IllegalLanguageModeDirective);
                 }
             } else {
@@ -978,12 +994,12 @@ namespace parser {
 
         auto marker = CreateStartMarker();
 
-        bool prev_strict = context_.strict_;
-        context_.strict_ = true;
+        bool prev_strict = ctx->strict_;
+        ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
         auto node = Alloc<ClassDeclaration>();
-        if (identifier_is_optional && (lookahead_.type_ != JsTokenType::Identifier)) {
+        if (identifier_is_optional && (ctx->lookahead_.type_ != JsTokenType::Identifier)) {
             // nothing
         } else {
             node->id = ParseVariableIdentifier(VarKind::Invalid);
@@ -1001,7 +1017,7 @@ namespace parser {
             node->super_class = dynamic_pointer_cast<Identifier>(temp);
         }
         node->body = ParseClassBody();
-        context_.strict_ = prev_strict;
+        ctx->strict_ = prev_strict;
 
         return Finalize(marker, node);
     }
@@ -1011,11 +1027,11 @@ namespace parser {
         auto marker = CreateStartMarker();
         auto node = Alloc<ClassExpression>();
 
-        bool prev_strict = context_.strict_;
-        context_.strict_ = true;
+        bool prev_strict = ctx->strict_;
+        ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
-        if (lookahead_.type_ == JsTokenType::Identifier) {
+        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
             node->id = ParseVariableIdentifier(VarKind::Invalid);
         }
 
@@ -1032,27 +1048,27 @@ namespace parser {
         }
 
         node->body = ParseClassBody();
-        context_.strict_ = prev_strict;
+        ctx->strict_ = prev_strict;
 
         return Finalize(marker, node);
     }
 
     Sp<Expression> Parser::ParseLeftHandSideExpressionAllowCall() {
-        Token start_token = lookahead_;
+        Token start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
         bool maybe_async = MatchContextualKeyword(u"async");
 
-        bool prev_allow_in = context_.allow_in;
-        context_.allow_in = true;
+        bool prev_allow_in = ctx->allow_in_;
+        ctx->allow_in_ = true;
 
         Sp<Expression> expr;
-        if (Match(JsTokenType::K_Super) && context_.in_function_body) {
+        if (Match(JsTokenType::K_Super) && ctx->in_function_body_) {
             auto node = Alloc<Super>();
             auto marker = CreateStartMarker();
             NextToken();
             expr = Finalize(marker, node);
             if (!Match(JsTokenType::LeftParen) && !Match(JsTokenType::Dot) && !Match(JsTokenType::LeftBrace)) {
-                ThrowUnexpectedToken(lookahead_);
+                ThrowUnexpectedToken(ctx->lookahead_);
                 return nullptr;
             }
         } else {
@@ -1070,8 +1086,8 @@ namespace parser {
 
         while (true) {
             if (Match(JsTokenType::Dot)) {
-                context_.is_binding_element = false;
-                context_.is_assignment_target = true;
+                ctx->is_binding_element_ = false;
+                ctx->is_assignment_target_ = true;
                 Expect(JsTokenType::Dot);
                 auto node = Alloc<MemberExpression>();
                 node->property = ParseIdentifierName();
@@ -1079,9 +1095,9 @@ namespace parser {
                 node->computed = false;
                 expr = Finalize(StartNode(start_token), node);
             } else if (Match(JsTokenType::LeftParen)) {
-                bool async_arrow = maybe_async && (start_token.line_number_ == lookahead_.line_number_);
-                context_.is_binding_element = false;
-                context_.is_assignment_target = false;
+                bool async_arrow = maybe_async && (start_token.line_number_ == ctx->lookahead_.line_number_);
+                ctx->is_binding_element_ = false;
+                ctx->is_assignment_target_ = false;
                 auto node = Alloc<CallExpression>();
                 if (async_arrow) {
                     node->arguments = ParseAsyncArguments();
@@ -1103,8 +1119,8 @@ namespace parser {
                     expr = move(placeholder);
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
-                context_.is_binding_element = false;
-                context_.is_assignment_target = true;
+                ctx->is_binding_element_ = false;
+                ctx->is_assignment_target_ = true;
                 Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<MemberExpression>();
                 node->computed = true;
@@ -1114,7 +1130,7 @@ namespace parser {
                 Expect(JsTokenType::RightBrace);
                 node->object = expr;
                 expr = Finalize(StartNode(start_token), node);
-            } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
+            } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral();
                 node->tag = expr;
@@ -1123,7 +1139,7 @@ namespace parser {
                 break;
             }
         }
-        context_.allow_in = prev_allow_in;
+        ctx->allow_in_ = prev_allow_in;
 
         return expr;
     }
@@ -1141,8 +1157,8 @@ namespace parser {
             } else if (Match(JsTokenType::Spread)) {
                 element = ParseSpreadElement();
                 if (!Match(JsTokenType::RightBrace)) {
-                    context_.is_assignment_target = false;
-                    context_.is_binding_element = false;
+                    ctx->is_assignment_target_ = false;
+                    ctx->is_binding_element_ = false;
                     Expect(JsTokenType::Comma);
                 }
                 node->elements.emplace_back(element);
@@ -1162,20 +1178,20 @@ namespace parser {
     }
 
     Sp<Module> Parser::ParseModule() {
-        context_.strict_ = true;
-        context_.is_module = true;
+        ctx->strict_ = true;
+        ctx->is_module_ = true;
         auto marker = CreateStartMarker();
         auto node = make_shared<Module>();
         node->body = ParseDirectivePrologues();
         node->source_type = u"module";
-        while (lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
         }
-        if (config_.comment) {
-            node->comments = move(comments_);
+        if (ctx->config_.comment) {
+            node->comments = move(ctx->comments_);
         } else {
-            comments_.clear();
-            comments_.shrink_to_fit();
+            ctx->comments_.clear();
+            ctx->comments_.shrink_to_fit();
         }
         return Finalize(marker, node);
     }
@@ -1185,14 +1201,14 @@ namespace parser {
         auto node = Alloc<Script>();
         node->body = ParseDirectivePrologues();
         node->source_type = u"script";
-        while (lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem());
         }
-        if (config_.comment) {
-            node->comments = move(comments_);
+        if (ctx->config_.comment) {
+            node->comments = move(ctx->comments_);
         } else {
-            comments_.clear();
-            comments_.shrink_to_fit();
+            ctx->comments_.clear();
+            ctx->comments_.shrink_to_fit();
         }
         return Finalize(start_marker, node);
     }
@@ -1223,7 +1239,6 @@ namespace parser {
     }
 
     Sp<IfStatement> Parser::ParseIfStatement() {
-
         auto marker = CreateStartMarker();
         auto node = Alloc<IfStatement>();
 
@@ -1231,7 +1246,7 @@ namespace parser {
         Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             Token token = NextToken();
             ThrowUnexpectedToken(token);
             node->consequent = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
@@ -1248,7 +1263,7 @@ namespace parser {
     }
 
     Sp<Statement> Parser::ParseIfClause() {
-        if (context_.strict_ && Match(JsTokenType::K_Function)) {
+        if (ctx->strict_ && Match(JsTokenType::K_Function)) {
             TolerateError(ParseMessages::StrictFunction);
         }
         return ParseStatement();
@@ -1256,8 +1271,8 @@ namespace parser {
 
     Sp<Statement> Parser::ParseStatement() {
 
-        if (IsPunctuatorToken(lookahead_.type_)) {
-            switch (lookahead_.type_) {
+        if (IsPunctuatorToken(ctx->lookahead_.type_)) {
+            switch (ctx->lookahead_.type_) {
                 case JsTokenType::LeftBracket:
                     return ParseBlock();
 
@@ -1273,7 +1288,7 @@ namespace parser {
             }
         }
 
-        switch (lookahead_.type_) {
+        switch (ctx->lookahead_.type_) {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
@@ -1333,10 +1348,10 @@ namespace parser {
                 return ParseWithStatement();
 
             default:
-                if (IsKeywordToken(lookahead_.type_)) {
+                if (IsKeywordToken(ctx->lookahead_.type_)) {
                     return ParseExpressionStatement();
                 }
-                ThrowUnexpectedToken(lookahead_);
+                ThrowUnexpectedToken(ctx->lookahead_);
                 return nullptr;
 
         }
@@ -1395,15 +1410,17 @@ namespace parser {
         optional<Token> first_restricted;
         string message;
 
+        auto& scanner = *ctx->scanner_;
+
         if (!identifier_is_optional || !Match(JsTokenType::LeftParen)) {
-            Token token = lookahead_;
+            Token token = ctx->lookahead_;
             id = ParseVariableIdentifier(VarKind::Invalid);
-            if (context_.strict_) {
-                if (scanner_->IsRestrictedWord(token.value_)) {
+            if (ctx->strict_) {
+                if (scanner.IsRestrictedWord(token.value_)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
                 }
             } else {
-                if (scanner_->IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value_)) {
                     first_restricted = token;
                     message = ParseMessages::StrictFunctionName;
                 } else {
@@ -1413,10 +1430,10 @@ namespace parser {
             }
         }
 
-        bool prev_allow_await = context_.await;
-        bool prev_allow_yield = context_.allow_yield;
-        context_.await = is_async;
-        context_.allow_yield = !is_generator;
+        bool prev_allow_await = ctx->await_;
+        bool prev_allow_yield = ctx->allow_yield_;
+        ctx->await_ = is_async;
+        ctx->allow_yield_ = !is_generator;
 
         auto options = ParseFormalParameters(first_restricted);
         first_restricted = options.first_restricted;
@@ -1424,24 +1441,24 @@ namespace parser {
             message = move(options.message);
         }
 
-        bool prev_strict = context_.strict_;
-        bool prev_allow_strict_directive = context_.allow_strict_directive;
-        context_.allow_strict_directive = options.simple;
+        bool prev_strict = ctx->strict_;
+        bool prev_allow_strict_directive = ctx->allow_strict_directive_;
+        ctx->allow_strict_directive_ = options.simple;
         auto body = ParseFunctionSourceElements();
 
-        if (context_.strict_ && first_restricted) {
+        if (ctx->strict_ && first_restricted) {
             Token temp = *first_restricted;
             ThrowUnexpectedToken(temp, message);
         }
-        if (context_.strict_ && options.stricted) {
+        if (ctx->strict_ && options.stricted) {
             Token temp = *options.stricted;
             TolerateUnexpectedToken(temp, message);
         }
 
-        context_.strict_ = prev_strict;
-        context_.allow_strict_directive = prev_allow_strict_directive;
-        context_.await = prev_allow_await;
-        context_.allow_yield = prev_allow_yield;
+        ctx->strict_ = prev_strict;
+        ctx->allow_strict_directive_ = prev_allow_strict_directive;
+        ctx->await_ = prev_allow_await;
+        ctx->allow_yield_ = prev_allow_yield;
 
         if (is_async) {
             auto node = Alloc<FunctionDeclaration>();
@@ -1473,19 +1490,19 @@ namespace parser {
             auto id = dynamic_pointer_cast<Identifier>(expr);
             UString key = UString(u"$") + id->name;
 
-            if (context_.label_set->find(key) != context_.label_set->end()) {
+            if (ctx->label_set_->find(key) != ctx->label_set_->end()) {
                 ThrowError(ParseMessages::Redeclaration, string("Label: ") + utils::To_UTF8(id->name));
             }
-            context_.label_set->insert(key);
+            ctx->label_set_->insert(key);
 
             Sp<Statement> body;
             if (Match(JsTokenType::K_Class)) {
-                TolerateUnexpectedToken(lookahead_);
+                TolerateUnexpectedToken(ctx->lookahead_);
                 body = ParseClassDeclaration(false);
             } else if (Match(JsTokenType::K_Function)) {
-                Token token = lookahead_;
+                Token token = ctx->lookahead_;
                 auto declaration = ParseFunctionDeclaration(false);
-                if (context_.strict_) {
+                if (ctx->strict_) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunction);
                 } else if (declaration->generator) {
                     TolerateUnexpectedToken(token, ParseMessages::GeneratorInLegacyContext);
@@ -1515,11 +1532,11 @@ namespace parser {
         Expect(JsTokenType::K_Break);
 
         std::optional<Sp<Identifier>> label;
-        if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
+        if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
             Sp<Identifier> id = ParseVariableIdentifier(VarKind::Invalid);
 
             UString key = UString(u"$") + id->name;
-            if (context_.label_set->find(key) == context_.label_set->end()) {
+            if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
                 ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
             }
             label = id;
@@ -1527,7 +1544,7 @@ namespace parser {
 
         ConsumeSemicolon();
 
-        if (!label && !context_.in_iteration && !context_.in_switch) {
+        if (!label && !ctx->in_iteration_ && !ctx->in_switch_) {
             ThrowError(ParseMessages::IllegalBreak);
             return nullptr;
         }
@@ -1542,19 +1559,19 @@ namespace parser {
         Expect(JsTokenType::K_Continue);
         auto node = Alloc<ContinueStatement>();
 
-        if (lookahead_.type_ == JsTokenType::Identifier && !has_line_terminator_) {
+        if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
             auto id = ParseVariableIdentifier(VarKind::Invalid);
             node->label = id;
 
             UString key = UString(u"$") + id->name;
-            if (context_.label_set->find(key) == context_.label_set->end()) {
+            if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
                 ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
             }
         }
 
         ConsumeSemicolon();
 
-        if (!node->label && !context_.in_iteration) {
+        if (!node->label && !ctx->in_iteration_) {
             ThrowError(ParseMessages::IllegalContinue);
             return nullptr;
         }
@@ -1575,16 +1592,16 @@ namespace parser {
         auto node = Alloc<DoWhileStatement>();
         Expect(JsTokenType::K_Do);
 
-        auto previous_in_interation = context_.in_iteration;
-        context_.in_iteration = true;
+        auto previous_in_interation = ctx->in_iteration_;
+        ctx->in_iteration_ = true;
         node->body = ParseStatement();
-        context_.in_iteration = previous_in_interation;
+        ctx->in_iteration_ = previous_in_interation;
 
         Expect(JsTokenType::K_While);
         Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             ThrowUnexpectedToken(NextToken());
         } else {
             Expect(JsTokenType::RightParen);
@@ -1616,14 +1633,14 @@ namespace parser {
                 auto marker = CreateStartMarker();
                 NextToken();
 
-                auto prev_allow_in = context_.allow_in;
-                context_.allow_in = true;
-                std::vector<Sp<VariableDeclarator>> declarations = ParseVariableDeclarationList(for_in);
-                context_.allow_in = prev_allow_in;
+                auto prev_allow_in = ctx->allow_in_;
+                ctx->allow_in_ = true;
+                auto declarations = ParseVariableDeclarationList(for_in);
+                ctx->allow_in_ = prev_allow_in;
 
                 if (declarations.size() == 1 && Match(JsTokenType::K_In)) {
                     auto decl = declarations[0];
-                    if (decl->init && (decl->id->type == SyntaxNodeType::ArrayPattern || decl->id->type == SyntaxNodeType::ObjectPattern || context_.strict_)) {
+                    if (decl->init && (decl->id->type == SyntaxNodeType::ArrayPattern || decl->id->type == SyntaxNodeType::ObjectPattern || ctx->strict_)) {
                         TolerateError(ParseMessages::ForInOfLoopInitializer);
                     }
                     auto node = Alloc<VariableDeclaration>();
@@ -1660,7 +1677,7 @@ namespace parser {
                     kind = VarKind::Let;
                 }
 
-                if (!context_.strict_ && lookahead_.value_ == u"in") {
+                if (!ctx->strict_ && ctx->lookahead_.value_ == u"in") {
                     auto node = Alloc<Identifier>();
                     node->name = token.value_;
                     init = Finalize(marker, node);
@@ -1669,11 +1686,11 @@ namespace parser {
                     right = ParseExpression();
                     init.reset();
                 } else {
-                    auto prev_allow_in = context_.allow_in;
-                    context_.allow_in = false;
+                    auto prev_allow_in = ctx->allow_in_;
+                    ctx->allow_in_ = false;
                     bool in_for = true;
-                    std::vector<Sp<VariableDeclarator>> declarations = ParseBindingList(VarKind::Const, in_for);
-                    context_.allow_in = prev_allow_in;
+                    auto declarations = ParseBindingList(VarKind::Const, in_for);
+                    ctx->allow_in_ = prev_allow_in;
 
                     if (declarations.size() == 1 && !declarations[0]->init && Match(JsTokenType::K_In)) {
                         auto node = Alloc<VariableDeclaration>();
@@ -1703,17 +1720,17 @@ namespace parser {
                     }
                 }
             } else {
-                auto init_start_token = lookahead_;
+                auto init_start_token = ctx->lookahead_;
                 auto start_marker = CreateStartMarker();
-                auto prev_allow_in = context_.allow_in;
-                context_.allow_in = false;
+                auto prev_allow_in = ctx->allow_in_;
+                ctx->allow_in_ = false;
                 init = InheritCoverGrammar<Expression>([this] {
                     return ParseAssignmentExpression();
                 });
-                context_.allow_in = prev_allow_in;
+                ctx->allow_in_ = prev_allow_in;
 
                 if (Match(JsTokenType::K_In)) {
-                    if (!context_.is_assignment_target || (*init)->type == SyntaxNodeType::AssignmentExpression) {
+                    if (!ctx->is_assignment_target_ || (*init)->type == SyntaxNodeType::AssignmentExpression) {
                         TolerateError(ParseMessages::InvalidLHSInForIn);
                     }
 
@@ -1723,7 +1740,7 @@ namespace parser {
                     right = ParseExpression();
                     init.reset();
                 } else if (MatchContextualKeyword(u"of")) {
-                    if (!context_.is_assignment_target || (*init)->type == SyntaxNodeType::AssignmentExpression) {
+                    if (!ctx->is_assignment_target_ || (*init)->type == SyntaxNodeType::AssignmentExpression) {
                         TolerateError(ParseMessages::InvalidLHSInForIn);
                     }
 
@@ -1767,19 +1784,19 @@ namespace parser {
         }
 
         Sp<Statement> body;
-        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             auto node = Alloc<EmptyStatement>();
             body = Finalize(CreateStartMarker(), node);
         } else {
             Expect(JsTokenType::RightParen);
 
-            auto prev_in_iter = context_.in_iteration;
-            context_.in_iteration = true;
+            auto prev_in_iter = ctx->in_iteration_;
+            ctx->in_iteration_ = true;
             body = IsolateCoverGrammar<Statement>([this] {
                 return ParseStatement();
             });
-            context_.in_iteration = prev_in_iter;
+            ctx->in_iteration_ = prev_in_iter;
         }
 
         if (!left) {
@@ -1806,7 +1823,7 @@ namespace parser {
     }
 
     Sp<ReturnStatement> Parser::ParseReturnStatement() {
-        if (!context_.in_function_body) {
+        if (!ctx->in_function_body_) {
             TolerateError(ParseMessages::IllegalReturn);
         }
 
@@ -1814,9 +1831,9 @@ namespace parser {
         Expect(JsTokenType::K_Return);
 
         bool has_arg = (!Match(JsTokenType::Semicolon) && !Match(JsTokenType::RightBracket) &&
-                        !has_line_terminator_ && lookahead_.type_ != JsTokenType::EOF_) ||
-                       lookahead_.type_ == JsTokenType::StringLiteral ||
-                       lookahead_.type_ == JsTokenType::Template;
+                        !ctx->has_line_terminator_ && ctx->lookahead_.type_ != JsTokenType::EOF_) ||
+                       ctx->lookahead_.type_ == JsTokenType::StringLiteral ||
+                       ctx->lookahead_.type_ == JsTokenType::Template;
 
         auto node = Alloc<ReturnStatement>();
         if (has_arg) {
@@ -1837,8 +1854,8 @@ namespace parser {
         node->discrimiant = ParseExpression();
         Expect(JsTokenType::RightParen);
 
-        auto prev_in_switch = context_.in_switch;
-        context_.in_switch = true;
+        auto prev_in_switch = ctx->in_switch_;
+        ctx->in_switch_ = true;
 
         bool default_found = false;
         Expect(JsTokenType::LeftBracket);
@@ -1858,7 +1875,7 @@ namespace parser {
         }
         Expect(JsTokenType::RightBracket);
 
-        context_.in_switch = prev_in_switch;
+        ctx->in_switch_ = prev_in_switch;
 
         return Finalize(marker, node);
     }
@@ -1867,7 +1884,7 @@ namespace parser {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Throw);
 
-        if (has_line_terminator_) {
+        if (ctx->has_line_terminator_) {
             ThrowError(ParseMessages::NewlineAfterThrow);
             return nullptr;
         }
@@ -1902,7 +1919,7 @@ namespace parser {
 
         Expect(JsTokenType::LeftParen);
         if (Match(JsTokenType::RightParen)) {
-            ThrowUnexpectedToken(lookahead_);
+            ThrowUnexpectedToken(ctx->lookahead_);
             return nullptr;
         }
 
@@ -1920,9 +1937,9 @@ namespace parser {
             param_set.insert(key);
         }
 
-        if (context_.strict_ && node->param->type == SyntaxNodeType::Identifier) {
+        if (ctx->strict_ && node->param->type == SyntaxNodeType::Identifier) {
             auto id = dynamic_pointer_cast<Identifier>(node->param);
-            if (scanner_->IsRestrictedWord(id->name)) {
+            if (ctx->scanner_->IsRestrictedWord(id->name)) {
                 TolerateError(ParseMessages::StrictCatchVariable);
             }
         }
@@ -1957,9 +1974,9 @@ namespace parser {
         vector<Token> params;
         Sp<SyntaxNode> id = ParsePattern(params, VarKind::Var);
 
-        if (context_.strict_ && id->type == SyntaxNodeType::Identifier) {
+        if (ctx->strict_ && id->type == SyntaxNodeType::Identifier) {
             auto identifier = dynamic_pointer_cast<Identifier>(id);
-            if (scanner_->IsRestrictedWord(identifier->name)) {
+            if (ctx->scanner_->IsRestrictedWord(identifier->name)) {
                 TolerateError(ParseMessages::StrictVarName);
             }
         }
@@ -1999,23 +2016,23 @@ namespace parser {
         Expect(JsTokenType::LeftParen);
         node->test = ParseExpression();
 
-        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             node->body = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
             Expect(JsTokenType::RightParen);
 
-            auto prev_in_interation = context_.in_iteration;
-            context_.in_iteration = true;
+            auto prev_in_interation = ctx->in_iteration_;
+            ctx->in_iteration_ = true;
             node->body = ParseStatement();
-            context_.in_iteration = prev_in_interation;
+            ctx->in_iteration_ = prev_in_interation;
         }
 
         return Finalize(marker, node);
     }
 
     Sp<WithStatement> Parser::ParseWithStatement() {
-        if (context_.strict_) {
+        if (ctx->strict_) {
             TolerateError(ParseMessages::StrictModeWith);
         }
 
@@ -2027,7 +2044,7 @@ namespace parser {
 
         node->object = ParseExpression();
 
-        if (!Match(JsTokenType::RightParen) && config_.tolerant) {
+        if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             auto empty = Alloc<EmptyStatement>();
             node->body = Finalize(marker, empty);
@@ -2045,9 +2062,9 @@ namespace parser {
         std::vector<Token> params;
         node->id = ParsePattern(params, kind);
 
-        if (context_.strict_ && node->id->type == SyntaxNodeType::Identifier) {
+        if (ctx->strict_ && node->id->type == SyntaxNodeType::Identifier) {
             auto id = dynamic_pointer_cast<Identifier>(node->id);
-            if (scanner_->IsRestrictedWord(id->name)) {
+            if (ctx->scanner_->IsRestrictedWord(id->name)) {
                 TolerateError(ParseMessages::StrictVarName);
             }
         }
@@ -2105,32 +2122,32 @@ namespace parser {
 
     Sp<Statement> Parser::ParseStatementListItem() {
         Sp<Statement> statement;
-        context_.is_assignment_target = true;
-        context_.is_binding_element = true;
+        ctx->is_assignment_target_ = true;
+        ctx->is_binding_element_ = true;
 
-        if (IsKeywordToken(lookahead_.type_)) {
-            if (lookahead_.value_ == u"export") {
-                if (context_.is_module) {
-                    TolerateUnexpectedToken(lookahead_, ParseMessages::IllegalExportDeclaration);
+        if (IsKeywordToken(ctx->lookahead_.type_)) {
+            if (ctx->lookahead_.value_ == u"export") {
+                if (ctx->is_module_) {
+                    TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::IllegalExportDeclaration);
                 }
                 statement = ParseExportDeclaration();
-            } else if (lookahead_.value_ == u"import") {
+            } else if (ctx->lookahead_.value_ == u"import") {
                 if (MatchImportCall()) {
                     statement = ParseExpressionStatement();
                 } else {
-                    if (!context_.is_module) {
-                        TolerateUnexpectedToken(lookahead_, ParseMessages::IllegalImportDeclaration);
+                    if (!ctx->is_module_) {
+                        TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::IllegalImportDeclaration);
                     }
                     statement = ParseImportDeclaration();
                 }
-            } else if (lookahead_.value_ == u"const") {
+            } else if (ctx->lookahead_.value_ == u"const") {
                 bool in_for = false;
                 statement = ParseLexicalDeclaration(in_for);
-            } else if (lookahead_.value_ == u"function") {
+            } else if (ctx->lookahead_.value_ == u"function") {
                 statement = ParseFunctionDeclaration(false);
-            } else if (lookahead_.value_ == u"class") {
+            } else if (ctx->lookahead_.value_ == u"class") {
                 statement = ParseClassDeclaration(false);
-            } else if (lookahead_.value_ == u"let") {
+            } else if (ctx->lookahead_.value_ == u"let") {
                 if (IsLexicalDeclaration()) {
                     bool in_for = false;
                     statement = ParseLexicalDeclaration(in_for);
@@ -2162,7 +2179,7 @@ namespace parser {
     }
 
     Sp<Declaration> Parser::ParseExportDeclaration() {
-        if (context_.in_function_body) {
+        if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalExportDeclaration);
         }
 
@@ -2190,7 +2207,7 @@ namespace parser {
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
-                    ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(lookahead_.value_));
+                    ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(ctx->lookahead_.value_));
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
@@ -2210,28 +2227,32 @@ namespace parser {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             }
             NextToken();
             auto node = Alloc<ExportAllDeclaration>();
             node->source = ParseModuleSpecifier();
             ConsumeSemicolon();
             export_decl = Finalize(start_marker, node);
-        } else if (IsKeywordToken(lookahead_.type_)) {
+        } else if (IsKeywordToken(ctx->lookahead_.type_)) {
             auto node = Alloc<ExportNamedDeclaration>();
 
-            if (lookahead_.value_ == u"let" || lookahead_.value_ == u"const") {
+            if (ctx->lookahead_.value_ == u"let" || ctx->lookahead_.value_ == u"const") {
                 bool in_for = false;
                 node->declaration = ParseLexicalDeclaration(in_for);
-            } else if (lookahead_.value_ == u"var" || lookahead_.value_ == u"class" || lookahead_.value_ == u"function") {
+            } else if (
+                ctx->lookahead_.value_ == u"var" ||
+                ctx->lookahead_.value_ == u"class" ||
+                ctx->lookahead_.value_ == u"function"
+            ) {
                 node->declaration = ParseStatementListItem();
             } else {
-                ThrowUnexpectedToken(lookahead_);
+                ThrowUnexpectedToken(ctx->lookahead_);
             }
 
             export_decl = Finalize(start_marker, node);
@@ -2260,12 +2281,12 @@ namespace parser {
                 ConsumeSemicolon();
             } else if (is_export_from_id) {
                 string message;
-                if (!lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             } else {
                 ConsumeSemicolon();
             }
@@ -2279,15 +2300,19 @@ namespace parser {
     Sp<Expression> Parser::ParseAssignmentExpression() {
         Sp<Expression> expr;
 
-        if (!context_.allow_yield && Match(JsTokenType::K_Yield)) {
+        if (!ctx->allow_yield_ && Match(JsTokenType::K_Yield)) {
             expr = ParseYieldExpression();
         } else {
             auto start_marker = CreateStartMarker();
-            auto token = lookahead_;
+            auto token = ctx->lookahead_;
             expr = ParseConditionalExpression();
 
-            if (token.type_ == JsTokenType::Identifier && (token.line_number_ == lookahead_.line_number_) && token.value_ == u"async") {
-                if (lookahead_.type_ == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
+            if (
+                token.type_ == JsTokenType::Identifier &&
+                (token.line_number_ == ctx->lookahead_.line_number_) &&
+                token.value_ == u"async"
+            ) {
+                if (ctx->lookahead_.type_ == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
                     Sp<SyntaxNode> arg = ParsePrimaryExpression();
                     arg = ReinterpretExpressionAsPattern(arg);
 
@@ -2301,37 +2326,37 @@ namespace parser {
 
             if (expr->type == SyntaxNodeType::ArrowParameterPlaceHolder || Match(JsTokenType::Arrow)) {
 
-                context_.is_assignment_target = false;
-                context_.is_binding_element = false;
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
                 bool is_async = false;
                 if (auto placeholder = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr); placeholder) {
                     is_async = placeholder->async;
                 }
 
                 if (auto list = ReinterpretAsCoverFormalsList(expr); list.has_value()) {
-                    if (has_line_terminator_) {
-                        TolerateUnexpectedToken(lookahead_);
+                    if (ctx->has_line_terminator_) {
+                        TolerateUnexpectedToken(ctx->lookahead_);
                     }
-                    context_.first_cover_initialized_name_error.reset();
+                    ctx->first_cover_initialized_name_error_.reset();
 
-                    bool prev_strict = context_.strict_;
-                    bool prev_allow_strict_directive = context_.allow_strict_directive;
-                    context_.allow_strict_directive = list->simple;
+                    bool prev_strict = ctx->strict_;
+                    bool prev_allow_strict_directive = ctx->allow_strict_directive_;
+                    ctx->allow_strict_directive_ = list->simple;
 
-                    bool prev_allow_yield = context_.allow_yield;
-                    bool prev_await = context_.await;
-                    context_.allow_yield = true;
-                    context_.await = is_async;
+                    bool prev_allow_yield = ctx->allow_yield_;
+                    bool prev_await = ctx->await_;
+                    ctx->allow_yield_ = true;
+                    ctx->await_ = is_async;
 
                     auto marker = CreateStartMarker();
                     Expect(JsTokenType::Arrow);
                     Sp<SyntaxNode> body;
 
                     if (Match(JsTokenType::LeftBracket)) {
-                        bool prev_allow_in = context_.allow_in;
-                        context_.allow_in = true;
+                        bool prev_allow_in = ctx->allow_in_;
+                        ctx->allow_in_ = true;
                         body = ParseFunctionSourceElements();
-                        context_.allow_in = prev_allow_in;
+                        ctx->allow_in_ = prev_allow_in;
                     } else {
                         body = IsolateCoverGrammar<SyntaxNode>([this] {
                             return ParseAssignmentExpression();
@@ -2340,11 +2365,11 @@ namespace parser {
 
                     bool expression = body->type != SyntaxNodeType::BlockStatement;
 
-                    if (context_.strict_ && list->first_restricted) {
+                    if (ctx->strict_ && list->first_restricted) {
                         ThrowUnexpectedToken(*list->first_restricted, list->message);
                         return nullptr;
                     }
-                    if (context_.strict_ && list->stricted) {
+                    if (ctx->strict_ && list->stricted) {
                         TolerateUnexpectedToken(*list->stricted, list->message);
                     }
 
@@ -2363,21 +2388,21 @@ namespace parser {
                         expr = Finalize(marker, node);
                     }
 
-                    context_.strict_ = prev_strict;
-                    context_.allow_strict_directive = prev_allow_strict_directive;
-                    context_.allow_yield = prev_allow_yield;
-                    context_.await = prev_await;
+                    ctx->strict_ = prev_strict;
+                    ctx->allow_strict_directive_ = prev_allow_strict_directive;
+                    ctx->allow_yield_ = prev_allow_yield;
+                    ctx->await_ = prev_await;
                 }
             } else {
 
                 if (MatchAssign()) {
-                    if (!context_.is_assignment_target) {
+                    if (!ctx->is_assignment_target_) {
                         TolerateError(ParseMessages::InvalidLHSInAssignment);
                     }
 
-                    if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+                    if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
-                        if (scanner_->IsRestrictedWord(id->name)) {
+                        if (ctx->scanner_->IsRestrictedWord(id->name)) {
                             TolerateUnexpectedToken(token, ParseMessages::StrictLHSAssignment);
                         }
                     }
@@ -2385,8 +2410,8 @@ namespace parser {
                     auto temp = Alloc<AssignmentExpression>();
 
                     if (!Match(JsTokenType::Assign)) {
-                        context_.is_assignment_target = false;
-                        context_.is_binding_element = false;
+                        ctx->is_assignment_target_ = false;
+                        ctx->is_binding_element_ = false;
                     } else {
 //                        Assert(!!temp->left, "left should not be null");
                     }
@@ -2399,7 +2424,7 @@ namespace parser {
                     });
                     temp->operator_ = operator_;
                     expr = Finalize(start_marker, temp);
-                    context_.first_cover_initialized_name_error.reset();
+                    ctx->first_cover_initialized_name_error_.reset();
                 }
             }
 
@@ -2420,13 +2445,13 @@ namespace parser {
             NextToken();
             auto node = Alloc<ConditionalExpression>();
 
-            bool prev_allow_in = context_.allow_in;
-            context_.allow_in = true;
+            bool prev_allow_in = ctx->allow_in_;
+            ctx->allow_in_ = true;
 
             node->consequent = IsolateCoverGrammar<Expression>([this] {
                 return ParseAssignmentExpression();
             });
-            context_.allow_in = prev_allow_in;
+            ctx->allow_in_ = prev_allow_in;
 
             Expect(JsTokenType::Colon);
             node->alternate = IsolateCoverGrammar<Expression>([this] {
@@ -2436,31 +2461,31 @@ namespace parser {
             node->test = move(expr);
             expr = move(node);
 
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
         }
 
         return Finalize(marker, expr);
     }
 
     Sp<Expression> Parser::ParseBinaryExpression() {
-        Token start_token = lookahead_;
+        Token start_token = ctx->lookahead_;
 
         auto expr = InheritCoverGrammar<Expression>([this] {
             return ParseExponentiationExpression();
         });
 
-        Token token = lookahead_;
+        Token token = ctx->lookahead_;
         int prec = BinaryPrecedence(token);
         if (prec > 0) {
             NextToken();
 
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
 
             stack<Token> markers;
             markers.push(start_token);
-            markers.push(lookahead_);
+            markers.push(ctx->lookahead_);
 
             Sp<Expression> left = expr;
             Sp<Expression> right = IsolateCoverGrammar<Expression>([this] {
@@ -2477,7 +2502,7 @@ namespace parser {
             precedences.push(prec);
 
             while (true) {
-                prec = BinaryPrecedence(lookahead_);
+                prec = BinaryPrecedence(ctx->lookahead_);
                 if (prec <= 0) break;
 
                 // reduce
@@ -2507,7 +2532,7 @@ namespace parser {
                 Token next_ = NextToken();
                 op_stack.push(next_.value_);
                 precedences.push(prec);
-                markers.push(lookahead_);
+                markers.push(ctx->lookahead_);
                 auto temp_expr = IsolateCoverGrammar<Expression>([this] {
                     return ParseExponentiationExpression();
                 });
@@ -2551,8 +2576,8 @@ namespace parser {
 
         if (expr->type != SyntaxNodeType::UnaryExpression && Match(JsTokenType::Pow)) {
             NextToken();
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
             auto node = Alloc<BinaryExpression>();
             node->left = expr;
             node->right = IsolateCoverGrammar<Expression>([this, &node] {
@@ -2573,7 +2598,7 @@ namespace parser {
             Match(JsTokenType::K_Delete) || Match(JsTokenType::K_Void) || Match(JsTokenType::K_Typeof)
             ) {
             auto marker = CreateStartMarker();
-            Token token = lookahead_;
+            Token token = ctx->lookahead_;
             NextToken();
             expr = InheritCoverGrammar<Expression>([this] {
                 return ParseUnaryExpression();
@@ -2583,12 +2608,12 @@ namespace parser {
             node->argument = expr;
             node->prefix = true;
             expr = Finalize(marker, node);
-            if (context_.strict_ && node->operator_ == u"delete" && node->argument->type == SyntaxNodeType::Identifier) {
+            if (ctx->strict_ && node->operator_ == u"delete" && node->argument->type == SyntaxNodeType::Identifier) {
                 TolerateError(ParseMessages::StrictDelete);
             }
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
-        } else if (context_.await && MatchContextualKeyword(u"await")) {
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
+        } else if (ctx->await_ && MatchContextualKeyword(u"await")) {
             expr = ParseAwaitExpression();
         } else {
             expr = ParseUpdateExpression();
@@ -2615,13 +2640,13 @@ namespace parser {
             expr = InheritCoverGrammar<Expression>([this] {
                 return ParseUnaryExpression();
             });
-            if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+            if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
                 auto id = dynamic_pointer_cast<Identifier>(expr);
-                if (scanner_->IsRestrictedWord(id->name)) {
+                if (ctx->scanner_->IsRestrictedWord(id->name)) {
                     TolerateError(ParseMessages::StrictLHSPrefix);
                 }
             }
-            if (!context_.is_assignment_target) {
+            if (!ctx->is_assignment_target_) {
                 TolerateError(ParseMessages::InvalidLHSInAssignment);
             }
             auto node = Alloc<UpdateExpression>();
@@ -2629,25 +2654,25 @@ namespace parser {
             node->operator_ = token.value_;
             node->argument = expr;
             expr = Finalize(marker, node);
-            context_.is_assignment_target = false;
-            context_.is_binding_element = false;
+            ctx->is_assignment_target_ = false;
+            ctx->is_binding_element_ = false;
         } else {
             expr = InheritCoverGrammar<Expression>([this] {
                 return ParseLeftHandSideExpressionAllowCall();
             });
-            if (!has_line_terminator_ && IsPunctuatorToken(lookahead_.type_)) {
+            if (!ctx->has_line_terminator_ && IsPunctuatorToken(ctx->lookahead_.type_)) {
                 if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
-                    if (context_.strict_ && expr->type == SyntaxNodeType::Identifier) {
+                    if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
-                        if (scanner_->IsRestrictedWord(id->name)) {
+                        if (ctx->scanner_->IsRestrictedWord(id->name)) {
                             TolerateError(ParseMessages::StrictLHSPostfix);
                         }
                     }
-                    if (!context_.is_assignment_target) {
+                    if (!ctx->is_assignment_target_) {
                         TolerateError(ParseMessages::InvalidLHSInAssignment);
                     }
-                    context_.is_assignment_target = false;
-                    context_.is_binding_element = false;
+                    ctx->is_assignment_target_ = false;
+                    ctx->is_binding_element_ = false;
                     auto node = Alloc<UpdateExpression>();
                     node->prefix = false;
                     Token token = NextToken();
@@ -2662,11 +2687,11 @@ namespace parser {
     }
 
     Sp<Expression> Parser::ParseLeftHandSideExpression() {
-        Assert(context_.allow_in, "callee of new expression always allow in keyword.");
+        Assert(ctx->allow_in_, "callee of new expression always allow in keyword.");
 
         auto start_marker = CreateStartMarker();
         Sp<Expression> expr;
-        if (Match(JsTokenType::K_Super) && context_.in_function_body) {
+        if (Match(JsTokenType::K_Super) && ctx->in_function_body_) {
             expr = ParseSuper();
         } else {
             expr = InheritCoverGrammar<Expression>([this] {
@@ -2680,8 +2705,8 @@ namespace parser {
 
         while (true) {
             if (Match(JsTokenType::LeftBrace)) {
-                context_.is_binding_element = false;
-                context_.is_assignment_target = true;
+                ctx->is_binding_element_ = false;
+                ctx->is_assignment_target_ = true;
                 Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<MemberExpression>();
                 node->computed = true;
@@ -2692,15 +2717,15 @@ namespace parser {
                 node->object = move(expr);
                 expr = Finalize(start_marker, node);
             } else if (Match(JsTokenType::Dot)) {
-                context_.is_binding_element = false;
-                context_.is_assignment_target = true;
+                ctx->is_binding_element_ = false;
+                ctx->is_assignment_target_ = true;
                 Expect(JsTokenType::Dot);
                 auto node = Alloc<MemberExpression>();
                 node->computed = false;
                 node->property = ParseIdentifierName();
                 node->object = move(expr);
                 expr = Finalize(start_marker, node);
-            } else if (lookahead_.type_ == JsTokenType::Template && lookahead_.head_) {
+            } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral();
                 node->tag = move(expr);
@@ -2718,7 +2743,7 @@ namespace parser {
 
         Expect(JsTokenType::K_Super);
         if (!Match(JsTokenType::LeftBrace) && !Match(JsTokenType::Dot)) {
-            ThrowUnexpectedToken(lookahead_);
+            ThrowUnexpectedToken(ctx->lookahead_);
             return nullptr;
         }
 
@@ -2727,7 +2752,7 @@ namespace parser {
     }
 
     Sp<ImportDeclaration> Parser::ParseImportDeclaration() {
-        if (context_.in_function_body) {
+        if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalImportDeclaration);
         }
 
@@ -2737,7 +2762,7 @@ namespace parser {
         Sp<Literal> src;
         std::vector<Sp<SyntaxNode>> specifiers;
 
-        if (lookahead_.type_ == JsTokenType::StringLiteral) {
+        if (ctx->lookahead_.type_ == JsTokenType::StringLiteral) {
             src = ParseModuleSpecifier();
         } else {
             if (Match(JsTokenType::LeftBracket)) {
@@ -2745,7 +2770,7 @@ namespace parser {
                 specifiers.insert(specifiers.end(), children.begin(), children.end());
             } else if (Match(JsTokenType::Mul)) {
                 specifiers.push_back(ParseImportNamespaceSpecifier());
-            } else if (IsIdentifierName(lookahead_) && !Match(JsTokenType::K_Default)) {
+            } else if (IsIdentifierName(ctx->lookahead_) && !Match(JsTokenType::K_Default)) {
                 auto default_ = ParseImportDefaultSpecifier();
                 specifiers.push_back(move(default_));
 
@@ -2757,7 +2782,7 @@ namespace parser {
                         auto children = ParseNamedImports();
                         specifiers.insert(specifiers.end(), children.begin(), children.end());
                     } else {
-                        ThrowUnexpectedToken(lookahead_);
+                        ThrowUnexpectedToken(ctx->lookahead_);
                     }
                 }
             } else {
@@ -2766,12 +2791,12 @@ namespace parser {
 
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             }
             NextToken();
             src = ParseModuleSpecifier();
@@ -2810,7 +2835,7 @@ namespace parser {
 
         Sp<Identifier> imported;
         Sp<Identifier> local;
-        if (lookahead_.type_ == JsTokenType::Identifier) {
+        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
             imported = ParseVariableIdentifier(VarKind::Invalid);
             local = imported;
             if (MatchContextualKeyword(u"as")) {
@@ -2837,7 +2862,7 @@ namespace parser {
     Sp<Literal> Parser::ParseModuleSpecifier() {
         auto start_marker = CreateStartMarker();
 
-        if (lookahead_.type_ != JsTokenType::StringLiteral) {
+        if (ctx->lookahead_.type_ != JsTokenType::StringLiteral) {
             ThrowError(ParseMessages::InvalidModuleSpecifier);
         }
 
@@ -2894,16 +2919,16 @@ namespace parser {
 
         Token token = NextToken();
         if (Match(JsTokenType::K_Yield)) {
-            if (context_.strict_) {
+            if (ctx->strict_) {
                 TolerateUnexpectedToken(token, ParseMessages::StrictReservedWord);
-            } else if (!context_.allow_yield) {
+            } else if (!ctx->allow_yield_) {
                 ThrowUnexpectedToken(token);
                 return nullptr;
             }
         } else if (token.type_ != JsTokenType::Identifier) {
             ThrowUnexpectedToken(token);
             return nullptr;
-        } else if ((context_.is_module || context_.await) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {
+        } else if ((ctx->is_module_ || ctx->await_) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {
             TolerateUnexpectedToken(token);
         }
 
@@ -2921,9 +2946,9 @@ namespace parser {
             pattern = ParseObjectPattern(params, kind);
         } else {
             if (Match(JsTokenType::K_Let) && (kind == VarKind::Const || kind == VarKind::Let)) {
-                TolerateUnexpectedToken(lookahead_, ParseMessages::LetInLexicalBinding);
+                TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::LetInLexicalBinding);
             }
-            params.push_back(lookahead_);
+            params.push_back(ctx->lookahead_);
             pattern = ParseVariableIdentifier(kind);
         }
 
@@ -2931,17 +2956,17 @@ namespace parser {
     }
 
     Sp<SyntaxNode> Parser::ParsePatternWithDefault(std::vector<Token> &params, VarKind kind) {
-        Token start_token_ = lookahead_;
+        Token start_token_ = ctx->lookahead_;
 
         auto pattern = ParsePattern(params, kind);
         if (Match(JsTokenType::Assign)) {
             NextToken();
-            bool prev_allow_yield = context_.allow_yield;
-            context_.allow_yield = true;
+            bool prev_allow_yield = ctx->allow_yield_;
+            ctx->allow_yield_ = true;
             auto right = IsolateCoverGrammar<Expression>([this] {
                 return ParseAssignmentExpression();
             });
-            context_.allow_yield = prev_allow_yield;
+            ctx->allow_yield_ = prev_allow_yield;
             auto node = Alloc<AssignmentPattern>();
             node->left = move(pattern);
             node->right = move(right);
@@ -2997,8 +3022,8 @@ namespace parser {
         node->shorthand = false;
         node->method = false;
 
-        if (lookahead_.type_ == JsTokenType::Identifier) {
-            Token keyToken = lookahead_;
+        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
+            Token keyToken = ctx->lookahead_;
             node->key = ParseVariableIdentifier(VarKind::Invalid);
             auto id_ = Alloc<Identifier>();
             id_->name = keyToken.value_;
@@ -3070,7 +3095,7 @@ namespace parser {
 
     Sp<SyntaxNode> Parser::ParseAsyncArgument() {
         auto arg = ParseAssignmentExpression();
-        context_.first_cover_initialized_name_error.reset();
+        ctx->first_cover_initialized_name_error_.reset();
         return arg;
     }
 
@@ -3113,7 +3138,7 @@ namespace parser {
             node->async = false;
             expr = move(node);
         } else {
-            auto start_token = lookahead_;
+            auto start_token = ctx->lookahead_;
 
             std::vector<Token> params;
             if (Match(JsTokenType::Spread)) {
@@ -3128,7 +3153,7 @@ namespace parser {
                 expr = move(node);
             } else {
                 bool arrow = false;
-                context_.is_binding_element = true;
+                ctx->is_binding_element_ = true;
 
                 expr = InheritCoverGrammar<Expression>([this] {
                     return ParseAssignmentExpression();
@@ -3137,9 +3162,9 @@ namespace parser {
                 if (Match(JsTokenType::Comma)) {
                     std::vector<Sp<Expression>> expressions;
 
-                    context_.is_assignment_target = false;
+                    ctx->is_assignment_target_ = false;
                     expressions.push_back(expr);
-                    while (lookahead_.type_ != JsTokenType::EOF_) {
+                    while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
                         if (!Match(JsTokenType::Comma)) {
                             break;
                         }
@@ -3157,15 +3182,15 @@ namespace parser {
                             node->async = false;
                             expr = move(node);
                         } else if (Match(JsTokenType::Spread)) {
-                            if (!context_.is_binding_element) {
-                                ThrowUnexpectedToken(lookahead_);
+                            if (!ctx->is_binding_element_) {
+                                ThrowUnexpectedToken(ctx->lookahead_);
                             }
                             expressions.push_back(ParseRestElement(params));
                             Expect(JsTokenType::RightParen);
                             if (!Match(JsTokenType::Arrow)) {
                                 Expect(JsTokenType::Arrow);
                             }
-                            context_.is_binding_element = false;
+                            ctx->is_binding_element_ = false;
                             for (auto& i : expressions) {
                                 ReinterpretExpressionAsPattern(i);
                             }
@@ -3205,8 +3230,8 @@ namespace parser {
                         }
 
                         if (!arrow) {
-                            if (!context_.is_binding_element) {
-                                ThrowUnexpectedToken(lookahead_);
+                            if (!ctx->is_binding_element_) {
+                                ThrowUnexpectedToken(ctx->lookahead_);
                             }
 
                             if (expr->type == SyntaxNodeType::SequenceExpression) {
@@ -3233,7 +3258,7 @@ namespace parser {
                         }
                     }
 
-                    context_.is_binding_element = false;
+                    ctx->is_binding_element_ = false;
                 }
             }
         }
@@ -3242,7 +3267,7 @@ namespace parser {
     }
 
     Sp<TemplateElement> Parser::ParseTemplateHead() {
-        Assert(lookahead_.head_, "Template literal must start with a template head");
+        Assert(ctx->lookahead_.head_, "Template literal must start with a template head");
         auto start_marker = CreateStartMarker();
         Token token = NextToken();
 
@@ -3255,8 +3280,8 @@ namespace parser {
     }
 
     Sp<TemplateElement> Parser::ParseTemplateElement() {
-        if (lookahead_.type_ != JsTokenType::Template) {
-            ThrowUnexpectedToken(lookahead_);
+        if (ctx->lookahead_.type_ != JsTokenType::Template) {
+            ThrowUnexpectedToken(ctx->lookahead_);
         }
 
         auto start_marker = CreateStartMarker();
@@ -3286,7 +3311,7 @@ namespace parser {
     }
 
     Sp<MethodDefinition> Parser::ParseClassElement(bool &has_ctor) {
-        Token token = lookahead_;
+        Token token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
 
         optional<Sp<SyntaxNode>> key;
@@ -3303,8 +3328,8 @@ namespace parser {
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey();
             auto id = dynamic_pointer_cast<Identifier>(*key);
-            if (id && id->name == u"static" && (QualifiedPropertyName(lookahead_) || Match(JsTokenType::Mul))) {
-                token = lookahead_;
+            if (id && id->name == u"static" && (QualifiedPropertyName(ctx->lookahead_) || Match(JsTokenType::Mul))) {
+                token = ctx->lookahead_;
                 is_static = true;
                 computed = Match(JsTokenType::LeftBrace);
                 if (Match(JsTokenType::Mul)) {
@@ -3313,10 +3338,14 @@ namespace parser {
                     key = ParseObjectPropertyKey();
                 }
             }
-            if ((token.type_ == JsTokenType::Identifier) && !has_line_terminator_ && (token.value_ == u"async")) {
+            if (
+                (token.type_ == JsTokenType::Identifier) &&
+                !ctx->has_line_terminator_ &&
+                (token.value_ == u"async")
+            ) {
                 if (token.type_ != JsTokenType::Colon && token.type_ != JsTokenType::LeftParen && token.type_ != JsTokenType::Mul) {
                     is_async = true;
-                    token = lookahead_;
+                    token = ctx->lookahead_;
                     key = ParseObjectPropertyKey();
                     if (token.type_ == JsTokenType::Identifier && token.value_ == u"constructor") {
                         TolerateUnexpectedToken(token, ParseMessages::ConstructorIsAsync);
@@ -3325,13 +3354,13 @@ namespace parser {
             }
         }
 
-        bool lookahead_prop_key = QualifiedPropertyName(lookahead_);
+        bool lookahead_prop_key = QualifiedPropertyName(ctx->lookahead_);
         if (token.type_ == JsTokenType::Identifier) {
             if (token.value_ == u"get" && lookahead_prop_key) {
                 kind = VarKind::Get;
                 computed = Match(JsTokenType::LeftBrace);
                 key = ParseObjectPropertyKey();
-                context_.allow_yield = false;
+                ctx->allow_yield_ = false;
                 value = ParseGetterMethod();
             } else if (token.value_ == u"set" && lookahead_prop_key) {
                 kind = VarKind::Set;
@@ -3358,7 +3387,7 @@ namespace parser {
         }
 
         if (kind == VarKind::Invalid) {
-            ThrowUnexpectedToken(lookahead_);
+            ThrowUnexpectedToken(ctx->lookahead_);
         }
 
         if (kind == VarKind::Init) {
@@ -3412,8 +3441,8 @@ namespace parser {
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
-        bool prev_allow_yield = context_.allow_yield;
-        context_.allow_yield = !node->generator;
+        bool prev_allow_yield = ctx->allow_yield_;
+        ctx->allow_yield_ = !node->generator;
 
         auto formal = ParseFormalParameters();
         if (!formal.params.empty()) {
@@ -3422,7 +3451,7 @@ namespace parser {
 
         node->params = formal.params;
         node->body = ParsePropertyMethod(formal);
-        context_.allow_yield = prev_allow_yield;
+        ctx->allow_yield_ = prev_allow_yield;
 
         return Finalize(start_marker, node);
     }
@@ -3432,8 +3461,8 @@ namespace parser {
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
-        bool prev_allow_yield = context_.allow_yield;
-        context_.allow_yield = !node->generator;
+        bool prev_allow_yield = ctx->allow_yield_;
+        ctx->allow_yield_ = !node->generator;
         auto options = ParseFormalParameters();
         if (options.params.size() != 1) {
             TolerateError(ParseMessages::BadSetterArity);
@@ -3442,30 +3471,30 @@ namespace parser {
         }
         node->params = options.params;
         node->body = ParsePropertyMethod(options);
-        context_.allow_yield = prev_allow_yield;
+        ctx->allow_yield_ = prev_allow_yield;
 
         return Finalize(start_marker, node);
     }
 
     Sp<BlockStatement> Parser::ParsePropertyMethod(parser::ParserCommon::FormalParameterOptions &options) {
-        context_.is_assignment_target = false;
-        context_.is_binding_element = false;
+        ctx->is_assignment_target_ = false;
+        ctx->is_binding_element_ = false;
 
-        bool prev_strict = context_.strict_;
-        bool prev_allow_strict_directive = context_.allow_strict_directive;
-        context_.allow_strict_directive = options.simple;
+        bool prev_strict = ctx->strict_;
+        bool prev_allow_strict_directive = ctx->allow_strict_directive_;
+        ctx->allow_strict_directive_ = options.simple;
 
         auto body = IsolateCoverGrammar<BlockStatement>([this] {
             return ParseFunctionSourceElements();
         });
-        if (context_.strict_ && options.first_restricted.has_value()) {
+        if (ctx->strict_ && options.first_restricted.has_value()) {
             TolerateUnexpectedToken(*options.first_restricted, options.message);
         }
-        if (context_.strict_ && options.stricted.has_value()) {
+        if (ctx->strict_ && options.stricted.has_value()) {
             TolerateUnexpectedToken(*options.stricted, options.message);
         }
-        context_.strict_ = prev_strict;
-        context_.allow_strict_directive = prev_allow_strict_directive;
+        ctx->strict_ = prev_strict;
+        ctx->allow_strict_directive_ = prev_allow_strict_directive;
 
         return body;
     }
@@ -3475,13 +3504,13 @@ namespace parser {
         auto node = Alloc<FunctionExpression>();
 
         node->generator = true;
-        bool prev_allow_yield = context_.allow_yield;
+        bool prev_allow_yield = ctx->allow_yield_;
 
-        context_.allow_yield = true;
+        ctx->allow_yield_ = true;
         auto params = ParseFormalParameters();
-        context_.allow_yield = false;
+        ctx->allow_yield_ = false;
         auto method = ParsePropertyMethod(params);
-        context_.allow_yield = prev_allow_yield;
+        ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
         node->body = move(method);
@@ -3494,11 +3523,11 @@ namespace parser {
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
-        bool prev_allow_yield = context_.allow_yield;
-        context_.allow_yield = true;
+        bool prev_allow_yield = ctx->allow_yield_;
+        ctx->allow_yield_ = true;
         auto params = ParseFormalParameters();
         auto method = ParsePropertyMethod(params);
-        context_.allow_yield = prev_allow_yield;
+        ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
         node->body = move(method);
@@ -3511,14 +3540,14 @@ namespace parser {
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
-        bool prev_allow_yield = context_.allow_yield;
-        bool prev_await = context_.await;
-        context_.allow_yield = false;
-        context_.await = true;
+        bool prev_allow_yield = ctx->allow_yield_;
+        bool prev_await = ctx->await_;
+        ctx->allow_yield_ = false;
+        ctx->await_ = true;
         auto params = ParseFormalParameters();
         auto method = ParsePropertyMethod(params);
-        context_.allow_yield = prev_allow_yield;
-        context_.await = prev_await;
+        ctx->allow_yield_ = prev_allow_yield;
+        ctx->await_ = prev_await;
 
         node->params = params.params;
         node->body = move(method);
