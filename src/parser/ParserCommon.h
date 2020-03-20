@@ -9,13 +9,13 @@
 #include <stack>
 #include <functional>
 #include <unordered_set>
-#include "../tokenizer/token.h"
-#include "parse_error_handler.h"
+#include "../tokenizer/Token.h"
+#include "ParseErrorHandler.h"
 #include "../utils.h"
 #include "../macros.h"
-#include "../tokenizer/scanner.h"
-#include "syntax_nodes.h"
-#include "parser_context.h"
+#include "../tokenizer/Scanner.h"
+#include "SyntaxNodes.h"
+#include "ParserContext.h"
 
 namespace parser {
 

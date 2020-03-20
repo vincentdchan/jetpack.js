@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(ZEP)
+project(js-parser)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -15,9 +15,7 @@ add_subdirectory(nlohmann_json)
 add_subdirectory(ordered-map)
 add_subdirectory(fmt)
 
-include_directories(cxxopts/include)
 include_directories(fmt/include)
-include_directories(ThreadPool)
 include_directories(robin-hood-hashing/src/include)
 
 file(GLOB source_files
@@ -46,14 +44,8 @@ string(STRIP ${JEMALLOC_LIBDIR} JEMALLOC_LIBDIR)
 
 include_directories(${JEMALLOC_INCLUDE})
 
-add_executable(zep-cli ${source_files} "src/entry/main.cpp")
-target_link_libraries(zep-cli
-        PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR}
-        PRIVATE nlohmann_json::nlohmann_json tsl::ordered_map fmt
-)
-
-add_library(zep STATIC ${source_files})
-target_link_libraries(zep
+add_library(js-parser STATIC ${source_files})
+target_link_libraries(js-parser
         PUBLIC -ljemalloc -L${JEMALLOC_LIBDIR}
         nlohmann_json::nlohmann_json tsl::ordered_map
 )

@@ -2,10 +2,10 @@
 // Created by Duzhong Chen on 2019/9/8.
 //
 #pragma once
-#include "node_types.h"
+#include "NodeTypes.h"
 #include "../macros.h"
-#include "../tokenizer/token.h"
-#include "../tokenizer/comment.h"
+#include "../tokenizer/Token.h"
+#include "../tokenizer/Comment.h"
 
 template <typename T>
 using Sp = std::shared_ptr<T>;

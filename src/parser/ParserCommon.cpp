@@ -2,8 +2,8 @@
 // Created by Duzhong Chen on 2019/9/6.
 //
 
-#include "parser_common.h"
-#include "error_message.h"
+#include "ParserCommon.h"
+#include "ErrorMessage.h"
 #include <jemalloc/jemalloc.h>
 #include <fmt/format.h>
 
@@ -71,7 +71,7 @@ namespace parser {
         }
         value = token.value_;
 
-        string final_message = fmt::format(msg, utils::To_UTF8(value));
+        string final_message = fmt::format(msg, parser_utils::To_UTF8(value));
         return UnexpectedToken(token, final_message);
     }
 

@@ -27,38 +27,7 @@ command line.
 With C++ library you can use ZEP to parse
 ES source code in your project.
 
-## Command line
-
-Parse a ES file as a script:
-
-```shell script
-zep ./test.js
-```
-
-Parse a ES file as a module:
-
-```shell script
-zep ./test.js --es-module
-```
-
-Parse a jsx file as a module:
-
-```shell script
-zep ./test.js --es-module --jsx
-```
-
-Dump AST as a file:
-
-```shell script
-zep ./test.js >> ast.json
-```
-
-Help:
-```shell script
-zep --help
-```
-
-## Use ZEP as a library
+## Use js-parser as a library
 
 Please install jemalloc on your mac:
 
@@ -70,16 +39,20 @@ ZEP is built with CMake, so it can be
 easily integrated to your project.
 
 ```cmake
-add_subdirectory(ZEP)
-target_include_directories(${PROJECT_NAME} ./ZEP/src)
-target_link_libraries(${PROJECT_NAME} zep)
+add_subdirectory(js-parser)
+target_include_directories(${PROJECT_NAME} ./js-parser/src)
+target_link_libraries(${PROJECT_NAME} PUBLIC js-parser)
 ```
 
 ### Example
 
 ```cpp
-ParserCommon::Config config = ParserCommon::Config::Default();
 Parser parser(src, config);
+ParserContext::Config config = ParserContext::Config::Default();
+auto src = std::make_shared<UString>();
+(*src) = Artery::ReadFileStream(mf->path);
+auto ctx = std::make_shared<ParserContext>(src, config);
+Parser parser(ctx);
 
 auto script = parser.ParseScript();
 // or

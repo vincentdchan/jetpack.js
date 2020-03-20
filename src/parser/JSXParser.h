@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "parser.hpp"
+#include "Parser.hpp"
 #include <vector>
 #include <robin_hood.h>
 

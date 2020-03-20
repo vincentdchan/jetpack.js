@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "token.h"
+#include "Token.h"
 #include <utility>
 
 struct Comment {

@@ -823,7 +823,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "AssignmentExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = utils::To_UTF8(node->operator_);
+            result["operator"] = parser_utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -853,7 +853,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "BinaryExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = utils::To_UTF8(node->operator_);
+            result["operator"] = parser_utils::To_UTF8(node->operator_);
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -991,7 +991,7 @@ namespace dumper {
             result["type"] = "Directive";
             DumpBaseInfo(result, node);
             result["expression"] = Dump(node->expression);
-            result["directive"] = utils::To_UTF8(node->directive);
+            result["directive"] = parser_utils::To_UTF8(node->directive);
 
             return result;
         }
@@ -1158,7 +1158,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "Identifier";
             DumpBaseInfo(result, node);
-            result["name"] = utils::To_UTF8(node->name);
+            result["name"] = parser_utils::To_UTF8(node->name);
 
             return result;
         }
@@ -1243,8 +1243,8 @@ namespace dumper {
             DumpBaseInfo(result, node);
             if (std::holds_alternative<bool>(node->value)) result["value"] = std::get<bool>(node->value);
             if (std::holds_alternative<double>(node->value)) result["value"] = std::get<double>(node->value);
-            if (std::holds_alternative<UString>(node->value)) result["value"] = utils::To_UTF8(std::get<UString>(node->value));
-            result["raw"] = utils::To_UTF8(node->raw);
+            if (std::holds_alternative<UString>(node->value)) result["value"] = parser_utils::To_UTF8(std::get<UString>(node->value));
+            result["raw"] = parser_utils::To_UTF8(node->raw);
 
             return result;
         }
@@ -1286,7 +1286,7 @@ namespace dumper {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
-            result["sourceType"] = utils::To_UTF8(node->source_type);
+            result["sourceType"] = parser_utils::To_UTF8(node->source_type);
             json array_comments = json::array();
             result["comments"] = std::move(array_comments);
 
@@ -1356,8 +1356,8 @@ namespace dumper {
             json result = json::object();
             result["type"] = "RegexLiteral";
             DumpBaseInfo(result, node);
-            result["value"] = utils::To_UTF8(node->value);
-            result["raw"] = utils::To_UTF8(node->raw);
+            result["value"] = parser_utils::To_UTF8(node->value);
+            result["raw"] = parser_utils::To_UTF8(node->raw);
 
             return result;
         }
@@ -1392,7 +1392,7 @@ namespace dumper {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
-            result["sourceType"] = utils::To_UTF8(node->source_type);
+            result["sourceType"] = parser_utils::To_UTF8(node->source_type);
             json array_comments = json::array();
             result["comments"] = std::move(array_comments);
 
@@ -1487,8 +1487,8 @@ namespace dumper {
             json result = json::object();
             result["type"] = "TemplateElement";
             DumpBaseInfo(result, node);
-            result["cooked"] = utils::To_UTF8(node->cooked);
-            result["raw"] = utils::To_UTF8(node->raw);
+            result["cooked"] = parser_utils::To_UTF8(node->cooked);
+            result["raw"] = parser_utils::To_UTF8(node->raw);
             result["tail"] = node->tail;
 
             return result;
@@ -1550,7 +1550,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "UnaryExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = utils::To_UTF8(node->operator_);
+            result["operator"] = parser_utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 
@@ -1561,7 +1561,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "UpdateExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = utils::To_UTF8(node->operator_);
+            result["operator"] = parser_utils::To_UTF8(node->operator_);
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 
@@ -1690,7 +1690,7 @@ namespace dumper {
             json result = json::object();
             result["type"] = "JSXIdentifier";
             DumpBaseInfo(result, node);
-            result["name"] = utils::To_UTF8(node->name);
+            result["name"] = parser_utils::To_UTF8(node->name);
 
             return result;
         }
@@ -1756,8 +1756,8 @@ namespace dumper {
             json result = json::object();
             result["type"] = "JSXText";
             DumpBaseInfo(result, node);
-            result["value"] = utils::To_UTF8(node->value);
-            result["raw"] = utils::To_UTF8(node->raw);
+            result["value"] = parser_utils::To_UTF8(node->value);
+            result["raw"] = parser_utils::To_UTF8(node->raw);
 
             return result;
         }

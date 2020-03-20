@@ -1,5 +1,5 @@
 
-#include "./node_traverser.h"
+#include "NodeTraverser.h"
 
 void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
     switch (node->type) {

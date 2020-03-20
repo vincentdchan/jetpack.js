@@ -5,11 +5,11 @@
 
 #include <vector>
 #include <iostream>
-#include "../tokenizer/token.h"
-#include "parser_context.h"
-#include "parser_common.h"
-#include "error_message.h"
-#include "nodes_size.h"
+#include "../tokenizer/Token.h"
+#include "ParserContext.h"
+#include "ParserCommon.h"
+#include "ErrorMessage.h"
+#include "NodesSize.h"
 
 #define ASSERT_NOT_NULL(EXPR, MSG) if ((EXPR) == nullptr) { \
         LogError(std::string(#EXPR) + " should not be nullptr " + MSG); \

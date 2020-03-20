@@ -6,10 +6,10 @@
 #include <memory>
 #include <vector>
 #include <stack>
-#include "../parser/parse_error_handler.h"
+#include "../parser/ParseErrorHandler.h"
 #include "../utils.h"
-#include "token.h"
-#include "comment.h"
+#include "Token.h"
+#include "Comment.h"
 
 class Scanner final {
 public:

@@ -2,8 +2,8 @@
 // Created by Duzhong Chen on 2019/10/30.
 //
 
-#include "typescript_parser.h"
-#include "parser.hpp"
+#include "TypescriptParser.h"
+#include "Parser.hpp"
 
 namespace parser {
 

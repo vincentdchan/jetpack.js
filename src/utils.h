@@ -10,7 +10,7 @@
 
 typedef std::u16string UString;
 
-namespace utils {
+namespace parser_utils {
 
     inline int64_t GetCurrentMs() {
         using namespace std::chrono;

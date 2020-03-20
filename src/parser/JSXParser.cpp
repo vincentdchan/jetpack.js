@@ -5,7 +5,7 @@
 #include <jemalloc/jemalloc.h>
 #include <stack>
 #include <fmt/format.h>
-#include "jsx_parser.h"
+#include "JSXParser.h"
 
 namespace parser {
     using namespace std;
@@ -163,7 +163,7 @@ namespace parser {
                 UString open = GetQualifiedElementName(el->opening_->name);
                 UString close = GetQualifiedElementName(closing->name);
                 if (open != close) {
-                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", utils::To_UTF8(open)));
+                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", parser_utils::To_UTF8(open)));
                 }
                 if (!el_stack.empty()) {
                     auto node = Alloc<JSXElement>();
@@ -378,7 +378,7 @@ namespace parser {
             }
             scanner.IncreaseIndex();
             text.push_back(ch);
-            if (utils::IsLineTerminator(ch)) {
+            if (parser_utils::IsLineTerminator(ch)) {
                 scanner.SetLineNumber(scanner.LineNumber() + 1);
                 if (ch == u'\r' && scanner.CharAt(scanner.Index()) == u'\n') {
                     scanner.IncreaseIndex();
@@ -544,12 +544,12 @@ namespace parser {
             return token;
         }
 
-        if (utils::IsIdentifierStart(cp) && cp != 92) {
+        if (parser_utils::IsIdentifierStart(cp) && cp != 92) {
             auto start = scanner.Index();
             scanner.IncreaseIndex();
             while (!scanner.IsEnd()) {
                 char16_t ch = scanner.CharAt(scanner.Index());
-                if (utils::IsIdentifierPart(ch) && (ch != 92)) {
+                if (parser_utils::IsIdentifierPart(ch) && (ch != 92)) {
                     scanner.IncreaseIndex();
                 } else if (ch == 45) {
                     // Hyphen (char code 45) can be part of an identifier.
@@ -604,14 +604,14 @@ namespace parser {
                         if (numeric) {
                             // e.g. '&#x41;'
                             hex = (ch == u'x');
-                            valid = hex || utils::IsDecimalDigit(ch);
+                            valid = hex || parser_utils::IsDecimalDigit(ch);
                             numeric &= !hex;
                         }
                         break;
 
                     default:
-                        valid &= !(numeric && !utils::IsDecimalDigit(ch));
-                        valid &= !(utils::IsHexDigit(ch));
+                        valid &= !(numeric && !parser_utils::IsDecimalDigit(ch));
+                        valid &= !(parser_utils::IsHexDigit(ch));
                         break;
 
                 }
@@ -624,10 +624,10 @@ namespace parser {
             // e.g. '&#x41;' becomes just '#x41'
             UString str = result.substr(1, result.size() - 2);
             if (numeric && str.size() > 1) {
-                std::string utf8 = utils::To_UTF8(str.substr(1));
+                std::string utf8 = parser_utils::To_UTF8(str.substr(1));
                 result.push_back(std::stoi(utf8));
             } else if (hex && str.size() > 2) {
-                std::string utf8 = string("0") + utils::To_UTF8(str.substr(1));
+                std::string utf8 = string("0") + parser_utils::To_UTF8(str.substr(1));
                 result.push_back(std::stoi(utf8, 0, 16));
             } else if (!numeric&& !hex && XHTMLEntities->find(str) != XHTMLEntities->end()) {
                 result.push_back((*XHTMLEntities)[str]);

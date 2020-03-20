@@ -6,8 +6,8 @@
 #include <unordered_set>
 #include <vector>
 #include "../utils.h"
-#include "../tokenizer/scanner.h"
-#include "syntax_nodes.h"
+#include "../tokenizer/Scanner.h"
+#include "SyntaxNodes.h"
 
 namespace parser {
 

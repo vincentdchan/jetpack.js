@@ -7,7 +7,7 @@
 #include <jemalloc/jemalloc.h>
 #include "utils.h"
 #include "artery.h"
-#include "parser/parser.hpp"
+#include "parser/Parser.hpp"
 
 using namespace std;
 
@@ -15,51 +15,49 @@ u16string Artery::ReadFileStream(const string& filename) {
     ifstream t(filename);
     string str((std::istreambuf_iterator<char>(t)),
                     std::istreambuf_iterator<char>());
-    return utils::To_UTF16(str);
+    return parser_utils::To_UTF16(str);
 }
 
 void Artery::Enter(const std::string &entry) {
-    lazy_thread_pool::get()->enqueue([this, entry] {
-        std::shared_ptr<ModuleContainer> module_container;
-        try {
-            {
-                std::lock_guard guard(modules_mutex_);
+    std::shared_ptr<ModuleContainer> module_container;
+    try {
+        {
+            std::lock_guard guard(modules_mutex_);
 
-                if (modules_.find(entry) != modules_.end()) return; // module exists, quite;
+            if (modules_.find(entry) != modules_.end()) return; // module exists, quite;
 
-                module_container.reset(new ModuleContainer);
-                modules_.insert({ entry, module_container });
-            }
-            IncreaseProcessingCount();
+            module_container.reset(new ModuleContainer);
+            modules_.insert({ entry, module_container });
+        }
+        IncreaseProcessingCount();
 
-            auto src = make_shared<UString>();
-            (*src) = Artery::ReadFileStream(entry);
+        auto src = make_shared<UString>();
+        (*src) = Artery::ReadFileStream(entry);
 
-            auto config = parser::ParserContext::Config::Default();
-            auto ctx = make_shared<parser::ParserContext>(src, config);
-            parser::Parser parser(ctx);
+        auto config = parser::ParserContext::Config::Default();
+        auto ctx = make_shared<parser::ParserContext>(src, config);
+        parser::Parser parser(ctx);
 
-            parser.OnImportDeclarationCreated([this] (const Sp<ImportDeclaration>& node) {
-                auto source_path = utils::To_UTF8(node->source->raw);
-                Enter(source_path);
-            });
+        parser.OnImportDeclarationCreated([this] (const Sp<ImportDeclaration>& node) {
+            auto source_path = parser_utils::To_UTF8(node->source->raw);
+            Enter(source_path);
+        });
 
-            if (module_container->state.is_lock_free()) {
-                throw std::runtime_error("module_contianer is no lock free.");
-            }
-
-            module_container->node = parser.ParseModule();
-            module_container->state = ModuleContainer::ProcessState::PROCEED;
-        } catch (parser::ParseError& err) {
-            module_container->error_message = err.ErrorMessage();
-            module_container->state = ModuleContainer::ProcessState::ERROR;
-        } catch (std::exception& ex) {
-            module_container->error_message = ex.what();
-            module_container->state = ModuleContainer::ProcessState::ERROR;
+        if (module_container->state.is_lock_free()) {
+            throw std::runtime_error("module_contianer is no lock free.");
         }
 
-        IncreaseFinishedCount();
-    });
+        module_container->node = parser.ParseModule();
+        module_container->state = ModuleContainer::ProcessState::PROCEED;
+    } catch (parser::ParseError& err) {
+        module_container->error_message = err.ErrorMessage();
+        module_container->state = ModuleContainer::ProcessState::ERROR;
+    } catch (std::exception& ex) {
+        module_container->error_message = ex.what();
+        module_container->state = ModuleContainer::ProcessState::ERROR;
+    }
+
+    IncreaseFinishedCount();
 }
 
 void Artery::WaitForParsingFinished() {

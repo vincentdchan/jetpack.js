@@ -2,7 +2,7 @@
 
 
 #pragma once
-#include "../parser/syntax_nodes.h"
+#include "../parser/SyntaxNodes.h"
 
 class AutoNodeTraverser {
 public:

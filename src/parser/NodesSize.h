@@ -4,8 +4,8 @@
 #pragma once
 
 #include <algorithm>
-#include "base_nodes.h"
-#include "syntax_nodes.h"
+#include "BaseNodes.h"
+#include "SyntaxNodes.h"
 
 namespace node_size {
 

@@ -8,8 +8,7 @@
 #include <memory>
 #include <robin_hood.h>
 #include <atomic>
-#include "parser/syntax_nodes.h"
-#include "lazy_thread_pool.h"
+#include "parser/SyntaxNodes.h"
 
 class Artery {
 public:
