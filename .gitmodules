@@ -19,3 +19,9 @@
 [submodule "cxxopts"]
 	path = cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+[submodule "third_party/cxxopts"]
+	path = third_party/cxxopts
+	url = https://github.com/jarro2783/cxxopts
+[submodule "third_party/ThreadPool"]
+	path = third_party/ThreadPool
+	url = https://github.com/progschj/ThreadPool.git

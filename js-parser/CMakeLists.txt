@@ -11,12 +11,9 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # unintended consequences that will break the build.  It's generally
 # discouraged (although not necessarily well documented as such) to use
 # include(...) for pulling in other CMake projects anyways.
-add_subdirectory(nlohmann_json)
-add_subdirectory(ordered-map)
-add_subdirectory(fmt)
 
-include_directories(fmt/include)
-include_directories(robin-hood-hashing/src/include)
+include_directories(../third_party/fmt/include)
+include_directories(../third_party/robin-hood-hashing/src/include)
 
 file(GLOB source_files
         "src/*.h"
