@@ -1,20 +1,20 @@
 [submodule "nlohmann_json"]
-	path = nlohmann_json
+	path = third_party/nlohmann_json
 	url = https://github.com/nlohmann/json.git
 [submodule "sparsehash"]
 	path = sparsehash
 	url = https://github.com/sparsehash/sparsehash.git
 [submodule "ordered-map"]
-	path = ordered-map
+	path = third_party/ordered-map
 	url = https://github.com/Tessil/ordered-map.git
 [submodule "ThreadPool"]
 	path = ThreadPool
 	url = https://github.com/progschj/ThreadPool.git
 [submodule "robin-hood-hashing"]
-	path = robin-hood-hashing
+	path = third_party/robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
 [submodule "fmt"]
-	path = fmt
+	path = third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
 [submodule "cxxopts"]
 	path = cxxopts
