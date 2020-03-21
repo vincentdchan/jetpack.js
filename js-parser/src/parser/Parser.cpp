@@ -266,7 +266,7 @@ namespace rocket_bundle::parser {
         return true;
     }
 
-    ParserCommon::FormalParameterOptions Parser::ParseFormalParameters(optional<Token> first_restricted) {
+    ParserCommon::FormalParameterOptions Parser::ParseFormalParameters(Scope& scope, optional<Token> first_restricted) {
 
         FormalParameterOptions options;
         options.simple = true;
@@ -275,7 +275,7 @@ namespace rocket_bundle::parser {
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
             while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
-                ParseFormalParameter(options);
+                ParseFormalParameter(scope, options);
                 if (Match(JsTokenType::RightParen)) {
                     break;
                 }
@@ -290,13 +290,13 @@ namespace rocket_bundle::parser {
         return options;
     }
 
-    void Parser::ParseFormalParameter(parser::Parser::FormalParameterOptions &option) {
+    void Parser::ParseFormalParameter(Scope& scope, parser::Parser::FormalParameterOptions &option) {
         std::vector<Token> params;
         Sp<SyntaxNode> param;
         if (Match(JsTokenType::Spread)) {
-            param = ParseRestElement(params);
+            param = ParseRestElement(scope, params);
         } else {
-            param = ParsePatternWithDefault(params, VarKind::Invalid);
+            param = ParsePatternWithDefault(scope, params, VarKind::Invalid);
         }
 
         for (auto& i : params) {
@@ -338,12 +338,12 @@ namespace rocket_bundle::parser {
         options.param_set.insert(key);
     }
 
-    Sp<Expression> Parser::ParsePrimaryExpression() {
+    Sp<Expression> Parser::ParsePrimaryExpression(Scope& scope) {
         auto& config = ctx->config_;
 
         if (config.jsx && Match(JsTokenType::LessThan)) {
             JSXParser jsxParser(ctx);
-            return jsxParser.ParseJSXRoot();
+            return jsxParser.ParseJSXRoot(scope);
         }
         auto marker = CreateStartMarker();
         Token token;
@@ -360,13 +360,13 @@ namespace rocket_bundle::parser {
                 ctx->is_assignment_target_ = false;
                 ctx->is_binding_element_ = false;
                 if (Match(JsTokenType::K_Function)) {
-                    return ParseFunctionExpression();
+                    return ParseFunctionExpression(scope);
                 } else if (Match(JsTokenType::K_This)) {
                     token = NextToken();
                     auto th = Alloc<ThisExpression>();
                     return Finalize(marker, th);
                 } else if (Match(JsTokenType::K_Class)) {
-                    return ParseClassExpression();
+                    return ParseClassExpression(scope);
                 } else if (MatchImportCall()) {
                     return ParseImportCall();
                 } else {
@@ -382,11 +382,13 @@ namespace rocket_bundle::parser {
                     ThrowUnexpectedToken(ctx->lookahead_);
                 }
                 if (MatchAsyncFunction()) {
-                    return ParseFunctionExpression();
+                    return ParseFunctionExpression(scope);
                 } else {
+                    // reference to a
                     auto node = Alloc<Identifier>();
                     Token next = NextToken();
                     node->name = next.value_;
+                    scope.FindOrAddFreeVarInCurrentScope(node->name);
                     return Finalize(marker, node);
                 }
             }
@@ -427,22 +429,22 @@ namespace rocket_bundle::parser {
             }
 
             case JsTokenType::Template:
-                return ParseTemplateLiteral();
+                return ParseTemplateLiteral(scope);
 
             case JsTokenType::LeftParen:
                 ctx->is_binding_element_ = false;
-                return InheritCoverGrammar<Expression>([this]() {
-                    return ParseGroupExpression();
+                return InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseGroupExpression(scope);
                 });
 
             case JsTokenType::LeftBrace:
-                return InheritCoverGrammar<Expression>([this]() {
-                    return ParseArrayInitializer();
+                return InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseArrayInitializer(scope);
                 });
 
             case JsTokenType::LeftBracket:
-                return InheritCoverGrammar<Expression>([this]() {
-                    return ParseObjectInitializer();
+                return InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseObjectInitializer(scope);
                 });
 
             case JsTokenType::Div:
@@ -467,20 +469,20 @@ namespace rocket_bundle::parser {
         return nullptr;
     }
 
-    Sp<SpreadElement> Parser::ParseSpreadElement() {
+    Sp<SpreadElement> Parser::ParseSpreadElement(Scope& scope) {
         auto marker = CreateStartMarker();
 
         Expect(JsTokenType::Spread);
 
         auto node = Alloc<SpreadElement>();
-        node->argument = InheritCoverGrammar<Expression>([this] {
-            return ParseAssignmentExpression();
+        node->argument = InheritCoverGrammar<Expression>([this, &scope] {
+            return ParseAssignmentExpression(scope);
         });
 
         return Finalize(marker, node);
     }
 
-    Sp<Property> Parser::ParseObjectProperty(bool &has_proto) {
+    Sp<Property> Parser::ParseObjectProperty(Scope& scope, bool &has_proto) {
         auto marker = CreateStartMarker();
         Token token = ctx->lookahead_;
         VarKind kind = VarKind::Invalid;
@@ -499,7 +501,7 @@ namespace rocket_bundle::parser {
             is_async = !ctx->has_line_terminator_ && (id == u"async") &&
                        !Match(JsTokenType::Colon) && !Match(JsTokenType::LeftParen) && !Match(JsTokenType::Mul) && !Match(JsTokenType::Comma);
             if (is_async) {
-                key = ParseObjectPropertyKey();
+                key = ParseObjectPropertyKey(scope);
             } else {
                 auto node = Alloc<Identifier>();
                 node->name = id;
@@ -509,7 +511,7 @@ namespace rocket_bundle::parser {
             NextToken();
         } else {
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
+            key = ParseObjectPropertyKey(scope);
         }
 
         auto lookahead_prop_key = QualifiedPropertyName(ctx->lookahead_);
@@ -517,20 +519,20 @@ namespace rocket_bundle::parser {
         if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"get" && lookahead_prop_key) {
             kind = VarKind::Get;
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
+            key = ParseObjectPropertyKey(scope);
             ctx->allow_yield_ = false;
-            value = ParseGetterMethod();
+            value = ParseGetterMethod(scope);
         } else if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"set" && lookahead_prop_key) {
             kind = VarKind::Set;
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
+            key = ParseObjectPropertyKey(scope);
             ctx->allow_yield_ = false;
-            value = ParseSetterMethod();
+            value = ParseSetterMethod(scope);
         } else if (token.type_ == JsTokenType::Mul && !is_async && lookahead_prop_key) {
             kind = VarKind::Init;
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
-            value = ParseGeneratorMethod();
+            key = ParseObjectPropertyKey(scope);
+            value = ParseGeneratorMethod(scope);
             method = true;
         } else {
             if (!key.has_value()) {
@@ -546,14 +548,14 @@ namespace rocket_bundle::parser {
                     has_proto = true;
                 }
                 NextToken();
-                value = InheritCoverGrammar<Expression>([this] {
-                    return ParseAssignmentExpression();
+                value = InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
             } else if (Match(JsTokenType::LeftParen)) {
                 if (is_async) {
-                    value = ParsePropertyMethodAsyncFunction();
+                    value = ParsePropertyMethodAsyncFunction(scope);
                 } else {
-                    value = ParsePropertyMethodFunction();
+                    value = ParsePropertyMethodFunction(scope);
                 }
                 method = true;
             } else if (token.type_ == JsTokenType::Identifier) {
@@ -566,8 +568,8 @@ namespace rocket_bundle::parser {
                     shorthand = true;
                     auto node = Alloc<AssignmentPattern>();
                     node->left = move(id);
-                    node->right = IsolateCoverGrammar<Expression>([this] {
-                        return ParseAssignmentExpression();
+                    node->right = IsolateCoverGrammar<Expression>([this, &scope] {
+                        return ParseAssignmentExpression(scope);
                     });
                 } else {
                     shorthand = true;
@@ -589,7 +591,7 @@ namespace rocket_bundle::parser {
         return node;
     }
 
-    Sp<SyntaxNode> Parser::ParseObjectPropertyKey() {
+    Sp<SyntaxNode> Parser::ParseObjectPropertyKey(Scope& scope) {
         auto marker = CreateStartMarker();
         Token token = NextToken();
 
@@ -601,8 +603,8 @@ namespace rocket_bundle::parser {
 
         if (IsPunctuatorToken(token.type_)) {
             if (token.type_ == JsTokenType::LeftBrace) {
-                auto result = IsolateCoverGrammar<Expression>([this] {
-                    return ParseAssignmentExpression();
+                auto result = IsolateCoverGrammar<Expression>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
                 Expect(JsTokenType::RightBrace);
                 return result;
@@ -638,7 +640,7 @@ namespace rocket_bundle::parser {
         return nullptr;
     }
 
-    Sp<Expression> Parser::ParseObjectInitializer() {
+    Sp<Expression> Parser::ParseObjectInitializer(Scope& scope) {
         auto marker = CreateStartMarker();
 
         Expect(JsTokenType::LeftBracket);
@@ -647,9 +649,9 @@ namespace rocket_bundle::parser {
         while (!Match(JsTokenType::RightBracket)) {
             Sp<SyntaxNode> prop;
             if (Match(JsTokenType::Spread)) {
-                prop = ParseSpreadElement();
+                prop = ParseSpreadElement(scope);
             } else {
-                prop = ParseObjectProperty(has_proto);
+                prop = ParseObjectProperty(scope, has_proto);
             }
             node->properties.push_back(std::move(prop));
             if (!Match(JsTokenType::RightBracket)) {
@@ -661,8 +663,12 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParseFunctionExpression() {
+    Sp<FunctionExpression> Parser::ParseFunctionExpression(Scope& parent_scope) {
         auto marker = CreateStartMarker();
+
+        auto fun_scope = std::make_unique<Scope>(ScopeType::Function);
+        fun_scope->SetParent(&parent_scope);
+        auto& scope = *fun_scope.get();
 
         bool is_async = MatchContextualKeyword(u"async");
         if (is_async) NextToken();
@@ -689,7 +695,7 @@ namespace rocket_bundle::parser {
             if (!ctx->strict_ && !is_generator && Match(JsTokenType::K_Yield)) {
                 id = ParseIdentifierName();
             } else {
-                id = ParseVariableIdentifier(VarKind::Invalid);
+                id = ParseVariableIdentifier(scope, VarKind::Invalid);
             }
 
             if (ctx->strict_) {
@@ -708,7 +714,7 @@ namespace rocket_bundle::parser {
             }
         }
 
-        auto formal = ParseFormalParameters(first_restricted);
+        auto formal = ParseFormalParameters(scope, first_restricted);
         if (!formal.message.empty()) {
             message = formal.message;
         }
@@ -716,7 +722,7 @@ namespace rocket_bundle::parser {
         bool prev_strict = ctx->strict_;
         bool prev_allow_strict_directive = ctx->allow_strict_directive_;
         ctx->allow_strict_directive_ = formal.simple;
-        auto body = ParseFunctionSourceElements();
+        auto body = ParseFunctionSourceElements(scope);
         if (ctx->strict_ && first_restricted.has_value()) {
             ThrowUnexpectedToken(*first_restricted, message);
         }
@@ -734,6 +740,7 @@ namespace rocket_bundle::parser {
             node->params = move(formal.params);
             node->body = move(body);
             node->async = true;
+            node->scope = move(fun_scope);
             return Finalize(marker, node);
         } else {
             auto node = Alloc<FunctionExpression>();
@@ -742,6 +749,7 @@ namespace rocket_bundle::parser {
             node->body = move(body);
             node->generator = is_generator;
             node->async = false;
+            node->scope = move(fun_scope);
             return Finalize(marker, node);
         }
     }
@@ -758,7 +766,7 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseNewExpression() {
+    Sp<Expression> Parser::ParseNewExpression(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         Sp<Identifier> id = ParseIdentifierName();
@@ -786,11 +794,11 @@ namespace rocket_bundle::parser {
             return nullptr;
         } else {
             auto node = Alloc<NewExpression>();
-            node->callee = IsolateCoverGrammar<Expression>([this] {
-                return ParseLeftHandSideExpression();
+            node->callee = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseLeftHandSideExpression(scope);
             });
             if (Match(JsTokenType::LeftParen)) {
-                node->arguments = ParseArguments();
+                node->arguments = ParseArguments(scope);
             }
             expr = node;
             ctx->is_assignment_target_ = false;
@@ -800,7 +808,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, expr);
     }
 
-    Sp<YieldExpression> Parser::ParseYieldExpression() {
+    Sp<YieldExpression> Parser::ParseYieldExpression(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Yield);
 
@@ -811,9 +819,9 @@ namespace rocket_bundle::parser {
             node->delegate = Match(JsTokenType::Mul);
             if (node->delegate) {
                 NextToken();
-                node->argument = ParseAssignmentExpression();
+                node->argument = ParseAssignmentExpression(scope);
             } else if (IsStartOfExpression()) {
-                node->argument = ParseAssignmentExpression();
+                node->argument = ParseAssignmentExpression(scope);
             }
             ctx->allow_yield_ = prev_allow_yield;
         }
@@ -821,17 +829,17 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseArguments() {
+    std::vector<Sp<SyntaxNode>> Parser::ParseArguments(Scope& scope) {
         std::vector<Sp<SyntaxNode>> result;
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
             Sp<SyntaxNode> expr;
             while (true) {
                 if (Match(JsTokenType::Spread)) {
-                    expr = ParseSpreadElement();
+                    expr = ParseSpreadElement(scope);
                 } else {
-                    expr = IsolateCoverGrammar<Expression>([this] {
-                        return ParseAssignmentExpression();
+                    expr = IsolateCoverGrammar<Expression>([this, &scope] {
+                        return ParseAssignmentExpression(scope);
                     });
                 }
                 result.push_back(expr);
@@ -855,11 +863,11 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseDirective() {
+    Sp<Statement> Parser::ParseDirective(Scope& scope) {
         auto token = ctx->lookahead_;
 
         auto marker = CreateStartMarker();
-        Sp<Expression> expr = ParseExpression();
+        Sp<Expression> expr = ParseExpression(scope);
         UString directive;
         if (expr->type == SyntaxNodeType::Literal) {
             directive = token.value_.substr(1, token.value_.size() - 1);
@@ -878,11 +886,11 @@ namespace rocket_bundle::parser {
         }
     }
 
-    Sp<Expression> Parser::ParseExpression() {
+    Sp<Expression> Parser::ParseExpression(Scope& scope) {
         auto start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
-        Sp<Expression> expr = IsolateCoverGrammar<Expression>([this] {
-            return ParseAssignmentExpression();
+        Sp<Expression> expr = IsolateCoverGrammar<Expression>([this, &scope] {
+            return ParseAssignmentExpression(scope);
         });
 
         if (Match(JsTokenType::Comma)) {
@@ -893,8 +901,8 @@ namespace rocket_bundle::parser {
                     break;
                 }
                 NextToken();
-                Sp<Expression> node = IsolateCoverGrammar<Expression>([this] {
-                    return ParseAssignmentExpression();
+                Sp<Expression> node = IsolateCoverGrammar<Expression>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
                 expressions.push_back(node);
             }
@@ -907,10 +915,10 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<BlockStatement> Parser::ParseFunctionSourceElements() {
+    Sp<BlockStatement> Parser::ParseFunctionSourceElements(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
-        vector<Sp<SyntaxNode>> body = ParseDirectivePrologues();
+        vector<Sp<SyntaxNode>> body = ParseDirectivePrologues(scope);
         Expect(JsTokenType::LeftBracket);
 
         auto prev_label_set = move(ctx->label_set_);
@@ -928,7 +936,7 @@ namespace rocket_bundle::parser {
                 break;
             }
 
-            Sp<SyntaxNode> temp = ParseStatementListItem();
+            Sp<SyntaxNode> temp = ParseStatementListItem(scope);
             body.push_back(move(temp));
         }
 
@@ -945,7 +953,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseDirectivePrologues() {
+    std::vector<Sp<SyntaxNode>> Parser::ParseDirectivePrologues(Scope& scope) {
         optional<Token> first_restrict;
         std::vector<Sp<SyntaxNode>> result;
 
@@ -956,7 +964,7 @@ namespace rocket_bundle::parser {
                 break;
             }
 
-            Sp<Statement> statement = ParseDirective();
+            Sp<Statement> statement = ParseDirective(scope);
             result.push_back(statement);
             if (statement->type != SyntaxNodeType::Directive) {
                 break;
@@ -981,34 +989,38 @@ namespace rocket_bundle::parser {
         return result;
     }
 
-    Sp<ClassBody> Parser::ParseClassBody() {
+    Sp<ClassBody> Parser::ParseClassBody(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ClassBody>();
 
-        node->body = ParseClassElementList();
+        node->body = ParseClassElementList(scope);
 
         return Finalize(marker, node);
     }
 
-    Sp<ClassDeclaration> Parser::ParseClassDeclaration(bool identifier_is_optional) {
-
+    Sp<ClassDeclaration> Parser::ParseClassDeclaration(Scope& parent_scope, bool identifier_is_optional) {
         auto marker = CreateStartMarker();
+
+        auto cls_scope = std::make_unique<Scope>(ScopeType::Class);
+        cls_scope->SetParent(&parent_scope);
+        auto& scope = *cls_scope;
 
         bool prev_strict = ctx->strict_;
         ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
         auto node = Alloc<ClassDeclaration>();
+        node->scope = move(cls_scope);
         if (identifier_is_optional && (ctx->lookahead_.type_ != JsTokenType::Identifier)) {
             // nothing
         } else {
-            node->id = ParseVariableIdentifier(VarKind::Invalid);
+            node->id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
         }
 
         if (Match(JsTokenType::K_Extends)) {
             NextToken();
-            auto temp = IsolateCoverGrammar<Expression>([this] {
-                return ParseLeftHandSideExpressionAllowCall();
+            auto temp = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseLeftHandSideExpressionAllowCall(scope);
             });
             if (temp->type != SyntaxNodeType::Identifier) {
                 ThrowUnexpectedToken(Token());
@@ -1016,29 +1028,34 @@ namespace rocket_bundle::parser {
             }
             node->super_class = dynamic_pointer_cast<Identifier>(temp);
         }
-        node->body = ParseClassBody();
+        node->body = ParseClassBody(scope);
         ctx->strict_ = prev_strict;
 
         return Finalize(marker, node);
     }
 
-    Sp<ClassExpression> Parser::ParseClassExpression() {
-
+    Sp<ClassExpression> Parser::ParseClassExpression(Scope& parent_scope) {
         auto marker = CreateStartMarker();
+
+        auto cls_scope = std::make_unique<Scope>(ScopeType::Class);
+        cls_scope->SetParent(&parent_scope);
+        auto& scope = *cls_scope;
+
         auto node = Alloc<ClassExpression>();
+        node->scope = move(cls_scope);
 
         bool prev_strict = ctx->strict_;
         ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
         if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
-            node->id = ParseVariableIdentifier(VarKind::Invalid);
+            node->id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
         }
 
         if (Match(JsTokenType::K_Extends)) {
             NextToken();
-            auto temp = IsolateCoverGrammar<Expression>([this] {
-                return ParseLeftHandSideExpressionAllowCall();
+            auto temp = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseLeftHandSideExpressionAllowCall(scope);
             });
             if (temp->type != SyntaxNodeType::Identifier) {
                 ThrowUnexpectedToken(Token());
@@ -1047,13 +1064,13 @@ namespace rocket_bundle::parser {
             node->super_class = dynamic_pointer_cast<Identifier>(temp);
         }
 
-        node->body = ParseClassBody();
+        node->body = ParseClassBody(scope);
         ctx->strict_ = prev_strict;
 
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseLeftHandSideExpressionAllowCall() {
+    Sp<Expression> Parser::ParseLeftHandSideExpressionAllowCall(Scope& scope) {
         Token start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
         bool maybe_async = MatchContextualKeyword(u"async");
@@ -1073,12 +1090,12 @@ namespace rocket_bundle::parser {
             }
         } else {
             if (Match(JsTokenType::K_New)) {
-                expr = InheritCoverGrammar<Expression>([this] {
-                    return ParseNewExpression();
+                expr = InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseNewExpression(scope);
                 });
             } else {
-                expr = InheritCoverGrammar<Expression>([this] {
-                    return ParsePrimaryExpression();
+                expr = InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParsePrimaryExpression(scope);
                 });
             }
         }
@@ -1100,9 +1117,9 @@ namespace rocket_bundle::parser {
                 ctx->is_assignment_target_ = false;
                 auto node = Alloc<CallExpression>();
                 if (async_arrow) {
-                    node->arguments = ParseAsyncArguments();
+                    node->arguments = ParseAsyncArguments(scope);
                 } else {
-                    node->arguments = ParseArguments();
+                    node->arguments = ParseArguments(scope);
                 }
                 if (expr->type == SyntaxNodeType::Import && node->arguments.size() != 1) {
                     TolerateError(ParseMessages::BadImportCallArity);
@@ -1124,15 +1141,15 @@ namespace rocket_bundle::parser {
                 Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<MemberExpression>();
                 node->computed = true;
-                node->property = IsolateCoverGrammar<Expression>([this] {
-                    return ParseExpression();
+                node->property = IsolateCoverGrammar<Expression>([this, &scope] {
+                    return ParseExpression(scope);
                 });
                 Expect(JsTokenType::RightBrace);
                 node->object = expr;
                 expr = Finalize(StartNode(start_token), node);
             } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
                 auto node = Alloc<TaggedTemplateExpression>();
-                node->quasi = ParseTemplateLiteral();
+                node->quasi = ParseTemplateLiteral(scope);
                 node->tag = expr;
                 expr = Finalize(StartNode(start_token), node);
             } else {
@@ -1144,7 +1161,7 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseArrayInitializer() {
+    Sp<Expression> Parser::ParseArrayInitializer(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ArrayExpression>();
         Sp<SyntaxNode> element;
@@ -1155,7 +1172,7 @@ namespace rocket_bundle::parser {
                 NextToken();
                 node->elements.emplace_back(nullopt);
             } else if (Match(JsTokenType::Spread)) {
-                element = ParseSpreadElement();
+                element = ParseSpreadElement(scope);
                 if (!Match(JsTokenType::RightBrace)) {
                     ctx->is_assignment_target_ = false;
                     ctx->is_binding_element_ = false;
@@ -1163,8 +1180,8 @@ namespace rocket_bundle::parser {
                 }
                 node->elements.emplace_back(element);
             } else {
-                element = InheritCoverGrammar<SyntaxNode>([this] {
-                    return ParseAssignmentExpression();
+                element = InheritCoverGrammar<SyntaxNode>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
                 node->elements.emplace_back(element);
                 if (!Match(JsTokenType::RightBrace)) {
@@ -1182,10 +1199,10 @@ namespace rocket_bundle::parser {
         ctx->is_module_ = true;
         auto marker = CreateStartMarker();
         auto node = make_shared<Module>();
-        node->body = ParseDirectivePrologues();
+        node->body = ParseDirectivePrologues(*node->scope.get());
         node->source_type = u"module";
         while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
-            node->body.push_back(ParseStatementListItem());
+            node->body.push_back(ParseStatementListItem(*node->scope.get()));
         }
         if (ctx->config_.comment) {
             node->comments = move(ctx->comments_);
@@ -1199,10 +1216,10 @@ namespace rocket_bundle::parser {
     Sp<Script> Parser::ParseScript() {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<Script>();
-        node->body = ParseDirectivePrologues();
+        node->body = ParseDirectivePrologues(*node->scope);
         node->source_type = u"script";
         while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
-            node->body.push_back(ParseStatementListItem());
+            node->body.push_back(ParseStatementListItem(*node->scope));
         }
         if (ctx->config_.comment) {
             node->comments = move(ctx->comments_);
@@ -1213,8 +1230,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SwitchCase> Parser::ParseSwitchCase() {
-
+    Sp<SwitchCase> Parser::ParseSwitchCase(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<SwitchCase>();
 
@@ -1223,7 +1239,7 @@ namespace rocket_bundle::parser {
             node->test.reset();
         } else {
             Expect(JsTokenType::K_Case);
-            node->test = ParseExpression();
+            node->test = ParseExpression(scope);
         }
         Expect(JsTokenType::Colon);
 
@@ -1231,20 +1247,20 @@ namespace rocket_bundle::parser {
             if (Match(JsTokenType::RightBracket) || Match(JsTokenType::K_Default) || Match(JsTokenType::K_Case)) {
                 break;
             }
-            Sp<Statement> con = ParseStatementListItem();
+            Sp<Statement> con = ParseStatementListItem(scope);
             node->consequent.push_back(std::move(con));
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<IfStatement> Parser::ParseIfStatement() {
+    Sp<IfStatement> Parser::ParseIfStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<IfStatement>();
 
         Expect(JsTokenType::K_If);
         Expect(JsTokenType::LeftParen);
-        node->test = ParseExpression();
+        node->test = ParseExpression(scope);
 
         if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             Token token = NextToken();
@@ -1252,38 +1268,38 @@ namespace rocket_bundle::parser {
             node->consequent = Finalize(CreateStartMarker(), Alloc<EmptyStatement>());
         } else {
             Expect(JsTokenType::RightParen);
-            node->consequent = ParseIfClause();
+            node->consequent = ParseIfClause(scope);
             if (Match(JsTokenType::K_Else)) {
                 NextToken();
-                node->alternate = ParseIfClause();
+                node->alternate = ParseIfClause(scope);
             }
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseIfClause() {
+    Sp<Statement> Parser::ParseIfClause(Scope& scope) {
         if (ctx->strict_ && Match(JsTokenType::K_Function)) {
             TolerateError(ParseMessages::StrictFunction);
         }
-        return ParseStatement();
+        return ParseStatement(scope);
     }
 
-    Sp<Statement> Parser::ParseStatement() {
+    Sp<Statement> Parser::ParseStatement(Scope& scope) {
 
         if (IsPunctuatorToken(ctx->lookahead_.type_)) {
             switch (ctx->lookahead_.type_) {
                 case JsTokenType::LeftBracket:
-                    return ParseBlock();
+                    return ParseBlock(scope);
 
                 case JsTokenType::LeftParen:
-                    return ParseExpressionStatement();
+                    return ParseExpressionStatement(scope);
 
                 case JsTokenType::Semicolon:
                     return ParseEmptyStatement();
 
                 default:
-                    return ParseExpressionStatement();
+                    return ParseExpressionStatement(scope);
 
             }
         }
@@ -1295,13 +1311,13 @@ namespace rocket_bundle::parser {
             case JsTokenType::StringLiteral:
             case JsTokenType::Template:
             case JsTokenType::RegularExpression:
-                return ParseExpressionStatement();
+                return ParseExpressionStatement(scope);
 
             case JsTokenType::Identifier: {
                 if (MatchAsyncFunction()) {
-                    return ParseFunctionDeclaration(false);
+                    return ParseFunctionDeclaration(scope, false);
                 } else {
-                    return ParseLabelledStatement();
+                    return ParseLabelledStatement(scope);
                 }
             }
 
@@ -1315,41 +1331,41 @@ namespace rocket_bundle::parser {
                 return ParseDebuggerStatement();
 
             case JsTokenType::K_Do:
-                return ParseDoWhileStatement();
+                return ParseDoWhileStatement(scope);
 
             case JsTokenType::K_For:
-                return ParseForStatement();
+                return ParseForStatement(scope);
 
             case JsTokenType::K_Function:
-                return ParseFunctionDeclaration(false);
+                return ParseFunctionDeclaration(scope, false);
 
             case JsTokenType::K_If:
-                return ParseIfStatement();
+                return ParseIfStatement(scope);
 
             case JsTokenType::K_Return:
-                return ParseReturnStatement();
+                return ParseReturnStatement(scope);
 
             case JsTokenType::K_Switch:
-                return ParseSwitchStatement();
+                return ParseSwitchStatement(scope);
 
             case JsTokenType::K_Throw:
-                return ParseThrowStatement();
+                return ParseThrowStatement(scope);
 
             case JsTokenType::K_Try:
-                return ParseTryStatement();
+                return ParseTryStatement(scope);
 
             case JsTokenType::K_Var:
-                return ParseVariableStatement();
+                return ParseVariableStatement(scope);
 
             case JsTokenType::K_While:
-                return ParseWhileStatement();
+                return ParseWhileStatement(scope);
 
             case JsTokenType::K_With:
-                return ParseWithStatement();
+                return ParseWithStatement(scope);
 
             default:
                 if (IsKeywordToken(ctx->lookahead_.type_)) {
-                    return ParseExpressionStatement();
+                    return ParseExpressionStatement(scope);
                 }
                 ThrowUnexpectedToken(ctx->lookahead_);
                 return nullptr;
@@ -1357,17 +1373,17 @@ namespace rocket_bundle::parser {
         }
     }
 
-    Sp<ExpressionStatement> Parser::ParseExpressionStatement() {
+    Sp<ExpressionStatement> Parser::ParseExpressionStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ExpressionStatement>();
 
-        node->expression  = ParseExpression();
+        node->expression  = ParseExpression(scope);
         ConsumeSemicolon();
 
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseBlock() {
+    Sp<BlockStatement> Parser::ParseBlock(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
 
@@ -1376,7 +1392,7 @@ namespace rocket_bundle::parser {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SyntaxNode> stmt = ParseStatementListItem();
+            Sp<SyntaxNode> stmt = ParseStatementListItem(scope);
             node->body.push_back(std::move(stmt));
         }
         Expect(JsTokenType::RightBracket);
@@ -1391,8 +1407,12 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<FunctionDeclaration> Parser::ParseFunctionDeclaration(bool identifier_is_optional) {
+    Sp<FunctionDeclaration> Parser::ParseFunctionDeclaration(Scope& parent_scope, bool identifier_is_optional) {
         auto marker = CreateStartMarker();
+
+        auto fun_scope = std::make_unique<Scope>(ScopeType::Function);
+        fun_scope->SetParent(&parent_scope);
+        auto& scope = *fun_scope;
 
         bool is_async = MatchContextualKeyword(u"async");
         if (is_async) {
@@ -1414,7 +1434,7 @@ namespace rocket_bundle::parser {
 
         if (!identifier_is_optional || !Match(JsTokenType::LeftParen)) {
             Token token = ctx->lookahead_;
-            id = ParseVariableIdentifier(VarKind::Invalid);
+            id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
             if (ctx->strict_) {
                 if (scanner.IsRestrictedWord(token.value_)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
@@ -1435,7 +1455,7 @@ namespace rocket_bundle::parser {
         ctx->await_ = is_async;
         ctx->allow_yield_ = !is_generator;
 
-        auto options = ParseFormalParameters(first_restricted);
+        auto options = ParseFormalParameters(scope, first_restricted);
         first_restricted = options.first_restricted;
         if (!options.message.empty()) {
             message = move(options.message);
@@ -1444,7 +1464,7 @@ namespace rocket_bundle::parser {
         bool prev_strict = ctx->strict_;
         bool prev_allow_strict_directive = ctx->allow_strict_directive_;
         ctx->allow_strict_directive_ = options.simple;
-        auto body = ParseFunctionSourceElements();
+        auto body = ParseFunctionSourceElements(scope);
 
         if (ctx->strict_ && first_restricted) {
             Token temp = *first_restricted;
@@ -1466,6 +1486,7 @@ namespace rocket_bundle::parser {
             node->params = move(options.params);
             node->body = move(body);
             node->async = true;
+            node->scope = move(fun_scope);
             return Finalize(marker, node);
         } else {
             auto node = Alloc<FunctionDeclaration>();
@@ -1474,14 +1495,15 @@ namespace rocket_bundle::parser {
             node->params = move(options.params);
             node->body = move(body);
             node->async = false;
+            node->scope = move(fun_scope);
 
             return Finalize(marker, node);
         }
     }
 
-    Sp<Statement> Parser::ParseLabelledStatement() {
+    Sp<Statement> Parser::ParseLabelledStatement(Scope& scope) {
         auto start_marker = CreateStartMarker();
-        Sp<Expression> expr = ParseExpression();
+        Sp<Expression> expr = ParseExpression(scope);
 
         Sp<Statement> statement;
         if ((expr->type == SyntaxNodeType::Identifier) && Match(JsTokenType::Colon)) {
@@ -1498,10 +1520,10 @@ namespace rocket_bundle::parser {
             Sp<Statement> body;
             if (Match(JsTokenType::K_Class)) {
                 TolerateUnexpectedToken(ctx->lookahead_);
-                body = ParseClassDeclaration(false);
+                body = ParseClassDeclaration(scope, false);
             } else if (Match(JsTokenType::K_Function)) {
                 Token token = ctx->lookahead_;
-                auto declaration = ParseFunctionDeclaration(false);
+                auto declaration = ParseFunctionDeclaration(scope, false);
                 if (ctx->strict_) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunction);
                 } else if (declaration->generator) {
@@ -1509,7 +1531,7 @@ namespace rocket_bundle::parser {
                 }
                 body = move(declaration);
             } else {
-                body = ParseStatement();
+                body = ParseStatement(scope);
             }
 
             auto node = Alloc<LabeledStatement>();
@@ -1533,7 +1555,8 @@ namespace rocket_bundle::parser {
 
         std::optional<Sp<Identifier>> label;
         if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
-            Sp<Identifier> id = ParseVariableIdentifier(VarKind::Invalid);
+            Scope scope;
+            Sp<Identifier> id = ParseVariableIdentifier(scope, VarKind::Invalid);
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
@@ -1560,7 +1583,8 @@ namespace rocket_bundle::parser {
         auto node = Alloc<ContinueStatement>();
 
         if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
-            auto id = ParseVariableIdentifier(VarKind::Invalid);
+            Scope scope;
+            auto id = ParseVariableIdentifier(scope, VarKind::Invalid);
             node->label = id;
 
             UString key = UString(u"$") + id->name;
@@ -1587,19 +1611,19 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<DoWhileStatement> Parser::ParseDoWhileStatement() {
+    Sp<DoWhileStatement> Parser::ParseDoWhileStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<DoWhileStatement>();
         Expect(JsTokenType::K_Do);
 
         auto previous_in_interation = ctx->in_iteration_;
         ctx->in_iteration_ = true;
-        node->body = ParseStatement();
+        node->body = ParseStatement(scope);
         ctx->in_iteration_ = previous_in_interation;
 
         Expect(JsTokenType::K_While);
         Expect(JsTokenType::LeftParen);
-        node->test = ParseExpression();
+        node->test = ParseExpression(scope);
 
         if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             ThrowUnexpectedToken(NextToken());
@@ -1613,7 +1637,7 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseForStatement() {
+    Sp<Statement> Parser::ParseForStatement(Scope& parent_scope) {
         bool for_in = true;
 
         std::optional<Sp<SyntaxNode>> init;
@@ -1622,6 +1646,10 @@ namespace rocket_bundle::parser {
         Sp<SyntaxNode> left;
         Sp<SyntaxNode> right;
         auto marker = CreateStartMarker();
+
+        auto for_scope = std::make_unique<Scope>(ScopeType::For);
+        for_scope->SetParent(&parent_scope);
+        auto& scope = *for_scope;
 
         Expect(JsTokenType::K_For);
         Expect(JsTokenType::LeftParen);
@@ -1635,7 +1663,7 @@ namespace rocket_bundle::parser {
 
                 auto prev_allow_in = ctx->allow_in_;
                 ctx->allow_in_ = true;
-                auto declarations = ParseVariableDeclarationList(for_in);
+                auto declarations = ParseVariableDeclarationList(scope, for_in);
                 ctx->allow_in_ = prev_allow_in;
 
                 if (declarations.size() == 1 && Match(JsTokenType::K_In)) {
@@ -1648,7 +1676,7 @@ namespace rocket_bundle::parser {
                     init = Finalize(marker, node);
                     NextToken();
                     left = *init;
-                    right = ParseExpression();
+                    right = ParseExpression(scope);
                     init.reset();
                 } else if (declarations.size() == 1 && !declarations[0]->init && MatchContextualKeyword(u"of")) { // of
                     auto node = Alloc<VariableDeclaration>();
@@ -1657,7 +1685,7 @@ namespace rocket_bundle::parser {
                     init = Finalize(marker, node);
                     NextToken();
                     left = *init;
-                    right = ParseAssignmentExpression();
+                    right = ParseAssignmentExpression(scope);
                     init.reset();
                     for_in = false;
                 } else {
@@ -1683,13 +1711,13 @@ namespace rocket_bundle::parser {
                     init = Finalize(marker, node);
                     NextToken();
                     left = *init;
-                    right = ParseExpression();
+                    right = ParseExpression(scope);
                     init.reset();
                 } else {
                     auto prev_allow_in = ctx->allow_in_;
                     ctx->allow_in_ = false;
                     bool in_for = true;
-                    auto declarations = ParseBindingList(VarKind::Const, in_for);
+                    auto declarations = ParseBindingList(scope, VarKind::Const, in_for);
                     ctx->allow_in_ = prev_allow_in;
 
                     if (declarations.size() == 1 && !declarations[0]->init && Match(JsTokenType::K_In)) {
@@ -1699,7 +1727,7 @@ namespace rocket_bundle::parser {
                         init = Finalize(marker, node);
                         NextToken();
                         left = *init;
-                        right = ParseExpression();
+                        right = ParseExpression(scope);
                         init.reset();
                     } else if (declarations.size() == 1 && !declarations[0]->init && MatchContextualKeyword(u"of")) {
                         auto node = Alloc<VariableDeclaration>();
@@ -1708,7 +1736,7 @@ namespace rocket_bundle::parser {
                         init = Finalize(marker, node);
                         NextToken();
                         left = *init;
-                        right = ParseAssignmentExpression();
+                        right = ParseAssignmentExpression(scope);
                         init.reset();
                         for_in = false;
                     } else {
@@ -1724,8 +1752,8 @@ namespace rocket_bundle::parser {
                 auto start_marker = CreateStartMarker();
                 auto prev_allow_in = ctx->allow_in_;
                 ctx->allow_in_ = false;
-                init = InheritCoverGrammar<Expression>([this] {
-                    return ParseAssignmentExpression();
+                init = InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
                 ctx->allow_in_ = prev_allow_in;
 
@@ -1737,7 +1765,7 @@ namespace rocket_bundle::parser {
                     NextToken();
                     init = ReinterpretExpressionAsPattern(*init);
                     left = *init;
-                    right = ParseExpression();
+                    right = ParseExpression(scope);
                     init.reset();
                 } else if (MatchContextualKeyword(u"of")) {
                     if (!ctx->is_assignment_target_ || (*init)->type == SyntaxNodeType::AssignmentExpression) {
@@ -1747,7 +1775,7 @@ namespace rocket_bundle::parser {
                     NextToken();
                     init = ReinterpretExpressionAsPattern(*init);
                     left = *init;
-                    right = ParseAssignmentExpression();
+                    right = ParseAssignmentExpression(scope);
                     init.reset();
                     for_in = false;
                 } else {
@@ -1758,8 +1786,8 @@ namespace rocket_bundle::parser {
 
                         while (Match(JsTokenType::Comma)) {
                             NextToken();
-                            Sp<Expression> node = IsolateCoverGrammar<Expression>([this] {
-                                return ParseAssignmentExpression();
+                            Sp<Expression> node = IsolateCoverGrammar<Expression>([this, &scope] {
+                                return ParseAssignmentExpression(scope);
                             });
                             init_seq.push_back(node);
                         }
@@ -1775,11 +1803,11 @@ namespace rocket_bundle::parser {
 
         if (!left) {
             if (!Match(JsTokenType::Semicolon)) {
-                test = ParseExpression();
+                test = ParseExpression(scope);
             }
             Expect(JsTokenType::Semicolon);
             if (!Match(JsTokenType::RightParen)) {
-                update = ParseExpression();
+                update = ParseExpression(scope);
             }
         }
 
@@ -1793,8 +1821,8 @@ namespace rocket_bundle::parser {
 
             auto prev_in_iter = ctx->in_iteration_;
             ctx->in_iteration_ = true;
-            body = IsolateCoverGrammar<Statement>([this] {
-                return ParseStatement();
+            body = IsolateCoverGrammar<Statement>([this, &scope] {
+                return ParseStatement(scope);
             });
             ctx->in_iteration_ = prev_in_iter;
         }
@@ -1805,24 +1833,27 @@ namespace rocket_bundle::parser {
             node->test = test;
             node->update = update;
             node->body = body;
+            node->scope = move(for_scope);
             return Finalize(marker, node);
         } else if (for_in) {
             auto node = Alloc<ForInStatement>();
             node->left = left;
             node->right = right;
             node->body = body;
+            node->scope = move(for_scope);
             return Finalize(marker, node);
         } else {
             auto node = Alloc<ForOfStatement>();
             node->left = left;
             node->right = right;
             node->body = body;
+            node->scope = move(for_scope);
             return Finalize(marker, node);
         }
 
     }
 
-    Sp<ReturnStatement> Parser::ParseReturnStatement() {
+    Sp<ReturnStatement> Parser::ParseReturnStatement(Scope& scope) {
         if (!ctx->in_function_body_) {
             TolerateError(ParseMessages::IllegalReturn);
         }
@@ -1837,7 +1868,7 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<ReturnStatement>();
         if (has_arg) {
-            node->argument = ParseExpression();
+            node->argument = ParseExpression(scope);
         }
 
         ConsumeSemicolon();
@@ -1845,13 +1876,19 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<SwitchStatement> Parser::ParseSwitchStatement() {
+    Sp<SwitchStatement> Parser::ParseSwitchStatement(Scope& parent_scope) {
         auto marker = CreateStartMarker();
+
+        auto switch_scope = std::make_unique<Scope>(ScopeType::Switch);
+        switch_scope->SetParent(&parent_scope);
+        auto& scope = *switch_scope;
+
         Expect(JsTokenType::K_Switch);
         auto node = Alloc<SwitchStatement>();
+        node->scope = move(switch_scope);
 
         Expect(JsTokenType::LeftParen);
-        node->discrimiant = ParseExpression();
+        node->discrimiant = ParseExpression(scope);
         Expect(JsTokenType::RightParen);
 
         auto prev_in_switch = ctx->in_switch_;
@@ -1863,7 +1900,7 @@ namespace rocket_bundle::parser {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SwitchCase> clause = ParseSwitchCase();
+            Sp<SwitchCase> clause = ParseSwitchCase(scope);
             if (!clause->test) {
                 if (default_found) {
                     ThrowError(ParseMessages::MultipleDefaultsInSwitch);
@@ -1880,7 +1917,7 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<ThrowStatement> Parser::ParseThrowStatement() {
+    Sp<ThrowStatement> Parser::ParseThrowStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Throw);
 
@@ -1890,30 +1927,34 @@ namespace rocket_bundle::parser {
         }
 
         auto node = Alloc<ThrowStatement>();
-        node->argument = ParseExpression();
+        node->argument = ParseExpression(scope);
         ConsumeSemicolon();
 
         return Finalize(marker, node);
     }
 
-    Sp<TryStatement> Parser::ParseTryStatement() {
+    Sp<TryStatement> Parser::ParseTryStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Try);
         auto node = Alloc<TryStatement>();
 
-        node->block = ParseBlock();
+        node->block = ParseBlock(scope);
         if (Match(JsTokenType::K_Catch)) {
-            node->handler = ParseCatchClause();
+            node->handler = ParseCatchClause(scope);
         }
         if (Match(JsTokenType::K_Finally)) {
-            node->finalizer = ParseFinallyClause();
+            node->finalizer = ParseFinallyClause(scope);
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<CatchClause> Parser::ParseCatchClause() {
+    Sp<CatchClause> Parser::ParseCatchClause(Scope& parent_scope) {
         auto marker = CreateStartMarker();
+
+        auto catch_scope = std::make_unique<Scope>(ScopeType::Catch);
+        catch_scope->SetParent(&parent_scope);
+        auto& scope = *catch_scope;
 
         Expect(JsTokenType::K_Catch);
 
@@ -1924,9 +1965,10 @@ namespace rocket_bundle::parser {
         }
 
         auto node = Alloc<CatchClause>();
+        node->scope = move(catch_scope);
 
         std::vector<Token> params;
-        node->param = ParsePattern(params);
+        node->param = ParsePattern(scope, params);
 
         std::unordered_set<UString> param_set;
         for (auto& token : params) {
@@ -1945,34 +1987,35 @@ namespace rocket_bundle::parser {
         }
 
         Expect(JsTokenType::RightParen);
-        node->body = ParseBlock();
+        node->body = ParseBlock(scope);
 
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseFinallyClause() {
+    Sp<BlockStatement> Parser::ParseFinallyClause(Scope& scope) {
         Expect(JsTokenType::K_Finally);
-        return ParseBlock();
+        return ParseBlock(scope);
     }
 
-    Sp<VariableDeclaration> Parser::ParseVariableStatement() {
+    Sp<VariableDeclaration> Parser::ParseVariableStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Var);
 
         auto node = Alloc<VariableDeclaration>();
-        node->declarations = ParseVariableDeclarationList(false);
+        node->declarations = ParseVariableDeclarationList(scope, false);
         ConsumeSemicolon();
 
         node->kind = VarKind::Var;
         return Finalize(marker, node);
     }
 
-    Sp<VariableDeclarator> Parser::ParseVariableDeclaration(bool in_for) {
+    Sp<VariableDeclarator> Parser::ParseVariableDeclaration(Scope& parent_scope, bool in_for) {
         auto marker = CreateStartMarker();
         auto node = Alloc<VariableDeclarator>();
+        node->scope->SetParent(&parent_scope);
 
         vector<Token> params;
-        Sp<SyntaxNode> id = ParsePattern(params, VarKind::Var);
+        Sp<SyntaxNode> id = ParsePattern(parent_scope, params, VarKind::Var);
 
         if (ctx->strict_ && id->type == SyntaxNodeType::Identifier) {
             auto identifier = dynamic_pointer_cast<Identifier>(id);
@@ -1984,8 +2027,8 @@ namespace rocket_bundle::parser {
         optional<Sp<Expression>> init;
         if (Match(JsTokenType::Assign)) {
             NextToken();
-            init = IsolateCoverGrammar<Expression>([this] {
-                return ParseAssignmentExpression();
+            init = IsolateCoverGrammar<Expression>([this, &scope = *node->scope] {
+                return ParseAssignmentExpression(scope);
             });
         } else if (id->type != SyntaxNodeType::Identifier && !in_for) {
             Expect(JsTokenType::Assign);
@@ -1997,24 +2040,26 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    std::vector<Sp<VariableDeclarator>> Parser::ParseVariableDeclarationList(bool in_for) {
+    std::vector<Sp<VariableDeclarator>> Parser::ParseVariableDeclarationList(
+            Scope& scope, bool in_for) {
+
         std::vector<Sp<VariableDeclarator>> list;
-        list.push_back(ParseVariableDeclaration(in_for));
+        list.push_back(ParseVariableDeclaration(scope, in_for));
         while (Match(JsTokenType::Comma)) {
             NextToken();
-            list.push_back(ParseVariableDeclaration(in_for));
+            list.push_back(ParseVariableDeclaration(scope, in_for));
         }
 
         return list;
     }
 
-    Sp<WhileStatement> Parser::ParseWhileStatement() {
+    Sp<WhileStatement> Parser::ParseWhileStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<WhileStatement>();
 
         Expect(JsTokenType::K_While);
         Expect(JsTokenType::LeftParen);
-        node->test = ParseExpression();
+        node->test = ParseExpression(scope);
 
         if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
@@ -2024,14 +2069,14 @@ namespace rocket_bundle::parser {
 
             auto prev_in_interation = ctx->in_iteration_;
             ctx->in_iteration_ = true;
-            node->body = ParseStatement();
+            node->body = ParseStatement(scope);
             ctx->in_iteration_ = prev_in_interation;
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<WithStatement> Parser::ParseWithStatement() {
+    Sp<WithStatement> Parser::ParseWithStatement(Scope& scope) {
         if (ctx->strict_) {
             TolerateError(ParseMessages::StrictModeWith);
         }
@@ -2042,7 +2087,7 @@ namespace rocket_bundle::parser {
         Expect(JsTokenType::K_With);
         Expect(JsTokenType::LeftParen);
 
-        node->object = ParseExpression();
+        node->object = ParseExpression(scope);
 
         if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
@@ -2050,17 +2095,17 @@ namespace rocket_bundle::parser {
             node->body = Finalize(marker, empty);
         } else {
             Expect(JsTokenType::RightParen);
-            node->body = ParseStatement();
+            node->body = ParseStatement(scope);
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<VariableDeclarator> Parser::ParseLexicalBinding(VarKind kind, bool &in_for) {
+    Sp<VariableDeclarator> Parser::ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<VariableDeclarator>();
         std::vector<Token> params;
-        node->id = ParsePattern(params, kind);
+        node->id = ParsePattern(scope, params, kind);
 
         if (ctx->strict_ && node->id->type == SyntaxNodeType::Identifier) {
             auto id = dynamic_pointer_cast<Identifier>(node->id);
@@ -2073,8 +2118,8 @@ namespace rocket_bundle::parser {
             if (!Match(JsTokenType::K_In) && !MatchContextualKeyword(u"of")) {
                 if (Match(JsTokenType::Assign)) {
                     NextToken();
-                    node->init = IsolateCoverGrammar<Expression>([this] {
-                        return ParseAssignmentExpression();
+                    node->init = IsolateCoverGrammar<Expression>([this, &scope] {
+                        return ParseAssignmentExpression(scope);
                     });
                 } else {
                     ThrowError(ParseMessages::DeclarationMissingInitializer);
@@ -2082,32 +2127,32 @@ namespace rocket_bundle::parser {
             }
         } else if ((!in_for && node->id->type != SyntaxNodeType::Identifier) || Match(JsTokenType::Assign)) {
             Expect(JsTokenType::Assign);
-            node->init = IsolateCoverGrammar<Expression>([this] {
-                return ParseAssignmentExpression();
+            node->init = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseAssignmentExpression(scope);
             });
         }
 
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<VariableDeclarator>> Parser::ParseBindingList(VarKind kind, bool& in_for) {
+    std::vector<Sp<VariableDeclarator>> Parser::ParseBindingList(Scope& scope, VarKind kind, bool& in_for) {
         std::vector<Sp<VariableDeclarator>> list;
-        list.push_back(ParseLexicalBinding(kind, in_for));
+        list.push_back(ParseLexicalBinding(scope, kind, in_for));
 
         while (Match(JsTokenType::Comma)) {
             NextToken();
-            list.push_back(ParseLexicalBinding(kind, in_for));
+            list.push_back(ParseLexicalBinding(scope, kind, in_for));
         }
 
         return list;
     }
 
-    Sp<RestElement> Parser::ParseRestElement(std::vector<Token> &params) {
+    Sp<RestElement> Parser::ParseRestElement(Scope& scope, std::vector<Token> &params) {
         auto marker = CreateStartMarker();
         auto node = Alloc<RestElement>();
 
         Expect(JsTokenType::Spread);
-        node->argument = ParsePattern(params, VarKind::Invalid);
+        node->argument = ParsePattern(scope, params, VarKind::Invalid);
         if (Match(JsTokenType::Assign)) {
             ThrowError(ParseMessages::DefaultRestParameter);
             return nullptr;
@@ -2120,7 +2165,7 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseStatementListItem() {
+    Sp<Statement> Parser::ParseStatementListItem(Scope& scope) {
         Sp<Statement> statement;
         ctx->is_assignment_target_ = true;
         ctx->is_binding_element_ = true;
@@ -2130,35 +2175,35 @@ namespace rocket_bundle::parser {
                 if (ctx->is_module_) {
                     TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::IllegalExportDeclaration);
                 }
-                statement = ParseExportDeclaration();
+                statement = ParseExportDeclaration(scope);
             } else if (ctx->lookahead_.value_ == u"import") {
                 if (MatchImportCall()) {
-                    statement = ParseExpressionStatement();
+                    statement = ParseExpressionStatement(scope);
                 } else {
                     if (!ctx->is_module_) {
                         TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::IllegalImportDeclaration);
                     }
-                    statement = ParseImportDeclaration();
+                    statement = ParseImportDeclaration(scope);
                 }
             } else if (ctx->lookahead_.value_ == u"const") {
                 bool in_for = false;
-                statement = ParseLexicalDeclaration(in_for);
+                statement = ParseLexicalDeclaration(scope, in_for);
             } else if (ctx->lookahead_.value_ == u"function") {
-                statement = ParseFunctionDeclaration(false);
+                statement = ParseFunctionDeclaration(scope, false);
             } else if (ctx->lookahead_.value_ == u"class") {
-                statement = ParseClassDeclaration(false);
+                statement = ParseClassDeclaration(scope, false);
             } else if (ctx->lookahead_.value_ == u"let") {
                 if (IsLexicalDeclaration()) {
                     bool in_for = false;
-                    statement = ParseLexicalDeclaration(in_for);
+                    statement = ParseLexicalDeclaration(scope, in_for);
                 } else {
-                    statement = ParseStatement();
+                    statement = ParseStatement(scope);
                 }
             } else {
-                statement = ParseStatement();
+                statement = ParseStatement(scope);
             }
         } else {
-            statement = ParseStatement();
+            statement = ParseStatement(scope);
         }
 
         return statement;
@@ -2178,7 +2223,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Declaration> Parser::ParseExportDeclaration() {
+    Sp<Declaration> Parser::ParseExportDeclaration(Scope& scope) {
         if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalExportDeclaration);
         }
@@ -2191,18 +2236,18 @@ namespace rocket_bundle::parser {
             NextToken();
             if (Match(JsTokenType::K_Function)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
-                node->declaration = ParseFunctionDeclaration(true);
+                node->declaration = ParseFunctionDeclaration(scope, true);
                 export_decl = Finalize(start_marker, node);
             } else if (Match(JsTokenType::K_Class)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
-                node->declaration = ParseClassExpression();
+                node->declaration = ParseClassExpression(scope);
                 export_decl = Finalize(start_marker, node);
             } else if (MatchContextualKeyword(u"async")) {
                 auto node = Alloc<ExportDefaultDeclaration>();
                 if (MatchAsyncFunction()) {
-                    node->declaration = ParseFunctionDeclaration(true);
+                    node->declaration = ParseFunctionDeclaration(scope, true);
                 } else {
-                    node->declaration = ParseAssignmentExpression();
+                    node->declaration = ParseAssignmentExpression(scope);
                 }
                 export_decl = Finalize(start_marker, node);
             } else {
@@ -2211,11 +2256,11 @@ namespace rocket_bundle::parser {
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
-                    decl = ParseObjectInitializer();
+                    decl = ParseObjectInitializer(scope);
                 } else if (Match(JsTokenType::LeftBrace)) {
-                    decl = ParseArrayInitializer();
+                    decl = ParseArrayInitializer(scope);
                 } else {
-                    decl = ParseAssignmentExpression();
+                    decl = ParseAssignmentExpression(scope);
                 }
                 ConsumeSemicolon();
                 auto node = Alloc<ExportDefaultDeclaration>();
@@ -2244,13 +2289,13 @@ namespace rocket_bundle::parser {
 
             if (ctx->lookahead_.value_ == u"let" || ctx->lookahead_.value_ == u"const") {
                 bool in_for = false;
-                node->declaration = ParseLexicalDeclaration(in_for);
+                node->declaration = ParseLexicalDeclaration(scope, in_for);
             } else if (
                 ctx->lookahead_.value_ == u"var" ||
                 ctx->lookahead_.value_ == u"class" ||
                 ctx->lookahead_.value_ == u"function"
             ) {
-                node->declaration = ParseStatementListItem();
+                node->declaration = ParseStatementListItem(scope);
             } else {
                 ThrowUnexpectedToken(ctx->lookahead_);
             }
@@ -2259,7 +2304,7 @@ namespace rocket_bundle::parser {
 
         } else if (MatchAsyncFunction()) {
             auto node = Alloc<ExportNamedDeclaration>();
-            node->declaration = ParseFunctionDeclaration(false);
+            node->declaration = ParseFunctionDeclaration(scope, false);
             export_decl = Finalize(start_marker, node);
         } else {
             auto node = Alloc<ExportNamedDeclaration>();
@@ -2297,15 +2342,15 @@ namespace rocket_bundle::parser {
         return export_decl;
     }
 
-    Sp<Expression> Parser::ParseAssignmentExpression() {
+    Sp<Expression> Parser::ParseAssignmentExpression(Scope& scope) {
         Sp<Expression> expr;
 
         if (!ctx->allow_yield_ && Match(JsTokenType::K_Yield)) {
-            expr = ParseYieldExpression();
+            expr = ParseYieldExpression(scope);
         } else {
             auto start_marker = CreateStartMarker();
             auto token = ctx->lookahead_;
-            expr = ParseConditionalExpression();
+            expr = ParseConditionalExpression(scope);
 
             if (
                 token.type_ == JsTokenType::Identifier &&
@@ -2313,7 +2358,7 @@ namespace rocket_bundle::parser {
                 token.value_ == u"async"
             ) {
                 if (ctx->lookahead_.type_ == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
-                    Sp<SyntaxNode> arg = ParsePrimaryExpression();
+                    Sp<SyntaxNode> arg = ParsePrimaryExpression(scope);
                     arg = ReinterpretExpressionAsPattern(arg);
 
                     auto node = Alloc<ArrowParameterPlaceHolder>();
@@ -2355,11 +2400,11 @@ namespace rocket_bundle::parser {
                     if (Match(JsTokenType::LeftBracket)) {
                         bool prev_allow_in = ctx->allow_in_;
                         ctx->allow_in_ = true;
-                        body = ParseFunctionSourceElements();
+                        body = ParseFunctionSourceElements(scope);
                         ctx->allow_in_ = prev_allow_in;
                     } else {
-                        body = IsolateCoverGrammar<SyntaxNode>([this] {
-                            return ParseAssignmentExpression();
+                        body = IsolateCoverGrammar<SyntaxNode>([this, &scope] {
+                            return ParseAssignmentExpression(scope);
                         });
                     }
 
@@ -2419,8 +2464,8 @@ namespace rocket_bundle::parser {
 
                     token = NextToken();
                     auto operator_ = token.value_;
-                    temp->right = IsolateCoverGrammar<Expression>([this] {
-                        return ParseAssignmentExpression();
+                    temp->right = IsolateCoverGrammar<Expression>([this, &scope] {
+                        return ParseAssignmentExpression(scope);
                     });
                     temp->operator_ = operator_;
                     expr = Finalize(start_marker, temp);
@@ -2434,11 +2479,11 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseConditionalExpression() {
+    Sp<Expression> Parser::ParseConditionalExpression(Scope& scope) {
         auto marker = CreateStartMarker();
 
-        Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
-            return ParseBinaryExpression();
+        Sp<Expression> expr = InheritCoverGrammar<Expression>([this, &scope] {
+            return ParseBinaryExpression(scope);
         });
 
         if (Match(JsTokenType::Ask)) {
@@ -2448,14 +2493,14 @@ namespace rocket_bundle::parser {
             bool prev_allow_in = ctx->allow_in_;
             ctx->allow_in_ = true;
 
-            node->consequent = IsolateCoverGrammar<Expression>([this] {
-                return ParseAssignmentExpression();
+            node->consequent = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseAssignmentExpression(scope);
             });
             ctx->allow_in_ = prev_allow_in;
 
             Expect(JsTokenType::Colon);
-            node->alternate = IsolateCoverGrammar<Expression>([this] {
-                return ParseAssignmentExpression();
+            node->alternate = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseAssignmentExpression(scope);
             });
 
             node->test = move(expr);
@@ -2468,11 +2513,11 @@ namespace rocket_bundle::parser {
         return Finalize(marker, expr);
     }
 
-    Sp<Expression> Parser::ParseBinaryExpression() {
+    Sp<Expression> Parser::ParseBinaryExpression(Scope& scope) {
         Token start_token = ctx->lookahead_;
 
-        auto expr = InheritCoverGrammar<Expression>([this] {
-            return ParseExponentiationExpression();
+        auto expr = InheritCoverGrammar<Expression>([this, &scope] {
+            return ParseExponentiationExpression(scope);
         });
 
         Token token = ctx->lookahead_;
@@ -2488,8 +2533,8 @@ namespace rocket_bundle::parser {
             markers.push(ctx->lookahead_);
 
             Sp<Expression> left = expr;
-            Sp<Expression> right = IsolateCoverGrammar<Expression>([this] {
-                return ParseExponentiationExpression();
+            Sp<Expression> right = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseExponentiationExpression(scope);
             });
 
             stack<int> precedences;
@@ -2533,8 +2578,8 @@ namespace rocket_bundle::parser {
                 op_stack.push(next_.value_);
                 precedences.push(prec);
                 markers.push(ctx->lookahead_);
-                auto temp_expr = IsolateCoverGrammar<Expression>([this] {
-                    return ParseExponentiationExpression();
+                auto temp_expr = IsolateCoverGrammar<Expression>([this, &scope] {
+                    return ParseExponentiationExpression(scope);
                 });
                 expr_stack.push(temp_expr);
             }
@@ -2565,11 +2610,11 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseExponentiationExpression() {
+    Sp<Expression> Parser::ParseExponentiationExpression(Scope& scope) {
         auto start = CreateStartMarker();
 
-        Sp<Expression> expr = InheritCoverGrammar<Expression>([this] {
-            return ParseUnaryExpression();
+        Sp<Expression> expr = InheritCoverGrammar<Expression>([this, &scope] {
+            return ParseUnaryExpression(scope);
         });
 
         Assert(!!expr, "ParseExponentiationExpression: expr should not be null");
@@ -2580,8 +2625,8 @@ namespace rocket_bundle::parser {
             ctx->is_binding_element_ = false;
             auto node = Alloc<BinaryExpression>();
             node->left = expr;
-            node->right = IsolateCoverGrammar<Expression>([this, &node] {
-                return ParseExponentiationExpression();
+            node->right = IsolateCoverGrammar<Expression>([this, &scope, &node] {
+                return ParseExponentiationExpression(scope);
             });
             node->operator_ = u"**";
             expr = Finalize(start, node);
@@ -2590,7 +2635,7 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseUnaryExpression() {
+    Sp<Expression> Parser::ParseUnaryExpression(Scope& scope) {
         Sp<Expression> expr;
 
         if (
@@ -2600,8 +2645,8 @@ namespace rocket_bundle::parser {
             auto marker = CreateStartMarker();
             Token token = ctx->lookahead_;
             NextToken();
-            expr = InheritCoverGrammar<Expression>([this] {
-                return ParseUnaryExpression();
+            expr = InheritCoverGrammar<Expression>([this, &scope] {
+                return ParseUnaryExpression(scope);
             });
             auto node = Alloc<UnaryExpression>();
             node->operator_ = token.value_;
@@ -2614,31 +2659,31 @@ namespace rocket_bundle::parser {
             ctx->is_assignment_target_ = false;
             ctx->is_binding_element_ = false;
         } else if (ctx->await_ && MatchContextualKeyword(u"await")) {
-            expr = ParseAwaitExpression();
+            expr = ParseAwaitExpression(scope);
         } else {
-            expr = ParseUpdateExpression();
+            expr = ParseUpdateExpression(scope);
         }
 
         return expr;
     }
 
-    Sp<AwaitExpression> Parser::ParseAwaitExpression() {
+    Sp<AwaitExpression> Parser::ParseAwaitExpression(Scope& scope) {
         auto marker = CreateStartMarker();
         NextToken();
         auto node = Alloc<AwaitExpression>();
-        node->argument = ParseUnaryExpression();
+        node->argument = ParseUnaryExpression(scope);
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseUpdateExpression() {
+    Sp<Expression> Parser::ParseUpdateExpression(Scope& scope) {
         Sp<Expression> expr;
         auto start_marker = CreateStartMarker();
 
         if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
             auto marker = CreateStartMarker();
             Token token = NextToken();
-            expr = InheritCoverGrammar<Expression>([this] {
-                return ParseUnaryExpression();
+            expr = InheritCoverGrammar<Expression>([this, &scope] {
+                return ParseUnaryExpression(scope);
             });
             if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
                 auto id = dynamic_pointer_cast<Identifier>(expr);
@@ -2657,8 +2702,8 @@ namespace rocket_bundle::parser {
             ctx->is_assignment_target_ = false;
             ctx->is_binding_element_ = false;
         } else {
-            expr = InheritCoverGrammar<Expression>([this] {
-                return ParseLeftHandSideExpressionAllowCall();
+            expr = InheritCoverGrammar<Expression>([this, &scope] {
+                return ParseLeftHandSideExpressionAllowCall(scope);
             });
             if (!ctx->has_line_terminator_ && IsPunctuatorToken(ctx->lookahead_.type_)) {
                 if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
@@ -2686,7 +2731,7 @@ namespace rocket_bundle::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseLeftHandSideExpression() {
+    Sp<Expression> Parser::ParseLeftHandSideExpression(Scope& scope) {
         Assert(ctx->allow_in_, "callee of new expression always allow in keyword.");
 
         auto start_marker = CreateStartMarker();
@@ -2694,11 +2739,11 @@ namespace rocket_bundle::parser {
         if (Match(JsTokenType::K_Super) && ctx->in_function_body_) {
             expr = ParseSuper();
         } else {
-            expr = InheritCoverGrammar<Expression>([this] {
+            expr = InheritCoverGrammar<Expression>([this, &scope] {
                 if (Match(JsTokenType::K_New)) {
-                    return ParseNewExpression();
+                    return ParseNewExpression(scope);
                 } else {
-                    return ParsePrimaryExpression();
+                    return ParsePrimaryExpression(scope);
                 }
             });
         }
@@ -2710,8 +2755,8 @@ namespace rocket_bundle::parser {
                 Expect(JsTokenType::LeftBrace);
                 auto node = Alloc<MemberExpression>();
                 node->computed = true;
-                node->property = IsolateCoverGrammar<Expression>([this] {
-                    return ParseExpression();
+                node->property = IsolateCoverGrammar<Expression>([this, &scope] {
+                    return ParseExpression(scope);
                 });
                 Expect(JsTokenType::RightBrace);
                 node->object = move(expr);
@@ -2727,7 +2772,7 @@ namespace rocket_bundle::parser {
                 expr = Finalize(start_marker, node);
             } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
                 auto node = Alloc<TaggedTemplateExpression>();
-                node->quasi = ParseTemplateLiteral();
+                node->quasi = ParseTemplateLiteral(scope);
                 node->tag = move(expr);
                 expr = Finalize(start_marker, node);
             } else {
@@ -2751,7 +2796,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportDeclaration> Parser::ParseImportDeclaration() {
+    Sp<ImportDeclaration> Parser::ParseImportDeclaration(Scope& scope) {
         if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalImportDeclaration);
         }
@@ -2766,7 +2811,7 @@ namespace rocket_bundle::parser {
             src = ParseModuleSpecifier();
         } else {
             if (Match(JsTokenType::LeftBracket)) {
-                auto children = ParseNamedImports();
+                auto children = ParseNamedImports(scope);
                 specifiers.insert(specifiers.end(), children.begin(), children.end());
             } else if (Match(JsTokenType::Mul)) {
                 specifiers.push_back(ParseImportNamespaceSpecifier());
@@ -2779,7 +2824,7 @@ namespace rocket_bundle::parser {
                     if (Match(JsTokenType::Mul)) {
                         specifiers.push_back(ParseImportNamespaceSpecifier());
                     } else if (Match(JsTokenType::LeftBracket)) {
-                        auto children = ParseNamedImports();
+                        auto children = ParseNamedImports(scope);
                         specifiers.insert(specifiers.end(), children.begin(), children.end());
                     } else {
                         ThrowUnexpectedToken(ctx->lookahead_);
@@ -2810,17 +2855,17 @@ namespace rocket_bundle::parser {
         {
             auto finalized_node = Finalize(start_marker, node);
             for (auto& callback : import_decl_handlers_) {
-                callback(finalized_node);
+                callback(finalized_node->source->raw);
             }
             return finalized_node;
         }
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports() {
+    std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports(Scope& scope) {
         Expect(JsTokenType::LeftBracket);
         std::vector<Sp<SyntaxNode>> specifiers;
         while (!Match(JsTokenType::RightBracket)) {
-            specifiers.push_back(ParseImportSpecifier());
+            specifiers.push_back(ParseImportSpecifier(scope));
             if (!Match(JsTokenType::RightBracket)) {
                 Expect(JsTokenType::Comma);
             }
@@ -2830,24 +2875,24 @@ namespace rocket_bundle::parser {
         return specifiers;
     }
 
-    Sp<ImportSpecifier> Parser::ParseImportSpecifier() {
+    Sp<ImportSpecifier> Parser::ParseImportSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         Sp<Identifier> imported;
         Sp<Identifier> local;
         if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
-            imported = ParseVariableIdentifier(VarKind::Invalid);
+            imported = ParseVariableIdentifier(scope, VarKind::Invalid);
             local = imported;
             if (MatchContextualKeyword(u"as")) {
                 NextToken();
-                local = ParseVariableIdentifier(VarKind::Invalid);
+                local = ParseVariableIdentifier(scope, VarKind::Invalid);
             }
         } else {
             imported = ParseIdentifierName();
             local = imported;
             if (MatchContextualKeyword(u"as")) {
                 NextToken();
-                local = ParseVariableIdentifier(VarKind::Invalid);
+                local = ParseVariableIdentifier(scope, VarKind::Invalid);
             } else {
                 ThrowUnexpectedToken(NextToken());
             }
@@ -2896,7 +2941,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Declaration> Parser::ParseLexicalDeclaration(bool &in_for) {
+    Sp<Declaration> Parser::ParseLexicalDeclaration(Scope& scope, bool &in_for) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<VariableDeclaration>();
         Token next = NextToken();
@@ -2908,13 +2953,13 @@ namespace rocket_bundle::parser {
             ThrowUnexpectedToken(next);
         }
 
-        node->declarations = ParseBindingList(node->kind, in_for);
+        node->declarations = ParseBindingList(scope, node->kind, in_for);
         ConsumeSemicolon();
 
         return Finalize(start_marker, node);
     }
 
-    Sp<Identifier> Parser::ParseVariableIdentifier(VarKind kind) {
+    Sp<Identifier> Parser::ParseVariableIdentifier(Scope& scope, VarKind kind) {
         auto marker = CreateStartMarker();
 
         Token token = NextToken();
@@ -2934,37 +2979,38 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<Identifier>();
         node->name = token.value_;
+        scope.CreateVariable(node->name, kind);
         return Finalize(marker, node);
     }
 
-    Sp<SyntaxNode> Parser::ParsePattern(std::vector<Token> &params, VarKind kind) {
+    Sp<SyntaxNode> Parser::ParsePattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         Sp<SyntaxNode> pattern;
 
         if (Match(JsTokenType::LeftBrace)) {
-            pattern = ParseArrayPattern(params, kind);
+            pattern = ParseArrayPattern(scope, params, kind);
         } else if (Match(JsTokenType::LeftBracket)) {
-            pattern = ParseObjectPattern(params, kind);
+            pattern = ParseObjectPattern(scope, params, kind);
         } else {
             if (Match(JsTokenType::K_Let) && (kind == VarKind::Const || kind == VarKind::Let)) {
                 TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::LetInLexicalBinding);
             }
             params.push_back(ctx->lookahead_);
-            pattern = ParseVariableIdentifier(kind);
+            pattern = ParseVariableIdentifier(scope, kind);
         }
 
         return pattern;
     }
 
-    Sp<SyntaxNode> Parser::ParsePatternWithDefault(std::vector<Token> &params, VarKind kind) {
+    Sp<SyntaxNode> Parser::ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind) {
         Token start_token_ = ctx->lookahead_;
 
-        auto pattern = ParsePattern(params, kind);
+        auto pattern = ParsePattern(scope, params, kind);
         if (Match(JsTokenType::Assign)) {
             NextToken();
             bool prev_allow_yield = ctx->allow_yield_;
             ctx->allow_yield_ = true;
-            auto right = IsolateCoverGrammar<Expression>([this] {
-                return ParseAssignmentExpression();
+            auto right = IsolateCoverGrammar<Expression>([this, &scope] {
+                return ParseAssignmentExpression(scope);
             });
             ctx->allow_yield_ = prev_allow_yield;
             auto node = Alloc<AssignmentPattern>();
@@ -2976,17 +3022,17 @@ namespace rocket_bundle::parser {
         return pattern;
     }
 
-    Sp<RestElement> Parser::ParseBindingRestElement(std::vector<Token> &params, VarKind kind) {
+    Sp<RestElement> Parser::ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::Spread);
         auto node = Alloc<RestElement>();
-        node->argument = ParsePattern(params, kind);
+        node->argument = ParsePattern(scope, params, kind);
 
         return Finalize(start_marker, node);
     }
 
-    Sp<ArrayPattern> Parser::ParseArrayPattern(std::vector<Token> &params, VarKind kind) {
+    Sp<ArrayPattern> Parser::ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::LeftBrace);
@@ -2997,10 +3043,10 @@ namespace rocket_bundle::parser {
                 elements.emplace_back(nullopt);
             } else {
                 if (Match(JsTokenType::Spread)) {
-                    elements.emplace_back(ParseBindingRestElement(params, kind));
+                    elements.emplace_back(ParseBindingRestElement(scope, params, kind));
                     break;
                 } else {
-                    elements.emplace_back(ParsePatternWithDefault(params, kind));
+                    elements.emplace_back(ParsePatternWithDefault(scope, params, kind));
                 }
                 if (!Match(JsTokenType::RightBrace)) {
                     Expect(JsTokenType::Comma);
@@ -3014,7 +3060,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Property> Parser::ParsePropertyPattern(std::vector<Token> &params, VarKind kind) {
+    Sp<Property> Parser::ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<Property>();
@@ -3024,7 +3070,7 @@ namespace rocket_bundle::parser {
 
         if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
             Token keyToken = ctx->lookahead_;
-            node->key = ParseVariableIdentifier(VarKind::Invalid);
+            node->key = ParseVariableIdentifier(scope, VarKind::Invalid);
             auto id_ = Alloc<Identifier>();
             id_->name = keyToken.value_;
             auto init = Finalize(start_marker, id_);
@@ -3032,7 +3078,7 @@ namespace rocket_bundle::parser {
                 params.push_back(keyToken);
                 node->shorthand = true;
                 NextToken();
-                auto expr = ParseAssignmentExpression();
+                auto expr = ParseAssignmentExpression(scope);
                 auto assign = Alloc<AssignmentPattern>();
                 assign->left = move(init);
                 assign->right = move(expr);
@@ -3043,22 +3089,22 @@ namespace rocket_bundle::parser {
                 node->value = move(init);
             } else {
                 Expect(JsTokenType::Colon);
-                node->value = ParsePatternWithDefault(params, kind);
+                node->value = ParsePatternWithDefault(scope, params, kind);
             }
         } else {
             node->computed = Match(JsTokenType::LeftBrace);
-            node->key = ParseObjectPropertyKey();
+            node->key = ParseObjectPropertyKey(scope);
             Expect(JsTokenType::Colon);
-            node->value = ParsePatternWithDefault(params, kind);
+            node->value = ParsePatternWithDefault(scope, params, kind);
         }
 
         return Finalize(start_marker, node);
     }
 
-    Sp<RestElement> Parser::ParseRestProperty(std::vector<Token> &params, VarKind kind) {
+    Sp<RestElement> Parser::ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
         Expect(JsTokenType::Spread);
-        auto arg = ParsePattern(params, VarKind::Invalid);
+        auto arg = ParsePattern(scope, params, VarKind::Invalid);
         if (Match(JsTokenType::Assign)) {
             ThrowError(ParseMessages::DefaultRestProperty);
         }
@@ -3070,16 +3116,16 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ObjectPattern> Parser::ParseObjectPattern(std::vector<Token> &params, VarKind kind) {
+    Sp<ObjectPattern> Parser::ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
         std::vector<Sp<SyntaxNode>> props;
 
         Expect(JsTokenType::LeftBracket);
         while (!Match(JsTokenType::RightBracket)) {
             if (Match(JsTokenType::Spread)) {
-                props.push_back(ParseRestProperty(params, kind));
+                props.push_back(ParseRestProperty(scope, params, kind));
             } else {
-                props.push_back(ParsePropertyPattern(params, kind));
+                props.push_back(ParsePropertyPattern(scope, params, kind));
             }
 
             if (!Match(JsTokenType::RightBracket)) {
@@ -3093,22 +3139,22 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> Parser::ParseAsyncArgument() {
-        auto arg = ParseAssignmentExpression();
+    Sp<SyntaxNode> Parser::ParseAsyncArgument(Scope& scope) {
+        auto arg = ParseAssignmentExpression(scope);
         ctx->first_cover_initialized_name_error_.reset();
         return arg;
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments() {
+    std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments(Scope& scope) {
         Expect(JsTokenType::LeftParen);
         std::vector<Sp<SyntaxNode>> result;
         if (!Match(JsTokenType::RightParen)) {
             while (true) {
                 if (Match(JsTokenType::Spread)) {
-                    result.push_back(ParseSpreadElement());
+                    result.push_back(ParseSpreadElement(scope));
                 } else {
-                    result.push_back(IsolateCoverGrammar<SyntaxNode>([this] {
-                        return ParseAsyncArgument();
+                    result.push_back(IsolateCoverGrammar<SyntaxNode>([this, &scope] {
+                        return ParseAsyncArgument(scope);
                     }));
                 }
                 if (Match(JsTokenType::RightParen)) {
@@ -3125,7 +3171,7 @@ namespace rocket_bundle::parser {
         return result;
     }
 
-    Sp<Expression> Parser::ParseGroupExpression() {
+    Sp<Expression> Parser::ParseGroupExpression(Scope& scope) {
         Sp<Expression> expr;
 
         Expect(JsTokenType::LeftParen);
@@ -3142,7 +3188,7 @@ namespace rocket_bundle::parser {
 
             std::vector<Token> params;
             if (Match(JsTokenType::Spread)) {
-                expr = ParseRestElement(params);
+                expr = ParseRestElement(scope, params);
                 Expect(JsTokenType::RightParen);
                 if (!Match(JsTokenType::Arrow)) {
                     Expect(JsTokenType::Arrow);
@@ -3155,8 +3201,8 @@ namespace rocket_bundle::parser {
                 bool arrow = false;
                 ctx->is_binding_element_ = true;
 
-                expr = InheritCoverGrammar<Expression>([this] {
-                    return ParseAssignmentExpression();
+                expr = InheritCoverGrammar<Expression>([this, &scope] {
+                    return ParseAssignmentExpression(scope);
                 });
 
                 if (Match(JsTokenType::Comma)) {
@@ -3185,7 +3231,7 @@ namespace rocket_bundle::parser {
                             if (!ctx->is_binding_element_) {
                                 ThrowUnexpectedToken(ctx->lookahead_);
                             }
-                            expressions.push_back(ParseRestElement(params));
+                            expressions.push_back(ParseRestElement(scope, params));
                             Expect(JsTokenType::RightParen);
                             if (!Match(JsTokenType::Arrow)) {
                                 Expect(JsTokenType::Arrow);
@@ -3202,8 +3248,8 @@ namespace rocket_bundle::parser {
                             node->async = false;
                             expr = move(node);
                         } else {
-                            expressions.push_back(InheritCoverGrammar<Expression>([this] {
-                                return ParseAssignmentExpression();
+                            expressions.push_back(InheritCoverGrammar<Expression>([this, &scope] {
+                                return ParseAssignmentExpression(scope);
                             }));
                         }
                         if (arrow) {
@@ -3295,14 +3341,14 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TemplateLiteral> Parser::ParseTemplateLiteral() {
+    Sp<TemplateLiteral> Parser::ParseTemplateLiteral(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<TemplateLiteral>();
 
         Sp<TemplateElement> quasi = ParseTemplateHead();
         node->quasis.push_back(quasi);
         while (!quasi->tail) {
-            node->expressions.push_back(ParseExpression());
+            node->expressions.push_back(ParseExpression(scope));
             quasi = ParseTemplateElement();
             node->quasis.push_back(quasi);
         }
@@ -3310,7 +3356,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<MethodDefinition> Parser::ParseClassElement(bool &has_ctor) {
+    Sp<MethodDefinition> Parser::ParseClassElement(Scope& scope, bool &has_ctor) {
         Token token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
 
@@ -3326,7 +3372,7 @@ namespace rocket_bundle::parser {
             NextToken();
         } else {
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
+            key = ParseObjectPropertyKey(scope);
             auto id = dynamic_pointer_cast<Identifier>(*key);
             if (id && id->name == u"static" && (QualifiedPropertyName(ctx->lookahead_) || Match(JsTokenType::Mul))) {
                 token = ctx->lookahead_;
@@ -3335,7 +3381,7 @@ namespace rocket_bundle::parser {
                 if (Match(JsTokenType::Mul)) {
                     NextToken();
                 } else {
-                    key = ParseObjectPropertyKey();
+                    key = ParseObjectPropertyKey(scope);
                 }
             }
             if (
@@ -3346,7 +3392,7 @@ namespace rocket_bundle::parser {
                 if (token.type_ != JsTokenType::Colon && token.type_ != JsTokenType::LeftParen && token.type_ != JsTokenType::Mul) {
                     is_async = true;
                     token = ctx->lookahead_;
-                    key = ParseObjectPropertyKey();
+                    key = ParseObjectPropertyKey(scope);
                     if (token.type_ == JsTokenType::Identifier && token.value_ == u"constructor") {
                         TolerateUnexpectedToken(token, ParseMessages::ConstructorIsAsync);
                     }
@@ -3359,29 +3405,29 @@ namespace rocket_bundle::parser {
             if (token.value_ == u"get" && lookahead_prop_key) {
                 kind = VarKind::Get;
                 computed = Match(JsTokenType::LeftBrace);
-                key = ParseObjectPropertyKey();
+                key = ParseObjectPropertyKey(scope);
                 ctx->allow_yield_ = false;
-                value = ParseGetterMethod();
+                value = ParseGetterMethod(scope);
             } else if (token.value_ == u"set" && lookahead_prop_key) {
                 kind = VarKind::Set;
                 computed = Match(JsTokenType::LeftBrace);
-                key = ParseObjectPropertyKey();
-                value = ParseSetterMethod();
+                key = ParseObjectPropertyKey(scope);
+                value = ParseSetterMethod(scope);
             }
         } else if (token.type_ == JsTokenType::Mul && lookahead_prop_key) {
             kind = VarKind::Init;
             computed = Match(JsTokenType::LeftBrace);
-            key = ParseObjectPropertyKey();
-            value = ParseGeneratorMethod();
+            key = ParseObjectPropertyKey(scope);
+            value = ParseGeneratorMethod(scope);
             method = true;
         }
 
         if (kind == VarKind::Invalid && key.has_value() && Match(JsTokenType::LeftParen)) {
             kind = VarKind::Init;
             if (is_async) {
-                value = ParsePropertyMethodAsyncFunction();
+                value = ParsePropertyMethodAsyncFunction(scope);
             } else {
-                value = ParsePropertyMethodFunction();
+                value = ParsePropertyMethodFunction(scope);
             }
             method = true;
         }
@@ -3419,7 +3465,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<MethodDefinition>> Parser::ParseClassElementList() {
+    std::vector<Sp<MethodDefinition>> Parser::ParseClassElementList(Scope& scope) {
         std::vector<Sp<MethodDefinition>> body;
         bool has_ctor = false;
 
@@ -3428,7 +3474,7 @@ namespace rocket_bundle::parser {
             if (Match(JsTokenType::Semicolon)) {
                 NextToken();
             } else {
-                body.push_back(ParseClassElement(has_ctor));
+                body.push_back(ParseClassElement(scope, has_ctor));
             }
         }
         Expect(JsTokenType::RightBracket);
@@ -3436,7 +3482,7 @@ namespace rocket_bundle::parser {
         return body;
     }
 
-    Sp<FunctionExpression> Parser::ParseGetterMethod() {
+    Sp<FunctionExpression> Parser::ParseGetterMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3444,39 +3490,39 @@ namespace rocket_bundle::parser {
         bool prev_allow_yield = ctx->allow_yield_;
         ctx->allow_yield_ = !node->generator;
 
-        auto formal = ParseFormalParameters();
+        auto formal = ParseFormalParameters(scope);
         if (!formal.params.empty()) {
             TolerateError(ParseMessages::BadGetterArity);
         }
 
         node->params = formal.params;
-        node->body = ParsePropertyMethod(formal);
+        node->body = ParsePropertyMethod(scope, formal);
         ctx->allow_yield_ = prev_allow_yield;
 
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParseSetterMethod() {
+    Sp<FunctionExpression> Parser::ParseSetterMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
         bool prev_allow_yield = ctx->allow_yield_;
         ctx->allow_yield_ = !node->generator;
-        auto options = ParseFormalParameters();
+        auto options = ParseFormalParameters(scope);
         if (options.params.size() != 1) {
             TolerateError(ParseMessages::BadSetterArity);
         } else if (options.params[0]->type == SyntaxNodeType::RestElement) {
             TolerateError(ParseMessages::BadSetterRestParameter);
         }
         node->params = options.params;
-        node->body = ParsePropertyMethod(options);
+        node->body = ParsePropertyMethod(scope, options);
         ctx->allow_yield_ = prev_allow_yield;
 
         return Finalize(start_marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParsePropertyMethod(parser::ParserCommon::FormalParameterOptions &options) {
+    Sp<BlockStatement> Parser::ParsePropertyMethod(Scope& scope, parser::ParserCommon::FormalParameterOptions &options) {
         ctx->is_assignment_target_ = false;
         ctx->is_binding_element_ = false;
 
@@ -3484,8 +3530,8 @@ namespace rocket_bundle::parser {
         bool prev_allow_strict_directive = ctx->allow_strict_directive_;
         ctx->allow_strict_directive_ = options.simple;
 
-        auto body = IsolateCoverGrammar<BlockStatement>([this] {
-            return ParseFunctionSourceElements();
+        auto body = IsolateCoverGrammar<BlockStatement>([this, &scope] {
+            return ParseFunctionSourceElements(scope);
         });
         if (ctx->strict_ && options.first_restricted.has_value()) {
             TolerateUnexpectedToken(*options.first_restricted, options.message);
@@ -3499,7 +3545,7 @@ namespace rocket_bundle::parser {
         return body;
     }
 
-    Sp<FunctionExpression> Parser::ParseGeneratorMethod() {
+    Sp<FunctionExpression> Parser::ParseGeneratorMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3507,9 +3553,9 @@ namespace rocket_bundle::parser {
         bool prev_allow_yield = ctx->allow_yield_;
 
         ctx->allow_yield_ = true;
-        auto params = ParseFormalParameters();
+        auto params = ParseFormalParameters(scope);
         ctx->allow_yield_ = false;
-        auto method = ParsePropertyMethod(params);
+        auto method = ParsePropertyMethod(scope, params);
         ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
@@ -3518,15 +3564,15 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParsePropertyMethodFunction() {
+    Sp<FunctionExpression> Parser::ParsePropertyMethodFunction(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
         node->generator = false;
         bool prev_allow_yield = ctx->allow_yield_;
         ctx->allow_yield_ = true;
-        auto params = ParseFormalParameters();
-        auto method = ParsePropertyMethod(params);
+        auto params = ParseFormalParameters(scope);
+        auto method = ParsePropertyMethod(scope, params);
         ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
@@ -3535,7 +3581,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParsePropertyMethodAsyncFunction() {
+    Sp<FunctionExpression> Parser::ParsePropertyMethodAsyncFunction(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3544,8 +3590,8 @@ namespace rocket_bundle::parser {
         bool prev_await = ctx->await_;
         ctx->allow_yield_ = false;
         ctx->await_ = true;
-        auto params = ParseFormalParameters();
-        auto method = ParsePropertyMethod(params);
+        auto params = ParseFormalParameters(scope);
+        auto method = ParsePropertyMethod(scope, params);
         ctx->allow_yield_ = prev_allow_yield;
         ctx->await_ = prev_await;
 
@@ -3586,7 +3632,7 @@ namespace rocket_bundle::parser {
         return false;
     }
 
-    void Parser::OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback) {
+    void Parser::OnNewImportLocationAdded(NewImportLocationAddedCallback callback) {
         import_decl_handlers_.push_back(callback);
     }
 

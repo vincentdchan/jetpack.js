@@ -27,19 +27,19 @@ namespace rocket_bundle {
         if (!utils::IsFileExist(path)) {
             throw Error("file not exist: " + path);
         }
-        auto mf = std::make_shared<ModuleFile>();
-        mf->module_resolver = shared_from_this();
-        mf->path = path;
+        entry_module = std::make_shared<ModuleFile>();
+        entry_module->module_resolver = shared_from_this();
+        entry_module->path = path;
 
         {
             std::lock_guard<std::mutex> guard(map_mutex_);
             if (modules_map_.find(path) != modules_map_.end()) {
                 return;  // exists;
             }
-            modules_map_[path] = mf;
+            modules_map_[path] = entry_module;
         }
 
-        ParseFile(mf);
+        ParseFile(entry_module);
     }
 
     void ModuleResolver::ParseFile(Sp<ModuleFile> mf) {
@@ -51,8 +51,10 @@ namespace rocket_bundle {
 
         std::vector<std::future<void>> futures;
 
-        parser.OnImportDeclarationCreated([this, &futures] (const Sp<ImportDeclaration>& node) {
-            auto source_path = utils::To_UTF8(node->source->raw);
+        parser.OnNewImportLocationAdded([this, &futures] (const UString& path) {
+            if (!trace_file) return;
+
+            auto source_path = utils::To_UTF8(path);
 
             std::shared_ptr<ModuleFile> mf;
             {
@@ -75,6 +77,10 @@ namespace rocket_bundle {
         for (auto& fut : futures) {
             fut.wait();
         }
+    }
+
+    void ModuleResolver::PrintStatistic() {
+        ModuleScope& mod_scope = *entry_module->ast->scope;
     }
 
 }

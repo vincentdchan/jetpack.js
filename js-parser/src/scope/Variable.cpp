@@ -7,9 +7,4 @@
 
 namespace rocket_bundle {
 
-    const UString& Variable::Name() const {
-        auto id = std::dynamic_pointer_cast<Identifier>(node.lock());
-        return id->name;
-    }
-
 }

@@ -26,13 +26,13 @@ namespace rocket_bundle::parser {
         friend class JSXParser;
         friend class TypeScriptParser;
 
-        typedef std::function<void (const Sp<ImportDeclaration>&)> ImportDeclarationCreatedCallback;
+        typedef std::function<void (const UString&)> NewImportLocationAddedCallback;
 
         Parser(std::shared_ptr<ParserContext> state):
         ParserCommon(state) {}
 //            nodes_pool(node_size::max_node_size) {}
 
-        void OnImportDeclarationCreated(ImportDeclarationCreatedCallback callback);
+        void OnNewImportLocationAdded(NewImportLocationAddedCallback callback);
 
         template <typename T>
         Sp<T> IsolateCoverGrammar(std::function<Sp<T>()> cb) {
@@ -78,27 +78,27 @@ namespace rocket_bundle::parser {
             return result;
         }
 
-        Sp<Expression> ParsePrimaryExpression();
+        Sp<Expression> ParsePrimaryExpression(Scope& scope);
 
-        Sp<SpreadElement> ParseSpreadElement();
+        Sp<SpreadElement> ParseSpreadElement(Scope& scope);
 
-        Sp<BlockStatement> ParsePropertyMethod(FormalParameterOptions& options);
+        Sp<BlockStatement> ParsePropertyMethod(Scope& scope, FormalParameterOptions& options);
 
-        Sp<FunctionExpression> ParsePropertyMethodFunction();
+        Sp<FunctionExpression> ParsePropertyMethodFunction(Scope& scope);
 
-        Sp<FunctionExpression> ParsePropertyMethodAsyncFunction();
+        Sp<FunctionExpression> ParsePropertyMethodAsyncFunction(Scope& scope);
 
-        Sp<Property> ParseObjectProperty(bool& has_proto);
+        Sp<Property> ParseObjectProperty(Scope& scope, bool& has_proto);
 
-        Sp<SyntaxNode> ParseObjectPropertyKey();
+        Sp<SyntaxNode> ParseObjectPropertyKey(Scope& scope);
 
-        Sp<Expression> ParseObjectInitializer();
+        Sp<Expression> ParseObjectInitializer(Scope& scope);
 
         Sp<TemplateElement> ParseTemplateHead();
 
         Sp<TemplateElement> ParseTemplateElement();
 
-        Sp<TemplateLiteral> ParseTemplateLiteral();
+        Sp<TemplateLiteral> ParseTemplateLiteral(Scope& scope);
 
         Sp<Pattern> ReinterpretExpressionAsPattern(const Sp<SyntaxNode>& expr);
 
@@ -106,157 +106,157 @@ namespace rocket_bundle::parser {
 
         void CheckPatternParam(FormalParameterOptions& options, const Sp<SyntaxNode>& param);
 
-        Sp<Expression> ParseGroupExpression();
+        Sp<Expression> ParseGroupExpression(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseArguments();
+        std::vector<Sp<SyntaxNode>> ParseArguments(Scope& scope);
 
         Sp<Identifier> ParseIdentifierName();
 
-        Sp<Expression> ParseNewExpression();
+        Sp<Expression> ParseNewExpression(Scope& scope);
 
-        Sp<SyntaxNode> ParseAsyncArgument();
+        Sp<SyntaxNode> ParseAsyncArgument(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseAsyncArguments();
+        std::vector<Sp<SyntaxNode>> ParseAsyncArguments(Scope& scope);
 
         Sp<Import> ParseImportCall();
 
-        Sp<Expression> ParseLeftHandSideExpressionAllowCall();
+        Sp<Expression> ParseLeftHandSideExpressionAllowCall(Scope& scope);
 
         Sp<Super> ParseSuper();
 
-        Sp<Expression> ParseLeftHandSideExpression();
+        Sp<Expression> ParseLeftHandSideExpression(Scope& scope);
 
-        Sp<Expression> ParseUpdateExpression();
+        Sp<Expression> ParseUpdateExpression(Scope& scope);
 
-        Sp<AwaitExpression> ParseAwaitExpression();
+        Sp<AwaitExpression> ParseAwaitExpression(Scope& scope);
 
-        Sp<Expression> ParseUnaryExpression();
+        Sp<Expression> ParseUnaryExpression(Scope& scope);
 
-        Sp<Expression> ParseExponentiationExpression();
+        Sp<Expression> ParseExponentiationExpression(Scope& scope);
 
-        Sp<Expression> ParseBinaryExpression();
+        Sp<Expression> ParseBinaryExpression(Scope& scope);
 
-        Sp<Expression> ParseConditionalExpression();
+        Sp<Expression> ParseConditionalExpression(Scope& scope);
 
         Sp<Expression>
-        ParseAssignmentExpression();
+        ParseAssignmentExpression(Scope& scope);
 
-        Sp<Statement> ParseStatementListItem();
+        Sp<Statement> ParseStatementListItem(Scope& scope);
 
-        Sp<BlockStatement> ParseBlock();
+        Sp<BlockStatement> ParseBlock(Scope& scope);
 
-        Sp<VariableDeclarator> ParseLexicalBinding(VarKind kind, bool &in_for);
+        Sp<VariableDeclarator> ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for);
 
-        std::vector<Sp<VariableDeclarator>> ParseBindingList(VarKind kind, bool& in_for);
+        std::vector<Sp<VariableDeclarator>> ParseBindingList(Scope& scope, VarKind kind, bool& in_for);
 
         bool IsLexicalDeclaration();
 
-        Sp<Declaration> ParseLexicalDeclaration(bool& in_for);
+        Sp<Declaration> ParseLexicalDeclaration(Scope& scope, bool& in_for);
 
-        Sp<RestElement> ParseBindingRestElement(std::vector<Token> &params, VarKind kind);
+        Sp<RestElement> ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<ArrayPattern> ParseArrayPattern(std::vector<Token> &params, VarKind kind);
+        Sp<ArrayPattern> ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Property> ParsePropertyPattern(std::vector<Token> &params, VarKind kind);
+        Sp<Property> ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<RestElement> ParseRestProperty(std::vector<Token> &params, VarKind kind);
+        Sp<RestElement> ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<ObjectPattern> ParseObjectPattern(std::vector<Token> &params, VarKind kind);
+        Sp<ObjectPattern> ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Expression> ParseArrayInitializer();
+        Sp<Expression> ParseArrayInitializer(Scope& scope);
 
-        FormalParameterOptions ParseFormalParameters(std::optional<Token> first_restricted = std::nullopt);
-        void ParseFormalParameter(FormalParameterOptions& option);
+        FormalParameterOptions ParseFormalParameters(Scope& scope, std::optional<Token> first_restricted = std::nullopt);
+        void ParseFormalParameter(Scope& scope, FormalParameterOptions& option);
         void ValidateParam(FormalParameterOptions& option, const Token& param, const UString& name);
         bool IsStartOfExpression();
 
-        Sp<RestElement> ParseRestElement(std::vector<Token>& params);
+        Sp<RestElement> ParseRestElement(Scope& scope, std::vector<Token>& params);
 
-        Sp<SyntaxNode> ParsePattern(std::vector<Token>& params, VarKind kind = VarKind::Invalid);
+        Sp<SyntaxNode> ParsePattern(Scope& scope, std::vector<Token>& params, VarKind kind = VarKind::Invalid);
 
-        Sp<SyntaxNode> ParsePatternWithDefault(std::vector<Token> &params, VarKind kind);
+        Sp<SyntaxNode> ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Identifier> ParseVariableIdentifier(VarKind kind);
+        Sp<Identifier> ParseVariableIdentifier(Scope& scope, VarKind kind);
 
-        Sp<VariableDeclarator> ParseVariableDeclaration(bool in_for);
+        Sp<VariableDeclarator> ParseVariableDeclaration(Scope& scope, bool in_for);
 
-        std::vector<Sp<VariableDeclarator>> ParseVariableDeclarationList(bool in_for);
+        std::vector<Sp<VariableDeclarator>> ParseVariableDeclarationList(Scope& scope, bool in_for);
 
-        Sp<VariableDeclaration> ParseVariableStatement();
+        Sp<VariableDeclaration> ParseVariableStatement(Scope& scope);
 
         Sp<EmptyStatement> ParseEmptyStatement();
 
-        Sp<ExpressionStatement> ParseExpressionStatement();
+        Sp<ExpressionStatement> ParseExpressionStatement(Scope& scope);
 
-        Sp<Expression> ParseExpression();
+        Sp<Expression> ParseExpression(Scope& scope);
 
-        Sp<Statement> ParseIfClause();
+        Sp<Statement> ParseIfClause(Scope& scope);
 
-        Sp<IfStatement> ParseIfStatement();
+        Sp<IfStatement> ParseIfStatement(Scope& scope);
 
-        Sp<DoWhileStatement> ParseDoWhileStatement();
+        Sp<DoWhileStatement> ParseDoWhileStatement(Scope& scope);
 
-        Sp<WhileStatement> ParseWhileStatement();
+        Sp<WhileStatement> ParseWhileStatement(Scope& scope);
 
-        Sp<Statement> ParseForStatement();
+        Sp<Statement> ParseForStatement(Scope& scope);
 
         Sp<ContinueStatement> ParseContinueStatement();
 
         Sp<BreakStatement> ParseBreakStatement();
 
-        Sp<ReturnStatement> ParseReturnStatement();
+        Sp<ReturnStatement> ParseReturnStatement(Scope& scope);
 
-        Sp<WithStatement> ParseWithStatement();
+        Sp<WithStatement> ParseWithStatement(Scope& scope);
 
-        Sp<SwitchCase> ParseSwitchCase();
+        Sp<SwitchCase> ParseSwitchCase(Scope& scope);
 
-        Sp<SwitchStatement> ParseSwitchStatement();
+        Sp<SwitchStatement> ParseSwitchStatement(Scope& scope);
 
-        Sp<Statement> ParseLabelledStatement();
+        Sp<Statement> ParseLabelledStatement(Scope& scope);
 
-        Sp<ThrowStatement> ParseThrowStatement();
+        Sp<ThrowStatement> ParseThrowStatement(Scope& scope);
 
-        Sp<CatchClause> ParseCatchClause();
+        Sp<CatchClause> ParseCatchClause(Scope& scope);
 
-        Sp<BlockStatement> ParseFinallyClause();
+        Sp<BlockStatement> ParseFinallyClause(Scope& scope);
 
-        Sp<TryStatement> ParseTryStatement();
+        Sp<TryStatement> ParseTryStatement(Scope& scope);
 
         Sp<DebuggerStatement> ParseDebuggerStatement();
 
-        Sp<Statement> ParseStatement();
+        Sp<Statement> ParseStatement(Scope& scope);
 
-        Sp<BlockStatement> ParseFunctionSourceElements();
+        Sp<BlockStatement> ParseFunctionSourceElements(Scope& scope);
 
-        Sp<FunctionDeclaration> ParseFunctionDeclaration(bool identifier_is_optional);
+        Sp<FunctionDeclaration> ParseFunctionDeclaration(Scope& scope, bool identifier_is_optional);
 
-        Sp<FunctionExpression> ParseFunctionExpression();
+        Sp<FunctionExpression> ParseFunctionExpression(Scope& scope);
 
-        Sp<Statement> ParseDirective();
+        Sp<Statement> ParseDirective(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseDirectivePrologues();
+        std::vector<Sp<SyntaxNode>> ParseDirectivePrologues(Scope& scope);
 
-        Sp<FunctionExpression> ParseGetterMethod();
+        Sp<FunctionExpression> ParseGetterMethod(Scope& scope);
 
-        Sp<FunctionExpression> ParseSetterMethod();
+        Sp<FunctionExpression> ParseSetterMethod(Scope& scope);
 
-        Sp<FunctionExpression> ParseGeneratorMethod();
+        Sp<FunctionExpression> ParseGeneratorMethod(Scope& scope);
 
-        Sp<YieldExpression> ParseYieldExpression();
+        Sp<YieldExpression> ParseYieldExpression(Scope& scope);
 
         bool QualifiedPropertyName(const Token& token);
 
-        Sp<MethodDefinition> ParseClassElement(bool& has_ctor);
+        Sp<MethodDefinition> ParseClassElement(Scope& scope, bool& has_ctor);
 
-        std::vector<Sp<MethodDefinition>> ParseClassElementList();
+        std::vector<Sp<MethodDefinition>> ParseClassElementList(Scope& scope);
 
         bool IsPropertyKey(const Sp<SyntaxNode>& key, const UString& name);
 
-        Sp<ClassBody> ParseClassBody();
+        Sp<ClassBody> ParseClassBody(Scope& scope);
 
-        Sp<ClassDeclaration> ParseClassDeclaration(bool identifier_is_optional);
+        Sp<ClassDeclaration> ParseClassDeclaration(Scope& scope, bool identifier_is_optional);
 
-        Sp<ClassExpression> ParseClassExpression();
+        Sp<ClassExpression> ParseClassExpression(Scope& scope);
 
         Sp<Module> ParseModule();
 
@@ -264,19 +264,19 @@ namespace rocket_bundle::parser {
 
         Sp<Literal> ParseModuleSpecifier();
 
-        Sp<ImportSpecifier> ParseImportSpecifier();
+        Sp<ImportSpecifier> ParseImportSpecifier(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseNamedImports();
+        std::vector<Sp<SyntaxNode>> ParseNamedImports(Scope& scope);
 
         Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier();
 
         Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier();
 
-        Sp<ImportDeclaration> ParseImportDeclaration();
+        Sp<ImportDeclaration> ParseImportDeclaration(Scope& scope);
 
         Sp<ExportSpecifier> ParseExportSpecifier();
 
-        Sp<Declaration> ParseExportDeclaration();
+        Sp<Declaration> ParseExportDeclaration(Scope& scope);
 
         bool MatchImportCall();
 
@@ -289,7 +289,7 @@ namespace rocket_bundle::parser {
         ~Parser() = default;
 
     private:
-        std::vector<ImportDeclarationCreatedCallback> import_decl_handlers_;
+        std::vector<NewImportLocationAddedCallback> import_decl_handlers_;
 
     };
 

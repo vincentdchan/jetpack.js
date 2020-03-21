@@ -177,7 +177,7 @@ namespace rocket_bundle {
 
     Module::Module(): SyntaxNode() {
         type = SyntaxNodeType::Module;
-        scope = std::make_unique<Scope>();
+        scope = std::make_unique<ModuleScope>();
     }
 
     NewExpression::NewExpression(): Expression() {
@@ -210,6 +210,7 @@ namespace rocket_bundle {
 
     Script::Script(): SyntaxNode() {
         type = SyntaxNodeType::Script;
+        scope = std::make_unique<Scope>(ScopeType::Global);
     }
 
     SequenceExpression::SequenceExpression(): Expression() {
@@ -275,6 +276,7 @@ namespace rocket_bundle {
 
     VariableDeclarator::VariableDeclarator(): SyntaxNode() {
         type = SyntaxNodeType::VariableDeclarator;
+        scope = std::make_unique<Scope>(ScopeType::VariableDeclarator);
     }
 
     WhileStatement::WhileStatement(): Statement() {

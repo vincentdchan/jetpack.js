@@ -32,35 +32,35 @@ namespace rocket_bundle::parser {
         JSXParser& operator=(const JSXParser& parser) = delete;
         JSXParser& operator=(JSXParser&&) = delete;
 
-        Sp<JSXElement> ParseJSXRoot();
+        Sp<JSXElement> ParseJSXRoot(Scope& scope);
 
-        Sp<JSXElement> ParseJSXElement();
+        Sp<JSXElement> ParseJSXElement(Scope& scope);
 
-        Sp<JSXOpeningElement> ParseJSXOpeningElement();
+        Sp<JSXOpeningElement> ParseJSXOpeningElement(Scope& scope);
 
-        Sp<SyntaxNode> ParseJSXElementName();
+        Sp<SyntaxNode> ParseJSXElementName(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseJSXAttributes();
+        std::vector<Sp<SyntaxNode>> ParseJSXAttributes(Scope& scope);
 
         Sp<JSXIdentifier> ParseJSXIdentifier();
 
-        Sp<MetaJSXElement> ParseComplexJSXElement(Sp<MetaJSXElement> el);
+        Sp<MetaJSXElement> ParseComplexJSXElement(Scope& scope, Sp<MetaJSXElement> el);
 
-        Sp<SyntaxNode> ParseJSXBoundaryElement();
+        Sp<SyntaxNode> ParseJSXBoundaryElement(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseJSXChildren();
+        std::vector<Sp<SyntaxNode>> ParseJSXChildren(Scope& scope);
 
-        Sp<JSXExpressionContainer> ParseJSXExpressionContainer();
+        Sp<JSXExpressionContainer> ParseJSXExpressionContainer(Scope& scope);
 
-        Sp<JSXSpreadAttribute> ParseJSXSpreadAttribute();
+        Sp<JSXSpreadAttribute> ParseJSXSpreadAttribute(Scope& scope);
 
-        Sp<JSXAttribute> ParseJSXNameValueAttribute();
+        Sp<JSXAttribute> ParseJSXNameValueAttribute(Scope& scope);
 
         Sp<SyntaxNode> ParseJSXAttributeName();
 
-        Sp<SyntaxNode> ParseJSXAttributeValue();
+        Sp<SyntaxNode> ParseJSXAttributeValue(Scope& scope);
 
-        Sp<JSXExpressionContainer> ParseJSXExpressionAttribute();
+        Sp<JSXExpressionContainer> ParseJSXExpressionAttribute(Scope& scope);
 
         Sp<Literal> ParseJSXStringLiteralAttribute();
 

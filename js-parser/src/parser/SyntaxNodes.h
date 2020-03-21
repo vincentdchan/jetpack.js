@@ -112,6 +112,8 @@ namespace rocket_bundle {
         Sp<SyntaxNode> param;
         Sp<BlockStatement> body;
 
+        std::unique_ptr<Scope> scope;
+
     };
 
     class ClassBody: public SyntaxNode {
@@ -413,7 +415,7 @@ namespace rocket_bundle {
         UString source_type;
         std::vector<Sp<Comment>> comments;
 
-        std::unique_ptr<Scope> scope;
+        std::unique_ptr<ModuleScope> scope;
 
     };
 
@@ -487,6 +489,8 @@ namespace rocket_bundle {
         std::vector<Sp<SyntaxNode>> body;
         UString source_type;
         std::vector<Sp<Comment>> comments;
+
+        std::unique_ptr<Scope> scope;
 
     };
 
@@ -631,6 +635,8 @@ namespace rocket_bundle {
 
         Sp<SyntaxNode> id;
         std::optional<Sp<Expression>> init;
+
+        std::unique_ptr<Scope> scope;
 
     };
 

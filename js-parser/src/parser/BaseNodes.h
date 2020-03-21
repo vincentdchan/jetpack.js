@@ -15,19 +15,6 @@ typedef UString JS_RegExp;
 
 namespace rocket_bundle {
 
-    enum class VarKind {
-        Invalid = 0,
-        Var,
-        Let,
-        Const,
-
-        Init,
-        Ctor,
-        Method,
-        Get,
-        Set,
-    };
-
     enum class TSAccessibility {
         Private,
         Public,

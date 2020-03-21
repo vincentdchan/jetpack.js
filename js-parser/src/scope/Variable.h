@@ -14,13 +14,38 @@ namespace rocket_bundle {
     class Identifier;
     class SyntaxNode;
 
+    enum class VarKind {
+        Invalid = 0,
+        Var,
+        Let,
+        Const,
+
+        Init,
+
+        /**
+         * "constructor" of a class
+         */
+        Ctor,
+
+        Method,
+        Get,
+        Set,
+    };
+
     class Variable {
     public:
-        bool is_mutated;
-        std::weak_ptr<Scope> scope;
-        std::weak_ptr<SyntaxNode> node;
+        VarKind kind = VarKind::Invalid;
+        bool is_exported = false;
+        bool is_imported = false;
+        bool is_mutated = false;
+        Scope* scope = nullptr;
 
-        [[nodiscard]] const UString& Name() const;
+        UString name;
+
+        /**
+         * for imported and exported variable
+         */
+        UString external_name;
 
     };
 

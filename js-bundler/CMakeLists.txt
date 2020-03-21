@@ -16,4 +16,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
         "../third_party/robin-hood-hashing/src/include")
-target_link_libraries(${PROJECT_NAME} js-parser fmt)
+target_link_libraries(${PROJECT_NAME} bundle-utils js-parser fmt)

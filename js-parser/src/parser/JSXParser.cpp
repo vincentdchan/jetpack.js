@@ -47,22 +47,22 @@ namespace rocket_bundle::parser {
         return qualified_name;
     }
 
-    Sp<JSXElement> JSXParser::ParseJSXRoot() {
+    Sp<JSXElement> JSXParser::ParseJSXRoot(Scope& scope) {
         StartJSX();
-        auto elem = ParseJSXElement();
+        auto elem = ParseJSXElement(scope);
         FinishJSX();
 
         return elem;
     }
 
-    Sp<JSXElement> JSXParser::ParseJSXElement() {
+    Sp<JSXElement> JSXParser::ParseJSXElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<JSXElement>();
-        node->opening_element = ParseJSXOpeningElement();
+        node->opening_element = ParseJSXOpeningElement(scope);
 
         if (!node->opening_element->self_closing) {
-            auto el = ParseComplexJSXElement(std::shared_ptr<MetaJSXElement>(new MetaJSXElement {
+            auto el = ParseComplexJSXElement(scope, std::shared_ptr<MetaJSXElement>(new MetaJSXElement {
                 start_marker,
                 node->opening_element,
                 nullopt,
@@ -76,13 +76,13 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXOpeningElement> JSXParser::ParseJSXOpeningElement() {
+    Sp<JSXOpeningElement> JSXParser::ParseJSXOpeningElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LessThan);
         auto node = Alloc<JSXOpeningElement>();
-        node->name = ParseJSXElementName();
-        node->attributes = ParseJSXAttributes();
+        node->name = ParseJSXElementName(scope);
+        node->attributes = ParseJSXAttributes(scope);
         node->self_closing = JSXMatch(JsTokenType::Div);
         if (node->self_closing) {
             JSXExpect(JsTokenType::Div);
@@ -92,7 +92,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXElementName() {
+    Sp<SyntaxNode> JSXParser::ParseJSXElementName(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto element_name = ParseJSXIdentifier();
 
@@ -117,14 +117,14 @@ namespace rocket_bundle::parser {
         return element_name;
     }
 
-    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXAttributes() {
+    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXAttributes(Scope& scope) {
         std::vector<Sp<SyntaxNode>> result;
 
         while (!JSXMatch(JsTokenType::Div) && !JSXMatch(JsTokenType::GreaterThan)) {
             if (JSXMatch(JsTokenType::LeftBracket)) {
-                result.push_back(ParseJSXSpreadAttribute());
+                result.push_back(ParseJSXSpreadAttribute(scope));
             } else {
-                result.push_back(ParseJSXNameValueAttribute());
+                result.push_back(ParseJSXNameValueAttribute(scope));
             }
         }
 
@@ -132,15 +132,15 @@ namespace rocket_bundle::parser {
     }
 
     Sp<JSXParser::MetaJSXElement>
-        JSXParser::ParseComplexJSXElement(Sp<JSXParser::MetaJSXElement> el) {
+        JSXParser::ParseComplexJSXElement(Scope& scope, Sp<JSXParser::MetaJSXElement> el) {
         std::stack<Sp<MetaJSXElement>> el_stack;
 
         while (!ctx->scanner_->IsEnd()) {
-            auto children = ParseJSXChildren();
+            auto children = ParseJSXChildren(scope);
             el->children_.insert(el->children_.end(), children.begin(), children.end());
 
             auto start_marker = CreateStartMarker();
-            auto element = ParseJSXBoundaryElement();
+            auto element = ParseJSXBoundaryElement(scope);
 
             if (element->type == SyntaxNodeType::JSXOpeningElement) {
                 auto opening = dynamic_pointer_cast<JSXOpeningElement>(element);
@@ -194,7 +194,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, id);
     }
 
-    Sp<JSXSpreadAttribute> JSXParser::ParseJSXSpreadAttribute() {
+    Sp<JSXSpreadAttribute> JSXParser::ParseJSXSpreadAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
         JSXExpect(JsTokenType::LeftBracket);
         JSXExpect(JsTokenType::Spread);
@@ -203,20 +203,20 @@ namespace rocket_bundle::parser {
         FinishJSX();
 
         Parser parser(ctx);
-        node->argument = parser.ParseAssignmentExpression();
+        node->argument = parser.ParseAssignmentExpression(scope);
         ReEnterJSX();
 
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXAttribute> JSXParser::ParseJSXNameValueAttribute() {
+    Sp<JSXAttribute> JSXParser::ParseJSXNameValueAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<JSXAttribute>();
         node->name = ParseJSXAttributeName();
 
         if (JSXMatch(JsTokenType::Assign)) {
             JSXExpect(JsTokenType::Assign);
-            node->value = { ParseJSXAttributeValue() };
+            node->value = { ParseJSXAttributeValue(scope) };
         }
 
         return Finalize(start_marker, node);
@@ -250,7 +250,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionAttribute() {
+    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LeftBracket);
@@ -263,23 +263,23 @@ namespace rocket_bundle::parser {
         auto node = Alloc<JSXExpressionContainer>();
 
         Parser parser(ctx);
-        node->expression = parser.ParseAssignmentExpression();
+        node->expression = parser.ParseAssignmentExpression(scope);
 
         ReEnterJSX();
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXAttributeValue() {
+    Sp<SyntaxNode> JSXParser::ParseJSXAttributeValue(Scope& scope) {
         if (JSXMatch(JsTokenType::LeftBracket)) {
-            return ParseJSXExpressionAttribute();
+            return ParseJSXExpressionAttribute(scope);
         } else if (JSXMatch(JsTokenType::LessThan)) {
-            return ParseJSXElement();
+            return ParseJSXElement(scope);
         } else {
             return ParseJSXStringLiteralAttribute();
         }
     }
 
-    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXChildren() {
+    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXChildren(Scope& scope) {
         std::vector<Sp<SyntaxNode>> result;
 
         while (!ctx->scanner_->IsEnd()) {
@@ -292,7 +292,7 @@ namespace rocket_bundle::parser {
                 result.push_back(Finalize(start_marker, node));
             }
             if (ctx->scanner_->CharAt(ctx->scanner_->Index()) == u'{') {
-                auto container = ParseJSXExpressionContainer();
+                auto container = ParseJSXExpressionContainer(scope);
                 result.push_back(container);
             } else {
                 break;
@@ -302,7 +302,7 @@ namespace rocket_bundle::parser {
         return result;
     }
 
-    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionContainer() {
+    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionContainer(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LeftBracket);
@@ -315,7 +315,7 @@ namespace rocket_bundle::parser {
         auto node = Alloc<JSXExpressionContainer>();
 
         Parser parser(ctx);
-        node->expression = parser.ParseAssignmentExpression();
+        node->expression = parser.ParseAssignmentExpression(scope);
 
         ReEnterJSX();
 
@@ -637,21 +637,21 @@ namespace rocket_bundle::parser {
         return result;
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXBoundaryElement() {
+    Sp<SyntaxNode> JSXParser::ParseJSXBoundaryElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LessThan);
         if (JSXMatch(JsTokenType::Div)) {
             JSXExpect(JsTokenType::Div);
             auto node = Alloc<JSXClosingElement>();
-            node->name = ParseJSXElementName();
+            node->name = ParseJSXElementName(scope);
             JSXExpect(JsTokenType::GreaterThan);
             return Finalize(start_marker, node);
         }
 
         auto node = Alloc<JSXOpeningElement>();
-        node->name = ParseJSXElementName();
-        node->attributes = ParseJSXAttributes();
+        node->name = ParseJSXElementName(scope);
+        node->attributes = ParseJSXAttributes(scope);
         node->self_closing = JSXMatch(JsTokenType::Div);
         if (node->self_closing) {
             JSXExpect(JsTokenType::Div);
