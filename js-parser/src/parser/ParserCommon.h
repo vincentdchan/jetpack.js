@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include "../tokenizer/Token.h"
 #include "ParseErrorHandler.h"
-#include "../utils.h"
+#include "Utils.h"
 #include "../macros.h"
 #include "../tokenizer/Scanner.h"
 #include "SyntaxNodes.h"

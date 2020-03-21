@@ -24,7 +24,7 @@ namespace rocket_bundle {
     }
 
     void ModuleResolver::ParseFileFromPath(const std::string &path) {
-        if (!IsFileExist(path)) {
+        if (!utils::IsFileExist(path)) {
             throw Error("file not exist: " + path);
         }
         auto mf = std::make_shared<ModuleFile>();
@@ -52,7 +52,7 @@ namespace rocket_bundle {
         std::vector<std::future<void>> futures;
 
         parser.OnImportDeclarationCreated([this, &futures] (const Sp<ImportDeclaration>& node) {
-            auto source_path = parser_utils::To_UTF8(node->source->raw);
+            auto source_path = utils::To_UTF8(node->source->raw);
 
             std::shared_ptr<ModuleFile> mf;
             {

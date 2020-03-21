@@ -5,7 +5,7 @@
 #include <optional>
 #include <unordered_set>
 #include <vector>
-#include "../utils.h"
+#include "Utils.h"
 #include "../tokenizer/Scanner.h"
 #include "SyntaxNodes.h"
 

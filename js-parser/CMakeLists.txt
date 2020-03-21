@@ -14,6 +14,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 include_directories(../third_party/fmt/include)
 include_directories(../third_party/robin-hood-hashing/src/include)
+include_directories(../bundle-utils/src)
 
 file(GLOB source_files
         "src/*.h"

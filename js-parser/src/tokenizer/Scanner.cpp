@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "Scanner.h"
-#include "../utils.h"
+#include "Utils.h"
 #include "../parser/ErrorMessage.h"
 
 namespace rocket_bundle {
@@ -62,7 +62,7 @@ namespace rocket_bundle {
             char32_t ch = CodePointAt(index_);
             index_++;
 
-            if (parser_utils::IsLineTerminator(ch)) {
+            if (utils::IsLineTerminator(ch)) {
                 loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
                 auto comment = new Comment {
                         false,
@@ -107,7 +107,7 @@ namespace rocket_bundle {
 
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
-            if (parser_utils::IsLineTerminator(ch)) {
+            if (utils::IsLineTerminator(ch)) {
                 if (ch == 0x0D && CodePointAt(index_ + 1) == 0x0A) {
                     ++index_;
                 }
@@ -159,9 +159,9 @@ namespace rocket_bundle {
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
 
-            if (parser_utils::IsWhiteSpace(ch)) {
+            if (utils::IsWhiteSpace(ch)) {
                 ++index_;
-            } else if (parser_utils::IsLineTerminator(ch)) {
+            } else if (utils::IsLineTerminator(ch)) {
                 ++index_;
 
                 if (ch == 0x0D && CodePointAt(index_) == 0x0A) {
@@ -338,7 +338,7 @@ namespace rocket_bundle {
         std::uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (std::uint32_t i = 0; i < len; ++i) {
-            if (!IsEnd() && parser_utils::IsHexDigit(CodePointAt(index_))) {
+            if (!IsEnd() && utils::IsHexDigit(CodePointAt(index_))) {
                 code = code * 16 + HexValue(CodePointAt(index_++));
             } else {
                 return false;
@@ -358,7 +358,7 @@ namespace rocket_bundle {
 
         while (!IsEnd()) {
             ch = (*source_)[index_++];
-            if (!parser_utils::IsHexDigit(ch)) {
+            if (!utils::IsHexDigit(ch)) {
                 break;
             }
             code = code * 16 + (ch - '0');
@@ -386,7 +386,7 @@ namespace rocket_bundle {
                 index_ = start;
                 return GetComplexIdentifier();
             }
-            if (parser_utils::IsIdentifierPart(ch)) {
+            if (utils::IsIdentifierPart(ch)) {
                 ++index_;
             } else {
                 break;
@@ -415,7 +415,7 @@ namespace rocket_bundle {
                 ++index_;
                 ch = ScanUnicodeCodePointEscape();
             } else {
-                if (!ScanHexEscape('u', ch) || ch == '\\' || !parser_utils::IsIdentifierStart(ch)) {
+                if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierStart(ch)) {
                     ThrowUnexpectedToken();
                 }
             }
@@ -424,11 +424,11 @@ namespace rocket_bundle {
 
         while (!IsEnd()) {
             cp = CodePointAt(index_);
-            if (!parser_utils::IsIdentifierPart(cp)) {
+            if (!utils::IsIdentifierPart(cp)) {
                 break;
             }
 
-            UString ch_ = parser_utils::FromCodePoint(cp);
+            UString ch_ = utils::FromCodePoint(cp);
 
             result.insert(result.end(), ch_.begin(), ch_.end());
 
@@ -446,7 +446,7 @@ namespace rocket_bundle {
                     ++index_;
                     ch = ScanUnicodeCodePointEscape();
                 } else {
-                    if (!ScanHexEscape('u', ch) || ch == '\\' || !parser_utils::IsIdentifierPart(ch)) {
+                    if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierPart(ch)) {
                         ThrowUnexpectedToken();
                     }
                 }
@@ -461,13 +461,13 @@ namespace rocket_bundle {
         bool octal = (ch != '0');
         result = ch - '0';
 
-        if (!IsEnd() && parser_utils::IsOctalDigit((*source_)[index_])) {
+        if (!IsEnd() && utils::IsOctalDigit((*source_)[index_])) {
             octal = true;
             result = result * 8 + ((*source_)[index_] - '0');
 
             // 3 digits are only allowed when string starts
             // with 0, 1, 2, 3
-            if (ch - '0' && !IsEnd() && parser_utils::IsOctalDigit((*source_)[index_])) {
+            if (ch - '0' && !IsEnd() && utils::IsOctalDigit((*source_)[index_])) {
                 result = result * 8 + ((*source_)[index_] - '0');
             }
         }
@@ -787,7 +787,7 @@ namespace rocket_bundle {
         Token tok;
 
         while (!IsEnd()) {
-            if (!parser_utils::IsHexDigit(CharAt(index_))) {
+            if (!utils::IsHexDigit(CharAt(index_))) {
                 break;
             }
             num += CharAt(index_++);
@@ -797,7 +797,7 @@ namespace rocket_bundle {
             ThrowUnexpectedToken();
         }
 
-        if (parser_utils::IsIdentifierStart(CharAt(index_))) {
+        if (utils::IsIdentifierStart(CharAt(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -830,7 +830,7 @@ namespace rocket_bundle {
         if (!IsEnd()) {
             ch = (*source_)[index_++];
             /* istanbul ignore else */
-            if (parser_utils::IsIdentifierStart(ch) || parser_utils::IsDecimalDigit(ch)) {
+            if (utils::IsIdentifierStart(ch) || utils::IsDecimalDigit(ch)) {
                 ThrowUnexpectedToken();
             }
         }
@@ -849,7 +849,7 @@ namespace rocket_bundle {
         UString num;
         bool octal = false;
 
-        if (parser_utils::IsOctalDigit(prefix)) {
+        if (utils::IsOctalDigit(prefix)) {
             octal = true;
             num = '0' + (*source_)[index_++];
         } else {
@@ -857,7 +857,7 @@ namespace rocket_bundle {
         }
 
         while (!IsEnd()) {
-            if (!parser_utils::IsOctalDigit((*source_)[index_])) {
+            if (!utils::IsOctalDigit((*source_)[index_])) {
                 break;
             }
             num.push_back((*source_)[index_++]);
@@ -868,7 +868,7 @@ namespace rocket_bundle {
             ThrowUnexpectedToken();
         }
 
-        if (parser_utils::IsIdentifierStart((*source_)[index_]) || parser_utils::IsDecimalDigit((*source_)[index_])) {
+        if (utils::IsIdentifierStart((*source_)[index_]) || utils::IsDecimalDigit((*source_)[index_])) {
             ThrowUnexpectedToken();
         }
 
@@ -890,7 +890,7 @@ namespace rocket_bundle {
             if (ch == '8' || ch == '9') {
                 return false;
             }
-            if (!parser_utils::IsOctalDigit(ch)) {
+            if (!utils::IsOctalDigit(ch)) {
                 return true;
             }
         }
@@ -901,7 +901,7 @@ namespace rocket_bundle {
     Token Scanner::ScanNumericLiteral() {
         auto start = index_;
         char16_t ch = (*source_)[start];
-        if (!(parser_utils::IsDecimalDigit(ch) || (ch == '.'))) {
+        if (!(utils::IsDecimalDigit(ch) || (ch == '.'))) {
             auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
             throw err;
         }
@@ -928,14 +928,14 @@ namespace rocket_bundle {
                     return ScanOctalLiteral(ch, start);
                 }
 
-                if (ch && parser_utils::IsOctalDigit(ch)) {
+                if (ch && utils::IsOctalDigit(ch)) {
                     if (IsImplicitOctalLiteral()) {
                         return ScanOctalLiteral(ch, start);
                     }
                 }
             }
 
-            while (parser_utils::IsDecimalDigit((*source_)[index_])) {
+            while (utils::IsDecimalDigit((*source_)[index_])) {
                 num.push_back((*source_)[index_++]);
             }
             ch = (*source_)[index_];
@@ -943,7 +943,7 @@ namespace rocket_bundle {
 
         if (ch == '.') {
             num.push_back((*source_)[index_++]);
-            while (parser_utils::IsDecimalDigit((*source_)[index_])) {
+            while (utils::IsDecimalDigit((*source_)[index_])) {
                 num.push_back((*source_)[index_++]);
             }
             ch = (*source_)[index_];
@@ -956,8 +956,8 @@ namespace rocket_bundle {
             if (ch == '+' || ch == '-') {
                 num.push_back(CharAt(index_++));
             }
-            if (parser_utils::IsDecimalDigit(CharAt(index_))) {
-                while (parser_utils::IsDecimalDigit(CharAt(index_))) {
+            if (utils::IsDecimalDigit(CharAt(index_))) {
+                while (utils::IsDecimalDigit(CharAt(index_))) {
                     num.push_back(CharAt(index_++));
                 }
             } else {
@@ -965,7 +965,7 @@ namespace rocket_bundle {
             }
         }
 
-        if (parser_utils::IsIdentifierStart(CharAt(index_))) {
+        if (utils::IsIdentifierStart(CharAt(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -1000,7 +1000,7 @@ namespace rocket_bundle {
                 break;
             } else if (ch == '\\') {
                 ch = CharAt(index_++);
-                if (!ch || !parser_utils::IsLineTerminator(ch)) {
+                if (!ch || !utils::IsLineTerminator(ch)) {
                     char32_t unescaped = 0;
                     switch (ch) {
                         case 'u':
@@ -1008,13 +1008,13 @@ namespace rocket_bundle {
                                 ++index_;
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                parser_utils::AddU32ToUtf16(str, tmp);
+                                utils::AddU32ToUtf16(str, tmp);
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                parser_utils::AddU32ToUtf16(str, unescaped);
+                                utils::AddU32ToUtf16(str, unescaped);
                             }
                             break;
 
@@ -1022,7 +1022,7 @@ namespace rocket_bundle {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            parser_utils::AddU32ToUtf16(str, unescaped);
+                            utils::AddU32ToUtf16(str, unescaped);
                             break;
 
                         case 'n':
@@ -1050,11 +1050,11 @@ namespace rocket_bundle {
                             break;
 
                         default:
-                            if (ch && parser_utils::IsOctalDigit(ch)) {
+                            if (ch && utils::IsOctalDigit(ch)) {
                                 std::uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                parser_utils::AddU32ToUtf16(str, octToDec);
+                                utils::AddU32ToUtf16(str, octToDec);
                             } else {
                                 str += ch;
                             }
@@ -1067,7 +1067,7 @@ namespace rocket_bundle {
                     }
                     line_start_ = index_;
                 }
-            } else if (parser_utils::IsLineTerminator(ch)) {
+            } else if (utils::IsLineTerminator(ch)) {
                 break;
             } else {
                 str += ch;
@@ -1118,7 +1118,7 @@ namespace rocket_bundle {
                 cooked += ch;
             } else if (ch == '\\') {
                 ch = (*source_)[index_++];
-                if (!parser_utils::IsLineTerminator(ch)) {
+                if (!utils::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
                             cooked += '\n';
@@ -1164,12 +1164,12 @@ namespace rocket_bundle {
 
                         default:
                             if (ch == '0') {
-                                if (parser_utils::IsDecimalDigit(CharAt(index_))) {
+                                if (utils::IsDecimalDigit(CharAt(index_))) {
                                     // Illegal: \01 \02 and so on
                                     ThrowUnexpectedToken();
                                 }
                                 cooked += '\0';
-                            } else if (parser_utils::IsOctalDigit(ch)) {
+                            } else if (utils::IsOctalDigit(ch)) {
                                 // Illegal: \1 \2
                                 ThrowUnexpectedToken();
                             } else {
@@ -1184,7 +1184,7 @@ namespace rocket_bundle {
                     }
                     line_start_ = index_;
                 }
-            } else if (parser_utils::IsLineTerminator(ch)) {
+            } else if (utils::IsLineTerminator(ch)) {
                 ++line_number_;
                 if (ch == '\r' && CharAt(index_) == '\n') {
                     ++index_;
@@ -1233,11 +1233,11 @@ namespace rocket_bundle {
             str.push_back(ch);
             if (ch == u'\\') {
                 ch = (*source_)[index_++];
-                if (parser_utils::IsLineTerminator(ch)) {
+                if (utils::IsLineTerminator(ch)) {
                     ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
                 }
                 str.push_back(ch);
-            } else if (parser_utils::IsLineTerminator(ch)) {
+            } else if (utils::IsLineTerminator(ch)) {
                 ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
             } else if (class_marker) {
                 if (ch == u']') {
@@ -1265,7 +1265,7 @@ namespace rocket_bundle {
         UString flags;
         while (!IsEnd()) {
             char16_t ch = (*source_)[index_];
-            if (!parser_utils::IsIdentifierPart(ch)) {
+            if (!utils::IsIdentifierPart(ch)) {
                 break;
             }
 
@@ -1327,7 +1327,7 @@ namespace rocket_bundle {
 
         char16_t cp = (*source_)[index_];
 
-        if (parser_utils::IsIdentifierStart(cp)) {
+        if (utils::IsIdentifierStart(cp)) {
             return ScanIdentifier();
         }
         // Very common: ( and ) and ;
@@ -1343,13 +1343,13 @@ namespace rocket_bundle {
         // Dot (.) U+002E can also start a floating-point number, hence the need
         // to check the next character.
         if (cp == 0x2E) {
-            if (parser_utils::IsDecimalDigit((*source_)[index_ + 1])) {
+            if (utils::IsDecimalDigit((*source_)[index_ + 1])) {
                 return ScanNumericLiteral();
             }
             return ScanPunctuator();
         }
 
-        if (parser_utils::IsDecimalDigit(cp)) {
+        if (utils::IsDecimalDigit(cp)) {
             return ScanNumericLiteral();
         }
 
@@ -1361,7 +1361,7 @@ namespace rocket_bundle {
 
         // Possible identifier start in a surrogate pair.
         if (cp >= 0xD800 && cp < 0xDFFF) {
-            if (parser_utils::IsIdentifierStart(CodePointAt(index_))) {
+            if (utils::IsIdentifierStart(CodePointAt(index_))) {
                 return ScanIdentifier();
             }
         }

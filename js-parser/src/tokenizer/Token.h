@@ -5,7 +5,7 @@
 
 #include <string>
 #include <utility>
-#include "../utils.h"
+#include <Utils.h>
 
 #define DEF_TOKEN(D) \
     D(BooleanLiteral) \

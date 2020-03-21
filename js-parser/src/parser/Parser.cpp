@@ -1491,7 +1491,7 @@ namespace rocket_bundle::parser {
             UString key = UString(u"$") + id->name;
 
             if (ctx->label_set_->find(key) != ctx->label_set_->end()) {
-                ThrowError(ParseMessages::Redeclaration, string("Label: ") + parser_utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::Redeclaration, string("Label: ") + utils::To_UTF8(id->name));
             }
             ctx->label_set_->insert(key);
 
@@ -1537,7 +1537,7 @@ namespace rocket_bundle::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, parser_utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
             }
             label = id;
         }
@@ -1565,7 +1565,7 @@ namespace rocket_bundle::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, parser_utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
             }
         }
 
@@ -1932,7 +1932,7 @@ namespace rocket_bundle::parser {
         for (auto& token : params) {
             UString key = UString(u"$") + token.value_;
             if (param_set.find(key) != param_set.end()) {
-                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + parser_utils::To_UTF8(token.value_));
+                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + utils::To_UTF8(token.value_));
             }
             param_set.insert(key);
         }
@@ -2207,7 +2207,7 @@ namespace rocket_bundle::parser {
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
-                    ThrowError(ParseMessages::UnexpectedToken, parser_utils::To_UTF8(ctx->lookahead_.value_));
+                    ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(ctx->lookahead_.value_));
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
@@ -2232,7 +2232,7 @@ namespace rocket_bundle::parser {
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, parser_utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             }
             NextToken();
             auto node = Alloc<ExportAllDeclaration>();
@@ -2286,7 +2286,7 @@ namespace rocket_bundle::parser {
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, parser_utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             } else {
                 ConsumeSemicolon();
             }
@@ -2796,7 +2796,7 @@ namespace rocket_bundle::parser {
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, parser_utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             }
             NextToken();
             src = ParseModuleSpecifier();

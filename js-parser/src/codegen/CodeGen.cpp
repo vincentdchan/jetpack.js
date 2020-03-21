@@ -824,7 +824,7 @@ namespace rocket_bundle {
         });
 
 //    for (auto& i : comments) {
-//        std::cout << "comment " << i->range_.first << " " << utils::To_UTF8(i->value_) << std::endl;
+//        std::cout << "comment " << i->range_.first << " " << bundle-utils::To_UTF8(i->value_) << std::endl;
 //    }
 
         for (auto& i : comments) {

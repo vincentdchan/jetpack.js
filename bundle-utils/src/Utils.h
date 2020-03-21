@@ -1,21 +1,26 @@
 //
-// Created by Duzhong Chen on 2019/9/3.
+// Created by Duzhong Chen on 2020/3/21.
 //
-#pragma once
 
+#pragma once
 #include <locale>
 #include <codecvt>
 #include <string>
 #include <chrono>
 
+#ifndef _WIN32
+#include <sys/stat.h>
+#endif
+
 typedef std::u16string UString;
 
-namespace parser_utils {
+namespace rocket_bundle::utils {
+    using std::int64_t;
 
     inline int64_t GetCurrentMs() {
         using namespace std::chrono;
         milliseconds ms = duration_cast< milliseconds >(
-            system_clock::now().time_since_epoch()
+                system_clock::now().time_since_epoch()
         );
         return ms.count();
     }
@@ -99,12 +104,22 @@ namespace parser_utils {
 
     inline bool IsHexDigit(char32_t cp) {
         return (cp >= 0x30 && cp <= 0x39) ||    // 0..9
-        (cp >= 0x41 && cp <= 0x46) ||       // A..F
-        (cp >= 0x61 && cp <= 0x66);         // a..f
+               (cp >= 0x41 && cp <= 0x46) ||       // A..F
+               (cp >= 0x61 && cp <= 0x66);         // a..f
     }
 
     inline bool IsOctalDigit(char32_t cp) {
         return (cp >= 0x30 && cp <= 0x37);      // 0..7
     }
+
+    inline bool IsFileExist(const std::string& path) {
+#ifndef _WIN32
+        struct stat st;
+        return stat(path.c_str(), &st) >= 0;
+#else
+        return false;
+#endif
+    }
+
 
 }

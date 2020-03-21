@@ -4,13 +4,13 @@ project(js-bundler)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(${PROJECT_NAME}
-        "src/Utils.h"
         "src/ModuleResolver.h"
         "src/ModuleResolver.cpp"
         "src/Error.h"
         "src/Error.cpp"
         "src/main.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC
+        "../bundle-utils/src"
         "../js-parser/src"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"

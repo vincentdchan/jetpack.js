@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <jemalloc/jemalloc.h>
-#include "utils.h"
+#include "Utils.h"
 #include "artery.h"
 #include "parser/Parser.hpp"
 
@@ -17,7 +17,7 @@ namespace rocket_bundle {
         ifstream t(filename);
         string str((std::istreambuf_iterator<char>(t)),
                    std::istreambuf_iterator<char>());
-        return parser_utils::To_UTF16(str);
+        return utils::To_UTF16(str);
     }
 
     void Artery::Enter(const std::string &entry) {
@@ -41,7 +41,7 @@ namespace rocket_bundle {
             parser::Parser parser(ctx);
 
             parser.OnImportDeclarationCreated([this] (const Sp<ImportDeclaration>& node) {
-                auto source_path = parser_utils::To_UTF8(node->source->raw);
+                auto source_path = utils::To_UTF8(node->source->raw);
                 Enter(source_path);
             });
 

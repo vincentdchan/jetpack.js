@@ -71,7 +71,7 @@ namespace rocket_bundle::parser {
         }
         value = token.value_;
 
-        string final_message = fmt::format(msg, parser_utils::To_UTF8(value));
+        string final_message = fmt::format(msg, utils::To_UTF8(value));
         return UnexpectedToken(token, final_message);
     }
 

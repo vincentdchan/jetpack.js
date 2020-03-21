@@ -9,7 +9,7 @@
 #include <sstream>
 #include <cinttypes>
 #include <deque>
-#include "../utils.h"
+#include "Utils.h"
 #include "NodeTraverser.h"
 
 namespace rocket_bundle {
@@ -68,7 +68,7 @@ namespace rocket_bundle {
         }
 
         inline void Write(const UString& w_str, Sp<SyntaxNode> node = nullptr) {
-            Write(parser_utils::To_UTF8(w_str), node);
+            Write(utils::To_UTF8(w_str), node);
 #ifdef DEBUG
             output.flush();
 #endif
