@@ -21,6 +21,8 @@ file(GLOB source_files
         "src/*.cpp"
         "src/parser/*.h"
         "src/parser/*.cpp"
+        "src/scope/*.h"
+        "src/scope/*.cpp"
         "src/dumper/*.h"
         "src/dumper/*.cpp"
         "src/tokenizer/*.h"

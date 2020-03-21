@@ -4,1175 +4,1201 @@
 #pragma once
 
 #include "BaseNodes.h"
+#include <memory>
 #include <optional>
 #include <vector>
 #include <variant>
+#include "../scope/Scope.h"
 
+namespace rocket_bundle {
 
-class ArrayExpression: public Expression {
-public:
-    ArrayExpression();
+    class ArrayExpression: public Expression {
+    public:
+        ArrayExpression();
 
-    std::vector<std::optional<Sp<SyntaxNode>>> elements;
+        std::vector<std::optional<Sp<SyntaxNode>>> elements;
 
-};
+    };
 
-class ArrayPattern: public Pattern {
-public:
-    ArrayPattern();
+    class ArrayPattern: public Pattern {
+    public:
+        ArrayPattern();
 
-    std::vector<std::optional<Sp<SyntaxNode>>> elements;
+        std::vector<std::optional<Sp<SyntaxNode>>> elements;
 
-};
+    };
 
-class ArrowFunctionExpression: public Expression {
-public:
-    ArrowFunctionExpression();
+    class ArrowFunctionExpression: public Expression {
+    public:
+        ArrowFunctionExpression();
 
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<SyntaxNode> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
+        std::optional<Sp<Identifier>> id;
+        std::vector<Sp<SyntaxNode>> params;
+        Sp<SyntaxNode> body;
+        bool generator = false;
+        bool expression = false;
+        bool async = false;
 
-};
+        std::unique_ptr<Scope> scope;
 
-class AssignmentExpression: public Expression {
-public:
-    AssignmentExpression();
+    };
 
-    UString operator_;
-    Sp<Pattern> left;
-    Sp<Expression> right;
+    class AssignmentExpression: public Expression {
+    public:
+        AssignmentExpression();
 
-};
+        UString operator_;
+        Sp<Pattern> left;
+        Sp<Expression> right;
 
-class AssignmentPattern: public Pattern {
-public:
-    AssignmentPattern();
+    };
 
-    Sp<SyntaxNode> left;
-    Sp<Expression> right;
+    class AssignmentPattern: public Pattern {
+    public:
+        AssignmentPattern();
 
-};
+        Sp<SyntaxNode> left;
+        Sp<Expression> right;
 
-class AwaitExpression: public Expression {
-public:
-    AwaitExpression();
+    };
 
-    Sp<Expression> argument;
+    class AwaitExpression: public Expression {
+    public:
+        AwaitExpression();
 
-};
+        Sp<Expression> argument;
 
-class BinaryExpression: public Expression {
-public:
-    BinaryExpression();
+    };
 
-    UString operator_;
-    Sp<Expression> left;
-    Sp<Expression> right;
+    class BinaryExpression: public Expression {
+    public:
+        BinaryExpression();
 
-};
+        UString operator_;
+        Sp<Expression> left;
+        Sp<Expression> right;
 
-class BlockStatement: public Statement {
-public:
-    BlockStatement();
+    };
 
-    std::vector<Sp<SyntaxNode>> body;
+    class BlockStatement: public Statement {
+    public:
+        BlockStatement();
 
-};
+        std::vector<Sp<SyntaxNode>> body;
 
-class BreakStatement: public Statement {
-public:
-    BreakStatement();
+    };
 
-    std::optional<Sp<Identifier>> label;
+    class BreakStatement: public Statement {
+    public:
+        BreakStatement();
 
-};
+        std::optional<Sp<Identifier>> label;
 
-class CallExpression: public Expression {
-public:
-    CallExpression();
+    };
 
-    Sp<Expression> callee;
-    std::vector<Sp<SyntaxNode>> arguments;
+    class CallExpression: public Expression {
+    public:
+        CallExpression();
 
-};
+        Sp<Expression> callee;
+        std::vector<Sp<SyntaxNode>> arguments;
 
-class CatchClause: public SyntaxNode {
-public:
-    CatchClause();
+    };
 
-    Sp<SyntaxNode> param;
-    Sp<BlockStatement> body;
+    class CatchClause: public SyntaxNode {
+    public:
+        CatchClause();
 
-};
+        Sp<SyntaxNode> param;
+        Sp<BlockStatement> body;
 
-class ClassBody: public SyntaxNode {
-public:
-    ClassBody();
+    };
 
-    std::vector<Sp<MethodDefinition>> body;
+    class ClassBody: public SyntaxNode {
+    public:
+        ClassBody();
 
-};
+        std::vector<Sp<MethodDefinition>> body;
 
-class ClassDeclaration: public Declaration {
-public:
-    ClassDeclaration();
+    };
 
-    std::optional<Sp<Identifier>> id;
-    std::optional<Sp<Identifier>> super_class;
-    Sp<ClassBody> body;
+    class ClassDeclaration: public Declaration {
+    public:
+        ClassDeclaration();
 
-};
+        std::optional<Sp<Identifier>> id;
+        std::optional<Sp<Identifier>> super_class;
+        Sp<ClassBody> body;
 
-class ClassExpression: public Expression {
-public:
-    ClassExpression();
+        std::unique_ptr<Scope> scope;
 
-    std::optional<Sp<Identifier>> id;
-    std::optional<Sp<Identifier>> super_class;
-    std::optional<Sp<ClassBody>> body;
+    };
 
-};
+    class ClassExpression: public Expression {
+    public:
+        ClassExpression();
 
-class ConditionalExpression: public Expression {
-public:
-    ConditionalExpression();
+        std::optional<Sp<Identifier>> id;
+        std::optional<Sp<Identifier>> super_class;
+        std::optional<Sp<ClassBody>> body;
 
-    Sp<Expression> test;
-    Sp<Expression> consequent;
-    Sp<Expression> alternate;
+        std::unique_ptr<Scope> scope;
 
-};
+    };
 
-class ContinueStatement: public Statement {
-public:
-    ContinueStatement();
+    class ConditionalExpression: public Expression {
+    public:
+        ConditionalExpression();
 
-    std::optional<Sp<Identifier>> label;
+        Sp<Expression> test;
+        Sp<Expression> consequent;
+        Sp<Expression> alternate;
 
-};
+    };
 
-class DebuggerStatement: public Statement {
-public:
-    DebuggerStatement();
+    class ContinueStatement: public Statement {
+    public:
+        ContinueStatement();
 
+        std::optional<Sp<Identifier>> label;
 
-};
+    };
 
-class Directive: public Statement {
-public:
-    Directive();
+    class DebuggerStatement: public Statement {
+    public:
+        DebuggerStatement();
 
-    Sp<Expression> expression;
-    UString directive;
 
-};
+    };
 
-class DoWhileStatement: public Statement {
-public:
-    DoWhileStatement();
+    class Directive: public Statement {
+    public:
+        Directive();
 
-    Sp<Statement> body;
-    Sp<Expression> test;
+        Sp<Expression> expression;
+        UString directive;
 
-};
+    };
 
-class EmptyStatement: public Statement {
-public:
-    EmptyStatement();
+    class DoWhileStatement: public Statement {
+    public:
+        DoWhileStatement();
 
+        Sp<Statement> body;
+        Sp<Expression> test;
 
-};
+    };
 
-class ExportAllDeclaration: public Declaration {
-public:
-    ExportAllDeclaration();
+    class EmptyStatement: public Statement {
+    public:
+        EmptyStatement();
 
-    Sp<Literal> source;
 
-};
+    };
 
-class ExportDefaultDeclaration: public Declaration {
-public:
-    ExportDefaultDeclaration();
+    class ExportAllDeclaration: public Declaration {
+    public:
+        ExportAllDeclaration();
 
-    Sp<SyntaxNode> declaration;
+        Sp<Literal> source;
 
-};
+    };
 
-class ExportNamedDeclaration: public Declaration {
-public:
-    ExportNamedDeclaration();
+    class ExportDefaultDeclaration: public Declaration {
+    public:
+        ExportDefaultDeclaration();
 
-    std::optional<Sp<SyntaxNode>> declaration;
-    std::vector<Sp<ExportSpecifier>> specifiers;
-    std::optional<Sp<Literal>> source;
+        Sp<SyntaxNode> declaration;
 
-};
+    };
 
-class ExportSpecifier: public SyntaxNode {
-public:
-    ExportSpecifier();
+    class ExportNamedDeclaration: public Declaration {
+    public:
+        ExportNamedDeclaration();
 
-    Sp<Identifier> exported;
-    Sp<Identifier> local;
+        std::optional<Sp<SyntaxNode>> declaration;
+        std::vector<Sp<ExportSpecifier>> specifiers;
+        std::optional<Sp<Literal>> source;
 
-};
+    };
 
-class ExpressionStatement: public Statement {
-public:
-    ExpressionStatement();
+    class ExportSpecifier: public SyntaxNode {
+    public:
+        ExportSpecifier();
 
-    Sp<Expression> expression;
+        Sp<Identifier> exported;
+        Sp<Identifier> local;
 
-};
+    };
 
-class ForInStatement: public Statement {
-public:
-    ForInStatement();
+    class ExpressionStatement: public Statement {
+    public:
+        ExpressionStatement();
 
-    Sp<SyntaxNode> left;
-    Sp<SyntaxNode> right;
-    Sp<Statement> body;
-    bool each = false;
+        Sp<Expression> expression;
 
-};
+    };
 
-class ForOfStatement: public Statement {
-public:
-    ForOfStatement();
+    class ForInStatement: public Statement {
+    public:
+        ForInStatement();
 
-    Sp<SyntaxNode> left;
-    Sp<SyntaxNode> right;
-    Sp<Statement> body;
+        Sp<SyntaxNode> left;
+        Sp<SyntaxNode> right;
+        Sp<Statement> body;
+        bool each = false;
 
-};
+        std::unique_ptr<Scope> scope;
 
-class ForStatement: public Statement {
-public:
-    ForStatement();
+    };
 
-    std::optional<Sp<SyntaxNode>> init;
-    std::optional<Sp<SyntaxNode>> test;
-    std::optional<Sp<SyntaxNode>> update;
-    Sp<Statement> body;
+    class ForOfStatement: public Statement {
+    public:
+        ForOfStatement();
 
-};
+        Sp<SyntaxNode> left;
+        Sp<SyntaxNode> right;
+        Sp<Statement> body;
 
-class FunctionDeclaration: public Declaration {
-public:
-    FunctionDeclaration();
+        std::unique_ptr<Scope> scope;
 
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<BlockStatement> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
+    };
 
-};
+    class ForStatement: public Statement {
+    public:
+        ForStatement();
 
-class FunctionExpression: public Expression {
-public:
-    FunctionExpression();
+        std::optional<Sp<SyntaxNode>> init;
+        std::optional<Sp<SyntaxNode>> test;
+        std::optional<Sp<SyntaxNode>> update;
+        Sp<Statement> body;
 
-    std::optional<Sp<Identifier>> id;
-    std::vector<Sp<SyntaxNode>> params;
-    Sp<BlockStatement> body;
-    bool generator = false;
-    bool expression = false;
-    bool async = false;
+        std::unique_ptr<Scope> scope;
 
-};
+    };
 
-class Identifier: public Expression, public Pattern {
-public:
-    Identifier();
+    class FunctionDeclaration: public Declaration {
+    public:
+        FunctionDeclaration();
 
-    UString name;
+        std::optional<Sp<Identifier>> id;
+        std::vector<Sp<SyntaxNode>> params;
+        Sp<BlockStatement> body;
+        bool generator = false;
+        bool expression = false;
+        bool async = false;
 
-};
+        std::unique_ptr<Scope> scope;
 
-class IfStatement: public Statement {
-public:
-    IfStatement();
+    };
 
-    Sp<Expression> test;
-    Sp<Statement> consequent;
-    std::optional<Sp<Statement>> alternate;
+    class FunctionExpression: public Expression {
+    public:
+        FunctionExpression();
 
-};
+        std::optional<Sp<Identifier>> id;
+        std::vector<Sp<SyntaxNode>> params;
+        Sp<BlockStatement> body;
+        bool generator = false;
+        bool expression = false;
+        bool async = false;
 
-class Import: public Expression {
-public:
-    Import();
+        std::unique_ptr<Scope> scope;
 
+    };
 
-};
+    class Identifier: public Expression, public Pattern {
+    public:
+        Identifier();
 
-class ImportDeclaration: public Declaration {
-public:
-    ImportDeclaration();
+        UString name;
 
-    std::vector<Sp<SyntaxNode>> specifiers;
-    Sp<Literal> source;
+    };
 
-};
+    class IfStatement: public Statement {
+    public:
+        IfStatement();
 
-class ImportDefaultSpecifier: public SyntaxNode {
-public:
-    ImportDefaultSpecifier();
+        Sp<Expression> test;
+        Sp<Statement> consequent;
+        std::optional<Sp<Statement>> alternate;
 
-    Sp<Identifier> local;
+    };
 
-};
+    class Import: public Expression {
+    public:
+        Import();
 
-class ImportNamespaceSpecifier: public SyntaxNode {
-public:
-    ImportNamespaceSpecifier();
 
-    Sp<Identifier> local;
+    };
 
-};
+    class ImportDeclaration: public Declaration {
+    public:
+        ImportDeclaration();
 
-class ImportSpecifier: public SyntaxNode {
-public:
-    ImportSpecifier();
+        std::vector<Sp<SyntaxNode>> specifiers;
+        Sp<Literal> source;
 
-    Sp<Identifier> local;
-    Sp<Identifier> imported;
+    };
 
-};
+    class ImportDefaultSpecifier: public SyntaxNode {
+    public:
+        ImportDefaultSpecifier();
 
-class LabeledStatement: public Statement {
-public:
-    LabeledStatement();
+        Sp<Identifier> local;
 
-    Sp<Identifier> label;
-    Sp<Statement> body;
+    };
 
-};
+    class ImportNamespaceSpecifier: public SyntaxNode {
+    public:
+        ImportNamespaceSpecifier();
 
-class Literal: public Expression {
-public:
-    Literal();
+        Sp<Identifier> local;
 
-    std::variant<bool, double, UString> value;
-    UString raw;
+    };
 
-};
+    class ImportSpecifier: public SyntaxNode {
+    public:
+        ImportSpecifier();
 
-class MetaProperty: public Expression {
-public:
-    MetaProperty();
+        Sp<Identifier> local;
+        Sp<Identifier> imported;
 
-    Sp<Identifier> meta;
-    Sp<Identifier> property;
+    };
 
-};
+    class LabeledStatement: public Statement {
+    public:
+        LabeledStatement();
 
-class MethodDefinition: public SyntaxNode {
-public:
-    MethodDefinition();
+        Sp<Identifier> label;
+        Sp<Statement> body;
 
-    std::optional<Sp<SyntaxNode>> key;
-    bool computed = false;
-    std::optional<Sp<Expression>> value;
-    VarKind kind;
-    bool static_ = false;
+    };
 
-};
+    class Literal: public Expression {
+    public:
+        Literal();
 
-class Module: public SyntaxNode {
-public:
-    Module();
+        std::variant<bool, double, UString> value;
+        UString raw;
 
-    std::vector<Sp<SyntaxNode>> body;
-    UString source_type;
-    std::vector<Sp<Comment>> comments;
+    };
 
-};
+    class MetaProperty: public Expression {
+    public:
+        MetaProperty();
 
-class NewExpression: public Expression {
-public:
-    NewExpression();
+        Sp<Identifier> meta;
+        Sp<Identifier> property;
 
-    Sp<Expression> callee;
-    std::vector<Sp<SyntaxNode>> arguments;
+    };
 
-};
+    class MethodDefinition: public SyntaxNode {
+    public:
+        MethodDefinition();
 
-class ObjectExpression: public Expression {
-public:
-    ObjectExpression();
+        std::optional<Sp<SyntaxNode>> key;
+        bool computed = false;
+        std::optional<Sp<Expression>> value;
+        VarKind kind;
+        bool static_ = false;
 
-    std::vector<Sp<SyntaxNode>> properties;
+    };
 
-};
+    class Module: public SyntaxNode {
+    public:
+        Module();
 
-class ObjectPattern: public Pattern {
-public:
-    ObjectPattern();
+        std::vector<Sp<SyntaxNode>> body;
+        UString source_type;
+        std::vector<Sp<Comment>> comments;
 
-    std::vector<Sp<SyntaxNode>> properties;
+        std::unique_ptr<Scope> scope;
 
-};
+    };
 
-class Property: public SyntaxNode {
-public:
-    Property();
+    class NewExpression: public Expression {
+    public:
+        NewExpression();
 
-    Sp<SyntaxNode> key;
-    bool computed = false;
-    std::optional<Sp<SyntaxNode>> value;
-    VarKind kind;
-    bool method = false;
-    bool shorthand = false;
+        Sp<Expression> callee;
+        std::vector<Sp<SyntaxNode>> arguments;
 
-};
+    };
 
-class RegexLiteral: public Expression {
-public:
-    RegexLiteral();
+    class ObjectExpression: public Expression {
+    public:
+        ObjectExpression();
 
-    UString value;
-    UString raw;
+        std::vector<Sp<SyntaxNode>> properties;
 
-};
+    };
 
-class RestElement: public Pattern, public Expression {
-public:
-    RestElement();
+    class ObjectPattern: public Pattern {
+    public:
+        ObjectPattern();
 
-    Sp<SyntaxNode> argument;
+        std::vector<Sp<SyntaxNode>> properties;
 
-};
+    };
 
-class ReturnStatement: public Statement {
-public:
-    ReturnStatement();
+    class Property: public SyntaxNode {
+    public:
+        Property();
 
-    std::optional<Sp<Expression>> argument;
+        Sp<SyntaxNode> key;
+        bool computed = false;
+        std::optional<Sp<SyntaxNode>> value;
+        VarKind kind;
+        bool method = false;
+        bool shorthand = false;
 
-};
+    };
 
-class Script: public SyntaxNode {
-public:
-    Script();
+    class RegexLiteral: public Expression {
+    public:
+        RegexLiteral();
 
-    std::vector<Sp<SyntaxNode>> body;
-    UString source_type;
-    std::vector<Sp<Comment>> comments;
+        UString value;
+        UString raw;
 
-};
+    };
 
-class SequenceExpression: public Expression {
-public:
-    SequenceExpression();
+    class RestElement: public Pattern, public Expression {
+    public:
+        RestElement();
 
-    std::vector<Sp<Expression>> expressions;
+        Sp<SyntaxNode> argument;
 
-};
+    };
 
-class SpreadElement: public SyntaxNode {
-public:
-    SpreadElement();
+    class ReturnStatement: public Statement {
+    public:
+        ReturnStatement();
 
-    Sp<Expression> argument;
+        std::optional<Sp<Expression>> argument;
 
-};
+    };
 
-class MemberExpression: public Expression, public Pattern {
-public:
-    MemberExpression();
+    class Script: public SyntaxNode {
+    public:
+        Script();
 
-    bool computed = false;
-    Sp<Expression> object;
-    Sp<Expression> property;
+        std::vector<Sp<SyntaxNode>> body;
+        UString source_type;
+        std::vector<Sp<Comment>> comments;
 
-};
+    };
 
-class Super: public Expression {
-public:
-    Super();
+    class SequenceExpression: public Expression {
+    public:
+        SequenceExpression();
 
+        std::vector<Sp<Expression>> expressions;
 
-};
+    };
 
-class SwitchCase: public SyntaxNode {
-public:
-    SwitchCase();
+    class SpreadElement: public SyntaxNode {
+    public:
+        SpreadElement();
 
-    std::optional<Sp<Expression>> test;
-    std::vector<Sp<Statement>> consequent;
+        Sp<Expression> argument;
 
-};
+    };
 
-class SwitchStatement: public Statement {
-public:
-    SwitchStatement();
+    class MemberExpression: public Expression, public Pattern {
+    public:
+        MemberExpression();
 
-    Sp<Expression> discrimiant;
-    std::vector<Sp<SwitchCase>> cases;
+        bool computed = false;
+        Sp<Expression> object;
+        Sp<Expression> property;
 
-};
+    };
 
-class TaggedTemplateExpression: public Expression {
-public:
-    TaggedTemplateExpression();
+    class Super: public Expression {
+    public:
+        Super();
 
-    Sp<Expression> tag;
-    Sp<TemplateLiteral> quasi;
 
-};
+    };
 
-class TemplateElement: public SyntaxNode {
-public:
-    TemplateElement();
+    class SwitchCase: public SyntaxNode {
+    public:
+        SwitchCase();
 
-    UString cooked;
-    UString raw;
-    bool tail = false;
+        std::optional<Sp<Expression>> test;
+        std::vector<Sp<Statement>> consequent;
 
-};
+    };
 
-class TemplateLiteral: public Expression {
-public:
-    TemplateLiteral();
+    class SwitchStatement: public Statement {
+    public:
+        SwitchStatement();
 
-    std::vector<Sp<TemplateElement>> quasis;
-    std::vector<Sp<Expression>> expressions;
+        Sp<Expression> discrimiant;
+        std::vector<Sp<SwitchCase>> cases;
 
-};
+        std::unique_ptr<Scope> scope;
 
-class ThisExpression: public Expression {
-public:
-    ThisExpression();
+    };
 
+    class TaggedTemplateExpression: public Expression {
+    public:
+        TaggedTemplateExpression();
 
-};
+        Sp<Expression> tag;
+        Sp<TemplateLiteral> quasi;
 
-class ThrowStatement: public Statement {
-public:
-    ThrowStatement();
+    };
 
-    Sp<Expression> argument;
+    class TemplateElement: public SyntaxNode {
+    public:
+        TemplateElement();
 
-};
+        UString cooked;
+        UString raw;
+        bool tail = false;
 
-class TryStatement: public Statement {
-public:
-    TryStatement();
+    };
 
-    Sp<BlockStatement> block;
-    std::optional<Sp<CatchClause>> handler;
-    std::optional<Sp<BlockStatement>> finalizer;
+    class TemplateLiteral: public Expression {
+    public:
+        TemplateLiteral();
 
-};
+        std::vector<Sp<TemplateElement>> quasis;
+        std::vector<Sp<Expression>> expressions;
 
-class UnaryExpression: public Expression {
-public:
-    UnaryExpression();
+    };
 
-    UString operator_;
-    Sp<Expression> argument;
-    bool prefix = false;
+    class ThisExpression: public Expression {
+    public:
+        ThisExpression();
 
-};
 
-class UpdateExpression: public Expression {
-public:
-    UpdateExpression();
+    };
 
-    UString operator_;
-    Sp<Expression> argument;
-    bool prefix = false;
+    class ThrowStatement: public Statement {
+    public:
+        ThrowStatement();
 
-};
+        Sp<Expression> argument;
 
-class VariableDeclaration: public Declaration {
-public:
-    VariableDeclaration();
+    };
 
-    std::vector<Sp<VariableDeclarator>> declarations;
-    VarKind kind;
+    class TryStatement: public Statement {
+    public:
+        TryStatement();
 
-};
+        Sp<BlockStatement> block;
+        std::optional<Sp<CatchClause>> handler;
+        std::optional<Sp<BlockStatement>> finalizer;
 
-class VariableDeclarator: public SyntaxNode {
-public:
-    VariableDeclarator();
+    };
 
-    Sp<SyntaxNode> id;
-    std::optional<Sp<Expression>> init;
+    class UnaryExpression: public Expression {
+    public:
+        UnaryExpression();
 
-};
+        UString operator_;
+        Sp<Expression> argument;
+        bool prefix = false;
 
-class WhileStatement: public Statement {
-public:
-    WhileStatement();
+    };
 
-    Sp<Expression> test;
-    Sp<Statement> body;
+    class UpdateExpression: public Expression {
+    public:
+        UpdateExpression();
 
-};
+        UString operator_;
+        Sp<Expression> argument;
+        bool prefix = false;
 
-class WithStatement: public Statement {
-public:
-    WithStatement();
+    };
 
-    Sp<Expression> object;
-    Sp<Statement> body;
+    class VariableDeclaration: public Declaration {
+    public:
+        VariableDeclaration();
 
-};
+        std::vector<Sp<VariableDeclarator>> declarations;
+        VarKind kind;
 
-class YieldExpression: public Expression {
-public:
-    YieldExpression();
+    };
 
-    std::optional<Sp<Expression>> argument;
-    bool delegate = false;
+    class VariableDeclarator: public SyntaxNode {
+    public:
+        VariableDeclarator();
 
-};
+        Sp<SyntaxNode> id;
+        std::optional<Sp<Expression>> init;
 
-class ArrowParameterPlaceHolder: public Expression {
-public:
-    ArrowParameterPlaceHolder();
+    };
 
-    std::vector<Sp<SyntaxNode>> params;
-    bool async = false;
+    class WhileStatement: public Statement {
+    public:
+        WhileStatement();
 
-};
+        Sp<Expression> test;
+        Sp<Statement> body;
 
-class JSXClosingElement: public SyntaxNode {
-public:
-    JSXClosingElement();
+    };
 
-    Sp<SyntaxNode> name;
+    class WithStatement: public Statement {
+    public:
+        WithStatement();
 
-};
+        Sp<Expression> object;
+        Sp<Statement> body;
 
-class JSXElement: public Expression {
-public:
-    JSXElement();
+    };
 
-    Sp<JSXOpeningElement> opening_element;
-    std::vector<Sp<SyntaxNode>> children;
-    std::optional<Sp<JSXClosingElement>> closing_element;
+    class YieldExpression: public Expression {
+    public:
+        YieldExpression();
 
-};
+        std::optional<Sp<Expression>> argument;
+        bool delegate = false;
 
-class JSXEmptyExpression: public SyntaxNode {
-public:
-    JSXEmptyExpression();
+    };
 
+    class ArrowParameterPlaceHolder: public Expression {
+    public:
+        ArrowParameterPlaceHolder();
 
-};
+        std::vector<Sp<SyntaxNode>> params;
+        bool async = false;
 
-class JSXExpressionContainer: public SyntaxNode {
-public:
-    JSXExpressionContainer();
+    };
 
-    Sp<Expression> expression;
+    class JSXClosingElement: public SyntaxNode {
+    public:
+        JSXClosingElement();
 
-};
+        Sp<SyntaxNode> name;
 
-class JSXIdentifier: public SyntaxNode {
-public:
-    JSXIdentifier();
+    };
 
-    UString name;
+    class JSXElement: public Expression {
+    public:
+        JSXElement();
 
-};
+        Sp<JSXOpeningElement> opening_element;
+        std::vector<Sp<SyntaxNode>> children;
+        std::optional<Sp<JSXClosingElement>> closing_element;
 
-class JSXMemberExpression: public SyntaxNode {
-public:
-    JSXMemberExpression();
+    };
 
-    Sp<SyntaxNode> object;
-    Sp<JSXIdentifier> property;
+    class JSXEmptyExpression: public SyntaxNode {
+    public:
+        JSXEmptyExpression();
 
-};
 
-class JSXAttribute: public SyntaxNode {
-public:
-    JSXAttribute();
+    };
 
-    Sp<SyntaxNode> name;
-    std::optional<Sp<SyntaxNode>> value;
+    class JSXExpressionContainer: public SyntaxNode {
+    public:
+        JSXExpressionContainer();
 
-};
+        Sp<Expression> expression;
 
-class JSXNamespacedName: public SyntaxNode {
-public:
-    JSXNamespacedName();
+    };
 
-    Sp<JSXIdentifier> namespace_;
-    Sp<JSXIdentifier> name;
+    class JSXIdentifier: public SyntaxNode {
+    public:
+        JSXIdentifier();
 
-};
+        UString name;
 
-class JSXOpeningElement: public SyntaxNode {
-public:
-    JSXOpeningElement();
+    };
 
-    Sp<SyntaxNode> name;
-    bool self_closing = false;
-    std::vector<Sp<SyntaxNode>> attributes;
+    class JSXMemberExpression: public SyntaxNode {
+    public:
+        JSXMemberExpression();
 
-};
+        Sp<SyntaxNode> object;
+        Sp<JSXIdentifier> property;
 
-class JSXSpreadAttribute: public SyntaxNode {
-public:
-    JSXSpreadAttribute();
+    };
 
-    Sp<Expression> argument;
+    class JSXAttribute: public SyntaxNode {
+    public:
+        JSXAttribute();
 
-};
+        Sp<SyntaxNode> name;
+        std::optional<Sp<SyntaxNode>> value;
 
-class JSXText: public SyntaxNode {
-public:
-    JSXText();
+    };
 
-    UString value;
-    UString raw;
+    class JSXNamespacedName: public SyntaxNode {
+    public:
+        JSXNamespacedName();
 
-};
+        Sp<JSXIdentifier> namespace_;
+        Sp<JSXIdentifier> name;
 
-class TSParameterProperty: public SyntaxNode {
-public:
-    TSParameterProperty();
+    };
 
-    bool readonly_ = false;
-    Sp<SyntaxNode> parameter;
+    class JSXOpeningElement: public SyntaxNode {
+    public:
+        JSXOpeningElement();
 
-};
+        Sp<SyntaxNode> name;
+        bool self_closing = false;
+        std::vector<Sp<SyntaxNode>> attributes;
 
-class TSDeclareFunction: public Declaration {
-public:
-    TSDeclareFunction();
+    };
 
-    Sp<Identifier> id;
-    bool decare = false;
-    Sp<TSTypeAnnotation> return_type;
+    class JSXSpreadAttribute: public SyntaxNode {
+    public:
+        JSXSpreadAttribute();
 
-};
+        Sp<Expression> argument;
 
-class TSDeclareMethod: public SyntaxNode {
-public:
-    TSDeclareMethod();
+    };
 
+    class JSXText: public SyntaxNode {
+    public:
+        JSXText();
 
-};
+        UString value;
+        UString raw;
 
-class TSQualifiedName: public SyntaxNode {
-public:
-    TSQualifiedName();
+    };
 
+    class TSParameterProperty: public SyntaxNode {
+    public:
+        TSParameterProperty();
 
-};
+        bool readonly_ = false;
+        Sp<SyntaxNode> parameter;
 
-class TSCallSignatureDeclaration: public SyntaxNode {
-public:
-    TSCallSignatureDeclaration();
+    };
 
+    class TSDeclareFunction: public Declaration {
+    public:
+        TSDeclareFunction();
 
-};
+        Sp<Identifier> id;
+        bool decare = false;
+        Sp<TSTypeAnnotation> return_type;
 
-class TSConstructSignatureDeclaration: public SyntaxNode {
-public:
-    TSConstructSignatureDeclaration();
+    };
 
+    class TSDeclareMethod: public SyntaxNode {
+    public:
+        TSDeclareMethod();
 
-};
 
-class TSPropertySignature: public SyntaxNode {
-public:
-    TSPropertySignature();
+    };
 
+    class TSQualifiedName: public SyntaxNode {
+    public:
+        TSQualifiedName();
 
-};
 
-class TSMethodSignature: public SyntaxNode {
-public:
-    TSMethodSignature();
+    };
 
+    class TSCallSignatureDeclaration: public SyntaxNode {
+    public:
+        TSCallSignatureDeclaration();
 
-};
 
-class TSIndexSignature: public SyntaxNode {
-public:
-    TSIndexSignature();
+    };
 
+    class TSConstructSignatureDeclaration: public SyntaxNode {
+    public:
+        TSConstructSignatureDeclaration();
 
-};
 
-class TSAnyKeyword: public TSType {
-public:
-    TSAnyKeyword();
+    };
 
+    class TSPropertySignature: public SyntaxNode {
+    public:
+        TSPropertySignature();
 
-};
 
-class TSBooleanKeyword: public TSType {
-public:
-    TSBooleanKeyword();
+    };
 
+    class TSMethodSignature: public SyntaxNode {
+    public:
+        TSMethodSignature();
 
-};
 
-class TSBigIntKeyword: public TSType {
-public:
-    TSBigIntKeyword();
+    };
 
+    class TSIndexSignature: public SyntaxNode {
+    public:
+        TSIndexSignature();
 
-};
 
-class TSNeverKeyword: public TSType {
-public:
-    TSNeverKeyword();
+    };
 
+    class TSAnyKeyword: public TSType {
+    public:
+        TSAnyKeyword();
 
-};
 
-class TSNullKeyword: public TSType {
-public:
-    TSNullKeyword();
+    };
 
+    class TSBooleanKeyword: public TSType {
+    public:
+        TSBooleanKeyword();
 
-};
 
-class TSNumberKeyword: public TSType {
-public:
-    TSNumberKeyword();
+    };
 
+    class TSBigIntKeyword: public TSType {
+    public:
+        TSBigIntKeyword();
 
-};
 
-class TSObjectKeyword: public TSType {
-public:
-    TSObjectKeyword();
+    };
 
+    class TSNeverKeyword: public TSType {
+    public:
+        TSNeverKeyword();
 
-};
 
-class TSStringKeyword: public TSType {
-public:
-    TSStringKeyword();
+    };
 
+    class TSNullKeyword: public TSType {
+    public:
+        TSNullKeyword();
 
-};
 
-class TSSymbolKeyword: public TSType {
-public:
-    TSSymbolKeyword();
+    };
 
+    class TSNumberKeyword: public TSType {
+    public:
+        TSNumberKeyword();
 
-};
 
-class TSUndefinedKeyword: public TSType {
-public:
-    TSUndefinedKeyword();
+    };
 
+    class TSObjectKeyword: public TSType {
+    public:
+        TSObjectKeyword();
 
-};
 
-class TSUnknownKeyword: public TSType {
-public:
-    TSUnknownKeyword();
+    };
 
+    class TSStringKeyword: public TSType {
+    public:
+        TSStringKeyword();
 
-};
 
-class TSVoidKeyword: public TSType {
-public:
-    TSVoidKeyword();
+    };
 
+    class TSSymbolKeyword: public TSType {
+    public:
+        TSSymbolKeyword();
 
-};
 
-class TSThisType: public TSType {
-public:
-    TSThisType();
+    };
 
+    class TSUndefinedKeyword: public TSType {
+    public:
+        TSUndefinedKeyword();
 
-};
 
-class TSFunctionType: public TSType {
-public:
-    TSFunctionType();
+    };
 
+    class TSUnknownKeyword: public TSType {
+    public:
+        TSUnknownKeyword();
 
-};
 
-class TSConstructorType: public TSType {
-public:
-    TSConstructorType();
+    };
 
+    class TSVoidKeyword: public TSType {
+    public:
+        TSVoidKeyword();
 
-};
 
-class TSTypeReference: public TSType {
-public:
-    TSTypeReference();
+    };
 
+    class TSThisType: public TSType {
+    public:
+        TSThisType();
 
-};
 
-class TSTypePredicate: public TSType {
-public:
-    TSTypePredicate();
+    };
 
+    class TSFunctionType: public TSType {
+    public:
+        TSFunctionType();
 
-};
 
-class TSTypeQuery: public TSType {
-public:
-    TSTypeQuery();
+    };
 
+    class TSConstructorType: public TSType {
+    public:
+        TSConstructorType();
 
-};
 
-class TSTypeLiteral: public TSType {
-public:
-    TSTypeLiteral();
+    };
 
+    class TSTypeReference: public TSType {
+    public:
+        TSTypeReference();
 
-};
 
-class TSArrayType: public TSType {
-public:
-    TSArrayType();
+    };
 
+    class TSTypePredicate: public TSType {
+    public:
+        TSTypePredicate();
 
-};
 
-class TSTupleType: public TSType {
-public:
-    TSTupleType();
+    };
 
+    class TSTypeQuery: public TSType {
+    public:
+        TSTypeQuery();
 
-};
 
-class TSOptionalType: public TSType {
-public:
-    TSOptionalType();
+    };
 
+    class TSTypeLiteral: public TSType {
+    public:
+        TSTypeLiteral();
 
-};
 
-class TSRestType: public TSType {
-public:
-    TSRestType();
+    };
 
+    class TSArrayType: public TSType {
+    public:
+        TSArrayType();
 
-};
 
-class TSUnionType: public TSType {
-public:
-    TSUnionType();
+    };
 
+    class TSTupleType: public TSType {
+    public:
+        TSTupleType();
 
-};
 
-class TSIntersectionType: public TSType {
-public:
-    TSIntersectionType();
+    };
 
+    class TSOptionalType: public TSType {
+    public:
+        TSOptionalType();
 
-};
 
-class TSConditionalType: public TSType {
-public:
-    TSConditionalType();
+    };
 
+    class TSRestType: public TSType {
+    public:
+        TSRestType();
 
-};
 
-class TSInferType: public TSType {
-public:
-    TSInferType();
+    };
 
+    class TSUnionType: public TSType {
+    public:
+        TSUnionType();
 
-};
 
-class TSParenthesizedType: public TSType {
-public:
-    TSParenthesizedType();
+    };
 
+    class TSIntersectionType: public TSType {
+    public:
+        TSIntersectionType();
 
-};
 
-class TSTypeOperator: public TSType {
-public:
-    TSTypeOperator();
+    };
 
+    class TSConditionalType: public TSType {
+    public:
+        TSConditionalType();
 
-};
 
-class TSIndexedAccessType: public TSType {
-public:
-    TSIndexedAccessType();
+    };
 
+    class TSInferType: public TSType {
+    public:
+        TSInferType();
 
-};
 
-class TSMappedType: public TSType {
-public:
-    TSMappedType();
+    };
 
+    class TSParenthesizedType: public TSType {
+    public:
+        TSParenthesizedType();
 
-};
 
-class TSLiteralType: public TSType {
-public:
-    TSLiteralType();
+    };
 
+    class TSTypeOperator: public TSType {
+    public:
+        TSTypeOperator();
 
-};
 
-class TSExpressionWithTypeArguments: public TSType {
-public:
-    TSExpressionWithTypeArguments();
+    };
 
+    class TSIndexedAccessType: public TSType {
+    public:
+        TSIndexedAccessType();
 
-};
 
-class TSInterfaceDeclaration: public Declaration {
-public:
-    TSInterfaceDeclaration();
+    };
 
+    class TSMappedType: public TSType {
+    public:
+        TSMappedType();
 
-};
 
-class TSInterfaceBody: public SyntaxNode {
-public:
-    TSInterfaceBody();
+    };
 
+    class TSLiteralType: public TSType {
+    public:
+        TSLiteralType();
 
-};
 
-class TSTypeAliasDeclaration: public Declaration {
-public:
-    TSTypeAliasDeclaration();
+    };
 
-    Sp<Identifier> id;
-    std::optional<Sp<TSTypeParameterDeclaration>> type_parameters;
-    Sp<TSType> type_annotation;
+    class TSExpressionWithTypeArguments: public TSType {
+    public:
+        TSExpressionWithTypeArguments();
 
-};
 
-class TSAsExpression: public Expression {
-public:
-    TSAsExpression();
+    };
 
+    class TSInterfaceDeclaration: public Declaration {
+    public:
+        TSInterfaceDeclaration();
 
-};
 
-class TSTypeAssertion: public Expression {
-public:
-    TSTypeAssertion();
+    };
 
+    class TSInterfaceBody: public SyntaxNode {
+    public:
+        TSInterfaceBody();
 
-};
 
-class TSEnumDeclaration: public Declaration {
-public:
-    TSEnumDeclaration();
+    };
 
+    class TSTypeAliasDeclaration: public Declaration {
+    public:
+        TSTypeAliasDeclaration();
 
-};
+        Sp<Identifier> id;
+        std::optional<Sp<TSTypeParameterDeclaration>> type_parameters;
+        Sp<TSType> type_annotation;
 
-class TSEnumMember: public SyntaxNode {
-public:
-    TSEnumMember();
+    };
 
+    class TSAsExpression: public Expression {
+    public:
+        TSAsExpression();
 
-};
 
-class TSModuleDeclaration: public Declaration {
-public:
-    TSModuleDeclaration();
+    };
 
+    class TSTypeAssertion: public Expression {
+    public:
+        TSTypeAssertion();
 
-};
 
-class TSModuleBlock: public SyntaxNode {
-public:
-    TSModuleBlock();
+    };
 
+    class TSEnumDeclaration: public Declaration {
+    public:
+        TSEnumDeclaration();
 
-};
 
-class TSImportType: public TSType {
-public:
-    TSImportType();
+    };
 
+    class TSEnumMember: public SyntaxNode {
+    public:
+        TSEnumMember();
 
-};
 
-class TSImportEqualsDeclaration: public Declaration {
-public:
-    TSImportEqualsDeclaration();
+    };
 
+    class TSModuleDeclaration: public Declaration {
+    public:
+        TSModuleDeclaration();
 
-};
 
-class TSExternalModuleReference: public SyntaxNode {
-public:
-    TSExternalModuleReference();
+    };
 
+    class TSModuleBlock: public SyntaxNode {
+    public:
+        TSModuleBlock();
 
-};
 
-class TSNonNullExpression: public Expression {
-public:
-    TSNonNullExpression();
+    };
 
+    class TSImportType: public TSType {
+    public:
+        TSImportType();
 
-};
 
-class TSExportAssignment: public Statement {
-public:
-    TSExportAssignment();
+    };
 
+    class TSImportEqualsDeclaration: public Declaration {
+    public:
+        TSImportEqualsDeclaration();
 
-};
 
-class TSNamespaceExportDeclaration: public Statement {
-public:
-    TSNamespaceExportDeclaration();
+    };
 
+    class TSExternalModuleReference: public SyntaxNode {
+    public:
+        TSExternalModuleReference();
 
-};
 
-class TSTypeAnnotation: public SyntaxNode {
-public:
-    TSTypeAnnotation();
+    };
 
+    class TSNonNullExpression: public Expression {
+    public:
+        TSNonNullExpression();
 
-};
 
-class TSTypeParameterInstantiation: public SyntaxNode {
-public:
-    TSTypeParameterInstantiation();
+    };
 
+    class TSExportAssignment: public Statement {
+    public:
+        TSExportAssignment();
 
-};
 
-class TSTypeParameterDeclaration: public SyntaxNode {
-public:
-    TSTypeParameterDeclaration();
+    };
 
+    class TSNamespaceExportDeclaration: public Statement {
+    public:
+        TSNamespaceExportDeclaration();
 
-};
 
-class TSTypeParameter: public SyntaxNode {
-public:
-    TSTypeParameter();
+    };
 
+    class TSTypeAnnotation: public SyntaxNode {
+    public:
+        TSTypeAnnotation();
 
-};
+
+    };
+
+    class TSTypeParameterInstantiation: public SyntaxNode {
+    public:
+        TSTypeParameterInstantiation();
+
+
+    };
+
+    class TSTypeParameterDeclaration: public SyntaxNode {
+    public:
+        TSTypeParameterDeclaration();
+
+
+    };
+
+    class TSTypeParameter: public SyntaxNode {
+    public:
+        TSTypeParameter();
+
+
+    };
+
+}
+

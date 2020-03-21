@@ -9,7 +9,7 @@
 #include "../tokenizer/Scanner.h"
 #include "SyntaxNodes.h"
 
-namespace parser {
+namespace rocket_bundle::parser {
 
     class ParserContext final {
     public:

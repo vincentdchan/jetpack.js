@@ -7,7 +7,7 @@
 #include <fmt/format.h>
 #include "JSXParser.h"
 
-namespace parser {
+namespace rocket_bundle::parser {
     using namespace std;
 
     JSXParser::JSXParser(std::shared_ptr<ParserContext> ctx): ParserCommon(ctx)  {

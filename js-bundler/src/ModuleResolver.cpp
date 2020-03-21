@@ -8,10 +8,9 @@
 #include <artery.h>
 #include <parser/ParserCommon.h>
 
-using parser::ParserContext;
-using parser::Parser;
-
-namespace rb {
+namespace rocket_bundle {
+    using parser::ParserContext;
+    using parser::Parser;
 
     void ModuleResolver::BeginFromEntry(std::string path) {
         auto thread_pool_size = std::thread::hardware_concurrency();

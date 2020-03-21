@@ -10,52 +10,57 @@
 #include <atomic>
 #include "parser/SyntaxNodes.h"
 
-class Artery {
-public:
-    static std::u16string ReadFileStream(const std::string& filename);
+namespace rocket_bundle {
 
-    class ModuleContainer;
+    class Artery {
+    public:
+        static std::u16string ReadFileStream(const std::string& filename);
 
-    Artery() = default;
-    Artery(const Artery&) = delete;
-    Artery(Artery&&) = delete;
+        class ModuleContainer;
 
-    Artery& operator=(const Artery& that) = delete;
-    Artery& operator=(Artery&&) = delete;
+        Artery() = default;
+        Artery(const Artery&) = delete;
+        Artery(Artery&&) = delete;
 
-    void Enter(const std::string& entry);
+        Artery& operator=(const Artery& that) = delete;
+        Artery& operator=(Artery&&) = delete;
 
-    void WaitForParsingFinished();
+        void Enter(const std::string& entry);
 
-    ~Artery() = default;
+        void WaitForParsingFinished();
 
-private:
-    void IncreaseProcessingCount();
-    void IncreaseFinishedCount();
+        ~Artery() = default;
 
-    robin_hood::unordered_map<std::string, std::shared_ptr<ModuleContainer>> modules_;
-    std::mutex modules_mutex_;
+    private:
+        void IncreaseProcessingCount();
+        void IncreaseFinishedCount();
 
-    std::mutex count_change_mutex_;
-    std::condition_variable count_change_cv_;
-    std::atomic<std::size_t> processing_count_ = 0;
-    std::atomic<std::size_t> finished_count_ = 0;
+        robin_hood::unordered_map<std::string, std::shared_ptr<ModuleContainer>> modules_;
+        std::mutex modules_mutex_;
 
-};
+        std::mutex count_change_mutex_;
+        std::condition_variable count_change_cv_;
+        std::atomic<std::size_t> processing_count_ = 0;
+        std::atomic<std::size_t> finished_count_ = 0;
 
-class Artery::ModuleContainer {
-public:
-    enum class ProcessState {
-        INIT = 0,
-        PROCEED = 1,
-        ERROR = 2,
     };
 
-    Sp<Module> node;
-    std::atomic<ProcessState> state = ProcessState::INIT;
-    std::string error_message;
+    class Artery::ModuleContainer {
+    public:
+        enum class ProcessState {
+            INIT = 0,
+            PROCEED = 1,
+            ERROR = 2,
+        };
 
-    void* operator new(std::size_t size);
-    void operator delete(void* chunk);
+        Sp<Module> node;
+        std::atomic<ProcessState> state = ProcessState::INIT;
+        std::string error_message;
 
-};
+        void* operator new(std::size_t size);
+        void operator delete(void* chunk);
+
+    };
+
+}
+

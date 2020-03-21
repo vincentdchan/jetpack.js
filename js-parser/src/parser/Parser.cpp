@@ -7,7 +7,7 @@
 #include "TypescriptParser.h"
 #include "../tokenizer/Token.h"
 
-namespace parser {
+namespace rocket_bundle::parser {
     using namespace std;
 
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {

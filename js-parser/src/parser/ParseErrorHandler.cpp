@@ -7,7 +7,7 @@
 
 using namespace std;
 
-namespace parser {
+namespace rocket_bundle::parser {
 
     ParseError ParseErrorHandler::CreateError(std::string msg, int index, int line, int col) {
         ParseError error_;

@@ -10,7 +10,7 @@
 #include <robin_hood.h>
 #include <parser/Parser.hpp>
 
-namespace rb {
+namespace rocket_bundle {
 
     class ModuleResolver;
 

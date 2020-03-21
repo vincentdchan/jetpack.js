@@ -6,7 +6,7 @@
 #include <string>
 #include <list>
 
-namespace parser {
+namespace rocket_bundle::parser {
 
     class ParseError: public std::exception {
     public:

@@ -2,570 +2,584 @@
 
 #include "SyntaxNodes.h"
 
-ArrayExpression::ArrayExpression(): Expression() {
-    type = SyntaxNodeType::ArrayExpression;
-}
-
-ArrayPattern::ArrayPattern(): Pattern() {
-    type = SyntaxNodeType::ArrayPattern;
-}
-
-ArrowFunctionExpression::ArrowFunctionExpression(): Expression() {
-    type = SyntaxNodeType::ArrowFunctionExpression;
-}
-
-AssignmentExpression::AssignmentExpression(): Expression() {
-    type = SyntaxNodeType::AssignmentExpression;
-}
-
-AssignmentPattern::AssignmentPattern(): Pattern() {
-    type = SyntaxNodeType::AssignmentPattern;
-}
-
-AwaitExpression::AwaitExpression(): Expression() {
-    type = SyntaxNodeType::AwaitExpression;
-}
-
-BinaryExpression::BinaryExpression(): Expression() {
-    type = SyntaxNodeType::BinaryExpression;
-}
-
-BlockStatement::BlockStatement(): Statement() {
-    type = SyntaxNodeType::BlockStatement;
-}
-
-BreakStatement::BreakStatement(): Statement() {
-    type = SyntaxNodeType::BreakStatement;
-}
-
-CallExpression::CallExpression(): Expression() {
-    type = SyntaxNodeType::CallExpression;
-}
-
-CatchClause::CatchClause(): SyntaxNode() {
-    type = SyntaxNodeType::CatchClause;
-}
-
-ClassBody::ClassBody(): SyntaxNode() {
-    type = SyntaxNodeType::ClassBody;
-}
-
-ClassDeclaration::ClassDeclaration(): Declaration() {
-    type = SyntaxNodeType::ClassDeclaration;
-}
-
-ClassExpression::ClassExpression(): Expression() {
-    type = SyntaxNodeType::ClassExpression;
-}
-
-ConditionalExpression::ConditionalExpression(): Expression() {
-    type = SyntaxNodeType::ConditionalExpression;
-}
-
-ContinueStatement::ContinueStatement(): Statement() {
-    type = SyntaxNodeType::ContinueStatement;
-}
-
-DebuggerStatement::DebuggerStatement(): Statement() {
-    type = SyntaxNodeType::DebuggerStatement;
-}
-
-Directive::Directive(): Statement() {
-    type = SyntaxNodeType::Directive;
-}
-
-DoWhileStatement::DoWhileStatement(): Statement() {
-    type = SyntaxNodeType::DoWhileStatement;
-}
-
-EmptyStatement::EmptyStatement(): Statement() {
-    type = SyntaxNodeType::EmptyStatement;
-}
-
-ExportAllDeclaration::ExportAllDeclaration(): Declaration() {
-    type = SyntaxNodeType::ExportAllDeclaration;
-}
-
-ExportDefaultDeclaration::ExportDefaultDeclaration(): Declaration() {
-    type = SyntaxNodeType::ExportDefaultDeclaration;
-}
-
-ExportNamedDeclaration::ExportNamedDeclaration(): Declaration() {
-    type = SyntaxNodeType::ExportNamedDeclaration;
-}
-
-ExportSpecifier::ExportSpecifier(): SyntaxNode() {
-    type = SyntaxNodeType::ExportSpecifier;
-}
-
-ExpressionStatement::ExpressionStatement(): Statement() {
-    type = SyntaxNodeType::ExpressionStatement;
-}
-
-ForInStatement::ForInStatement(): Statement() {
-    type = SyntaxNodeType::ForInStatement;
-}
-
-ForOfStatement::ForOfStatement(): Statement() {
-    type = SyntaxNodeType::ForOfStatement;
-}
-
-ForStatement::ForStatement(): Statement() {
-    type = SyntaxNodeType::ForStatement;
-}
-
-FunctionDeclaration::FunctionDeclaration(): Declaration() {
-    type = SyntaxNodeType::FunctionDeclaration;
-}
-
-FunctionExpression::FunctionExpression(): Expression() {
-    type = SyntaxNodeType::FunctionExpression;
-}
-
-Identifier::Identifier(): Expression(), Pattern() {
-    type = SyntaxNodeType::Identifier;
-}
-
-IfStatement::IfStatement(): Statement() {
-    type = SyntaxNodeType::IfStatement;
-}
-
-Import::Import(): Expression() {
-    type = SyntaxNodeType::Import;
-}
-
-ImportDeclaration::ImportDeclaration(): Declaration() {
-    type = SyntaxNodeType::ImportDeclaration;
-}
-
-ImportDefaultSpecifier::ImportDefaultSpecifier(): SyntaxNode() {
-    type = SyntaxNodeType::ImportDefaultSpecifier;
-}
-
-ImportNamespaceSpecifier::ImportNamespaceSpecifier(): SyntaxNode() {
-    type = SyntaxNodeType::ImportNamespaceSpecifier;
-}
-
-ImportSpecifier::ImportSpecifier(): SyntaxNode() {
-    type = SyntaxNodeType::ImportSpecifier;
-}
-
-LabeledStatement::LabeledStatement(): Statement() {
-    type = SyntaxNodeType::LabeledStatement;
-}
-
-Literal::Literal(): Expression() {
-    type = SyntaxNodeType::Literal;
-}
-
-MetaProperty::MetaProperty(): Expression() {
-    type = SyntaxNodeType::MetaProperty;
-}
-
-MethodDefinition::MethodDefinition(): SyntaxNode() {
-    type = SyntaxNodeType::MethodDefinition;
-}
-
-Module::Module(): SyntaxNode() {
-    type = SyntaxNodeType::Module;
-}
-
-NewExpression::NewExpression(): Expression() {
-    type = SyntaxNodeType::NewExpression;
-}
-
-ObjectExpression::ObjectExpression(): Expression() {
-    type = SyntaxNodeType::ObjectExpression;
-}
-
-ObjectPattern::ObjectPattern(): Pattern() {
-    type = SyntaxNodeType::ObjectPattern;
-}
-
-Property::Property(): SyntaxNode() {
-    type = SyntaxNodeType::Property;
-}
-
-RegexLiteral::RegexLiteral(): Expression() {
-    type = SyntaxNodeType::RegexLiteral;
-}
-
-RestElement::RestElement(): Pattern(), Expression() {
-    type = SyntaxNodeType::RestElement;
-}
-
-ReturnStatement::ReturnStatement(): Statement() {
-    type = SyntaxNodeType::ReturnStatement;
-}
-
-Script::Script(): SyntaxNode() {
-    type = SyntaxNodeType::Script;
-}
-
-SequenceExpression::SequenceExpression(): Expression() {
-    type = SyntaxNodeType::SequenceExpression;
-}
-
-SpreadElement::SpreadElement(): SyntaxNode() {
-    type = SyntaxNodeType::SpreadElement;
-}
-
-MemberExpression::MemberExpression(): Expression(), Pattern() {
-    type = SyntaxNodeType::MemberExpression;
-}
-
-Super::Super(): Expression() {
-    type = SyntaxNodeType::Super;
-}
-
-SwitchCase::SwitchCase(): SyntaxNode() {
-    type = SyntaxNodeType::SwitchCase;
-}
-
-SwitchStatement::SwitchStatement(): Statement() {
-    type = SyntaxNodeType::SwitchStatement;
-}
-
-TaggedTemplateExpression::TaggedTemplateExpression(): Expression() {
-    type = SyntaxNodeType::TaggedTemplateExpression;
-}
-
-TemplateElement::TemplateElement(): SyntaxNode() {
-    type = SyntaxNodeType::TemplateElement;
-}
-
-TemplateLiteral::TemplateLiteral(): Expression() {
-    type = SyntaxNodeType::TemplateLiteral;
-}
-
-ThisExpression::ThisExpression(): Expression() {
-    type = SyntaxNodeType::ThisExpression;
-}
-
-ThrowStatement::ThrowStatement(): Statement() {
-    type = SyntaxNodeType::ThrowStatement;
-}
-
-TryStatement::TryStatement(): Statement() {
-    type = SyntaxNodeType::TryStatement;
-}
-
-UnaryExpression::UnaryExpression(): Expression() {
-    type = SyntaxNodeType::UnaryExpression;
-}
-
-UpdateExpression::UpdateExpression(): Expression() {
-    type = SyntaxNodeType::UpdateExpression;
-}
-
-VariableDeclaration::VariableDeclaration(): Declaration() {
-    type = SyntaxNodeType::VariableDeclaration;
-}
-
-VariableDeclarator::VariableDeclarator(): SyntaxNode() {
-    type = SyntaxNodeType::VariableDeclarator;
-}
-
-WhileStatement::WhileStatement(): Statement() {
-    type = SyntaxNodeType::WhileStatement;
-}
-
-WithStatement::WithStatement(): Statement() {
-    type = SyntaxNodeType::WithStatement;
-}
-
-YieldExpression::YieldExpression(): Expression() {
-    type = SyntaxNodeType::YieldExpression;
-}
-
-ArrowParameterPlaceHolder::ArrowParameterPlaceHolder(): Expression() {
-    type = SyntaxNodeType::ArrowParameterPlaceHolder;
-}
-
-JSXClosingElement::JSXClosingElement(): SyntaxNode() {
-    type = SyntaxNodeType::JSXClosingElement;
-}
-
-JSXElement::JSXElement(): Expression() {
-    type = SyntaxNodeType::JSXElement;
-}
-
-JSXEmptyExpression::JSXEmptyExpression(): SyntaxNode() {
-    type = SyntaxNodeType::JSXEmptyExpression;
-}
-
-JSXExpressionContainer::JSXExpressionContainer(): SyntaxNode() {
-    type = SyntaxNodeType::JSXExpressionContainer;
-}
-
-JSXIdentifier::JSXIdentifier(): SyntaxNode() {
-    type = SyntaxNodeType::JSXIdentifier;
-}
-
-JSXMemberExpression::JSXMemberExpression(): SyntaxNode() {
-    type = SyntaxNodeType::JSXMemberExpression;
-}
-
-JSXAttribute::JSXAttribute(): SyntaxNode() {
-    type = SyntaxNodeType::JSXAttribute;
-}
-
-JSXNamespacedName::JSXNamespacedName(): SyntaxNode() {
-    type = SyntaxNodeType::JSXNamespacedName;
-}
-
-JSXOpeningElement::JSXOpeningElement(): SyntaxNode() {
-    type = SyntaxNodeType::JSXOpeningElement;
-}
-
-JSXSpreadAttribute::JSXSpreadAttribute(): SyntaxNode() {
-    type = SyntaxNodeType::JSXSpreadAttribute;
-}
-
-JSXText::JSXText(): SyntaxNode() {
-    type = SyntaxNodeType::JSXText;
-}
-
-TSParameterProperty::TSParameterProperty(): SyntaxNode() {
-    type = SyntaxNodeType::TSParameterProperty;
-}
-
-TSDeclareFunction::TSDeclareFunction(): Declaration() {
-    type = SyntaxNodeType::TSDeclareFunction;
-}
-
-TSDeclareMethod::TSDeclareMethod(): SyntaxNode() {
-    type = SyntaxNodeType::TSDeclareMethod;
-}
-
-TSQualifiedName::TSQualifiedName(): SyntaxNode() {
-    type = SyntaxNodeType::TSQualifiedName;
-}
-
-TSCallSignatureDeclaration::TSCallSignatureDeclaration(): SyntaxNode() {
-    type = SyntaxNodeType::TSCallSignatureDeclaration;
-}
-
-TSConstructSignatureDeclaration::TSConstructSignatureDeclaration(): SyntaxNode() {
-    type = SyntaxNodeType::TSConstructSignatureDeclaration;
-}
-
-TSPropertySignature::TSPropertySignature(): SyntaxNode() {
-    type = SyntaxNodeType::TSPropertySignature;
-}
-
-TSMethodSignature::TSMethodSignature(): SyntaxNode() {
-    type = SyntaxNodeType::TSMethodSignature;
-}
-
-TSIndexSignature::TSIndexSignature(): SyntaxNode() {
-    type = SyntaxNodeType::TSIndexSignature;
-}
-
-TSAnyKeyword::TSAnyKeyword(): TSType() {
-    type = SyntaxNodeType::TSAnyKeyword;
-}
-
-TSBooleanKeyword::TSBooleanKeyword(): TSType() {
-    type = SyntaxNodeType::TSBooleanKeyword;
-}
-
-TSBigIntKeyword::TSBigIntKeyword(): TSType() {
-    type = SyntaxNodeType::TSBigIntKeyword;
-}
-
-TSNeverKeyword::TSNeverKeyword(): TSType() {
-    type = SyntaxNodeType::TSNeverKeyword;
-}
-
-TSNullKeyword::TSNullKeyword(): TSType() {
-    type = SyntaxNodeType::TSNullKeyword;
-}
-
-TSNumberKeyword::TSNumberKeyword(): TSType() {
-    type = SyntaxNodeType::TSNumberKeyword;
-}
-
-TSObjectKeyword::TSObjectKeyword(): TSType() {
-    type = SyntaxNodeType::TSObjectKeyword;
-}
-
-TSStringKeyword::TSStringKeyword(): TSType() {
-    type = SyntaxNodeType::TSStringKeyword;
-}
-
-TSSymbolKeyword::TSSymbolKeyword(): TSType() {
-    type = SyntaxNodeType::TSSymbolKeyword;
-}
-
-TSUndefinedKeyword::TSUndefinedKeyword(): TSType() {
-    type = SyntaxNodeType::TSUndefinedKeyword;
-}
-
-TSUnknownKeyword::TSUnknownKeyword(): TSType() {
-    type = SyntaxNodeType::TSUnknownKeyword;
-}
-
-TSVoidKeyword::TSVoidKeyword(): TSType() {
-    type = SyntaxNodeType::TSVoidKeyword;
-}
-
-TSThisType::TSThisType(): TSType() {
-    type = SyntaxNodeType::TSThisType;
-}
-
-TSFunctionType::TSFunctionType(): TSType() {
-    type = SyntaxNodeType::TSFunctionType;
-}
-
-TSConstructorType::TSConstructorType(): TSType() {
-    type = SyntaxNodeType::TSConstructorType;
-}
-
-TSTypeReference::TSTypeReference(): TSType() {
-    type = SyntaxNodeType::TSTypeReference;
-}
-
-TSTypePredicate::TSTypePredicate(): TSType() {
-    type = SyntaxNodeType::TSTypePredicate;
-}
-
-TSTypeQuery::TSTypeQuery(): TSType() {
-    type = SyntaxNodeType::TSTypeQuery;
-}
-
-TSTypeLiteral::TSTypeLiteral(): TSType() {
-    type = SyntaxNodeType::TSTypeLiteral;
-}
-
-TSArrayType::TSArrayType(): TSType() {
-    type = SyntaxNodeType::TSArrayType;
-}
-
-TSTupleType::TSTupleType(): TSType() {
-    type = SyntaxNodeType::TSTupleType;
-}
-
-TSOptionalType::TSOptionalType(): TSType() {
-    type = SyntaxNodeType::TSOptionalType;
-}
-
-TSRestType::TSRestType(): TSType() {
-    type = SyntaxNodeType::TSRestType;
-}
-
-TSUnionType::TSUnionType(): TSType() {
-    type = SyntaxNodeType::TSUnionType;
-}
-
-TSIntersectionType::TSIntersectionType(): TSType() {
-    type = SyntaxNodeType::TSIntersectionType;
-}
-
-TSConditionalType::TSConditionalType(): TSType() {
-    type = SyntaxNodeType::TSConditionalType;
-}
+namespace rocket_bundle {
+
+    ArrayExpression::ArrayExpression(): Expression() {
+        type = SyntaxNodeType::ArrayExpression;
+    }
+
+    ArrayPattern::ArrayPattern(): Pattern() {
+        type = SyntaxNodeType::ArrayPattern;
+    }
+
+    ArrowFunctionExpression::ArrowFunctionExpression(): Expression() {
+        type = SyntaxNodeType::ArrowFunctionExpression;
+        scope = std::make_unique<Scope>();
+    }
+
+    AssignmentExpression::AssignmentExpression(): Expression() {
+        type = SyntaxNodeType::AssignmentExpression;
+    }
+
+    AssignmentPattern::AssignmentPattern(): Pattern() {
+        type = SyntaxNodeType::AssignmentPattern;
+    }
+
+    AwaitExpression::AwaitExpression(): Expression() {
+        type = SyntaxNodeType::AwaitExpression;
+    }
+
+    BinaryExpression::BinaryExpression(): Expression() {
+        type = SyntaxNodeType::BinaryExpression;
+    }
+
+    BlockStatement::BlockStatement(): Statement() {
+        type = SyntaxNodeType::BlockStatement;
+    }
+
+    BreakStatement::BreakStatement(): Statement() {
+        type = SyntaxNodeType::BreakStatement;
+    }
+
+    CallExpression::CallExpression(): Expression() {
+        type = SyntaxNodeType::CallExpression;
+    }
+
+    CatchClause::CatchClause(): SyntaxNode() {
+        type = SyntaxNodeType::CatchClause;
+    }
+
+    ClassBody::ClassBody(): SyntaxNode() {
+        type = SyntaxNodeType::ClassBody;
+    }
+
+    ClassDeclaration::ClassDeclaration(): Declaration() {
+        type = SyntaxNodeType::ClassDeclaration;
+        scope = std::make_unique<Scope>();
+    }
+
+    ClassExpression::ClassExpression(): Expression() {
+        type = SyntaxNodeType::ClassExpression;
+        scope = std::make_unique<Scope>();
+    }
+
+    ConditionalExpression::ConditionalExpression(): Expression() {
+        type = SyntaxNodeType::ConditionalExpression;
+    }
+
+    ContinueStatement::ContinueStatement(): Statement() {
+        type = SyntaxNodeType::ContinueStatement;
+    }
+
+    DebuggerStatement::DebuggerStatement(): Statement() {
+        type = SyntaxNodeType::DebuggerStatement;
+    }
+
+    Directive::Directive(): Statement() {
+        type = SyntaxNodeType::Directive;
+    }
+
+    DoWhileStatement::DoWhileStatement(): Statement() {
+        type = SyntaxNodeType::DoWhileStatement;
+    }
+
+    EmptyStatement::EmptyStatement(): Statement() {
+        type = SyntaxNodeType::EmptyStatement;
+    }
+
+    ExportAllDeclaration::ExportAllDeclaration(): Declaration() {
+        type = SyntaxNodeType::ExportAllDeclaration;
+    }
+
+    ExportDefaultDeclaration::ExportDefaultDeclaration(): Declaration() {
+        type = SyntaxNodeType::ExportDefaultDeclaration;
+    }
+
+    ExportNamedDeclaration::ExportNamedDeclaration(): Declaration() {
+        type = SyntaxNodeType::ExportNamedDeclaration;
+    }
+
+    ExportSpecifier::ExportSpecifier(): SyntaxNode() {
+        type = SyntaxNodeType::ExportSpecifier;
+    }
+
+    ExpressionStatement::ExpressionStatement(): Statement() {
+        type = SyntaxNodeType::ExpressionStatement;
+    }
+
+    ForInStatement::ForInStatement(): Statement() {
+        type = SyntaxNodeType::ForInStatement;
+        scope = std::make_unique<Scope>();
+    }
+
+    ForOfStatement::ForOfStatement(): Statement() {
+        type = SyntaxNodeType::ForOfStatement;
+        scope = std::make_unique<Scope>();
+    }
+
+    ForStatement::ForStatement(): Statement() {
+        type = SyntaxNodeType::ForStatement;
+        scope = std::make_unique<Scope>();
+    }
+
+    FunctionDeclaration::FunctionDeclaration(): Declaration() {
+        type = SyntaxNodeType::FunctionDeclaration;
+        scope = std::make_unique<Scope>();
+    }
+
+    FunctionExpression::FunctionExpression(): Expression() {
+        type = SyntaxNodeType::FunctionExpression;
+    }
+
+    Identifier::Identifier(): Expression(), Pattern() {
+        type = SyntaxNodeType::Identifier;
+    }
+
+    IfStatement::IfStatement(): Statement() {
+        type = SyntaxNodeType::IfStatement;
+    }
+
+    Import::Import(): Expression() {
+        type = SyntaxNodeType::Import;
+    }
+
+    ImportDeclaration::ImportDeclaration(): Declaration() {
+        type = SyntaxNodeType::ImportDeclaration;
+    }
+
+    ImportDefaultSpecifier::ImportDefaultSpecifier(): SyntaxNode() {
+        type = SyntaxNodeType::ImportDefaultSpecifier;
+    }
+
+    ImportNamespaceSpecifier::ImportNamespaceSpecifier(): SyntaxNode() {
+        type = SyntaxNodeType::ImportNamespaceSpecifier;
+    }
+
+    ImportSpecifier::ImportSpecifier(): SyntaxNode() {
+        type = SyntaxNodeType::ImportSpecifier;
+    }
+
+    LabeledStatement::LabeledStatement(): Statement() {
+        type = SyntaxNodeType::LabeledStatement;
+    }
+
+    Literal::Literal(): Expression() {
+        type = SyntaxNodeType::Literal;
+    }
+
+    MetaProperty::MetaProperty(): Expression() {
+        type = SyntaxNodeType::MetaProperty;
+    }
+
+    MethodDefinition::MethodDefinition(): SyntaxNode() {
+        type = SyntaxNodeType::MethodDefinition;
+    }
+
+    Module::Module(): SyntaxNode() {
+        type = SyntaxNodeType::Module;
+        scope = std::make_unique<Scope>();
+    }
+
+    NewExpression::NewExpression(): Expression() {
+        type = SyntaxNodeType::NewExpression;
+    }
+
+    ObjectExpression::ObjectExpression(): Expression() {
+        type = SyntaxNodeType::ObjectExpression;
+    }
+
+    ObjectPattern::ObjectPattern(): Pattern() {
+        type = SyntaxNodeType::ObjectPattern;
+    }
+
+    Property::Property(): SyntaxNode() {
+        type = SyntaxNodeType::Property;
+    }
+
+    RegexLiteral::RegexLiteral(): Expression() {
+        type = SyntaxNodeType::RegexLiteral;
+    }
+
+    RestElement::RestElement(): Pattern(), Expression() {
+        type = SyntaxNodeType::RestElement;
+    }
+
+    ReturnStatement::ReturnStatement(): Statement() {
+        type = SyntaxNodeType::ReturnStatement;
+    }
+
+    Script::Script(): SyntaxNode() {
+        type = SyntaxNodeType::Script;
+    }
+
+    SequenceExpression::SequenceExpression(): Expression() {
+        type = SyntaxNodeType::SequenceExpression;
+    }
+
+    SpreadElement::SpreadElement(): SyntaxNode() {
+        type = SyntaxNodeType::SpreadElement;
+    }
+
+    MemberExpression::MemberExpression(): Expression(), Pattern() {
+        type = SyntaxNodeType::MemberExpression;
+    }
+
+    Super::Super(): Expression() {
+        type = SyntaxNodeType::Super;
+    }
+
+    SwitchCase::SwitchCase(): SyntaxNode() {
+        type = SyntaxNodeType::SwitchCase;
+    }
+
+    SwitchStatement::SwitchStatement(): Statement() {
+        type = SyntaxNodeType::SwitchStatement;
+        scope = std::make_unique<Scope>();
+    }
+
+    TaggedTemplateExpression::TaggedTemplateExpression(): Expression() {
+        type = SyntaxNodeType::TaggedTemplateExpression;
+    }
+
+    TemplateElement::TemplateElement(): SyntaxNode() {
+        type = SyntaxNodeType::TemplateElement;
+    }
+
+    TemplateLiteral::TemplateLiteral(): Expression() {
+        type = SyntaxNodeType::TemplateLiteral;
+    }
+
+    ThisExpression::ThisExpression(): Expression() {
+        type = SyntaxNodeType::ThisExpression;
+    }
+
+    ThrowStatement::ThrowStatement(): Statement() {
+        type = SyntaxNodeType::ThrowStatement;
+    }
+
+    TryStatement::TryStatement(): Statement() {
+        type = SyntaxNodeType::TryStatement;
+    }
+
+    UnaryExpression::UnaryExpression(): Expression() {
+        type = SyntaxNodeType::UnaryExpression;
+    }
+
+    UpdateExpression::UpdateExpression(): Expression() {
+        type = SyntaxNodeType::UpdateExpression;
+    }
+
+    VariableDeclaration::VariableDeclaration(): Declaration() {
+        type = SyntaxNodeType::VariableDeclaration;
+    }
+
+    VariableDeclarator::VariableDeclarator(): SyntaxNode() {
+        type = SyntaxNodeType::VariableDeclarator;
+    }
+
+    WhileStatement::WhileStatement(): Statement() {
+        type = SyntaxNodeType::WhileStatement;
+    }
+
+    WithStatement::WithStatement(): Statement() {
+        type = SyntaxNodeType::WithStatement;
+    }
+
+    YieldExpression::YieldExpression(): Expression() {
+        type = SyntaxNodeType::YieldExpression;
+    }
+
+    ArrowParameterPlaceHolder::ArrowParameterPlaceHolder(): Expression() {
+        type = SyntaxNodeType::ArrowParameterPlaceHolder;
+    }
+
+    JSXClosingElement::JSXClosingElement(): SyntaxNode() {
+        type = SyntaxNodeType::JSXClosingElement;
+    }
+
+    JSXElement::JSXElement(): Expression() {
+        type = SyntaxNodeType::JSXElement;
+    }
+
+    JSXEmptyExpression::JSXEmptyExpression(): SyntaxNode() {
+        type = SyntaxNodeType::JSXEmptyExpression;
+    }
+
+    JSXExpressionContainer::JSXExpressionContainer(): SyntaxNode() {
+        type = SyntaxNodeType::JSXExpressionContainer;
+    }
+
+    JSXIdentifier::JSXIdentifier(): SyntaxNode() {
+        type = SyntaxNodeType::JSXIdentifier;
+    }
+
+    JSXMemberExpression::JSXMemberExpression(): SyntaxNode() {
+        type = SyntaxNodeType::JSXMemberExpression;
+    }
+
+    JSXAttribute::JSXAttribute(): SyntaxNode() {
+        type = SyntaxNodeType::JSXAttribute;
+    }
+
+    JSXNamespacedName::JSXNamespacedName(): SyntaxNode() {
+        type = SyntaxNodeType::JSXNamespacedName;
+    }
+
+    JSXOpeningElement::JSXOpeningElement(): SyntaxNode() {
+        type = SyntaxNodeType::JSXOpeningElement;
+    }
+
+    JSXSpreadAttribute::JSXSpreadAttribute(): SyntaxNode() {
+        type = SyntaxNodeType::JSXSpreadAttribute;
+    }
+
+    JSXText::JSXText(): SyntaxNode() {
+        type = SyntaxNodeType::JSXText;
+    }
+
+    TSParameterProperty::TSParameterProperty(): SyntaxNode() {
+        type = SyntaxNodeType::TSParameterProperty;
+    }
+
+    TSDeclareFunction::TSDeclareFunction(): Declaration() {
+        type = SyntaxNodeType::TSDeclareFunction;
+    }
+
+    TSDeclareMethod::TSDeclareMethod(): SyntaxNode() {
+        type = SyntaxNodeType::TSDeclareMethod;
+    }
+
+    TSQualifiedName::TSQualifiedName(): SyntaxNode() {
+        type = SyntaxNodeType::TSQualifiedName;
+    }
+
+    TSCallSignatureDeclaration::TSCallSignatureDeclaration(): SyntaxNode() {
+        type = SyntaxNodeType::TSCallSignatureDeclaration;
+    }
+
+    TSConstructSignatureDeclaration::TSConstructSignatureDeclaration(): SyntaxNode() {
+        type = SyntaxNodeType::TSConstructSignatureDeclaration;
+    }
+
+    TSPropertySignature::TSPropertySignature(): SyntaxNode() {
+        type = SyntaxNodeType::TSPropertySignature;
+    }
+
+    TSMethodSignature::TSMethodSignature(): SyntaxNode() {
+        type = SyntaxNodeType::TSMethodSignature;
+    }
+
+    TSIndexSignature::TSIndexSignature(): SyntaxNode() {
+        type = SyntaxNodeType::TSIndexSignature;
+    }
+
+    TSAnyKeyword::TSAnyKeyword(): TSType() {
+        type = SyntaxNodeType::TSAnyKeyword;
+    }
+
+    TSBooleanKeyword::TSBooleanKeyword(): TSType() {
+        type = SyntaxNodeType::TSBooleanKeyword;
+    }
+
+    TSBigIntKeyword::TSBigIntKeyword(): TSType() {
+        type = SyntaxNodeType::TSBigIntKeyword;
+    }
+
+    TSNeverKeyword::TSNeverKeyword(): TSType() {
+        type = SyntaxNodeType::TSNeverKeyword;
+    }
+
+    TSNullKeyword::TSNullKeyword(): TSType() {
+        type = SyntaxNodeType::TSNullKeyword;
+    }
+
+    TSNumberKeyword::TSNumberKeyword(): TSType() {
+        type = SyntaxNodeType::TSNumberKeyword;
+    }
+
+    TSObjectKeyword::TSObjectKeyword(): TSType() {
+        type = SyntaxNodeType::TSObjectKeyword;
+    }
+
+    TSStringKeyword::TSStringKeyword(): TSType() {
+        type = SyntaxNodeType::TSStringKeyword;
+    }
+
+    TSSymbolKeyword::TSSymbolKeyword(): TSType() {
+        type = SyntaxNodeType::TSSymbolKeyword;
+    }
+
+    TSUndefinedKeyword::TSUndefinedKeyword(): TSType() {
+        type = SyntaxNodeType::TSUndefinedKeyword;
+    }
+
+    TSUnknownKeyword::TSUnknownKeyword(): TSType() {
+        type = SyntaxNodeType::TSUnknownKeyword;
+    }
+
+    TSVoidKeyword::TSVoidKeyword(): TSType() {
+        type = SyntaxNodeType::TSVoidKeyword;
+    }
+
+    TSThisType::TSThisType(): TSType() {
+        type = SyntaxNodeType::TSThisType;
+    }
+
+    TSFunctionType::TSFunctionType(): TSType() {
+        type = SyntaxNodeType::TSFunctionType;
+    }
+
+    TSConstructorType::TSConstructorType(): TSType() {
+        type = SyntaxNodeType::TSConstructorType;
+    }
+
+    TSTypeReference::TSTypeReference(): TSType() {
+        type = SyntaxNodeType::TSTypeReference;
+    }
+
+    TSTypePredicate::TSTypePredicate(): TSType() {
+        type = SyntaxNodeType::TSTypePredicate;
+    }
+
+    TSTypeQuery::TSTypeQuery(): TSType() {
+        type = SyntaxNodeType::TSTypeQuery;
+    }
+
+    TSTypeLiteral::TSTypeLiteral(): TSType() {
+        type = SyntaxNodeType::TSTypeLiteral;
+    }
+
+    TSArrayType::TSArrayType(): TSType() {
+        type = SyntaxNodeType::TSArrayType;
+    }
+
+    TSTupleType::TSTupleType(): TSType() {
+        type = SyntaxNodeType::TSTupleType;
+    }
+
+    TSOptionalType::TSOptionalType(): TSType() {
+        type = SyntaxNodeType::TSOptionalType;
+    }
+
+    TSRestType::TSRestType(): TSType() {
+        type = SyntaxNodeType::TSRestType;
+    }
+
+    TSUnionType::TSUnionType(): TSType() {
+        type = SyntaxNodeType::TSUnionType;
+    }
+
+    TSIntersectionType::TSIntersectionType(): TSType() {
+        type = SyntaxNodeType::TSIntersectionType;
+    }
+
+    TSConditionalType::TSConditionalType(): TSType() {
+        type = SyntaxNodeType::TSConditionalType;
+    }
+
+    TSInferType::TSInferType(): TSType() {
+        type = SyntaxNodeType::TSInferType;
+    }
+
+    TSParenthesizedType::TSParenthesizedType(): TSType() {
+        type = SyntaxNodeType::TSParenthesizedType;
+    }
 
-TSInferType::TSInferType(): TSType() {
-    type = SyntaxNodeType::TSInferType;
-}
+    TSTypeOperator::TSTypeOperator(): TSType() {
+        type = SyntaxNodeType::TSTypeOperator;
+    }
 
-TSParenthesizedType::TSParenthesizedType(): TSType() {
-    type = SyntaxNodeType::TSParenthesizedType;
-}
+    TSIndexedAccessType::TSIndexedAccessType(): TSType() {
+        type = SyntaxNodeType::TSIndexedAccessType;
+    }
 
-TSTypeOperator::TSTypeOperator(): TSType() {
-    type = SyntaxNodeType::TSTypeOperator;
-}
+    TSMappedType::TSMappedType(): TSType() {
+        type = SyntaxNodeType::TSMappedType;
+    }
 
-TSIndexedAccessType::TSIndexedAccessType(): TSType() {
-    type = SyntaxNodeType::TSIndexedAccessType;
-}
+    TSLiteralType::TSLiteralType(): TSType() {
+        type = SyntaxNodeType::TSLiteralType;
+    }
 
-TSMappedType::TSMappedType(): TSType() {
-    type = SyntaxNodeType::TSMappedType;
-}
+    TSExpressionWithTypeArguments::TSExpressionWithTypeArguments(): TSType() {
+        type = SyntaxNodeType::TSExpressionWithTypeArguments;
+    }
 
-TSLiteralType::TSLiteralType(): TSType() {
-    type = SyntaxNodeType::TSLiteralType;
-}
+    TSInterfaceDeclaration::TSInterfaceDeclaration(): Declaration() {
+        type = SyntaxNodeType::TSInterfaceDeclaration;
+    }
 
-TSExpressionWithTypeArguments::TSExpressionWithTypeArguments(): TSType() {
-    type = SyntaxNodeType::TSExpressionWithTypeArguments;
-}
+    TSInterfaceBody::TSInterfaceBody(): SyntaxNode() {
+        type = SyntaxNodeType::TSInterfaceBody;
+    }
 
-TSInterfaceDeclaration::TSInterfaceDeclaration(): Declaration() {
-    type = SyntaxNodeType::TSInterfaceDeclaration;
-}
+    TSTypeAliasDeclaration::TSTypeAliasDeclaration(): Declaration() {
+        type = SyntaxNodeType::TSTypeAliasDeclaration;
+    }
 
-TSInterfaceBody::TSInterfaceBody(): SyntaxNode() {
-    type = SyntaxNodeType::TSInterfaceBody;
-}
+    TSAsExpression::TSAsExpression(): Expression() {
+        type = SyntaxNodeType::TSAsExpression;
+    }
 
-TSTypeAliasDeclaration::TSTypeAliasDeclaration(): Declaration() {
-    type = SyntaxNodeType::TSTypeAliasDeclaration;
-}
+    TSTypeAssertion::TSTypeAssertion(): Expression() {
+        type = SyntaxNodeType::TSTypeAssertion;
+    }
 
-TSAsExpression::TSAsExpression(): Expression() {
-    type = SyntaxNodeType::TSAsExpression;
-}
+    TSEnumDeclaration::TSEnumDeclaration(): Declaration() {
+        type = SyntaxNodeType::TSEnumDeclaration;
+    }
 
-TSTypeAssertion::TSTypeAssertion(): Expression() {
-    type = SyntaxNodeType::TSTypeAssertion;
-}
+    TSEnumMember::TSEnumMember(): SyntaxNode() {
+        type = SyntaxNodeType::TSEnumMember;
+    }
 
-TSEnumDeclaration::TSEnumDeclaration(): Declaration() {
-    type = SyntaxNodeType::TSEnumDeclaration;
-}
+    TSModuleDeclaration::TSModuleDeclaration(): Declaration() {
+        type = SyntaxNodeType::TSModuleDeclaration;
+    }
 
-TSEnumMember::TSEnumMember(): SyntaxNode() {
-    type = SyntaxNodeType::TSEnumMember;
-}
+    TSModuleBlock::TSModuleBlock(): SyntaxNode() {
+        type = SyntaxNodeType::TSModuleBlock;
+    }
 
-TSModuleDeclaration::TSModuleDeclaration(): Declaration() {
-    type = SyntaxNodeType::TSModuleDeclaration;
-}
+    TSImportType::TSImportType(): TSType() {
+        type = SyntaxNodeType::TSImportType;
+    }
 
-TSModuleBlock::TSModuleBlock(): SyntaxNode() {
-    type = SyntaxNodeType::TSModuleBlock;
-}
+    TSImportEqualsDeclaration::TSImportEqualsDeclaration(): Declaration() {
+        type = SyntaxNodeType::TSImportEqualsDeclaration;
+    }
 
-TSImportType::TSImportType(): TSType() {
-    type = SyntaxNodeType::TSImportType;
-}
+    TSExternalModuleReference::TSExternalModuleReference(): SyntaxNode() {
+        type = SyntaxNodeType::TSExternalModuleReference;
+    }
 
-TSImportEqualsDeclaration::TSImportEqualsDeclaration(): Declaration() {
-    type = SyntaxNodeType::TSImportEqualsDeclaration;
-}
+    TSNonNullExpression::TSNonNullExpression(): Expression() {
+        type = SyntaxNodeType::TSNonNullExpression;
+    }
 
-TSExternalModuleReference::TSExternalModuleReference(): SyntaxNode() {
-    type = SyntaxNodeType::TSExternalModuleReference;
-}
+    TSExportAssignment::TSExportAssignment(): Statement() {
+        type = SyntaxNodeType::TSExportAssignment;
+    }
 
-TSNonNullExpression::TSNonNullExpression(): Expression() {
-    type = SyntaxNodeType::TSNonNullExpression;
-}
+    TSNamespaceExportDeclaration::TSNamespaceExportDeclaration(): Statement() {
+        type = SyntaxNodeType::TSNamespaceExportDeclaration;
+    }
 
-TSExportAssignment::TSExportAssignment(): Statement() {
-    type = SyntaxNodeType::TSExportAssignment;
-}
+    TSTypeAnnotation::TSTypeAnnotation(): SyntaxNode() {
+        type = SyntaxNodeType::TSTypeAnnotation;
+    }
 
-TSNamespaceExportDeclaration::TSNamespaceExportDeclaration(): Statement() {
-    type = SyntaxNodeType::TSNamespaceExportDeclaration;
-}
+    TSTypeParameterInstantiation::TSTypeParameterInstantiation(): SyntaxNode() {
+        type = SyntaxNodeType::TSTypeParameterInstantiation;
+    }
 
-TSTypeAnnotation::TSTypeAnnotation(): SyntaxNode() {
-    type = SyntaxNodeType::TSTypeAnnotation;
-}
+    TSTypeParameterDeclaration::TSTypeParameterDeclaration(): SyntaxNode() {
+        type = SyntaxNodeType::TSTypeParameterDeclaration;
+    }
 
-TSTypeParameterInstantiation::TSTypeParameterInstantiation(): SyntaxNode() {
-    type = SyntaxNodeType::TSTypeParameterInstantiation;
-}
+    TSTypeParameter::TSTypeParameter(): SyntaxNode() {
+        type = SyntaxNodeType::TSTypeParameter;
+    }
 
-TSTypeParameterDeclaration::TSTypeParameterDeclaration(): SyntaxNode() {
-    type = SyntaxNodeType::TSTypeParameterDeclaration;
 }
 
-TSTypeParameter::TSTypeParameter(): SyntaxNode() {
-    type = SyntaxNodeType::TSTypeParameter;
-}

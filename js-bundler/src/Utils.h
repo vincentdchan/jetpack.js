@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #endif
 
-namespace rb {
+namespace rocket_bundle {
 
     inline bool IsFileExist(const std::string& path) {
 #ifndef _WIN32

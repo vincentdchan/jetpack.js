@@ -7,7 +7,7 @@
 #include <jemalloc/jemalloc.h>
 #include <fmt/format.h>
 
-namespace parser {
+namespace rocket_bundle::parser {
     using namespace std;
 
     ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state):

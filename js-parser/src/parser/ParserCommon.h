@@ -17,7 +17,7 @@
 #include "SyntaxNodes.h"
 #include "ParserContext.h"
 
-namespace parser {
+namespace rocket_bundle::parser {
 
     class ParserCommon {
     public:

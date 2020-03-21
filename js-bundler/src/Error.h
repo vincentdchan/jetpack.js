@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace rb {
+namespace rocket_bundle {
 
     class Error : std::exception {
     public:

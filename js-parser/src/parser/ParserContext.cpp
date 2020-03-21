@@ -3,7 +3,7 @@
 //
 #include "ParserContext.h"
 
-namespace parser {
+namespace rocket_bundle::parser {
     using namespace std;
 
     ParserContext::Config ParserContext::Config::Default() {

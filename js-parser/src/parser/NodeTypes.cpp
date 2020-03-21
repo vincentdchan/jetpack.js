@@ -2,437 +2,442 @@
 
 #include "NodeTypes.h"
 
-const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
-    switch (type_) {
+namespace rocket_bundle {
 
-        case SyntaxNodeType::ArrayExpression:
-            return "ArrayExpression";
+    const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
+        switch (type_) {
 
-        case SyntaxNodeType::ArrayPattern:
-            return "ArrayPattern";
+            case SyntaxNodeType::ArrayExpression:
+                return "ArrayExpression";
 
-        case SyntaxNodeType::ArrowFunctionExpression:
-            return "ArrowFunctionExpression";
+            case SyntaxNodeType::ArrayPattern:
+                return "ArrayPattern";
 
-        case SyntaxNodeType::AssignmentExpression:
-            return "AssignmentExpression";
+            case SyntaxNodeType::ArrowFunctionExpression:
+                return "ArrowFunctionExpression";
 
-        case SyntaxNodeType::AssignmentPattern:
-            return "AssignmentPattern";
+            case SyntaxNodeType::AssignmentExpression:
+                return "AssignmentExpression";
 
-        case SyntaxNodeType::AwaitExpression:
-            return "AwaitExpression";
+            case SyntaxNodeType::AssignmentPattern:
+                return "AssignmentPattern";
 
-        case SyntaxNodeType::BinaryExpression:
-            return "BinaryExpression";
+            case SyntaxNodeType::AwaitExpression:
+                return "AwaitExpression";
 
-        case SyntaxNodeType::BlockStatement:
-            return "BlockStatement";
+            case SyntaxNodeType::BinaryExpression:
+                return "BinaryExpression";
 
-        case SyntaxNodeType::BreakStatement:
-            return "BreakStatement";
+            case SyntaxNodeType::BlockStatement:
+                return "BlockStatement";
 
-        case SyntaxNodeType::CallExpression:
-            return "CallExpression";
+            case SyntaxNodeType::BreakStatement:
+                return "BreakStatement";
 
-        case SyntaxNodeType::CatchClause:
-            return "CatchClause";
+            case SyntaxNodeType::CallExpression:
+                return "CallExpression";
 
-        case SyntaxNodeType::ClassBody:
-            return "ClassBody";
+            case SyntaxNodeType::CatchClause:
+                return "CatchClause";
 
-        case SyntaxNodeType::ClassDeclaration:
-            return "ClassDeclaration";
+            case SyntaxNodeType::ClassBody:
+                return "ClassBody";
 
-        case SyntaxNodeType::ClassExpression:
-            return "ClassExpression";
+            case SyntaxNodeType::ClassDeclaration:
+                return "ClassDeclaration";
 
-        case SyntaxNodeType::ConditionalExpression:
-            return "ConditionalExpression";
+            case SyntaxNodeType::ClassExpression:
+                return "ClassExpression";
 
-        case SyntaxNodeType::ContinueStatement:
-            return "ContinueStatement";
+            case SyntaxNodeType::ConditionalExpression:
+                return "ConditionalExpression";
 
-        case SyntaxNodeType::DebuggerStatement:
-            return "DebuggerStatement";
+            case SyntaxNodeType::ContinueStatement:
+                return "ContinueStatement";
 
-        case SyntaxNodeType::Directive:
-            return "Directive";
+            case SyntaxNodeType::DebuggerStatement:
+                return "DebuggerStatement";
 
-        case SyntaxNodeType::DoWhileStatement:
-            return "DoWhileStatement";
+            case SyntaxNodeType::Directive:
+                return "Directive";
 
-        case SyntaxNodeType::EmptyStatement:
-            return "EmptyStatement";
+            case SyntaxNodeType::DoWhileStatement:
+                return "DoWhileStatement";
 
-        case SyntaxNodeType::ExportAllDeclaration:
-            return "ExportAllDeclaration";
+            case SyntaxNodeType::EmptyStatement:
+                return "EmptyStatement";
 
-        case SyntaxNodeType::ExportDefaultDeclaration:
-            return "ExportDefaultDeclaration";
+            case SyntaxNodeType::ExportAllDeclaration:
+                return "ExportAllDeclaration";
 
-        case SyntaxNodeType::ExportNamedDeclaration:
-            return "ExportNamedDeclaration";
+            case SyntaxNodeType::ExportDefaultDeclaration:
+                return "ExportDefaultDeclaration";
 
-        case SyntaxNodeType::ExportSpecifier:
-            return "ExportSpecifier";
+            case SyntaxNodeType::ExportNamedDeclaration:
+                return "ExportNamedDeclaration";
 
-        case SyntaxNodeType::ExpressionStatement:
-            return "ExpressionStatement";
+            case SyntaxNodeType::ExportSpecifier:
+                return "ExportSpecifier";
 
-        case SyntaxNodeType::ForInStatement:
-            return "ForInStatement";
+            case SyntaxNodeType::ExpressionStatement:
+                return "ExpressionStatement";
 
-        case SyntaxNodeType::ForOfStatement:
-            return "ForOfStatement";
+            case SyntaxNodeType::ForInStatement:
+                return "ForInStatement";
 
-        case SyntaxNodeType::ForStatement:
-            return "ForStatement";
+            case SyntaxNodeType::ForOfStatement:
+                return "ForOfStatement";
 
-        case SyntaxNodeType::FunctionDeclaration:
-            return "FunctionDeclaration";
+            case SyntaxNodeType::ForStatement:
+                return "ForStatement";
 
-        case SyntaxNodeType::FunctionExpression:
-            return "FunctionExpression";
+            case SyntaxNodeType::FunctionDeclaration:
+                return "FunctionDeclaration";
 
-        case SyntaxNodeType::Identifier:
-            return "Identifier";
+            case SyntaxNodeType::FunctionExpression:
+                return "FunctionExpression";
 
-        case SyntaxNodeType::IfStatement:
-            return "IfStatement";
+            case SyntaxNodeType::Identifier:
+                return "Identifier";
 
-        case SyntaxNodeType::Import:
-            return "Import";
+            case SyntaxNodeType::IfStatement:
+                return "IfStatement";
 
-        case SyntaxNodeType::ImportDeclaration:
-            return "ImportDeclaration";
+            case SyntaxNodeType::Import:
+                return "Import";
 
-        case SyntaxNodeType::ImportDefaultSpecifier:
-            return "ImportDefaultSpecifier";
+            case SyntaxNodeType::ImportDeclaration:
+                return "ImportDeclaration";
 
-        case SyntaxNodeType::ImportNamespaceSpecifier:
-            return "ImportNamespaceSpecifier";
+            case SyntaxNodeType::ImportDefaultSpecifier:
+                return "ImportDefaultSpecifier";
 
-        case SyntaxNodeType::ImportSpecifier:
-            return "ImportSpecifier";
+            case SyntaxNodeType::ImportNamespaceSpecifier:
+                return "ImportNamespaceSpecifier";
 
-        case SyntaxNodeType::LabeledStatement:
-            return "LabeledStatement";
+            case SyntaxNodeType::ImportSpecifier:
+                return "ImportSpecifier";
 
-        case SyntaxNodeType::Literal:
-            return "Literal";
+            case SyntaxNodeType::LabeledStatement:
+                return "LabeledStatement";
 
-        case SyntaxNodeType::MetaProperty:
-            return "MetaProperty";
+            case SyntaxNodeType::Literal:
+                return "Literal";
 
-        case SyntaxNodeType::MethodDefinition:
-            return "MethodDefinition";
+            case SyntaxNodeType::MetaProperty:
+                return "MetaProperty";
 
-        case SyntaxNodeType::Module:
-            return "Module";
+            case SyntaxNodeType::MethodDefinition:
+                return "MethodDefinition";
 
-        case SyntaxNodeType::NewExpression:
-            return "NewExpression";
+            case SyntaxNodeType::Module:
+                return "Module";
 
-        case SyntaxNodeType::ObjectExpression:
-            return "ObjectExpression";
+            case SyntaxNodeType::NewExpression:
+                return "NewExpression";
 
-        case SyntaxNodeType::ObjectPattern:
-            return "ObjectPattern";
+            case SyntaxNodeType::ObjectExpression:
+                return "ObjectExpression";
 
-        case SyntaxNodeType::Property:
-            return "Property";
+            case SyntaxNodeType::ObjectPattern:
+                return "ObjectPattern";
 
-        case SyntaxNodeType::RegexLiteral:
-            return "RegexLiteral";
+            case SyntaxNodeType::Property:
+                return "Property";
 
-        case SyntaxNodeType::RestElement:
-            return "RestElement";
+            case SyntaxNodeType::RegexLiteral:
+                return "RegexLiteral";
 
-        case SyntaxNodeType::ReturnStatement:
-            return "ReturnStatement";
+            case SyntaxNodeType::RestElement:
+                return "RestElement";
 
-        case SyntaxNodeType::Script:
-            return "Script";
+            case SyntaxNodeType::ReturnStatement:
+                return "ReturnStatement";
 
-        case SyntaxNodeType::SequenceExpression:
-            return "SequenceExpression";
+            case SyntaxNodeType::Script:
+                return "Script";
 
-        case SyntaxNodeType::SpreadElement:
-            return "SpreadElement";
+            case SyntaxNodeType::SequenceExpression:
+                return "SequenceExpression";
 
-        case SyntaxNodeType::MemberExpression:
-            return "MemberExpression";
+            case SyntaxNodeType::SpreadElement:
+                return "SpreadElement";
 
-        case SyntaxNodeType::Super:
-            return "Super";
+            case SyntaxNodeType::MemberExpression:
+                return "MemberExpression";
 
-        case SyntaxNodeType::SwitchCase:
-            return "SwitchCase";
+            case SyntaxNodeType::Super:
+                return "Super";
 
-        case SyntaxNodeType::SwitchStatement:
-            return "SwitchStatement";
+            case SyntaxNodeType::SwitchCase:
+                return "SwitchCase";
 
-        case SyntaxNodeType::TaggedTemplateExpression:
-            return "TaggedTemplateExpression";
+            case SyntaxNodeType::SwitchStatement:
+                return "SwitchStatement";
 
-        case SyntaxNodeType::TemplateElement:
-            return "TemplateElement";
+            case SyntaxNodeType::TaggedTemplateExpression:
+                return "TaggedTemplateExpression";
 
-        case SyntaxNodeType::TemplateLiteral:
-            return "TemplateLiteral";
+            case SyntaxNodeType::TemplateElement:
+                return "TemplateElement";
 
-        case SyntaxNodeType::ThisExpression:
-            return "ThisExpression";
+            case SyntaxNodeType::TemplateLiteral:
+                return "TemplateLiteral";
 
-        case SyntaxNodeType::ThrowStatement:
-            return "ThrowStatement";
+            case SyntaxNodeType::ThisExpression:
+                return "ThisExpression";
 
-        case SyntaxNodeType::TryStatement:
-            return "TryStatement";
+            case SyntaxNodeType::ThrowStatement:
+                return "ThrowStatement";
 
-        case SyntaxNodeType::UnaryExpression:
-            return "UnaryExpression";
+            case SyntaxNodeType::TryStatement:
+                return "TryStatement";
 
-        case SyntaxNodeType::UpdateExpression:
-            return "UpdateExpression";
+            case SyntaxNodeType::UnaryExpression:
+                return "UnaryExpression";
 
-        case SyntaxNodeType::VariableDeclaration:
-            return "VariableDeclaration";
+            case SyntaxNodeType::UpdateExpression:
+                return "UpdateExpression";
 
-        case SyntaxNodeType::VariableDeclarator:
-            return "VariableDeclarator";
+            case SyntaxNodeType::VariableDeclaration:
+                return "VariableDeclaration";
 
-        case SyntaxNodeType::WhileStatement:
-            return "WhileStatement";
+            case SyntaxNodeType::VariableDeclarator:
+                return "VariableDeclarator";
 
-        case SyntaxNodeType::WithStatement:
-            return "WithStatement";
+            case SyntaxNodeType::WhileStatement:
+                return "WhileStatement";
 
-        case SyntaxNodeType::YieldExpression:
-            return "YieldExpression";
+            case SyntaxNodeType::WithStatement:
+                return "WithStatement";
 
-        case SyntaxNodeType::ArrowParameterPlaceHolder:
-            return "ArrowParameterPlaceHolder";
+            case SyntaxNodeType::YieldExpression:
+                return "YieldExpression";
 
-        case SyntaxNodeType::JSXClosingElement:
-            return "JSXClosingElement";
+            case SyntaxNodeType::ArrowParameterPlaceHolder:
+                return "ArrowParameterPlaceHolder";
 
-        case SyntaxNodeType::JSXElement:
-            return "JSXElement";
+            case SyntaxNodeType::JSXClosingElement:
+                return "JSXClosingElement";
 
-        case SyntaxNodeType::JSXEmptyExpression:
-            return "JSXEmptyExpression";
+            case SyntaxNodeType::JSXElement:
+                return "JSXElement";
 
-        case SyntaxNodeType::JSXExpressionContainer:
-            return "JSXExpressionContainer";
+            case SyntaxNodeType::JSXEmptyExpression:
+                return "JSXEmptyExpression";
 
-        case SyntaxNodeType::JSXIdentifier:
-            return "JSXIdentifier";
+            case SyntaxNodeType::JSXExpressionContainer:
+                return "JSXExpressionContainer";
 
-        case SyntaxNodeType::JSXMemberExpression:
-            return "JSXMemberExpression";
+            case SyntaxNodeType::JSXIdentifier:
+                return "JSXIdentifier";
 
-        case SyntaxNodeType::JSXAttribute:
-            return "JSXAttribute";
+            case SyntaxNodeType::JSXMemberExpression:
+                return "JSXMemberExpression";
 
-        case SyntaxNodeType::JSXNamespacedName:
-            return "JSXNamespacedName";
+            case SyntaxNodeType::JSXAttribute:
+                return "JSXAttribute";
 
-        case SyntaxNodeType::JSXOpeningElement:
-            return "JSXOpeningElement";
+            case SyntaxNodeType::JSXNamespacedName:
+                return "JSXNamespacedName";
 
-        case SyntaxNodeType::JSXSpreadAttribute:
-            return "JSXSpreadAttribute";
+            case SyntaxNodeType::JSXOpeningElement:
+                return "JSXOpeningElement";
 
-        case SyntaxNodeType::JSXText:
-            return "JSXText";
+            case SyntaxNodeType::JSXSpreadAttribute:
+                return "JSXSpreadAttribute";
 
-        case SyntaxNodeType::TSParameterProperty:
-            return "TSParameterProperty";
+            case SyntaxNodeType::JSXText:
+                return "JSXText";
 
-        case SyntaxNodeType::TSDeclareFunction:
-            return "TSDeclareFunction";
+            case SyntaxNodeType::TSParameterProperty:
+                return "TSParameterProperty";
 
-        case SyntaxNodeType::TSDeclareMethod:
-            return "TSDeclareMethod";
+            case SyntaxNodeType::TSDeclareFunction:
+                return "TSDeclareFunction";
 
-        case SyntaxNodeType::TSQualifiedName:
-            return "TSQualifiedName";
+            case SyntaxNodeType::TSDeclareMethod:
+                return "TSDeclareMethod";
 
-        case SyntaxNodeType::TSCallSignatureDeclaration:
-            return "TSCallSignatureDeclaration";
+            case SyntaxNodeType::TSQualifiedName:
+                return "TSQualifiedName";
 
-        case SyntaxNodeType::TSConstructSignatureDeclaration:
-            return "TSConstructSignatureDeclaration";
+            case SyntaxNodeType::TSCallSignatureDeclaration:
+                return "TSCallSignatureDeclaration";
 
-        case SyntaxNodeType::TSPropertySignature:
-            return "TSPropertySignature";
+            case SyntaxNodeType::TSConstructSignatureDeclaration:
+                return "TSConstructSignatureDeclaration";
 
-        case SyntaxNodeType::TSMethodSignature:
-            return "TSMethodSignature";
+            case SyntaxNodeType::TSPropertySignature:
+                return "TSPropertySignature";
 
-        case SyntaxNodeType::TSIndexSignature:
-            return "TSIndexSignature";
+            case SyntaxNodeType::TSMethodSignature:
+                return "TSMethodSignature";
 
-        case SyntaxNodeType::TSAnyKeyword:
-            return "TSAnyKeyword";
+            case SyntaxNodeType::TSIndexSignature:
+                return "TSIndexSignature";
 
-        case SyntaxNodeType::TSBooleanKeyword:
-            return "TSBooleanKeyword";
+            case SyntaxNodeType::TSAnyKeyword:
+                return "TSAnyKeyword";
 
-        case SyntaxNodeType::TSBigIntKeyword:
-            return "TSBigIntKeyword";
+            case SyntaxNodeType::TSBooleanKeyword:
+                return "TSBooleanKeyword";
 
-        case SyntaxNodeType::TSNeverKeyword:
-            return "TSNeverKeyword";
+            case SyntaxNodeType::TSBigIntKeyword:
+                return "TSBigIntKeyword";
 
-        case SyntaxNodeType::TSNullKeyword:
-            return "TSNullKeyword";
+            case SyntaxNodeType::TSNeverKeyword:
+                return "TSNeverKeyword";
 
-        case SyntaxNodeType::TSNumberKeyword:
-            return "TSNumberKeyword";
+            case SyntaxNodeType::TSNullKeyword:
+                return "TSNullKeyword";
 
-        case SyntaxNodeType::TSObjectKeyword:
-            return "TSObjectKeyword";
+            case SyntaxNodeType::TSNumberKeyword:
+                return "TSNumberKeyword";
 
-        case SyntaxNodeType::TSStringKeyword:
-            return "TSStringKeyword";
+            case SyntaxNodeType::TSObjectKeyword:
+                return "TSObjectKeyword";
 
-        case SyntaxNodeType::TSSymbolKeyword:
-            return "TSSymbolKeyword";
+            case SyntaxNodeType::TSStringKeyword:
+                return "TSStringKeyword";
 
-        case SyntaxNodeType::TSUndefinedKeyword:
-            return "TSUndefinedKeyword";
+            case SyntaxNodeType::TSSymbolKeyword:
+                return "TSSymbolKeyword";
 
-        case SyntaxNodeType::TSUnknownKeyword:
-            return "TSUnknownKeyword";
+            case SyntaxNodeType::TSUndefinedKeyword:
+                return "TSUndefinedKeyword";
 
-        case SyntaxNodeType::TSVoidKeyword:
-            return "TSVoidKeyword";
+            case SyntaxNodeType::TSUnknownKeyword:
+                return "TSUnknownKeyword";
 
-        case SyntaxNodeType::TSThisType:
-            return "TSThisType";
+            case SyntaxNodeType::TSVoidKeyword:
+                return "TSVoidKeyword";
 
-        case SyntaxNodeType::TSFunctionType:
-            return "TSFunctionType";
+            case SyntaxNodeType::TSThisType:
+                return "TSThisType";
 
-        case SyntaxNodeType::TSConstructorType:
-            return "TSConstructorType";
+            case SyntaxNodeType::TSFunctionType:
+                return "TSFunctionType";
 
-        case SyntaxNodeType::TSTypeReference:
-            return "TSTypeReference";
+            case SyntaxNodeType::TSConstructorType:
+                return "TSConstructorType";
 
-        case SyntaxNodeType::TSTypePredicate:
-            return "TSTypePredicate";
+            case SyntaxNodeType::TSTypeReference:
+                return "TSTypeReference";
 
-        case SyntaxNodeType::TSTypeQuery:
-            return "TSTypeQuery";
+            case SyntaxNodeType::TSTypePredicate:
+                return "TSTypePredicate";
 
-        case SyntaxNodeType::TSTypeLiteral:
-            return "TSTypeLiteral";
+            case SyntaxNodeType::TSTypeQuery:
+                return "TSTypeQuery";
 
-        case SyntaxNodeType::TSArrayType:
-            return "TSArrayType";
+            case SyntaxNodeType::TSTypeLiteral:
+                return "TSTypeLiteral";
 
-        case SyntaxNodeType::TSTupleType:
-            return "TSTupleType";
+            case SyntaxNodeType::TSArrayType:
+                return "TSArrayType";
 
-        case SyntaxNodeType::TSOptionalType:
-            return "TSOptionalType";
+            case SyntaxNodeType::TSTupleType:
+                return "TSTupleType";
 
-        case SyntaxNodeType::TSRestType:
-            return "TSRestType";
+            case SyntaxNodeType::TSOptionalType:
+                return "TSOptionalType";
 
-        case SyntaxNodeType::TSUnionType:
-            return "TSUnionType";
+            case SyntaxNodeType::TSRestType:
+                return "TSRestType";
 
-        case SyntaxNodeType::TSIntersectionType:
-            return "TSIntersectionType";
+            case SyntaxNodeType::TSUnionType:
+                return "TSUnionType";
 
-        case SyntaxNodeType::TSConditionalType:
-            return "TSConditionalType";
+            case SyntaxNodeType::TSIntersectionType:
+                return "TSIntersectionType";
 
-        case SyntaxNodeType::TSInferType:
-            return "TSInferType";
+            case SyntaxNodeType::TSConditionalType:
+                return "TSConditionalType";
 
-        case SyntaxNodeType::TSParenthesizedType:
-            return "TSParenthesizedType";
+            case SyntaxNodeType::TSInferType:
+                return "TSInferType";
 
-        case SyntaxNodeType::TSTypeOperator:
-            return "TSTypeOperator";
+            case SyntaxNodeType::TSParenthesizedType:
+                return "TSParenthesizedType";
 
-        case SyntaxNodeType::TSIndexedAccessType:
-            return "TSIndexedAccessType";
+            case SyntaxNodeType::TSTypeOperator:
+                return "TSTypeOperator";
 
-        case SyntaxNodeType::TSMappedType:
-            return "TSMappedType";
+            case SyntaxNodeType::TSIndexedAccessType:
+                return "TSIndexedAccessType";
 
-        case SyntaxNodeType::TSLiteralType:
-            return "TSLiteralType";
+            case SyntaxNodeType::TSMappedType:
+                return "TSMappedType";
 
-        case SyntaxNodeType::TSExpressionWithTypeArguments:
-            return "TSExpressionWithTypeArguments";
+            case SyntaxNodeType::TSLiteralType:
+                return "TSLiteralType";
 
-        case SyntaxNodeType::TSInterfaceDeclaration:
-            return "TSInterfaceDeclaration";
+            case SyntaxNodeType::TSExpressionWithTypeArguments:
+                return "TSExpressionWithTypeArguments";
 
-        case SyntaxNodeType::TSInterfaceBody:
-            return "TSInterfaceBody";
+            case SyntaxNodeType::TSInterfaceDeclaration:
+                return "TSInterfaceDeclaration";
 
-        case SyntaxNodeType::TSTypeAliasDeclaration:
-            return "TSTypeAliasDeclaration";
+            case SyntaxNodeType::TSInterfaceBody:
+                return "TSInterfaceBody";
 
-        case SyntaxNodeType::TSAsExpression:
-            return "TSAsExpression";
+            case SyntaxNodeType::TSTypeAliasDeclaration:
+                return "TSTypeAliasDeclaration";
 
-        case SyntaxNodeType::TSTypeAssertion:
-            return "TSTypeAssertion";
+            case SyntaxNodeType::TSAsExpression:
+                return "TSAsExpression";
 
-        case SyntaxNodeType::TSEnumDeclaration:
-            return "TSEnumDeclaration";
+            case SyntaxNodeType::TSTypeAssertion:
+                return "TSTypeAssertion";
 
-        case SyntaxNodeType::TSEnumMember:
-            return "TSEnumMember";
+            case SyntaxNodeType::TSEnumDeclaration:
+                return "TSEnumDeclaration";
 
-        case SyntaxNodeType::TSModuleDeclaration:
-            return "TSModuleDeclaration";
+            case SyntaxNodeType::TSEnumMember:
+                return "TSEnumMember";
 
-        case SyntaxNodeType::TSModuleBlock:
-            return "TSModuleBlock";
+            case SyntaxNodeType::TSModuleDeclaration:
+                return "TSModuleDeclaration";
 
-        case SyntaxNodeType::TSImportType:
-            return "TSImportType";
+            case SyntaxNodeType::TSModuleBlock:
+                return "TSModuleBlock";
 
-        case SyntaxNodeType::TSImportEqualsDeclaration:
-            return "TSImportEqualsDeclaration";
+            case SyntaxNodeType::TSImportType:
+                return "TSImportType";
 
-        case SyntaxNodeType::TSExternalModuleReference:
-            return "TSExternalModuleReference";
+            case SyntaxNodeType::TSImportEqualsDeclaration:
+                return "TSImportEqualsDeclaration";
 
-        case SyntaxNodeType::TSNonNullExpression:
-            return "TSNonNullExpression";
+            case SyntaxNodeType::TSExternalModuleReference:
+                return "TSExternalModuleReference";
 
-        case SyntaxNodeType::TSExportAssignment:
-            return "TSExportAssignment";
+            case SyntaxNodeType::TSNonNullExpression:
+                return "TSNonNullExpression";
 
-        case SyntaxNodeType::TSNamespaceExportDeclaration:
-            return "TSNamespaceExportDeclaration";
+            case SyntaxNodeType::TSExportAssignment:
+                return "TSExportAssignment";
 
-        case SyntaxNodeType::TSTypeAnnotation:
-            return "TSTypeAnnotation";
+            case SyntaxNodeType::TSNamespaceExportDeclaration:
+                return "TSNamespaceExportDeclaration";
 
-        case SyntaxNodeType::TSTypeParameterInstantiation:
-            return "TSTypeParameterInstantiation";
+            case SyntaxNodeType::TSTypeAnnotation:
+                return "TSTypeAnnotation";
 
-        case SyntaxNodeType::TSTypeParameterDeclaration:
-            return "TSTypeParameterDeclaration";
+            case SyntaxNodeType::TSTypeParameterInstantiation:
+                return "TSTypeParameterInstantiation";
 
-        case SyntaxNodeType::TSTypeParameter:
-            return "TSTypeParameter";
+            case SyntaxNodeType::TSTypeParameterDeclaration:
+                return "TSTypeParameterDeclaration";
 
-        default:
-            return "<Invalid>";
+            case SyntaxNodeType::TSTypeParameter:
+                return "TSTypeParameter";
 
+            default:
+                return "<Invalid>";
+
+        }
     }
+
 }
+

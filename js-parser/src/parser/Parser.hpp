@@ -16,7 +16,7 @@
         return false; \
     }
 
-namespace parser {
+namespace rocket_bundle::parser {
 
     class JSXParser;
     class TypeScriptParser;
