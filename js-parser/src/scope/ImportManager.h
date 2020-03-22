@@ -9,6 +9,11 @@
 
 namespace rocket_bundle {
 
+    /**
+     * Syntax Node
+     */
+    class ImportDeclaration;
+
     enum class ImportType {
         Invalid = 0,
 
@@ -31,12 +36,21 @@ namespace rocket_bundle {
      */
     class ImportManager {
     public:
+        enum class EC {
+            Ok = 0,
+
+            UnknownSpecifier = -1,
+
+        };
+
         ImportManager() = default;
         ImportManager(const ImportManager&) = delete;
 
         ImportManager& operator=(const ImportManager&) = delete;
 
         robin_hood::unordered_map<UString, ImportIdentifierInfo> id_map;
+
+        EC ResolveImportDecl(const std::shared_ptr<ImportDeclaration>&);
 
     };
 

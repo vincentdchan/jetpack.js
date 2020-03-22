@@ -2797,6 +2797,9 @@ namespace rocket_bundle::parser {
     }
 
     Sp<ImportDeclaration> Parser::ParseImportDeclaration(Scope& scope) {
+        auto module_scope = scope.CastToMoudle();
+        Assert(module_scope, "import specifier is not in module scope");
+
         if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalImportDeclaration);
         }
@@ -2854,9 +2857,15 @@ namespace rocket_bundle::parser {
 
         {
             auto finalized_node = Finalize(start_marker, node);
+
+            // notify callback to analyze another module
             for (auto& callback : import_decl_handlers_) {
                 callback(finalized_node->source->raw);
             }
+
+            // notify module scope to analyze variable ref
+            module_scope->import_manager.ResolveImportDecl(finalized_node);
+
             return finalized_node;
         }
     }
@@ -2887,7 +2896,7 @@ namespace rocket_bundle::parser {
                 NextToken();
                 local = ParseVariableIdentifier(scope, VarKind::Invalid);
             }
-        } else {
+        } else {  // maybe keywords
             imported = ParseIdentifierName();
             local = imported;
             if (MatchContextualKeyword(u"as")) {
