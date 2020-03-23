@@ -6,27 +6,50 @@
 
 namespace rocket_bundle {
 
-    ImportManager::EC ImportManager::ResolveImportDecl(const Sp<ImportDeclaration>& import_decl) {
-        for (auto& spec : import_decl->specifiers) {
+    ImportManager::EC ImportManager::ResolveImportDecl(const Sp<ImportDeclaration>& importDecl) {
+        for (auto& spec : importDecl->specifiers) {
             switch (spec->type) {
 
                 /**
                  * import named specifier
                  */
                 case SyntaxNodeType::ImportSpecifier: {
-                    auto import_sepc = std::dynamic_pointer_cast<ImportSpecifier>(spec);
+                    auto importSepc = std::dynamic_pointer_cast<ImportSpecifier>(spec);
+
+                    ImportIdentifierInfo importInfo;
+                    importInfo.is_namespace = false;
+                    importInfo.local_name = importSepc->local->name;
+                    importInfo.source_name = importSepc->imported->name;
+                    importInfo.module_name = importDecl->source->raw;
+
+                    id_map[importInfo.local_name] = importInfo;
 
                     break;
                 }
 
                 case SyntaxNodeType::ImportDefaultSpecifier: {
-                    auto import_default = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+                    auto importDefault = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+
+                    ImportIdentifierInfo importInfo;
+                    importInfo.is_namespace = false;
+                    importInfo.local_name = importDefault->local->name;
+                    importInfo.source_name = u"default";
+                    importInfo.module_name = importDecl->source->raw;
+
+                    id_map[importInfo.local_name] = importInfo;
 
                     break;
                 }
 
                 case SyntaxNodeType::ImportNamespaceSpecifier: {
-                    auto import_np = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(spec);
+                    auto importNP = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(spec);
+
+                    ImportIdentifierInfo importInfo;
+                    importInfo.is_namespace = true;
+                    importInfo.local_name = importNP->local->name;
+                    importInfo.module_name = importDecl->source->raw;
+
+                    id_map[importInfo.local_name] = importInfo;
 
                     break;
                 }

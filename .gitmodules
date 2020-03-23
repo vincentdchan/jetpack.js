@@ -25,3 +25,6 @@
 [submodule "third_party/ThreadPool"]
 	path = third_party/ThreadPool
 	url = https://github.com/progschj/ThreadPool.git
+[submodule "third_party/filesystem"]
+	path = third_party/filesystem
+	url = https://github.com/gulrak/filesystem.git

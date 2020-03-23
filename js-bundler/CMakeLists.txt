@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC
         "../bundle-utils/src"
         "../js-parser/src"
+        "../third_party/filesystem/include"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"

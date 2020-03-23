@@ -4,6 +4,7 @@ project(rocket-bundle)
 add_subdirectory(./third_party/nlohmann_json)
 add_subdirectory(./third_party/ordered-map)
 add_subdirectory(./third_party/fmt)
+add_subdirectory(./third_party/filesystem)
 
 add_subdirectory(./bundle-utils)
 add_subdirectory(./js-parser)

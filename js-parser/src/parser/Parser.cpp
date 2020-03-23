@@ -210,8 +210,8 @@ namespace rocket_bundle::parser {
         if (match) {
             auto state = scanner.SaveState();
             std::vector<Sp<Comment>> comments;
-            Token next = scanner.Lex();
             scanner.ScanComments(comments);
+            Token next = scanner.Lex();
             scanner.RestoreState(state);
             match = (next.type_ == JsTokenType::LeftParen);
         }
@@ -2283,6 +2283,11 @@ namespace rocket_bundle::parser {
             auto node = Alloc<ExportAllDeclaration>();
             node->source = ParseModuleSpecifier();
             ConsumeSemicolon();
+
+            for (auto& handler : import_decl_handlers_) {
+                handler(node->source->raw);
+            }
+
             export_decl = Finalize(start_marker, node);
         } else if (IsKeywordToken(ctx->lookahead_.type_)) {
             auto node = Alloc<ExportNamedDeclaration>();
@@ -2334,6 +2339,12 @@ namespace rocket_bundle::parser {
                 ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
             } else {
                 ConsumeSemicolon();
+            }
+
+            if (node->source.has_value()) {
+                for (auto& handler : import_decl_handlers_) {
+                    handler((*node->source)->raw);
+                }
             }
 
             export_decl = Finalize(start_marker, node);
@@ -2864,7 +2875,9 @@ namespace rocket_bundle::parser {
             }
 
             // notify module scope to analyze variable ref
-            module_scope->import_manager.ResolveImportDecl(finalized_node);
+            if (module_scope->import_manager.ResolveImportDecl(finalized_node) != ImportManager::EC::Ok) {
+                ThrowError("resolver import relation error");
+            }
 
             return finalized_node;
         }
@@ -2939,7 +2952,7 @@ namespace rocket_bundle::parser {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::Mul);
-        if (MatchContextualKeyword(u"as")) {
+        if (!MatchContextualKeyword(u"as")) {
             ThrowError(ParseMessages::NoAsAfterImportNamespace);
         }
         NextToken();

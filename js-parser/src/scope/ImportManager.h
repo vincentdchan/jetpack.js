@@ -14,17 +14,9 @@ namespace rocket_bundle {
      */
     class ImportDeclaration;
 
-    enum class ImportType {
-        Invalid = 0,
-
-        Default,
-        Identifier,
-        Namespace,
-    };
-
     class ImportIdentifierInfo {
     public:
-        ImportType type;
+        bool is_namespace;
         UString local_name;
         UString source_name;
         UString module_name;

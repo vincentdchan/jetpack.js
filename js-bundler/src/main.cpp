@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
+#include "Path.h"
 #include "ModuleResolver.h"
 
 #define OPT_HELP "help"
@@ -14,10 +15,11 @@
 #define OPT_ES_MODULE "es-module"
 #define OPT_JSX "jsx"
 #define OPT_ANALYZE_MODULE "analyze-module"
+#define OPT_NO_TRACE "no-trace"
 
 using namespace rocket_bundle;
 
-static int AnalyzeModule(const std::string& path);
+static int AnalyzeModule(const std::string& self_path, const std::string& path, bool trace_file);
 
 int main(int argc, char** argv) {
     try {
@@ -30,11 +32,13 @@ int main(int argc, char** argv) {
                 (OPT_JSX, "support jsx syntax")
                 (OPT_HELP, "produce help message")
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
+                (OPT_NO_TRACE, "do not trace ref file when analyze module")
                 ;
 
         options.parse_positional(OPT_ENTRY);
 
         auto result = options.parse(argc, argv);
+        bool trace_file = true;
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -42,9 +46,13 @@ int main(int argc, char** argv) {
             return !result[OPT_HELP].count();
         }
 
+        if (result[OPT_NO_TRACE].count()) {
+            trace_file = false;
+        }
+
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
-            return AnalyzeModule(path);
+            return AnalyzeModule(argv[0], path, trace_file);
         }
 
         std::cout << options.help() << std::endl;
@@ -55,10 +63,16 @@ int main(int argc, char** argv) {
     }
 }
 
-static int AnalyzeModule(const std::string& path) {
-    auto resolver = std::make_shared<ModuleResolver>();
-    resolver->SetTraceFile(false);
-    resolver->BeginFromEntry(path);
+static int AnalyzeModule(const std::string& self_path_str, const std::string& path, bool trace_file) {
+    Path self_path(self_path_str);
+    self_path.Pop();
+
+    // do not release memory
+    // it will save your time
+    auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
+    resolver->SetTraceFile(trace_file);
+    resolver->BeginFromEntry(self_path.ToString(), path);
     resolver->PrintStatistic();
+
     return 0;
 }

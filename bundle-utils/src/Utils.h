@@ -9,7 +9,7 @@
 #include <chrono>
 
 #ifndef _WIN32
-#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 typedef std::u16string UString;
@@ -114,8 +114,7 @@ namespace rocket_bundle::utils {
 
     inline bool IsFileExist(const std::string& path) {
 #ifndef _WIN32
-        struct stat st;
-        return stat(path.c_str(), &st) >= 0;
+        return access(path.c_str(), F_OK) == 0;
 #else
         return false;
 #endif

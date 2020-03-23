@@ -749,6 +749,9 @@ namespace rocket_bundle {
                 if ((*source_)[index_] == '&') {
                     ++index_;
                     t = JsTokenType::And;
+                } else if ((*source_)[index_] == '=') {
+                    ++index_;
+                    t = JsTokenType::BitAndAssign;
                 } else {
                     t = JsTokenType::BitAnd;
                 }
@@ -759,6 +762,9 @@ namespace rocket_bundle {
                 if ((*source_)[index_] == '|') {
                     ++index_;
                     t = JsTokenType::Or;
+                } else if ((*source_)[index_] == '=') {
+                    ++index_;
+                    t = JsTokenType::BitOrAssign;
                 } else {
                     t = JsTokenType::BitOr;
                 }
