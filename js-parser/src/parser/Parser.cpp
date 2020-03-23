@@ -2224,6 +2224,9 @@ namespace rocket_bundle::parser {
     }
 
     Sp<Declaration> Parser::ParseExportDeclaration(Scope& scope) {
+        auto module_scope = scope.CastToMoudle();
+        Assert(module_scope, "scope should be module scope");
+
         if (ctx->in_function_body_) {
             ThrowError(ParseMessages::IllegalExportDeclaration);
         }
@@ -2237,10 +2240,18 @@ namespace rocket_bundle::parser {
             if (Match(JsTokenType::K_Function)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
                 node->declaration = ParseFunctionDeclaration(scope, true);
+
+                Assert(module_scope->export_manager.ResolveDefaultDecl(node) == ExportManager::Ok,
+                       "resolve export failed");
+
                 export_decl = Finalize(start_marker, node);
             } else if (Match(JsTokenType::K_Class)) {
                 auto node = Alloc<ExportDefaultDeclaration>();
                 node->declaration = ParseClassExpression(scope);
+
+                Assert(module_scope->export_manager.ResolveDefaultDecl(node) == ExportManager::Ok,
+                       "resolve export failed");
+
                 export_decl = Finalize(start_marker, node);
             } else if (MatchContextualKeyword(u"async")) {
                 auto node = Alloc<ExportDefaultDeclaration>();
@@ -2249,6 +2260,10 @@ namespace rocket_bundle::parser {
                 } else {
                     node->declaration = ParseAssignmentExpression(scope);
                 }
+
+                Assert(module_scope->export_manager.ResolveDefaultDecl(node) == ExportManager::Ok,
+                       "resolve export failed");
+
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
@@ -2265,9 +2280,12 @@ namespace rocket_bundle::parser {
                 ConsumeSemicolon();
                 auto node = Alloc<ExportDefaultDeclaration>();
                 node->declaration = move(decl);
+
+                Assert(module_scope->export_manager.ResolveDefaultDecl(node) == ExportManager::Ok,
+                       "resolve export failed");
+
                 export_decl = Finalize(start_marker, node);
             }
-
         } else if (Match(JsTokenType::Mul)) {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
@@ -2284,9 +2302,13 @@ namespace rocket_bundle::parser {
             node->source = ParseModuleSpecifier();
             ConsumeSemicolon();
 
+            // notify other thread to parse
             for (auto& handler : import_decl_handlers_) {
                 handler(node->source->raw);
             }
+
+            Assert(module_scope->export_manager.ResolveAllDecl(node) == ExportManager::Ok,
+                    "resolve export failed");
 
             export_decl = Finalize(start_marker, node);
         } else if (IsKeywordToken(ctx->lookahead_.type_)) {
@@ -2305,11 +2327,17 @@ namespace rocket_bundle::parser {
                 ThrowUnexpectedToken(ctx->lookahead_);
             }
 
-            export_decl = Finalize(start_marker, node);
+            Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
+                   "resolve export failed");
 
+            export_decl = Finalize(start_marker, node);
         } else if (MatchAsyncFunction()) {
             auto node = Alloc<ExportNamedDeclaration>();
             node->declaration = ParseFunctionDeclaration(scope, false);
+
+            Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
+                   "resolve export failed");
+
             export_decl = Finalize(start_marker, node);
         } else {
             auto node = Alloc<ExportNamedDeclaration>();
@@ -2346,6 +2374,9 @@ namespace rocket_bundle::parser {
                     handler((*node->source)->raw);
                 }
             }
+
+            Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
+                   "resolve export failed");
 
             export_decl = Finalize(start_marker, node);
         }

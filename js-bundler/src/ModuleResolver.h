@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <unordered_set>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
@@ -42,6 +43,10 @@ namespace rocket_bundle {
 
         Sp<Module> ast;
 
+        robin_hood::unordered_map<std::string, std::string> resolved_map;
+
+        bool visited_mark = false;
+
     };
 
     /**
@@ -77,6 +82,10 @@ namespace rocket_bundle {
         void FinishOne();
 
         json GetImportStat();
+        json GetAllExportVars();
+
+        void TraverseModulePushExportVars(json& arr,
+                const Sp<ModuleFile>&, std::unordered_set<std::string>* white_list);
 
         std::mutex map_mutex_;
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;

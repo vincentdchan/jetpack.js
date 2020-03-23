@@ -2,6 +2,7 @@
 // Created by Duzhong Chen on 2020/3/22.
 //
 
+#include "ImportManager.h"
 #import "../parser/SyntaxNodes.h"
 
 namespace rocket_bundle {
