@@ -5,7 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ghc/filesystem.hpp>
-#include <artery.h>
 #include <parser/ParserCommon.h>
 #include <iostream>
 
@@ -32,8 +31,7 @@ namespace rocket_bundle {
         auto thread_pool_size = std::thread::hardware_concurrency();
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
 
-        EnqueueOne();
-        thread_pool_->enqueue([this, &path] {
+        EnqueueOne([this, &path] {
             try {
                 ParseFileFromPath(path);
             } catch (parser::ParseError& ex) {
@@ -85,7 +83,7 @@ namespace rocket_bundle {
     void ModuleResolver::ParseFile(Sp<ModuleFile> mf) {
         ParserContext::Config config = ParserContext::Config::Default();
         auto src = std::make_shared<UString>();
-        (*src) = Artery::ReadFileStream(mf->path);
+        (*src) = ReadFileStream(mf->path);
         auto ctx = std::make_shared<ParserContext>(src, config);
         Parser parser(ctx);
 
@@ -121,8 +119,7 @@ namespace rocket_bundle {
                 modules_map_[mf->path] = mf;
             }
 
-            EnqueueOne();
-            thread_pool_->enqueue([this, mf] {
+            EnqueueOne([this, mf] {
                 try {
                     ParseFile(mf);
                 } catch (parser::ParseError& ex) {
@@ -139,6 +136,13 @@ namespace rocket_bundle {
         });
 
         mf->ast = parser.ParseModule();
+    }
+
+    std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {
+        std::ifstream t(filename);
+        std::string str((std::istreambuf_iterator<char>(t)),
+                   std::istreambuf_iterator<char>());
+        return utils::To_UTF16(str);
     }
 
     void ModuleResolver::PrintStatistic() {
@@ -166,9 +170,13 @@ namespace rocket_bundle {
         }
     }
 
-    void ModuleResolver::EnqueueOne() {
-        std::lock_guard<std::mutex> lk(main_lock_);
-        enqueued_files_count_++;
+    void ModuleResolver::EnqueueOne(std::function<void()> unit) {
+        {
+            std::lock_guard<std::mutex> lk(main_lock_);
+            enqueued_files_count_++;
+        }
+
+        thread_pool_->enqueue(std::move(unit));
     }
 
     void ModuleResolver::FinishOne() {
