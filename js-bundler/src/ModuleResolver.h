@@ -14,6 +14,7 @@
 #include <string>
 #include <functional>
 #include <robin_hood.h>
+#include <fstream>
 #include <parser/Parser.hpp>
 
 namespace rocket_bundle {
@@ -43,11 +44,16 @@ namespace rocket_bundle {
 
         Sp<Module> ast;
 
+        /**
+         * relative path -> absolute path
+         */
         robin_hood::unordered_map<std::string, std::string> resolved_map;
 
         bool visited_mark = false;
 
         std::string codegen_result;
+
+        std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
         void CodeGenFromAst();
 
@@ -82,6 +88,8 @@ namespace rocket_bundle {
         void PrintErrors();
 
         void CodeGenAllModules(const std::string& out_path);
+
+        void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
 
     private:
         void EnqueueOne(std::function<void()> unit);

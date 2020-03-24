@@ -5,7 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <parser/ParserCommon.h>
-#include <codegen/CodeGen.h>
 #include <fstream>
 #include <iostream>
 
@@ -13,6 +12,7 @@
 #include "./ModuleResolver.h"
 #include "./Utils.h"
 #include "./Error.h"
+#include "./codegen/CodeGen.h"
 
 namespace rocket_bundle {
     using parser::ParserContext;
@@ -20,6 +20,7 @@ namespace rocket_bundle {
 
     void ModuleFile::CodeGenFromAst() {
         std::stringstream ss;
+        ss << "// " << this->path << std::endl;
         CodeGen::Config config;
         CodeGen codegen(config, ss);
         codegen.Traverse(ast);
@@ -101,6 +102,7 @@ namespace rocket_bundle {
 
             auto u8path = utils::To_UTF8(path);
             Path module_path(mf->path);
+            module_path.Pop();
             module_path.Join(u8path);
 
             auto source_path = module_path.ToString();
@@ -130,6 +132,8 @@ namespace rocket_bundle {
                 new_mf->path = std::move(source_path);
                 modules_map_[new_mf->path] = new_mf;
             }
+
+            mf->ref_mods.push_back(new_mf);
 
             EnqueueOne([this, new_mf] {
                 try {
@@ -282,10 +286,26 @@ namespace rocket_bundle {
         std::ofstream out(out_path, std::ios::out);
 
         for (auto& tuple : modules_map_) {
-            out << tuple.second->codegen_result << std::endl;
+            tuple.second->visited_mark = false;
         }
 
+        MergeModules(entry_module, out);
+
         out.close();
+    }
+
+    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, std::ofstream &out) {
+        if (mf->visited_mark) {
+            return;
+        }
+        mf->visited_mark = true;
+
+        for (auto& ref : mf->ref_mods) {
+            auto new_mf = ref.lock();
+            MergeModules(new_mf, out);
+        }
+
+        out << mf->codegen_result << std::endl;
     }
 
 }

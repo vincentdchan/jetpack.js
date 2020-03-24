@@ -246,7 +246,8 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<Literal>();
         node->raw = GetTokenRaw(token);
-        node->value = token.value_;
+        node->ty = Literal::Ty::String;
+        node->str_ = token.value_;
         return Finalize(start_marker, node);
     }
 

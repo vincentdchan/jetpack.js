@@ -379,9 +379,22 @@ namespace rocket_bundle {
 
     class Literal: public Expression {
     public:
+        enum class Ty {
+            Invalid = 0,
+            Boolean,
+            Double,
+            String,
+            Null,
+        };
+
         Literal();
 
-        std::variant<bool, double, UString> value;
+        Ty ty = Ty::Invalid;
+
+        bool boolean_ = false;
+        double double_ = 0;
+        UString str_;
+
         UString raw;
 
     };

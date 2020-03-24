@@ -2,7 +2,7 @@
 
 
 #pragma once
-#include "../parser/SyntaxNodes.h"
+#include "../../../js-parser/src/parser/SyntaxNodes.h"
 
 namespace rocket_bundle {
 

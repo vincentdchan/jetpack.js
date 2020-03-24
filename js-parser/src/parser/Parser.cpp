@@ -403,7 +403,8 @@ namespace rocket_bundle::parser {
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
-                node->value = token.value_;
+                node->ty = Literal::Ty::String;
+                node->str_ = token.value_;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -413,7 +414,12 @@ namespace rocket_bundle::parser {
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
-                node->value = token.value_;
+                node->ty = Literal::Ty::Boolean;
+                if (token.value_ == u"true") {
+                    node->boolean_ = true;
+                } else {
+                    node->boolean_ = false;
+                }
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -423,7 +429,8 @@ namespace rocket_bundle::parser {
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
-                node->value = token.value_;
+                node->ty = Literal::Ty::Null;
+                node->str_ = token.value_;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -614,13 +621,25 @@ namespace rocket_bundle::parser {
         }
 
         switch (token.type_) {
-            case JsTokenType::StringLiteral:
+            case JsTokenType::StringLiteral: {
+                if (ctx->strict_ && token.octal_) {
+                    TolerateUnexpectedToken(token, ParseMessages::StrictOctalLiteral);
+                }
+                auto node = Alloc<Literal>();
+                node->ty = Literal::Ty::String;
+                node->str_ = token.value_;
+                node->raw = GetTokenRaw(token);
+                return Finalize(marker, node);
+            }
+
             case JsTokenType::NumericLiteral: {
                 if (ctx->strict_ && token.octal_) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictOctalLiteral);
                 }
                 auto node = Alloc<Literal>();
-                node->value = token.value_;
+                node->ty = Literal::Ty::Double;
+                node->str_ = token.value_;
+                node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
 
@@ -2304,7 +2323,7 @@ namespace rocket_bundle::parser {
 
             // notify other thread to parse
             for (auto& handler : import_decl_handlers_) {
-                handler(node->source->raw);
+                handler(node->source->str_);
             }
 
             Assert(module_scope->export_manager.ResolveAllDecl(node) == ExportManager::Ok,
@@ -2371,7 +2390,7 @@ namespace rocket_bundle::parser {
 
             if (node->source.has_value()) {
                 for (auto& handler : import_decl_handlers_) {
-                    handler((*node->source)->raw);
+                    handler((*node->source)->str_);
                 }
             }
 
@@ -2902,7 +2921,7 @@ namespace rocket_bundle::parser {
 
             // notify callback to analyze another module
             for (auto& callback : import_decl_handlers_) {
-                callback(finalized_node->source->raw);
+                callback(finalized_node->source->str_);
             }
 
             // notify module scope to analyze variable ref
@@ -2966,8 +2985,9 @@ namespace rocket_bundle::parser {
 
         Token token = NextToken();
         auto node = Alloc<Literal>();
-        node->value = token.value_;
-        node->raw = token.value_;
+        node->ty = Literal::Ty::String;
+        node->str_ = token.value_;
+        node->raw = GetTokenRaw(token);
         return Finalize(start_marker, node);
     }
 
@@ -3680,7 +3700,7 @@ namespace rocket_bundle::parser {
         }
         if (key->type == SyntaxNodeType::Literal) {
             auto lit = dynamic_pointer_cast<Literal>(key);
-            return std::holds_alternative<UString>(lit->value) && std::get<UString>(lit->value) == name;
+            return lit->ty == Literal::Ty::String && lit->str_ == name;
         }
         return false;
     }
@@ -3690,4 +3710,3 @@ namespace rocket_bundle::parser {
     }
 
 }
-

@@ -5,6 +5,7 @@
 #include "CodeGen.h"
 #include <iostream>
 #include <algorithm>
+#include <scope/Variable.h>
 
 using namespace std;
 
@@ -79,6 +80,24 @@ namespace rocket_bundle {
     }
 
     void CodeGen::FormatVariableDeclaration(const Sp<VariableDeclaration> &node) {
+        switch (node->kind) {
+            case VarKind::Var:
+                Write("var ");
+                break;
+
+            case VarKind::Let:
+                Write("let ");
+                break;
+
+            case VarKind::Const:
+                Write("const ");
+                break;
+
+            default:
+                break;
+
+        }
+
         if (!node->declarations.empty()) {
             for (std::size_t i = 0; i < node->declarations.size(); i++) {
                 this->Traverse(node->declarations[i]);
@@ -185,7 +204,7 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<BlockStatement> &node) {
-        WriteIndentWith("{");
+        Write("{");
         state_.indent_level++;
 
         if (!node->body.empty()) {
@@ -406,7 +425,7 @@ namespace rocket_bundle {
         if (node->generator) {
             Write("function* ");
         } else {
-            Write("function");
+            Write("function ");
         }
 
         if (node->id.has_value()) {
@@ -426,7 +445,7 @@ namespace rocket_bundle {
         if (node->generator) {
             Write("function* ");
         } else {
-            Write("function");
+            Write("function ");
         }
 
         if (node->id.has_value()) {
@@ -487,7 +506,7 @@ namespace rocket_bundle {
                 }
             }
             if (i < node->specifiers.size()) {
-                Write("{");
+                Write("{ ");
                 while (true) {
                     auto spec = node->specifiers[i];
                     auto import_ = dynamic_pointer_cast<ImportSpecifier>(spec);
@@ -502,13 +521,13 @@ namespace rocket_bundle {
                         break;
                     }
                 }
-                Write("}");
+                Write(" }");
             }
             Write(" from ");
         }
 
         this->Traverse(node->source);
-        Write("; ");
+        Write(";");
     }
 
     void CodeGen::Traverse(const Sp<ExportDefaultDeclaration> &node) {
@@ -525,7 +544,7 @@ namespace rocket_bundle {
         if (node->declaration.has_value()) {
             TraverseNode(*node->declaration);
         } else {
-            Write("{");
+            Write("{ ");
             if (node->specifiers.size() > 0) {
                 std::uint32_t i = 0;
                 for (auto& spec : node->specifiers) {
@@ -541,7 +560,7 @@ namespace rocket_bundle {
                     }
                 }
             }
-            Write("}");
+            Write(" }");
             if (node->source.has_value()) {
                 Write(" from ");
                 this->Traverse(*node->source);

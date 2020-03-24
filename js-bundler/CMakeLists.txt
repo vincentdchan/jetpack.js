@@ -8,8 +8,14 @@ set(SOURCE_FILES
         "src/ModuleResolver.cpp"
         "src/ModuleConcatenation.h"
         "src/ModuleConcatenation.cpp"
+        "src/UniqueNameGenerator.h"
+        "src/UniqueNameGenerator.cpp"
         "src/Error.h"
-        "src/Error.cpp")
+        "src/Error.cpp"
+        "src/codegen/NodeTraverser.h"
+        "src/codegen/NodeTraverser.cpp"
+        "src/codegen/CodeGen.h"
+        "src/codegen/CodeGen.cpp")
 
 include_directories(PUBLIC
         "../bundle-utils/src"
@@ -22,6 +28,8 @@ link_libraries(bundle-utils js-parser fmt)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
 
-add_executable(js-bundler-test ${SOURCE_FILES} tests/resolve.cpp)
+add_executable(js-bundler-test ${SOURCE_FILES}
+        tests/resolve.cpp
+        tests/codegen.cpp)
 target_include_directories(js-bundler-test PUBLIC "../third_party/googletest/googletest/include")
 target_link_libraries(js-bundler-test gtest_main)

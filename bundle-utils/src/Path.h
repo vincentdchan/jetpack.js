@@ -39,6 +39,10 @@ namespace rocket_bundle {
                 }
                 i++;
             }
+
+            if (!buffer.empty()) {
+                slices.emplace_back(std::move(buffer));
+            }
         }
 
         inline bool EndsWith(const std::string& str) {
@@ -51,7 +55,7 @@ namespace rocket_bundle {
                 return false;
             }
 
-            std::size_t i = str.size() - 1;
+            std::int32_t i = str.size() - 1;
 
             while (i >= 0) {
                 if (str[i] != last_str[last_str.size() - str.size() + i]) {
