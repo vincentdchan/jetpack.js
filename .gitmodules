@@ -25,3 +25,6 @@
 [submodule "third_party/ThreadPool"]
 	path = third_party/ThreadPool
 	url = https://github.com/progschj/ThreadPool.git
+[submodule "third_party/googletest"]
+	path = third_party/googletest
+	url = https://github.com/google/googletest.git

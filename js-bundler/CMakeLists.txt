@@ -3,19 +3,25 @@ project(js-bundler)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME}
+set(SOURCE_FILES
         "src/ModuleResolver.h"
         "src/ModuleResolver.cpp"
         "src/ModuleConcatenation.h"
         "src/ModuleConcatenation.cpp"
         "src/Error.h"
-        "src/Error.cpp"
-        "src/main.cpp")
-target_include_directories(${PROJECT_NAME} PUBLIC
+        "src/Error.cpp")
+
+include_directories(PUBLIC
         "../bundle-utils/src"
         "../js-parser/src"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
         "../third_party/robin-hood-hashing/src/include")
-target_link_libraries(${PROJECT_NAME} bundle-utils js-parser fmt)
+link_libraries(bundle-utils js-parser fmt)
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
+
+add_executable(js-bundler-test ${SOURCE_FILES} tests/resolve.cpp)
+target_include_directories(js-bundler-test PUBLIC "../third_party/googletest/googletest/include")
+target_link_libraries(js-bundler-test gtest_main)
