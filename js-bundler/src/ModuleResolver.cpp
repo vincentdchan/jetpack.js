@@ -4,7 +4,6 @@
 
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
-#include <ghc/filesystem.hpp>
 #include <parser/ParserCommon.h>
 #include <codegen/CodeGen.h>
 #include <fstream>
@@ -31,7 +30,7 @@ namespace rocket_bundle {
         std::string path;
         if (target_path.empty()) {
             return;
-        } else if (target_path[0] == PATH_DIV) {
+        } else if (target_path[0] == Path::PATH_DIV) {
             path = target_path;
         } else {
             Path path(base_path);

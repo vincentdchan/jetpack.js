@@ -15,7 +15,6 @@
 #include <functional>
 #include <robin_hood.h>
 #include <parser/Parser.hpp>
-#include <ghc/filesystem.hpp>
 
 namespace rocket_bundle {
 
@@ -60,7 +59,6 @@ namespace rocket_bundle {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
-        static const char PATH_DIV = '/';
         static std::u16string ReadFileStream(const std::string& filename);
 
         ModuleResolver() = default;

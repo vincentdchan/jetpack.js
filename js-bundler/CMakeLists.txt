@@ -6,13 +6,14 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(${PROJECT_NAME}
         "src/ModuleResolver.h"
         "src/ModuleResolver.cpp"
+        "src/ModuleConcatenation.h"
+        "src/ModuleConcatenation.cpp"
         "src/Error.h"
         "src/Error.cpp"
         "src/main.cpp")
 target_include_directories(${PROJECT_NAME} PUBLIC
         "../bundle-utils/src"
         "../js-parser/src"
-        "../third_party/filesystem/include"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
