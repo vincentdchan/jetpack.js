@@ -106,7 +106,7 @@ namespace rocket_bundle {
         json GetAllExportVars();
 
         void TraverseModulePushExportVars(json& arr,
-                const Sp<ModuleFile>&, std::unordered_set<std::string>* white_list);
+                const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
 
         std::mutex map_mutex_;
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;

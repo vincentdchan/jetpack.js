@@ -411,7 +411,7 @@ namespace rocket_bundle {
 
     void ModuleResolver::TraverseModulePushExportVars(
             rocket_bundle::json &arr, const Sp<rocket_bundle::ModuleFile>& mod,
-            std::unordered_set<std::string>* white_list) {
+            std::unordered_set<UString>* white_list) {
 
         if (mod->visited_mark) {
             return;
@@ -419,15 +419,16 @@ namespace rocket_bundle {
         mod->visited_mark = true;
 
         for (auto& local_name : mod->ast->scope->export_manager.local_export_name) {
-            auto u8name = utils::To_UTF8(local_name);
-            if (white_list && white_list->find(u8name) == white_list->end()) {
+            if (white_list && white_list->find(local_name) == white_list->end()) {
                 continue;
             }
-            arr.push_back(std::move(u8name));
+            arr.push_back(utils::To_UTF8(local_name));
         }
 
-        for (auto& item : mod->ast->scope->export_manager.external_export_vars) {
-            auto u8relative_path = utils::To_UTF8(item.first);
+        auto external_infos = mod->ast->scope->export_manager.CollectExternalInfos();
+
+        for (auto& info : external_infos) {
+            auto u8relative_path = utils::To_UTF8(info.path);
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
                 WorkerError err { mod->path, std::string("resolve path failed: ") + u8relative_path };
@@ -441,13 +442,11 @@ namespace rocket_bundle {
                 worker_errors_.emplace_back(std::move(err));
                 return;
             }
-            if (item.second.is_export_all) {
+            if (info.is_export_all) {
                 TraverseModulePushExportVars(arr, iter->second, nullptr);
             } else {
-                std::unordered_set<std::string> new_white_list;
-                for (auto& name : item.second.export_names) {
-                    new_white_list.insert(utils::To_UTF8(name));
-                }
+                std::unordered_set<UString> new_white_list;
+                new_white_list.insert(std::begin(info.names), std::end(info.names));
                 TraverseModulePushExportVars(arr, iter->second, &new_white_list);
             }
         }

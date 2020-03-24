@@ -3,17 +3,13 @@
 //
 
 #include "ExportManager.h"
-#import "../parser/SyntaxNodes.h"
+#include "../parser/SyntaxNodes.h"
+#include "../parser/BaseNodes.h"
 
 namespace rocket_bundle {
 
     ExportManager::EC ExportManager::ResolveAllDecl(const std::shared_ptr<ExportAllDeclaration>& decl) {
-        ExternalVariable ext_var;
-        ext_var.is_export_all = true;
-        ext_var.source_name = decl->source->str_;
-
-        external_export_vars[decl->source->str_] = ext_var;
-
+        external_asts.emplace_back(decl);
         return EC::Ok;
     }
 
@@ -24,16 +20,7 @@ namespace rocket_bundle {
 
     ExportManager::EC ExportManager::ResolveNamedDecl(const std::shared_ptr<ExportNamedDeclaration>& decl) {
         if (decl->source.has_value()) { // external export
-            ExternalVariable ext_var;
-            ext_var.source_name = (*decl->source)->str_;
-            ext_var.is_export_all = false;
-            ext_var.is_export_all = false;
-            for (auto& spec : decl->specifiers) {
-                ext_var.export_names.push_back(spec->exported->name);
-            }
-
-            external_export_vars[(*decl->source)->str_] = ext_var;
-
+            external_asts.emplace_back(decl);
             return EC::Ok;
         }
         // local export
@@ -43,6 +30,47 @@ namespace rocket_bundle {
         }
 
         return EC::Ok;
+    }
+
+    std::vector<ExternalInfo> ExportManager::CollectExternalInfos() {
+        std::vector<ExternalInfo> result;
+
+        for (auto& weak_ast : external_asts) {
+            auto ast = weak_ast.lock();
+            switch (ast->type) {
+                case SyntaxNodeType::ExportAllDeclaration: {
+                    auto export_all_decl = std::dynamic_pointer_cast<ExportAllDeclaration>(ast);
+
+                    ExternalInfo info;
+                    info.is_export_all = true;
+                    info.path = export_all_decl->source->str_;
+
+                    result.emplace_back(std::move(info));
+                    break;
+                }
+
+                case SyntaxNodeType::ExportNamedDeclaration: {
+                    auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(ast);
+
+                    ExternalInfo info;
+                    info.is_export_all = false;
+                    info.path = (*export_named_decl->source)->str_;
+
+                    for (auto& spec : export_named_decl->specifiers) {
+                        info.names.push_back(spec->exported->name);
+                    }
+
+                    result.emplace_back(std::move(info));
+                    break;
+                }
+
+                default:
+                    break;
+
+            }
+        }
+
+        return result;
     }
 
 }

@@ -11,12 +11,22 @@
 
 namespace rocket_bundle {
 
+    class SyntaxNode;
+
     class ExternalVariable {
     public:
         bool is_export_all;
         UString source_name;
 
         std::vector<UString> export_names;
+
+    };
+
+    struct ExternalInfo {
+    public:
+        UString path;
+        bool is_export_all = false;
+        std::vector<UString> names;
 
     };
 
@@ -42,7 +52,11 @@ namespace rocket_bundle {
         EC ResolveNamedDecl(const std::shared_ptr<ExportNamedDeclaration>&);
 
         std::vector<UString> local_export_name;
-        robin_hood::unordered_map<UString, ExternalVariable> external_export_vars;
+//        robin_hood::unordered_map<UString, ExternalVariable> external_export_vars;
+
+        std::vector<std::weak_ptr<SyntaxNode>> external_asts;
+
+        std::vector<ExternalInfo> CollectExternalInfos();
 
     };
 
