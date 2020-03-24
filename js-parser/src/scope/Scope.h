@@ -84,6 +84,8 @@ namespace rocket_bundle {
         robin_hood::unordered_map<UString, Variable> own_variables;
         std::unordered_set<UString> free_var_names;
 
+        std::vector<Scope*> children;
+
     };
 
     /**

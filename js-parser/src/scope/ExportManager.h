@@ -7,12 +7,9 @@
 #include <vector>
 #include <Utils.h>
 #include <robin_hood.h>
+#include "../parser/NodeTypes.h"
 
 namespace rocket_bundle {
-
-    class ExportAllDeclaration;
-    class ExportDefaultDeclaration;
-    class ExportNamedDeclaration;
 
     class ExternalVariable {
     public:

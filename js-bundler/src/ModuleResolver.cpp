@@ -29,7 +29,9 @@ namespace rocket_bundle {
     }
 
     void ModuleFile::ReplaceAllNamedExports() {
-        for (auto& stmt : ast->body) {
+        std::vector<Sp<SyntaxNode>> tail;
+        for (auto iter = ast->body.begin(); iter != ast->body.end();) {
+#define stmt (*iter)
             switch (stmt->type) {
                 case SyntaxNodeType::ExportNamedDeclaration: {
                     auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
@@ -67,7 +69,7 @@ namespace rocket_bundle {
                             var_dector->id = id;
                             var_dector->init = { exist_id };
 
-                            var_decl->declarations.push_back(var_dector);
+                            tail.push_back(var_dector);
 
                             stmt = var_decl;
                             break;
@@ -116,7 +118,7 @@ namespace rocket_bundle {
 
                             var_decl2->declarations.push_back(dector2);
 
-                            ast->body.push_back(var_decl2);
+                            tail.push_back(var_decl2);
                             break;
                         }
 
@@ -166,7 +168,7 @@ namespace rocket_bundle {
 
                                 var_decl->declarations.push_back(dector);
 
-                                ast->body.push_back(var_decl);
+                                tail.push_back(var_decl);
                             } else {
                                 auto default_id = std::make_shared<Identifier>();
                                 default_id->name = utils::To_UTF16(new_name);
@@ -203,7 +205,7 @@ namespace rocket_bundle {
 
                                 var_decl->declarations.push_back(dector);
 
-                                ast->body.push_back(var_decl);
+                                tail.push_back(var_decl);
                             } else {
                                 auto default_id = std::make_shared<Identifier>();
                                 default_id->name = utils::To_UTF16(new_name);
@@ -223,11 +225,22 @@ namespace rocket_bundle {
                     break;
                 }
 
+                /**
+                 * remove export all
+                 */
+                case SyntaxNodeType::ExportAllDeclaration:
+                    iter = ast->body.erase(iter);
+                    continue;
+
                 default:
                     break;
 
             }
+            ++iter;
         }
+
+        ast->body.insert(std::end(ast->body), std::begin(tail), std::end(tail));
+#undef stmt
     }
 
     void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {

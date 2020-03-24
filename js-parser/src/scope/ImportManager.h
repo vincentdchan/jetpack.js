@@ -6,13 +6,9 @@
 
 #include <robin_hood.h>
 #include "Utils.h"
+#include "../parser/NodeTypes.h"
 
 namespace rocket_bundle {
-
-    /**
-     * Syntax Node
-     */
-    class ImportDeclaration;
 
     class ImportIdentifierInfo {
     public:

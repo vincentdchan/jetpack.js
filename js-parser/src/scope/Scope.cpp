@@ -59,6 +59,7 @@ namespace rocket_bundle {
 
     void Scope::SetParent(Scope* parent_) {
         parent = parent_;
+        parent->children.push_back(this);
     }
 
     void Scope::AddFreeVariableName(const UString &free_var_name) {

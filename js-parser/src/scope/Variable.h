@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include <vector>
 #include <memory>
 #include "../macros.h"
 #include "Utils.h"
+#include "../parser/NodeTypes.h"
 
 namespace rocket_bundle {
 
     class Scope;
-    class Identifier;
-    class SyntaxNode;
 
     enum class VarKind {
         Invalid = 0,
@@ -46,6 +46,8 @@ namespace rocket_bundle {
          * for imported and exported variable
          */
         UString external_name;
+
+        std::vector<std::weak_ptr<Identifier>> identifiers;
 
     };
 
