@@ -206,6 +206,11 @@ namespace rocket_bundle {
         result["totalFiles"] = finished_files_count_;
         result["exports"] = GetAllExportVars();
 
+        if (!worker_errors_.empty()) {
+            PrintErrors();
+            return;
+        }
+
         std::cout << result.dump(2) << std::endl;
     }
 
@@ -238,12 +243,16 @@ namespace rocket_bundle {
             auto u8relative_path = utils::To_UTF8(item.first);
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
-                throw std::runtime_error("resolve path failed: " + u8relative_path);
+                WorkerError err { mod->path, std::string("resolve path failed: ") + u8relative_path };
+                worker_errors_.emplace_back(std::move(err));
+                return;
             }
 
             auto iter = modules_map_.find(resolved_path->second);
             if (iter == modules_map_.end()) {
-                throw std::runtime_error("module not found: " + resolved_path->second);
+                WorkerError err { mod->path, "module not found: " + resolved_path->second };
+                worker_errors_.emplace_back(std::move(err));
+                return;
             }
             if (item.second.is_export_all) {
                 TraverseModulePushExportVars(arr, iter->second, nullptr);
