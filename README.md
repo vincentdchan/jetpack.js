@@ -1,33 +1,48 @@
-# Zhong's ECMAScript Parser
+# Rocket Bundle
 
-ZEP(Zhong's ES Parser) is a ECMAScript parser
-implemented in C++ aimed at excellent performance and
-scalability.
+`rocket-bundls.js` is an extremely fast js bundler and minifier.
+
+Rocket Bundle a well-designed tool. It's modulize into parser and bundler.
+The parser can be used as a library independently.
+
+- [Why](#why)
+- [Features](#Features)
+  - [Parser](#parser)
+  - [Bundler](#bundler)
+- [Usage](#usage)
+- [Use the parser as a library](#use-the-parser-as-a-library)
+  - [Example](#example)
+- [Performance](#performance)
+- [Compatibility](#compatibility)
+- [Platform](#platform)
+
+# Why
+
+Several months ago, I wrote a js parser in C++. Many parsers embedded in other js engine have a lot of dependencies on their runtime. It's very hard to separate them. So I decided to write my own parser. After I finished, I found my parser is almost 10x faster than the common parsers running on Node.js (without heating). But I didn't move on after that. This year(2020), Evan Wallace's project [esbuild](https://github.com/evanw/esbuild/) inspires me. So I decided to write a bundler in C++. I want to know if Golang's performance could beat C++.
 
 # Features
+
+## Parser
 
 - Implemented in C++ with excellent performance
 - Full support for ECMAScript 2017([ECMA-262 8th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
 - JSON output of sensible [syntax tree](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
 - Experimental support for [JSX](https://facebook.github.io/jsx/), a syntax extension for [React](https://facebook.github.io/react/)
 - Syntax node location (index-based and line-column)
+- TypeScript Support(WIP).
 
-# WIP Features
+## Bundler
 
-- [ ] TypeScript Support.
-- [ ] Refactor AST with C++ template, better to do type-checking and static anslysis.
+- Module resolution.
+- Bundle a ES project into a single file.
+- Minify the code.
+- Sourcemap generation(WIP).
 
 # Usage
 
-ZEP contains a cli tool and a C++ library.
+TODO
 
-With cli tool you can parse ES file in
-command line.
-
-With C++ library you can use ZEP to parse
-ES source code in your project.
-
-## Use js-parser as a library
+# Use the parser as a library
 
 Please install jemalloc on your mac:
 
@@ -44,7 +59,7 @@ target_include_directories(${PROJECT_NAME} ./js-parser/src)
 target_link_libraries(${PROJECT_NAME} PUBLIC js-parser)
 ```
 
-### Example
+## Example
 
 ```cpp
 Parser parser(src, config);
@@ -77,8 +92,8 @@ And the WASM version is in the roadmap. The web version of ZEP would be released
 
 # Platform
 
-ZEP can only run on macOS currently.
-The Linux version would be released
-as soon as possible. Windows version
-is in the roadmap, which is considered
-low priority.
+`rocket-bundle.js` supports all popular system including:
+
+- macOS
+- Linux
+- Windows
