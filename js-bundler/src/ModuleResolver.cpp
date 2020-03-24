@@ -40,11 +40,185 @@ namespace rocket_bundle {
                 }
 
                 case SyntaxNodeType::ExportDefaultDeclaration: {
-//                    auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
-//                    auto resolver = module_resolver.lock();
-//                    std::string new_name = "default_" + std::to_string(resolver->NextNameId());
-//
-//                    export_default_decl->
+                    auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
+                    auto resolver = module_resolver.lock();
+                    std::string new_name = "default_" + std::to_string(resolver->NextNameId());
+
+                    switch (export_default_decl->declaration->type) {
+
+                        /**
+                         * export defaut var1
+                         *
+                         * TO
+                         *
+                         * const defaut_0 = var1;
+                         */
+                        case SyntaxNodeType::Identifier: {
+                            auto exist_id = std::dynamic_pointer_cast<Identifier>(export_default_decl->declaration);
+
+                            auto var_decl = std::make_shared<VariableDeclaration>();
+                            var_decl->kind = VarKind::Const;
+
+                            auto var_dector = std::make_shared<VariableDeclarator>();
+
+                            auto id = std::make_shared<Identifier>();
+                            id->name = utils::To_UTF16(new_name);
+
+                            var_dector->id = id;
+                            var_dector->init = { exist_id };
+
+                            var_decl->declarations.push_back(var_dector);
+
+                            stmt = var_decl;
+                            break;
+                        }
+
+                        /**
+                         * export default a = 3
+                         *
+                         * TO
+                         *
+                         * const a = 3;
+                         * const default_0 = a;
+                         *
+                         */
+                        case SyntaxNodeType::AssignmentExpression: {
+                            auto exist_assign = std::dynamic_pointer_cast<AssignmentExpression>(export_default_decl->declaration);
+
+                            auto var_decl1 = std::make_shared<VariableDeclaration>();
+                            var_decl1->kind = VarKind::Const;
+
+                            auto dector1 = std::make_shared<VariableDeclarator>();
+
+                            if (exist_assign->left->type != SyntaxNodeType::Identifier) {
+                                std::runtime_error("left of assign should be identifer");
+                            }
+
+                            auto assign_left_id = std::dynamic_pointer_cast<Identifier>(exist_assign->left);
+                            dector1->id = assign_left_id;
+                            dector1->init = {  exist_assign->right };
+                            var_decl1->declarations.push_back(dector1);
+
+                            stmt = var_decl1;
+                            // ---------------
+                            auto var_decl2 = std::make_shared<VariableDeclaration>();
+                            var_decl2->kind = VarKind::Const;
+
+                            auto dector2 = std::make_shared<VariableDeclarator>();
+                            auto default_id = std::make_shared<Identifier>();
+                            default_id->name = utils::To_UTF16(new_name);
+                            dector2->id = default_id;
+
+                            auto right_id = std::make_shared<Identifier>();
+                            right_id->name = assign_left_id->name;  // copy name
+
+                            dector2->init = { right_id };
+
+                            var_decl2->declarations.push_back(dector2);
+
+                            ast->body.push_back(var_decl2);
+                            break;
+                        }
+
+                        /**
+                         * Case 1:
+                         *
+                         * export default function() {
+                         * }
+                         *
+                         * TO
+                         *
+                         * function default_0() {
+                         * }
+                         *
+                         * Case 2:
+                         *
+                         * export default function name() {
+                         * }
+                         *
+                         * TO
+                         *
+                         * function name() {
+                         * }
+                         *
+                         * const default_0 = name;
+                         *
+                         */
+                        case SyntaxNodeType::FunctionDeclaration: {
+                            auto fun_decl = std::dynamic_pointer_cast<FunctionDeclaration>(export_default_decl->declaration);
+
+                            if (fun_decl->id.has_value()) {
+                                stmt = fun_decl;
+
+                                auto var_decl = std::make_shared<VariableDeclaration>();
+                                var_decl->kind = VarKind::Const;
+
+                                auto dector = std::make_shared<VariableDeclarator>();
+                                auto default_id = std::make_shared<Identifier>();
+                                default_id->name = utils::To_UTF16(new_name);
+
+                                dector->id = default_id;
+
+                                auto right_id = std::make_shared<Identifier>();
+                                right_id->name = (*fun_decl->id)->name;
+
+                                dector->init = { right_id };
+
+                                var_decl->declarations.push_back(dector);
+
+                                ast->body.push_back(var_decl);
+                            } else {
+                                auto default_id = std::make_shared<Identifier>();
+                                default_id->name = utils::To_UTF16(new_name);
+
+                                fun_decl->id = { default_id };
+
+                                stmt = fun_decl;
+                            }
+                            break;
+                        }
+
+                        /**
+                         * Similar to FunctionDeclaration
+                         */
+                        case SyntaxNodeType::ClassDeclaration: {
+                            auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(export_default_decl->declaration);
+
+                            if (cls_decl->id.has_value()) {
+                                stmt = cls_decl;
+
+                                auto var_decl = std::make_shared<VariableDeclaration>();
+                                var_decl->kind = VarKind::Const;
+
+                                auto dector = std::make_shared<VariableDeclarator>();
+                                auto default_id = std::make_shared<Identifier>();
+                                default_id->name = utils::To_UTF16(new_name);
+
+                                dector->id = default_id;
+
+                                auto right_id = std::make_shared<Identifier>();
+                                right_id->name = (*cls_decl->id)->name;
+
+                                dector->init = { right_id };
+
+                                var_decl->declarations.push_back(dector);
+
+                                ast->body.push_back(var_decl);
+                            } else {
+                                auto default_id = std::make_shared<Identifier>();
+                                default_id->name = utils::To_UTF16(new_name);
+
+                                cls_decl->id = { default_id };
+
+                                stmt = cls_decl;
+                            }
+                            break;
+                        }
+
+                        default:
+                            break;
+
+                    }
 
                     break;
                 }
