@@ -7,6 +7,7 @@
 #include <parser/ParserCommon.h>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include "Path.h"
 #include "./ModuleResolver.h"
@@ -25,6 +26,34 @@ namespace rocket_bundle {
         CodeGen codegen(config, ss);
         codegen.Traverse(ast);
         codegen_result = ss.str();
+    }
+
+    void ModuleFile::ReplaceAllNamedExports() {
+        for (auto& stmt : ast->body) {
+            switch (stmt->type) {
+                case SyntaxNodeType::ExportNamedDeclaration: {
+                    auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
+                    if (export_named_decl->declaration.has_value()) {  // is local
+                        stmt = *export_named_decl->declaration;
+                    }
+                    break;
+                }
+
+                case SyntaxNodeType::ExportDefaultDeclaration: {
+//                    auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
+//                    auto resolver = module_resolver.lock();
+//                    std::string new_name = "default_" + std::to_string(resolver->NextNameId());
+//
+//                    export_default_decl->
+
+                    break;
+                }
+
+                default:
+                    break;
+
+            }
+        }
     }
 
     void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {
@@ -273,6 +302,7 @@ namespace rocket_bundle {
 
         for (auto& tuple : modules_map_) {
             EnqueueOne([this, mod = tuple.second] {
+                mod->ReplaceAllNamedExports();
                 mod->CodeGenFromAst();
                 FinishOne();
             });

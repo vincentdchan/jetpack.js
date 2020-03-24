@@ -57,6 +57,8 @@ namespace rocket_bundle {
 
         void CodeGenFromAst();
 
+        void ReplaceAllNamedExports();
+
     };
 
     /**
@@ -91,6 +93,11 @@ namespace rocket_bundle {
 
         void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
 
+        inline std::int32_t NextNameId() {
+            std::lock_guard<std::mutex> guard(main_lock_);
+            return name_counter_++;
+        }
+
     private:
         void EnqueueOne(std::function<void()> unit);
         void FinishOne();
@@ -113,6 +120,8 @@ namespace rocket_bundle {
 
         std::int32_t enqueued_files_count_ = 0;
         std::int32_t finished_files_count_ = 0;
+
+        std::int32_t name_counter_ = 0;
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;
