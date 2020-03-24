@@ -48,6 +48,10 @@ namespace rocket_bundle {
 
         bool visited_mark = false;
 
+        std::string codegen_result;
+
+        void CodeGenFromAst();
+
     };
 
     /**
@@ -78,6 +82,8 @@ namespace rocket_bundle {
         void PrintStatistic();
 
         void PrintErrors();
+
+        void CodeGenAllModules(const std::string& out_path);
 
     private:
         void EnqueueOne(std::function<void()> unit);

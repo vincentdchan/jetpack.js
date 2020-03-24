@@ -16,10 +16,12 @@
 #define OPT_JSX "jsx"
 #define OPT_ANALYZE_MODULE "analyze-module"
 #define OPT_NO_TRACE "no-trace"
+#define OPT_OUT "out"
 
 using namespace rocket_bundle;
 
 static int AnalyzeModule(const std::string& self_path, const std::string& path, bool trace_file);
+static int BundleModule(const std::string& self_path, const std::string& path, const std::string& out_path);
 
 int main(int argc, char** argv) {
     try {
@@ -33,6 +35,7 @@ int main(int argc, char** argv) {
                 (OPT_HELP, "produce help message")
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
                 (OPT_NO_TRACE, "do not trace ref file when analyze module")
+                (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
                 ;
 
         options.parse_positional(OPT_ENTRY);
@@ -55,6 +58,13 @@ int main(int argc, char** argv) {
             return AnalyzeModule(argv[0], path, trace_file);
         }
 
+        if (result[OPT_OUT].count()) {
+            std::string entry_path = result[OPT_ENTRY].as<std::string>();
+            std::string out_path = result[OPT_OUT].as<std::string>();
+
+            return BundleModule(argv[0], entry_path, out_path);
+        }
+
         std::cout << options.help() << std::endl;
         return 0;
     } catch (std::exception& ex) {
@@ -73,6 +83,18 @@ static int AnalyzeModule(const std::string& self_path_str, const std::string& pa
     resolver->SetTraceFile(trace_file);
     resolver->BeginFromEntry(self_path.ToString(), path);
     resolver->PrintStatistic();
+
+    return 0;
+}
+
+static int BundleModule(const std::string& self_path_str, const std::string& path, const std::string& out_path) {
+    Path self_path(self_path_str);
+    self_path.Pop();
+
+    auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
+    resolver->SetTraceFile(true);
+    resolver->BeginFromEntry(self_path.ToString(), path);
+    resolver->CodeGenAllModules(out_path);
 
     return 0;
 }

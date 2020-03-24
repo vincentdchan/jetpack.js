@@ -6,6 +6,8 @@
 #include <tsl/ordered_map.h>
 #include <ghc/filesystem.hpp>
 #include <parser/ParserCommon.h>
+#include <codegen/CodeGen.h>
+#include <fstream>
 #include <iostream>
 
 #include "Path.h"
@@ -16,6 +18,14 @@
 namespace rocket_bundle {
     using parser::ParserContext;
     using parser::Parser;
+
+    void ModuleFile::CodeGenFromAst() {
+        std::stringstream ss;
+        CodeGen::Config config;
+        CodeGen codegen(config, ss);
+        codegen.Traverse(ast);
+        codegen_result = ss.str();
+    }
 
     void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {
         std::string path;
@@ -252,6 +262,31 @@ namespace rocket_bundle {
         }
 
         return result;
+    }
+
+    void ModuleResolver::CodeGenAllModules(const std::string& out_path) {
+        enqueued_files_count_ = 0;
+        finished_files_count_ = 0;
+
+        for (auto& tuple : modules_map_) {
+            EnqueueOne([this, mod = tuple.second] {
+                mod->CodeGenFromAst();
+                FinishOne();
+            });
+        }
+
+        std::unique_lock<std::mutex> lk(main_lock_);
+        main_cv_.wait(lk, [this] {
+            return finished_files_count_ >= enqueued_files_count_;
+        });
+
+        std::ofstream out(out_path, std::ios::out);
+
+        for (auto& tuple : modules_map_) {
+            out << tuple.second->codegen_result << std::endl;
+        }
+
+        out.close();
     }
 
 }
