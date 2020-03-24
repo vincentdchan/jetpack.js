@@ -90,8 +90,9 @@ namespace rocket_bundle {
         parser.OnNewImportLocationAdded([this, &mf] (const UString& path) {
             if (!trace_file) return;
 
+            auto u8path = utils::To_UTF8(path);
             Path module_path(mf->path);
-            module_path.Join(utils::To_UTF8(path));
+            module_path.Join(u8path);
 
             auto source_path = module_path.ToString();
 
@@ -108,27 +109,29 @@ namespace rocket_bundle {
                 }
             }
 
-            std::shared_ptr<ModuleFile> mf;
+            mf->resolved_map[u8path] = source_path;
+
+            std::shared_ptr<ModuleFile> new_mf;
             {
                 std::lock_guard<std::mutex> guard(map_mutex_);
                 if (modules_map_.find(source_path) != modules_map_.end()) return;  // exists
 
-                mf = std::make_shared<ModuleFile>();
-                mf->module_resolver = shared_from_this();
-                mf->path = std::move(source_path);
-                modules_map_[mf->path] = mf;
+                new_mf = std::make_shared<ModuleFile>();
+                new_mf->module_resolver = shared_from_this();
+                new_mf->path = std::move(source_path);
+                modules_map_[new_mf->path] = new_mf;
             }
 
-            EnqueueOne([this, mf] {
+            EnqueueOne([this, new_mf] {
                 try {
-                    ParseFile(mf);
+                    ParseFile(new_mf);
                 } catch (parser::ParseError& ex) {
                     std::lock_guard<std::mutex> guard(error_mutex_);
-                    WorkerError err { mf->path, ex.ErrorMessage() };
+                    WorkerError err {new_mf->path, ex.ErrorMessage() };
                     worker_errors_.emplace_back(std::move(err));
                 } catch (std::exception& ex) {
                     std::lock_guard<std::mutex> guard(error_mutex_);
-                    WorkerError err { mf->path, ex.what() };
+                    WorkerError err {new_mf->path, ex.what() };
                     worker_errors_.emplace_back(std::move(err));
                 }
                 FinishOne();
@@ -159,8 +162,57 @@ namespace rocket_bundle {
         result["entry"] = entry_module->path;
         result["importStat"] = GetImportStat();
         result["totalFiles"] = finished_files_count_;
+        result["exports"] = GetAllExportVars();
 
         std::cout << result.dump(2) << std::endl;
+    }
+
+    json ModuleResolver::GetAllExportVars() {
+        json result = json::array();
+
+        TraverseModulePushExportVars(result, entry_module, nullptr);
+
+        return result;
+    }
+
+    void ModuleResolver::TraverseModulePushExportVars(
+            rocket_bundle::json &arr, const Sp<rocket_bundle::ModuleFile>& mod,
+            std::unordered_set<std::string>* white_list) {
+
+        if (mod->visited_mark) {
+            return;
+        }
+        mod->visited_mark = true;
+
+        for (auto& local_name : mod->ast->scope->export_manager.local_export_name) {
+            auto u8name = utils::To_UTF8(local_name);
+            if (white_list && white_list->find(u8name) == white_list->end()) {
+                continue;
+            }
+            arr.push_back(std::move(u8name));
+        }
+
+        for (auto& item : mod->ast->scope->export_manager.external_export_vars) {
+            auto u8relative_path = utils::To_UTF8(item.first);
+            auto resolved_path = mod->resolved_map.find(u8relative_path);
+            if (resolved_path == mod->resolved_map.end()) {
+                throw std::runtime_error("resolve path failed: " + u8relative_path);
+            }
+
+            auto iter = modules_map_.find(resolved_path->second);
+            if (iter == modules_map_.end()) {
+                throw std::runtime_error("module not found: " + resolved_path->second);
+            }
+            if (item.second.is_export_all) {
+                TraverseModulePushExportVars(arr, iter->second, nullptr);
+            } else {
+                std::unordered_set<std::string> new_white_list;
+                for (auto& name : item.second.export_names) {
+                    new_white_list.insert(utils::To_UTF8(name));
+                }
+                TraverseModulePushExportVars(arr, iter->second, &new_white_list);
+            }
+        }
     }
 
     void ModuleResolver::PrintErrors() {
