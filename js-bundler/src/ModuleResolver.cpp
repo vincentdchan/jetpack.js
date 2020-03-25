@@ -29,12 +29,12 @@ namespace rocket_bundle {
         return MakeId(utils::To_UTF16(content));
     }
 
-    inline Sp<SyntaxNode> MakeModuleVar(std::int32_t id) {
+    inline Sp<SyntaxNode> MakeModuleVar(const UString& var_name) {
         auto mod_var = std::make_shared<VariableDeclaration>();
         mod_var->kind = VarKind::Const;
 
         auto declarator = std::make_shared<VariableDeclarator>();
-        declarator->id = MakeId("mod_" + std::to_string(id));
+        declarator->id = MakeId(var_name);
 
         declarator->init = { std::make_shared<ObjectExpression>() };
 
@@ -51,15 +51,93 @@ namespace rocket_bundle {
         codegen_result = ss.str();
     }
 
+    /**
+     * import { a, b as c } from './mod1';
+     *
+     * TO
+     *
+     * const { a, b: c } = mod_1;
+     */
+    Sp<VariableDeclaration> ModuleFile::TurnImportIntoVarDecl(Sp<rocket_bundle::ImportDeclaration> &import_decl) {
+        auto result = std::make_shared<VariableDeclaration>();
+        result->kind = VarKind::Const;
+
+        auto full_path_iter = resolved_map.find(utils::To_UTF8(import_decl->source->str_));
+        if (full_path_iter == resolved_map.end()) {
+            throw std::runtime_error("can not resolver path: " + utils::To_UTF8(import_decl->source->str_));
+        }
+
+        auto resolver = module_resolver.lock();
+        auto target_module = resolver->modules_map_[full_path_iter->second];
+
+        if (target_module == nullptr) {
+            throw std::runtime_error("can not find module: " + full_path_iter->second);
+        }
+
+        auto target_mode_name = target_module->GetModuleVarName();
+
+        auto declarator = std::make_shared<VariableDeclarator>();
+
+        if (import_decl->specifiers[0]->type == SyntaxNodeType::ImportNamespaceSpecifier) {
+            // TODO: implement
+            declarator->id = MakeId("foo");
+        } else {
+            auto pattern = std::make_shared<ObjectPattern>();
+
+            for (auto& spec : import_decl->specifiers) {
+                switch (spec->type) {
+                    case SyntaxNodeType::ImportDefaultSpecifier: {
+                        auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+
+                        auto prop = std::make_shared<Property>();
+
+                        prop->key = MakeId("default");
+                        prop->value = { MakeId(default_spec->local->name) };
+
+                        pattern->properties.push_back(std::move(prop));
+                        break;
+                    }
+
+                    case SyntaxNodeType::ImportSpecifier: {
+                        auto named_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
+
+                        auto prop = std::make_shared<Property>();
+
+                        prop->key = MakeId(named_spec->imported->name);
+                        if (named_spec->imported->name != named_spec->local->name) {
+                            prop->value = { MakeId(named_spec->local->name) };
+                        }
+
+                        pattern->properties.push_back(std::move(prop));
+                        break;
+                    }
+
+                    default:
+                        break;
+
+                }
+            }
+
+            declarator->id = std::move(pattern);
+        }
+
+        declarator->init = { MakeId(target_mode_name) };
+
+        result->declarations.push_back(declarator);
+        return result;
+    }
+
     void ModuleFile::ReplaceAllNamedExports() {
         std::vector<Sp<SyntaxNode>> new_body;
-        new_body.push_back(MakeModuleVar(this->id));
+        new_body.push_back(MakeModuleVar(GetModuleVarName()));
 
         for (auto& stmt : ast->body) {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
-//                    ignore
-//                    iter = ast->body.erase(iter);
+                    auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
+                    if (!import_decl->specifiers.empty()) {
+                        new_body.push_back(TurnImportIntoVarDecl(import_decl));
+                    }
                     continue;
                 }
 
@@ -248,7 +326,7 @@ namespace rocket_bundle {
         ast->body = std::move(new_body);
     }
 
-    UString ModuleResolver::GetModuleVarName() {
+    UString ModuleFile::GetModuleVarName() {
         std::string tmp = "mod_" + std::to_string(id);
         return utils::To_UTF16(tmp);
     }
@@ -507,6 +585,7 @@ namespace rocket_bundle {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
+        // BEGIN every modules gen their own code
         for (auto& tuple : modules_map_) {
             EnqueueOne([this, mod = tuple.second] {
                 mod->ReplaceAllNamedExports();
@@ -519,6 +598,8 @@ namespace rocket_bundle {
         main_cv_.wait(lk, [this] {
             return finished_files_count_ >= enqueued_files_count_;
         });
+
+        // END every modules gen their own code
 
         std::ofstream out(out_path, std::ios::out);
 

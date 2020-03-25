@@ -57,6 +57,8 @@ namespace rocket_bundle {
 
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
+        Sp<VariableDeclaration> TurnImportIntoVarDecl(Sp<ImportDeclaration>& import_decl);
+
         void CodeGenFromAst();
 
         void ReplaceAllNamedExports();
@@ -103,6 +105,8 @@ namespace rocket_bundle {
             return name_counter_++;
         }
 
+        robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
+
     private:
         void EnqueueOne(std::function<void()> unit);
         void FinishOne();
@@ -114,7 +118,6 @@ namespace rocket_bundle {
                 const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
 
         std::mutex map_mutex_;
-        robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
 
         Sp<ModuleFile> entry_module;
 

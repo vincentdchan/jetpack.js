@@ -746,9 +746,9 @@ namespace rocket_bundle {
             } else {
                 TraverseNode(node->key);
             }
-            Write(": ");
         }
         if (node->value.has_value()) {
+            Write(": ");
             TraverseNode(*node->value);
         }
     }
