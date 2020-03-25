@@ -139,6 +139,7 @@ namespace rocket_bundle {
         void Traverse(const Sp<VariableDeclaration>& node) override;
         void Traverse(const Sp<VariableDeclarator>& node) override;
         void Traverse(const Sp<ClassDeclaration>& node) override;
+        void Traverse(const Sp<ClassBody>& node) override;
         void Traverse(const Sp<ImportDeclaration>& node) override;
         void Traverse(const Sp<ExportDefaultDeclaration>& node) override;
         void Traverse(const Sp<ExportNamedDeclaration>& node) override;
@@ -165,6 +166,7 @@ namespace rocket_bundle {
         void Traverse(const Sp<CallExpression>& node) override;
         void Traverse(const Sp<MemberExpression>& node) override;
         void Traverse(const Sp<Identifier>& node) override;
+        void Traverse(const Sp<UpdateExpression>& node) override;
 
         inline std::ostream& Stream() {
             return output;

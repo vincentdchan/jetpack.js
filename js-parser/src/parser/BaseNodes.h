@@ -52,6 +52,9 @@ namespace rocket_bundle {
         Expression() = default;
 
         [[nodiscard]] bool IsExpression() const override { return true; }
+        virtual bool IsGenerator() const { return false; }
+        virtual bool IsAsync() const { return false; }
+        virtual bool IsComputed() const { return false; }
 
     };
 

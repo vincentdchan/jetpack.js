@@ -476,11 +476,29 @@ namespace rocket_bundle {
             Write((*node->id)->name);
         }
         if (node->super_class.has_value()) {
-            Write("extends ");
+            Write(" extends ");
             TraverseNode(*node->super_class);
             Write(" ");
         }
         TraverseNode(node->body);
+    }
+
+    void CodeGen::Traverse(const Sp<ClassBody>& node) {
+        Write("{");
+        state_.indent_level++;
+
+        if (!node->body.empty()) {
+            WriteLineEnd();
+            for (auto& elem : node->body) {
+                WriteCommentBefore(elem);
+                WriteIndent();
+                TraverseNode(elem);
+                WriteLineEnd();
+            }
+        }
+
+        state_.indent_level--;
+        WriteIndentWith("}");
     }
 
     void CodeGen::Traverse(const Sp<ImportDeclaration> &node) {
@@ -592,7 +610,30 @@ namespace rocket_bundle {
                 break;
 
         }
-        // TODO: implementation;
+
+        if (node->key.has_value() && node->value.has_value()) {
+            auto fun_expr = std::dynamic_pointer_cast<FunctionExpression>(*node->value);
+            if (!fun_expr) {
+                return;
+            }
+
+            if (fun_expr->IsAsync()) {
+                Write("async ");
+            }
+            if (fun_expr->IsGenerator()) {
+                Write("*");
+            }
+            if (fun_expr->IsComputed()) {
+                Write('[');
+                TraverseNode(*node->key);
+                Write(']');
+            } else {
+                TraverseNode(*node->key);
+            }
+            FormatSequence(fun_expr->params);
+            Write(" ");
+            TraverseNode(fun_expr->body);
+        }
     }
 
     void CodeGen::Traverse(const Sp<ArrowFunctionExpression> &node) {
@@ -659,11 +700,12 @@ namespace rocket_bundle {
         Write("`");
         for (std::size_t i = 0; i < node->expressions.size(); i++) {
             auto expr = node->expressions[i];
-            Write(node->quasis[i]->raw);
+            Write(node->quasis[i]->cooked);
             Write("${");
             TraverseNode(expr);
             Write("}");
         }
+        Write(node->quasis[node->quasis.size() - 1]->cooked);
         Write("`");
     }
 
@@ -835,6 +877,16 @@ namespace rocket_bundle {
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
         Write(lit->raw, lit);
+    }
+
+    void CodeGen::Traverse(const Sp<UpdateExpression>& update) {
+        if (update->prefix) {
+            Write(update->operator_);
+            TraverseNode(update->argument);
+        } else {
+            TraverseNode(update->argument);
+            Write(update->operator_);
+        }
     }
 
     void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {

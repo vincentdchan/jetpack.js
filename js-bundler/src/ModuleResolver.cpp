@@ -33,10 +33,18 @@ namespace rocket_bundle {
         for (auto iter = ast->body.begin(); iter != ast->body.end();) {
 #define stmt (*iter)
             switch (stmt->type) {
+                case SyntaxNodeType::ImportDeclaration: {
+                    iter = ast->body.erase(iter);
+                    continue;
+                }
+
                 case SyntaxNodeType::ExportNamedDeclaration: {
                     auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
                     if (export_named_decl->declaration.has_value()) {  // is local
                         stmt = *export_named_decl->declaration;
+                    } else {
+                        iter = ast->body.erase(iter);
+                        continue;
                     }
                     break;
                 }
@@ -46,82 +54,71 @@ namespace rocket_bundle {
                     auto resolver = module_resolver.lock();
                     std::string new_name = "default_" + std::to_string(resolver->NextNameId());
 
+                    /**
+                     * export defaut var1
+                     *
+                     * TO
+                     *
+                     * const defaut_0 = var1;
+                     */
+                    if (export_default_decl->declaration->type == SyntaxNodeType::AssignmentExpression) {
+                        auto exist_assign = std::dynamic_pointer_cast<AssignmentExpression>(export_default_decl->declaration);
+
+                        auto var_decl1 = std::make_shared<VariableDeclaration>();
+                        var_decl1->kind = VarKind::Const;
+
+                        auto dector1 = std::make_shared<VariableDeclarator>();
+
+                        if (exist_assign->left->type != SyntaxNodeType::Identifier) {
+                            std::runtime_error("left of assign should be identifer");
+                        }
+
+                        auto assign_left_id = std::dynamic_pointer_cast<Identifier>(exist_assign->left);
+                        dector1->id = assign_left_id;
+                        dector1->init = {  exist_assign->right };
+                        var_decl1->declarations.push_back(dector1);
+
+                        stmt = var_decl1;
+                        // ---------------
+                        auto var_decl2 = std::make_shared<VariableDeclaration>();
+                        var_decl2->kind = VarKind::Const;
+
+                        auto dector2 = std::make_shared<VariableDeclarator>();
+                        auto default_id = std::make_shared<Identifier>();
+                        default_id->name = utils::To_UTF16(new_name);
+                        dector2->id = default_id;
+
+                        auto right_id = std::make_shared<Identifier>();
+                        right_id->name = assign_left_id->name;  // copy name
+
+                        dector2->init = { right_id };
+
+                        var_decl2->declarations.push_back(dector2);
+
+                        tail.push_back(var_decl2);
+
+                        continue;
+                    } else if (export_default_decl->declaration->IsExpression()) {
+                        auto exist_id = std::dynamic_pointer_cast<Expression>(export_default_decl->declaration);
+
+                        auto var_decl = std::make_shared<VariableDeclaration>();
+                        var_decl->kind = VarKind::Const;
+
+                        auto var_dector = std::make_shared<VariableDeclarator>();
+
+                        auto id = std::make_shared<Identifier>();
+                        id->name = utils::To_UTF16(new_name);
+
+                        var_dector->id = id;
+                        var_dector->init = { exist_id };
+
+                        var_decl->declarations.push_back(var_dector);
+
+                        stmt = var_decl;
+                        continue;
+                    }
+
                     switch (export_default_decl->declaration->type) {
-
-                        /**
-                         * export defaut var1
-                         *
-                         * TO
-                         *
-                         * const defaut_0 = var1;
-                         */
-                        case SyntaxNodeType::Identifier: {
-                            auto exist_id = std::dynamic_pointer_cast<Identifier>(export_default_decl->declaration);
-
-                            auto var_decl = std::make_shared<VariableDeclaration>();
-                            var_decl->kind = VarKind::Const;
-
-                            auto var_dector = std::make_shared<VariableDeclarator>();
-
-                            auto id = std::make_shared<Identifier>();
-                            id->name = utils::To_UTF16(new_name);
-
-                            var_dector->id = id;
-                            var_dector->init = { exist_id };
-
-                            tail.push_back(var_dector);
-
-                            stmt = var_decl;
-                            break;
-                        }
-
-                        /**
-                         * export default a = 3
-                         *
-                         * TO
-                         *
-                         * const a = 3;
-                         * const default_0 = a;
-                         *
-                         */
-                        case SyntaxNodeType::AssignmentExpression: {
-                            auto exist_assign = std::dynamic_pointer_cast<AssignmentExpression>(export_default_decl->declaration);
-
-                            auto var_decl1 = std::make_shared<VariableDeclaration>();
-                            var_decl1->kind = VarKind::Const;
-
-                            auto dector1 = std::make_shared<VariableDeclarator>();
-
-                            if (exist_assign->left->type != SyntaxNodeType::Identifier) {
-                                std::runtime_error("left of assign should be identifer");
-                            }
-
-                            auto assign_left_id = std::dynamic_pointer_cast<Identifier>(exist_assign->left);
-                            dector1->id = assign_left_id;
-                            dector1->init = {  exist_assign->right };
-                            var_decl1->declarations.push_back(dector1);
-
-                            stmt = var_decl1;
-                            // ---------------
-                            auto var_decl2 = std::make_shared<VariableDeclaration>();
-                            var_decl2->kind = VarKind::Const;
-
-                            auto dector2 = std::make_shared<VariableDeclarator>();
-                            auto default_id = std::make_shared<Identifier>();
-                            default_id->name = utils::To_UTF16(new_name);
-                            dector2->id = default_id;
-
-                            auto right_id = std::make_shared<Identifier>();
-                            right_id->name = assign_left_id->name;  // copy name
-
-                            dector2->init = { right_id };
-
-                            var_decl2->declarations.push_back(dector2);
-
-                            tail.push_back(var_decl2);
-                            break;
-                        }
-
                         /**
                          * Case 1:
                          *

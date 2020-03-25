@@ -41,6 +41,9 @@ namespace rocket_bundle {
 
         std::unique_ptr<Scope> scope;
 
+        bool IsGenerator() const override { return generator; }
+        bool IsAsync() const override { return async; }
+
     };
 
     class AssignmentExpression: public Expression {
@@ -307,6 +310,9 @@ namespace rocket_bundle {
 
         std::unique_ptr<Scope> scope;
 
+        bool IsGenerator() const override { return generator; }
+        bool IsAsync() const override { return async; }
+
     };
 
     class Identifier: public Expression, public Pattern {
@@ -531,6 +537,8 @@ namespace rocket_bundle {
         Sp<Expression> object;
         Sp<Expression> property;
 
+        bool IsComputed() const override { return computed; }
+
     };
 
     class Super: public Expression {
@@ -686,6 +694,8 @@ namespace rocket_bundle {
 
         std::vector<Sp<SyntaxNode>> params;
         bool async = false;
+
+        bool IsAsync() const override { return async; }
 
     };
 

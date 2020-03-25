@@ -80,3 +80,21 @@ TEST(ModuleResolver, HandleExportDefaultFunction2) {
               "function name() {}\n"
               "const default_0 = name;\n");
 }
+
+TEST(ModuleResolver, HandleExportDefaultLiteral) {
+    std::string src = "export default 3;\n";
+
+    auto result = ReplaceDefault(src);
+
+    EXPECT_EQ(result,
+              "const default_0 = 3;\n");
+}
+
+TEST(ModuleResolver, HandleExportDefaultLiteral2) {
+    std::string src = "export default `3`;\n";
+
+    auto result = ReplaceDefault(src);
+
+    EXPECT_EQ(result,
+              "const default_0 = `3`;\n");
+}

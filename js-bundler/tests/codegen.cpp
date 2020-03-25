@@ -65,3 +65,11 @@ TEST(CodeGen, ObjectStringProps) {
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
+
+TEST(CodeGen, ClassExtends) {
+    std::string src = "class A extends B {\n"
+                      "  constructor() {  }\n"
+                      "}\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
