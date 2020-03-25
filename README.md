@@ -29,7 +29,8 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - JSON output of sensible [syntax tree](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
 - Experimental support for [JSX](https://facebook.github.io/jsx/), a syntax extension for [React](https://facebook.github.io/react/)
 - Syntax node location (index-based and line-column)
-- TypeScript Support(WIP).
+- Friendly error message
+- TypeScript Support(WIP)
 
 ## Bundler
 

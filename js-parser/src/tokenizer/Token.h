@@ -163,6 +163,6 @@ public:
     bool octal_ = false;
     bool head_ = false;
     bool tail_ = false;
-    char16_t cooked_;
+    UString cooked_;
 
 };

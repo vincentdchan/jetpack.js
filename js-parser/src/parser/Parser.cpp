@@ -435,6 +435,17 @@ namespace rocket_bundle::parser {
                 return Finalize(marker, node);
             }
 
+            case JsTokenType::RegularExpression: {
+                ctx->is_assignment_target_ = false;
+                ctx->is_binding_element_ = false;
+                token = NextToken();
+                auto node = Alloc<Literal>();
+                node->ty = Literal::Ty::Regex;
+                node->str_ = token.value_;
+                node->raw = GetTokenRaw(token);
+                return Finalize(marker, node);
+            }
+
             case JsTokenType::Template:
                 return ParseTemplateLiteral(scope);
 

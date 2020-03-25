@@ -14,6 +14,9 @@
 
 namespace rocket_bundle {
 
+    /**
+     * Reference: https://github.com/davidbonnet/astring/blob/master/src/astring.js
+     */
     class CodeGen: public NodeTraverser {
     private:
         struct State {
@@ -115,6 +118,7 @@ namespace rocket_bundle {
         void Traverse(const Sp<Script>& node) override;
         void Traverse(const Sp<Module>& node) override;
         void Traverse(const Sp<Literal>& lit) override;
+        void Traverse(const Sp<RegexLiteral>& lit) override;
         void Traverse(const Sp<ArrayExpression>& node) override;
         void Traverse(const Sp<BlockStatement>& node) override;
         void Traverse(const Sp<EmptyStatement>& node) override;
@@ -167,6 +171,7 @@ namespace rocket_bundle {
         void Traverse(const Sp<MemberExpression>& node) override;
         void Traverse(const Sp<Identifier>& node) override;
         void Traverse(const Sp<UpdateExpression>& node) override;
+        void Traverse(const Sp<ObjectPattern>& node) override;
 
         inline std::ostream& Stream() {
             return output;

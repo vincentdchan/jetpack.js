@@ -98,3 +98,30 @@ TEST(ModuleResolver, HandleExportDefaultLiteral2) {
     EXPECT_EQ(result,
               "const default_0 = `3`;\n");
 }
+
+TEST(ModuleResolver, HandleExportDefaultLiteral3) {
+    std::string src = "export default `\n"
+                      "aaaabb\n"
+                      "ddd`;\n";
+
+    auto result = ReplaceDefault(src);
+
+    EXPECT_EQ(result,
+              "const default_0 = `\n"
+              "aaaabb\n"
+              "ddd`;\n");
+}
+
+//TEST(ModuleResolver, HandleExportDefaultLiteral4) {
+//    std::string src = "export default /* glsl */`\n"
+//                      "#ifdef USE_ALPHAMAP\n"
+//                      "\n"
+//                      "\tdiffuseColor.a *= texture2D( alphaMap, vUv ).g;\n"
+//                      "\n"
+//                      "#endif\n"
+//                      "`;";
+//
+//    auto result = ReplaceDefault(src);
+//
+//    std::cout << result << std::endl;
+//}

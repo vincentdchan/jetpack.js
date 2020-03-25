@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <atomic>
 #include <functional>
 #include <robin_hood.h>
 #include <fstream>
@@ -37,6 +38,7 @@ namespace rocket_bundle {
 
     class ModuleFile {
     public:
+        std::int32_t id = 0;
 
         std::string path;
 
@@ -59,6 +61,8 @@ namespace rocket_bundle {
 
         void ReplaceAllNamedExports();
 
+        UString GetModuleVarName();
+
     };
 
     /**
@@ -69,7 +73,8 @@ namespace rocket_bundle {
     public:
         static std::u16string ReadFileStream(const std::string& filename);
 
-        ModuleResolver() = default;
+        ModuleResolver() : mod_counter_(0) {
+        }
 
         void BeginFromEntry(std::string base_path, std::string origin_path);
 
@@ -125,6 +130,8 @@ namespace rocket_bundle {
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;
+
+        std::atomic<std::int32_t> mod_counter_;
 
         bool trace_file = true;
 

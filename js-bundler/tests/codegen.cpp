@@ -73,3 +73,21 @@ TEST(CodeGen, ClassExtends) {
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
+
+TEST(CodeGen, Regex) {
+    std::string src = "const a = /abc/;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, Pattern) {
+    std::string src = "var { _lodPlanes, _sizeLods, _sigmas } = _createPlanes();\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, TemplateLiteral) {
+    std::string src = "const a = `abc${dd}k2`;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}

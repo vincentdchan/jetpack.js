@@ -19,6 +19,29 @@ namespace rocket_bundle {
     using parser::ParserContext;
     using parser::Parser;
 
+    inline Sp<Identifier> MakeId(const UString& content) {
+        auto id = std::make_shared<Identifier>();
+        id->name = content;
+        return id;
+    }
+
+    inline Sp<Identifier> MakeId(const std::string& content) {
+        return MakeId(utils::To_UTF16(content));
+    }
+
+    inline Sp<SyntaxNode> MakeModuleVar(std::int32_t id) {
+        auto mod_var = std::make_shared<VariableDeclaration>();
+        mod_var->kind = VarKind::Const;
+
+        auto declarator = std::make_shared<VariableDeclarator>();
+        declarator->id = MakeId("mod_" + std::to_string(id));
+
+        declarator->init = { std::make_shared<ObjectExpression>() };
+
+        mod_var->declarations.push_back(std::move(declarator));
+        return mod_var;
+    }
+
     void ModuleFile::CodeGenFromAst() {
         std::stringstream ss;
         ss << "// " << this->path << std::endl;
@@ -29,22 +52,21 @@ namespace rocket_bundle {
     }
 
     void ModuleFile::ReplaceAllNamedExports() {
-        std::vector<Sp<SyntaxNode>> tail;
-        for (auto iter = ast->body.begin(); iter != ast->body.end();) {
-#define stmt (*iter)
+        std::vector<Sp<SyntaxNode>> new_body;
+        new_body.push_back(MakeModuleVar(this->id));
+
+        for (auto& stmt : ast->body) {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
-                    iter = ast->body.erase(iter);
+//                    ignore
+//                    iter = ast->body.erase(iter);
                     continue;
                 }
 
                 case SyntaxNodeType::ExportNamedDeclaration: {
                     auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
                     if (export_named_decl->declaration.has_value()) {  // is local
-                        stmt = *export_named_decl->declaration;
-                    } else {
-                        iter = ast->body.erase(iter);
-                        continue;
+                        new_body.push_back(*export_named_decl->declaration);
                     }
                     break;
                 }
@@ -78,15 +100,13 @@ namespace rocket_bundle {
                         dector1->init = {  exist_assign->right };
                         var_decl1->declarations.push_back(dector1);
 
-                        stmt = var_decl1;
+                        new_body.push_back(var_decl1);
                         // ---------------
                         auto var_decl2 = std::make_shared<VariableDeclaration>();
                         var_decl2->kind = VarKind::Const;
 
                         auto dector2 = std::make_shared<VariableDeclarator>();
-                        auto default_id = std::make_shared<Identifier>();
-                        default_id->name = utils::To_UTF16(new_name);
-                        dector2->id = default_id;
+                        dector2->id = MakeId(new_name);
 
                         auto right_id = std::make_shared<Identifier>();
                         right_id->name = assign_left_id->name;  // copy name
@@ -95,7 +115,7 @@ namespace rocket_bundle {
 
                         var_decl2->declarations.push_back(dector2);
 
-                        tail.push_back(var_decl2);
+                        new_body.push_back(var_decl2);
 
                         continue;
                     } else if (export_default_decl->declaration->IsExpression()) {
@@ -106,15 +126,12 @@ namespace rocket_bundle {
 
                         auto var_dector = std::make_shared<VariableDeclarator>();
 
-                        auto id = std::make_shared<Identifier>();
-                        id->name = utils::To_UTF16(new_name);
-
-                        var_dector->id = id;
+                        var_dector->id = MakeId(new_name);
                         var_dector->init = { exist_id };
 
                         var_decl->declarations.push_back(var_dector);
 
-                        stmt = var_decl;
+                        new_body.push_back(var_decl);
                         continue;
                     }
 
@@ -153,10 +170,8 @@ namespace rocket_bundle {
                                 var_decl->kind = VarKind::Const;
 
                                 auto dector = std::make_shared<VariableDeclarator>();
-                                auto default_id = std::make_shared<Identifier>();
-                                default_id->name = utils::To_UTF16(new_name);
 
-                                dector->id = default_id;
+                                dector->id = MakeId(new_name);
 
                                 auto right_id = std::make_shared<Identifier>();
                                 right_id->name = (*fun_decl->id)->name;
@@ -165,14 +180,12 @@ namespace rocket_bundle {
 
                                 var_decl->declarations.push_back(dector);
 
-                                tail.push_back(var_decl);
+                                new_body.push_back(stmt);
+                                new_body.push_back(var_decl);
                             } else {
-                                auto default_id = std::make_shared<Identifier>();
-                                default_id->name = utils::To_UTF16(new_name);
+                                fun_decl->id = { MakeId(new_name) };
 
-                                fun_decl->id = { default_id };
-
-                                stmt = fun_decl;
+                                new_body.push_back(fun_decl);
                             }
                             break;
                         }
@@ -190,10 +203,8 @@ namespace rocket_bundle {
                                 var_decl->kind = VarKind::Const;
 
                                 auto dector = std::make_shared<VariableDeclarator>();
-                                auto default_id = std::make_shared<Identifier>();
-                                default_id->name = utils::To_UTF16(new_name);
 
-                                dector->id = default_id;
+                                dector->id = MakeId(new_name);
 
                                 auto right_id = std::make_shared<Identifier>();
                                 right_id->name = (*cls_decl->id)->name;
@@ -202,14 +213,12 @@ namespace rocket_bundle {
 
                                 var_decl->declarations.push_back(dector);
 
-                                tail.push_back(var_decl);
+                                new_body.push_back(stmt);
+                                new_body.push_back(var_decl);
                             } else {
-                                auto default_id = std::make_shared<Identifier>();
-                                default_id->name = utils::To_UTF16(new_name);
+                                cls_decl->id = { MakeId(new_name) };
 
-                                cls_decl->id = { default_id };
-
-                                stmt = cls_decl;
+                                new_body.push_back(cls_decl);
                             }
                             break;
                         }
@@ -226,18 +235,22 @@ namespace rocket_bundle {
                  * remove export all
                  */
                 case SyntaxNodeType::ExportAllDeclaration:
-                    iter = ast->body.erase(iter);
                     continue;
 
                 default:
+                    new_body.push_back(stmt);
                     break;
 
             }
-            ++iter;
         }
 
-        ast->body.insert(std::end(ast->body), std::begin(tail), std::end(tail));
-#undef stmt
+//        ast->body.insert(std::end(ast->body), std::begin(tail), std::end(tail));
+        ast->body = std::move(new_body);
+    }
+
+    UString ModuleResolver::GetModuleVarName() {
+        std::string tmp = "mod_" + std::to_string(id);
+        return utils::To_UTF16(tmp);
     }
 
     void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {
@@ -289,6 +302,7 @@ namespace rocket_bundle {
             return;
         }
         entry_module = std::make_shared<ModuleFile>();
+        entry_module->id = mod_counter_++;
         entry_module->module_resolver = shared_from_this();
         entry_module->path = path;
 
@@ -341,6 +355,7 @@ namespace rocket_bundle {
                 if (modules_map_.find(source_path) != modules_map_.end()) return;  // exists
 
                 new_mf = std::make_shared<ModuleFile>();
+                new_mf->id = mod_counter_++;
                 new_mf->module_resolver = shared_from_this();
                 new_mf->path = std::move(source_path);
                 modules_map_[new_mf->path] = new_mf;

@@ -1097,7 +1097,7 @@ namespace rocket_bundle {
     }
 
     Token Scanner::ScanTemplate() {
-        char16_t cooked;
+        UString cooked;
         bool terminated = false;
         std::uint32_t start = index_;
 
@@ -1121,33 +1121,33 @@ namespace rocket_bundle {
                     terminated = true;
                     break;
                 }
-                cooked += ch;
+                cooked.push_back(ch);
             } else if (ch == '\\') {
                 ch = (*source_)[index_++];
                 if (!utils::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
-                            cooked += '\n';
+                            cooked.push_back('\n');
                             break;
                         case 'r':
-                            cooked += '\r';
+                            cooked.push_back('\r');
                             break;
                         case 't':
-                            cooked += '\t';
+                            cooked.push_back('\t');
                             break;
                         case 'u':
                             if ((*source_)[index_] == '{') {
                                 ++index_;
-                                char32_t tmp = ScanUnicodeCodePointEscape();
-                                cooked = tmp;
+                                char16_t tmp = ScanUnicodeCodePointEscape();
+                                cooked.push_back(tmp);
                             } else {
                                 auto restore = index_;
                                 char32_t unescapedChar;
                                 if (ScanHexEscape(ch, unescapedChar)) {
-                                    cooked = unescapedChar;
+                                    cooked.push_back(unescapedChar);
                                 } else {
                                     index_= restore;
-                                    cooked = ch;
+                                    cooked.push_back(ch);
                                 }
                             }
                             break;
@@ -1156,16 +1156,16 @@ namespace rocket_bundle {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            cooked = unescaped;
+                            cooked.push_back(unescaped);
                             break;
                         case 'b':
-                            cooked += '\b';
+                            cooked.push_back('\b');
                             break;
                         case 'f':
-                            cooked += '\f';
+                            cooked.push_back('\f');
                             break;
                         case 'v':
-                            cooked += '\v';
+                            cooked.push_back('\v');
                             break;
 
                         default:
@@ -1174,12 +1174,12 @@ namespace rocket_bundle {
                                     // Illegal: \01 \02 and so on
                                     ThrowUnexpectedToken();
                                 }
-                                cooked += '\0';
+                                cooked.push_back('\0');
                             } else if (utils::IsOctalDigit(ch)) {
                                 // Illegal: \1 \2
                                 ThrowUnexpectedToken();
                             } else {
-                                cooked = ch;
+                                cooked.push_back(ch);
                             }
                             break;
                     }
@@ -1196,9 +1196,9 @@ namespace rocket_bundle {
                     ++index_;
                 }
                 line_start_  = index_;
-                cooked = '\n';
+                cooked.push_back('\n');
             } else {
-                cooked = ch;
+                cooked.push_back(ch);
             }
         }
 
@@ -1216,7 +1216,7 @@ namespace rocket_bundle {
         tok.line_number_ = line_number_;
         tok.line_start_ = line_start_;
         tok.range_ = make_pair(start, index_);
-        tok.cooked_ = cooked;
+        tok.cooked_ = std::move(cooked);
         tok.head_ = head;
         tok.tail_ = tail;
 
@@ -1307,7 +1307,7 @@ namespace rocket_bundle {
     }
 
     Token Scanner::ScanRegExp() {
-//    auto start = index_;
+//        auto start = index_;
 
         auto pattern = ScanRegExpBody();
         auto flags = ScanRegExpFlags();

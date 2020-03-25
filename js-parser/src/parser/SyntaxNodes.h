@@ -391,6 +391,7 @@ namespace rocket_bundle {
             Double,
             String,
             Null,
+            Regex,
         };
 
         Literal();

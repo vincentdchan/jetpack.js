@@ -879,6 +879,10 @@ namespace rocket_bundle {
         Write(lit->raw, lit);
     }
 
+    void CodeGen::Traverse(const Sp<RegexLiteral> &lit) {
+        Write(lit->value, lit);
+    }
+
     void CodeGen::Traverse(const Sp<UpdateExpression>& update) {
         if (update->prefix) {
             Write(update->operator_);
@@ -887,6 +891,19 @@ namespace rocket_bundle {
             TraverseNode(update->argument);
             Write(update->operator_);
         }
+    }
+
+    void CodeGen::Traverse(const Sp<ObjectPattern>& node) {
+        Write("{ ");
+        for (std::size_t i = 0; ;) {
+            TraverseNode(node->properties[i]);
+            if (++i < node->properties.size()) {
+                Write(", ");
+            } else {
+                break;
+            }
+        }
+        Write(" }");
     }
 
     void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {
