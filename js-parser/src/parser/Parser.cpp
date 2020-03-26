@@ -388,7 +388,7 @@ namespace rocket_bundle::parser {
                     auto node = Alloc<Identifier>();
                     Token next = NextToken();
                     node->name = next.value_;
-                    scope.FindOrAddFreeVarInCurrentScope(node->name);
+                    scope.AddUnresolvedId(node);
                     return Finalize(marker, node);
                 }
             }
@@ -1044,7 +1044,7 @@ namespace rocket_bundle::parser {
         if (identifier_is_optional && (ctx->lookahead_.type_ != JsTokenType::Identifier)) {
             // nothing
         } else {
-            node->id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
+            node->id = ParseVariableIdentifier(parent_scope, VarKind::Var);
         }
 
         if (Match(JsTokenType::K_Extends)) {
@@ -1413,16 +1413,18 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseBlock(Scope& scope) {
+    Sp<BlockStatement> Parser::ParseBlock(Scope& parent_scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
+        node->scope = std::make_unique<Scope>();
+        node->scope->SetParent(&parent_scope);
 
         Expect(JsTokenType::LeftBracket);
         while (true) {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SyntaxNode> stmt = ParseStatementListItem(scope);
+            Sp<SyntaxNode> stmt = ParseStatementListItem(*node->scope.get());
             node->body.push_back(std::move(stmt));
         }
         Expect(JsTokenType::RightBracket);
@@ -1464,7 +1466,7 @@ namespace rocket_bundle::parser {
 
         if (!identifier_is_optional || !Match(JsTokenType::LeftParen)) {
             Token token = ctx->lookahead_;
-            id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
+            id = ParseVariableIdentifier(parent_scope, VarKind::Var);
             if (ctx->strict_) {
                 if (scanner.IsRestrictedWord(token.value_)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
@@ -3057,7 +3059,7 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<Identifier>();
         node->name = token.value_;
-        scope.CreateVariable(node->name, kind);
+        scope.CreateVariable(node, kind);
         return Finalize(marker, node);
     }
 
@@ -3148,10 +3150,12 @@ namespace rocket_bundle::parser {
 
         if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
             Token keyToken = ctx->lookahead_;
-            node->key = ParseVariableIdentifier(scope, VarKind::Invalid);
+            node->key = ParseVariableIdentifier(LeftValueScope::default_, kind);
+
             auto id_ = Alloc<Identifier>();
             id_->name = keyToken.value_;
             auto init = Finalize(start_marker, id_);
+
             if (Match(JsTokenType::Assign)) {
                 params.push_back(keyToken);
                 node->shorthand = true;
@@ -3161,8 +3165,11 @@ namespace rocket_bundle::parser {
                 assign->left = move(init);
                 assign->right = move(expr);
                 node->value = Finalize(StartNode(keyToken), assign);
-            } else if (!Match(JsTokenType::Colon)) {
+            } else if (!Match(JsTokenType::Colon)) {  // shorthand!
                 params.push_back(keyToken);
+
+                scope.CreateVariable(init, kind);
+
                 node->shorthand = true;
                 node->value = move(init);
             } else {

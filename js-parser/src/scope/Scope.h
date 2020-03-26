@@ -5,6 +5,7 @@
 #pragma once
 
 #include <vector>
+#include <list>
 #include <memory>
 #include <robin_hood.h>
 #include <unordered_set>
@@ -64,11 +65,11 @@ namespace rocket_bundle {
 
         virtual Variable* RecursivelyFindVariable(const UString& var_name);
 
-        virtual Variable* CreateVariable(const UString& var_name, VarKind kind);
+        virtual Variable* CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind);
 
-        virtual void FindOrAddFreeVarInCurrentScope(const UString& name);
-
-        void AddFreeVariableName(const UString& free_var_name);
+        virtual void AddUnresolvedId(const std::shared_ptr<Identifier>& id) {
+            unresolved_id.push_back(id);
+        }
 
         void SetParent(Scope* parent_);
 
@@ -76,15 +77,38 @@ namespace rocket_bundle {
             return parent;
         }
 
+        void ResolveAllSymbols();
+
+        bool RenameSymbol(const UString& old_name, const UString& new_name);
+
         virtual ~Scope() = default;
+
+        robin_hood::unordered_map<UString, Variable> own_variables;
 
     protected:
         Scope* parent = nullptr;
 
-        robin_hood::unordered_map<UString, Variable> own_variables;
-        std::unordered_set<UString> free_var_names;
+        /**
+         * log identifier when parsing
+         */
+        std::list<std::shared_ptr<Identifier>> unresolved_id;
 
         std::vector<Scope*> children;
+
+    };
+
+    /**
+     * Used in left value, do not record id
+     */
+    class LeftValueScope : public Scope {
+    public:
+        static LeftValueScope default_;
+
+        Variable* CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) override {
+            return nullptr;
+        }
+
+        void AddUnresolvedId(const std::shared_ptr<Identifier>& id) override {}
 
     };
 

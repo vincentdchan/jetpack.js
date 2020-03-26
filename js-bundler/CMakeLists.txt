@@ -29,6 +29,7 @@ link_libraries(bundle-utils js-parser fmt)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} src/main.cpp)
 
 add_executable(js-bundler-test ${SOURCE_FILES}
+        tests/scope.cpp
         tests/resolve.cpp
         tests/codegen.cpp)
 target_include_directories(js-bundler-test PUBLIC "../third_party/googletest/googletest/include")

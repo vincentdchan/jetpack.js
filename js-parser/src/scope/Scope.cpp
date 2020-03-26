@@ -4,6 +4,7 @@
 
 #include "Variable.h"
 #include "Scope.h"
+#include "../parser/SyntaxNodes.h"
 
 namespace rocket_bundle {
 
@@ -18,43 +19,58 @@ namespace rocket_bundle {
         return parent->RecursivelyFindVariable(var_name);
     }
 
-    /**
-     * Js allow using a variable before it's declared,
-     * when a variable is declared, remove it from free variable.
-     */
-    Variable* Scope::CreateVariable(const UString &var_name, VarKind kind) {
-        switch (kind) {
-            case VarKind::Var:
-                if (auto iter = free_var_names.find(var_name); iter != free_var_names.end()) {
-                    free_var_names.erase(iter);
-                }
-                break;
+    Variable* Scope::CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) {
+        Scope* target_scope = this;
 
-            case VarKind::Let:
-            case VarKind::Const:
-                if (auto iter = free_var_names.find(var_name); iter != free_var_names.end()) {
-                    // throw error
-                    return nullptr;
-                }
-                break;
-
-            default:
-                // normally
-                return nullptr;
-
+        if (kind == VarKind::Var) {
+            while (target_scope->type != ScopeType::Function && target_scope->parent != nullptr) {
+                target_scope = target_scope->parent;
+            }
         }
-        Variable& var = own_variables[var_name];
-        var.scope = this;
-        var.name = var_name;
+
+        Variable& var = target_scope->own_variables[var_id->name];
+        var.scope = target_scope;
+        var.name = var_id->name;
         var.kind = kind;
+        var.identifiers.push_back(var_id);
         return &var;
     }
 
-    void Scope::FindOrAddFreeVarInCurrentScope(const UString &name) {
-        if (auto iter = own_variables.find(name); iter != own_variables.end()) {
-            return;
+    /**
+     * Recursively resolve symbols.
+     *
+     * Add identifier to their scope.
+     *
+     * Do this after parsing.
+     */
+    void Scope::ResolveAllSymbols() {
+        for (auto iter = unresolved_id.begin(); iter != unresolved_id.end();) {
+            auto var = RecursivelyFindVariable((*iter)->name);
+            if (var != nullptr) {
+                var->identifiers.push_back(*iter);
+                iter = unresolved_id.erase(iter);
+            } else {
+                iter++;
+            }
         }
-        free_var_names.insert(name);
+
+        for (auto child : children) {
+            child->ResolveAllSymbols();
+        }
+    }
+
+    bool Scope::RenameSymbol(const UString &old_name, const UString &new_name) {
+        auto iter = own_variables.find(old_name);
+        if (iter == own_variables.end()) {
+            return false;
+        }
+
+        iter->second.name = new_name;
+        for (auto& id : iter->second.identifiers) {
+            id->name = new_name;
+        }
+
+        return true;
     }
 
     void Scope::SetParent(Scope* parent_) {
@@ -62,9 +78,7 @@ namespace rocket_bundle {
         parent->children.push_back(this);
     }
 
-    void Scope::AddFreeVariableName(const UString &free_var_name) {
-        free_var_names.insert(free_var_name);
-    }
+    LeftValueScope LeftValueScope::default_;
 
     ModuleScope::ModuleScope() : Scope(ScopeType::Module) {
 

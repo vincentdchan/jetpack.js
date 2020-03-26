@@ -35,9 +35,9 @@ namespace rocket_bundle {
     class Variable {
     public:
         VarKind kind = VarKind::Invalid;
-        bool is_exported = false;
-        bool is_imported = false;
-        bool is_mutated = false;
+//        bool is_exported = false;
+//        bool is_imported = false;
+//        bool is_mutated = false;
         Scope* scope = nullptr;
 
         UString name;
@@ -47,7 +47,7 @@ namespace rocket_bundle {
          */
         UString external_name;
 
-        std::vector<std::weak_ptr<Identifier>> identifiers;
+        std::vector<std::shared_ptr<Identifier>> identifiers;
 
     };
 

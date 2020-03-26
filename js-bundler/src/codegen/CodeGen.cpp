@@ -474,9 +474,10 @@ namespace rocket_bundle {
         Write("class ");
         if (node->id.has_value()) {
             Write((*node->id)->name);
+            Write(" ");
         }
         if (node->super_class.has_value()) {
-            Write(" extends ");
+            Write("extends ");
             TraverseNode(*node->super_class);
             Write(" ");
         }
@@ -738,7 +739,15 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<Property> &node) {
-        if (!node->shorthand) {
+        bool shorthand = node->shorthand;
+        if (node->value.has_value()
+            && node->key->type == SyntaxNodeType::Identifier
+            && (*node->value)->type == SyntaxNodeType::Identifier) {
+            auto key_id = std::dynamic_pointer_cast<Identifier>(node->key);
+            auto val_id = std::dynamic_pointer_cast<Identifier>(*node->value);
+            shorthand = key_id->name == val_id->name;
+        }
+        if (!shorthand) {
             if (node->computed) {
                 Write("[");
                 TraverseNode(node->key);
@@ -748,7 +757,7 @@ namespace rocket_bundle {
             }
         }
         if (node->value.has_value()) {
-            if (!node->shorthand) {
+            if (!shorthand) {
                 Write(": ");
             }
             TraverseNode(*node->value);

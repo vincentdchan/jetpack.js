@@ -487,6 +487,7 @@ namespace rocket_bundle {
         });
 
         mf->ast = parser.ParseModule();
+        mf->ast->scope->ResolveAllSymbols();
     }
 
     std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {

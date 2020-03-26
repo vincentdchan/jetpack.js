@@ -89,6 +89,8 @@ namespace rocket_bundle {
 
         std::vector<Sp<SyntaxNode>> body;
 
+        std::unique_ptr<Scope> scope;
+
     };
 
     class BreakStatement: public Statement {
