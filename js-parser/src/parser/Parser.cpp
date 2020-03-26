@@ -2241,17 +2241,23 @@ namespace rocket_bundle::parser {
         return statement;
     }
 
-    Sp<ExportSpecifier> Parser::ParseExportSpecifier() {
+    Sp<ExportSpecifier> Parser::ParseExportSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
-        auto node = Alloc<ExportSpecifier>();
 
-        node->local = ParseIdentifierName();
-        node->exported = node->local;
+        auto local = ParseIdentifierName();
+        auto exported = std::make_shared<Identifier>();
+        (*exported) = (*local);
+
+        scope.AddUnresolvedId(local);
+
         if (MatchContextualKeyword(u"as")) {
             NextToken();
-            node->exported = ParseIdentifierName();
+            exported = ParseIdentifierName();
         }
 
+        auto node = Alloc<ExportSpecifier>();
+        node->local = std::move(local);
+        node->exported = std::move(exported);
         return Finalize(start_marker, node);
     }
 
@@ -2376,7 +2382,7 @@ namespace rocket_bundle::parser {
             Expect(JsTokenType::LeftBracket);
             while (!Match(JsTokenType::RightBracket)) {
                 is_export_from_id = is_export_from_id || Match(JsTokenType::K_Default);
-                node->specifiers.push_back(ParseExportSpecifier());
+                node->specifiers.push_back(ParseExportSpecifier(scope));
                 if (!Match(JsTokenType::RightBracket)) {
                     Expect(JsTokenType::Comma);
                 }
@@ -2960,21 +2966,25 @@ namespace rocket_bundle::parser {
         Sp<Identifier> imported;
         Sp<Identifier> local;
         if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
-            imported = ParseVariableIdentifier(scope, VarKind::Invalid);
-            local = imported;
+            imported = ParseVariableIdentifier(LeftValueScope::default_, VarKind::Invalid);
+            local = std::make_shared<Identifier>();
+            (*local) = (*imported);
             if (MatchContextualKeyword(u"as")) {
                 NextToken();
                 local = ParseVariableIdentifier(scope, VarKind::Invalid);
             }
+            scope.CreateVariable(local, VarKind::Var);
         } else {  // maybe keywords
             imported = ParseIdentifierName();
-            local = imported;
+            local = std::make_shared<Identifier>();
+            (*local) = (*imported);
             if (MatchContextualKeyword(u"as")) {
                 NextToken();
                 local = ParseVariableIdentifier(scope, VarKind::Invalid);
             } else {
                 ThrowUnexpectedToken(NextToken());
             }
+            scope.CreateVariable(local, VarKind::Var);
         }
 
         auto node = Alloc<ImportSpecifier>();

@@ -274,7 +274,7 @@ namespace rocket_bundle::parser {
 
         Sp<ImportDeclaration> ParseImportDeclaration(Scope& scope);
 
-        Sp<ExportSpecifier> ParseExportSpecifier();
+        Sp<ExportSpecifier> ParseExportSpecifier(Scope& scope);
 
         Sp<Declaration> ParseExportDeclaration(Scope& scope);
 

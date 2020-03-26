@@ -181,3 +181,71 @@ TEST(Scope, Cls) {
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
+
+TEST(Scope, RenameImport) {
+    std::string src = "import { name } from 'main';\n";
+
+    std::string expected = "import { name as renamed } from 'main';\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
+
+TEST(Scope, RenameImport2) {
+    std::string src = "import { cc as name } from 'main';\n";
+
+    std::string expected = "import { cc as renamed } from 'main';\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
+
+TEST(Scope, RenameExport1) {
+    std::string src = "const name = 3;\n"
+                      "export { name as foo };\n";
+
+    std::string expected = "const renamed = 3;\n"
+                           "export { renamed as foo };\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
+
+TEST(Scope, RenameExport2) {
+    std::string src = "const name = 3;\n"
+                      "export { name };\n";
+
+    std::string expected = "const renamed = 3;\n"
+                           "export { renamed as name };\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
