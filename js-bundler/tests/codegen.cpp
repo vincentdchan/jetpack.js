@@ -91,3 +91,13 @@ TEST(CodeGen, TemplateLiteral) {
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
+
+TEST(CodeGen, ObjectExpression) {
+    std::string src = "const _ = {\n"
+                      "  a,\n"
+                      "  b,\n"
+                      "  c\n"
+                      "};\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}

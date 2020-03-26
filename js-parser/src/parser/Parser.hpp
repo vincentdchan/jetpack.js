@@ -289,6 +289,12 @@ namespace rocket_bundle::parser {
         ~Parser() = default;
 
     private:
+        inline void EmitNewLocationAdded(const UString& location) {
+            for (auto& handler : import_decl_handlers_) {
+                handler(location);
+            }
+        }
+
         std::vector<NewImportLocationAddedCallback> import_decl_handlers_;
 
     };

@@ -58,9 +58,8 @@ namespace rocket_bundle {
      *
      * const { a, b: c } = mod_1;
      */
-    Sp<VariableDeclaration> ModuleFile::TurnImportIntoVarDecl(Sp<rocket_bundle::ImportDeclaration> &import_decl) {
-        auto result = std::make_shared<VariableDeclaration>();
-        result->kind = VarKind::Const;
+    std::vector<Sp<VariableDeclaration>> ModuleFile::HandleImportDeclaration(Sp<rocket_bundle::ImportDeclaration> &import_decl) {
+        std::vector<Sp<VariableDeclaration>> result;
 
         auto full_path_iter = resolved_map.find(utils::To_UTF8(import_decl->source->str_));
         if (full_path_iter == resolved_map.end()) {
@@ -76,68 +75,98 @@ namespace rocket_bundle {
 
         auto target_mode_name = target_module->GetModuleVarName();
 
-        auto declarator = std::make_shared<VariableDeclarator>();
-
-        if (import_decl->specifiers[0]->type == SyntaxNodeType::ImportNamespaceSpecifier) {
-            // TODO: implement
-            declarator->id = MakeId("foo");
-        } else {
-            auto pattern = std::make_shared<ObjectPattern>();
-
-            for (auto& spec : import_decl->specifiers) {
-                switch (spec->type) {
-                    case SyntaxNodeType::ImportDefaultSpecifier: {
-                        auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
-
-                        auto prop = std::make_shared<Property>();
-
-                        prop->key = MakeId("default");
-                        prop->value = { MakeId(default_spec->local->name) };
-
-                        pattern->properties.push_back(std::move(prop));
-                        break;
-                    }
-
-                    case SyntaxNodeType::ImportSpecifier: {
-                        auto named_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
-
-                        auto prop = std::make_shared<Property>();
-
-                        prop->key = MakeId(named_spec->imported->name);
-                        if (named_spec->imported->name != named_spec->local->name) {
-                            prop->value = { MakeId(named_spec->local->name) };
-                        }
-
-                        pattern->properties.push_back(std::move(prop));
-                        break;
-                    }
-
-                    default:
-                        break;
-
-                }
-            }
-
-            declarator->id = std::move(pattern);
+        if (import_decl->specifiers.empty()) {
+            return result;
         }
 
-        declarator->init = { MakeId(target_mode_name) };
+        if (import_decl->specifiers[0]->type == SyntaxNodeType::ImportNamespaceSpecifier) {
+            auto import_ns = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(import_decl->specifiers[0]);
 
-        result->declarations.push_back(declarator);
+            auto decl = std::make_shared<VariableDeclaration>();
+            decl->kind = VarKind::Const;
+
+            auto declarator = std::make_shared<VariableDeclarator>();
+
+            declarator->id = MakeId(import_ns->local->name);  // try not to use old ast
+
+            auto obj = std::make_shared<ObjectExpression>();
+
+            auto __proto__ = std::make_shared<Property>();
+            __proto__->key = MakeId("__proto__");
+
+            auto null_lit = std::make_shared<Literal>();
+            null_lit->ty = Literal::Ty::Null;
+            null_lit->str_ = u"null";
+            null_lit->raw = u"null";
+
+            __proto__->value = null_lit;
+
+            obj->properties.push_back(__proto__);
+
+            declarator->init = { obj };
+
+            decl->declarations.push_back(std::move(declarator));
+            result.push_back(std::move(decl));
+        } else {
+//            auto result = std::make_shared<VariableDeclaration>();
+//            result->kind = VarKind::Const;
+//
+//            auto pattern = std::make_shared<ObjectPattern>();
+//
+//            for (auto& spec : import_decl->specifiers) {
+//                switch (spec->type) {
+//                    case SyntaxNodeType::ImportDefaultSpecifier: {
+//                        auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+//
+//                        auto prop = std::make_shared<Property>();
+//
+//                        prop->key = MakeId("default");
+//                        prop->value = { MakeId(default_spec->local->name) };
+//
+//                        pattern->properties.push_back(std::move(prop));
+//                        break;
+//                    }
+//
+//                    case SyntaxNodeType::ImportSpecifier: {
+//                        auto named_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
+//
+//                        auto prop = std::make_shared<Property>();
+//
+//                        prop->key = MakeId(named_spec->imported->name);
+//                        if (named_spec->imported->name != named_spec->local->name) {
+//                            prop->value = { MakeId(named_spec->local->name) };
+//                        }
+//
+//                        pattern->properties.push_back(std::move(prop));
+//                        break;
+//                    }
+//
+//                    default:
+//                        break;
+//
+//                }
+//            }
+//
+//            declarator->id = std::move(pattern);
+//            declarator->init = { MakeId(target_mode_name) };
+//
+//            result->declarations.push_back(declarator);
+        }
+
         return result;
     }
 
     void ModuleFile::ReplaceAllNamedExports() {
         std::vector<Sp<SyntaxNode>> new_body;
-        new_body.push_back(MakeModuleVar(GetModuleVarName()));
+//        new_body.push_back(MakeModuleVar(GetModuleVarName()));
 
         for (auto& stmt : ast->body) {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
                     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
-                    if (!import_decl->specifiers.empty()) {
-                        new_body.push_back(TurnImportIntoVarDecl(import_decl));
-                    }
+
+                    auto tmp = HandleImportDeclaration(import_decl);
+                    new_body.insert(std::end(new_body), std::begin(tmp), std::end(tmp));
                     continue;
                 }
 

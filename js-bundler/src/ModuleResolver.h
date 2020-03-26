@@ -57,7 +57,8 @@ namespace rocket_bundle {
 
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
-        Sp<VariableDeclaration> TurnImportIntoVarDecl(Sp<ImportDeclaration>& import_decl);
+        std::vector<Sp<VariableDeclaration>>
+        HandleImportDeclaration(Sp<ImportDeclaration>& import_decl);
 
         void CodeGenFromAst();
 
