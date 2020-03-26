@@ -491,8 +491,8 @@ namespace rocket_bundle {
         std::cout << result.dump(2) << std::endl;
     }
 
-    json ModuleResolver::GetAllExportVars() {
-        json result = json::array();
+    std::vector<UString> ModuleResolver::GetAllExportVars() {
+        std::vector<UString> result;
 
         TraverseModulePushExportVars(result, entry_module, nullptr);
 
@@ -500,7 +500,7 @@ namespace rocket_bundle {
     }
 
     void ModuleResolver::TraverseModulePushExportVars(
-            rocket_bundle::json &arr, const Sp<rocket_bundle::ModuleFile>& mod,
+            std::vector<UString>& arr, const Sp<rocket_bundle::ModuleFile>& mod,
             std::unordered_set<UString>* white_list) {
 
         if (mod->visited_mark) {
@@ -512,7 +512,7 @@ namespace rocket_bundle {
             if (white_list && white_list->find(local_name) == white_list->end()) {
                 continue;
             }
-            arr.push_back(utils::To_UTF8(local_name));
+            arr.push_back(local_name);
         }
 
         auto external_infos = mod->ast->scope->export_manager.CollectExternalInfos();
@@ -585,6 +585,7 @@ namespace rocket_bundle {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
+
         // BEGIN every modules gen their own code
         for (auto& tuple : modules_map_) {
             EnqueueOne([this, mod = tuple.second] {
@@ -609,6 +610,11 @@ namespace rocket_bundle {
 
         MergeModules(entry_module, out);
 
+        auto final_export = GenFinalExportDecl();
+        CodeGen::Config config;
+        CodeGen codegen(config, out);
+        codegen.Traverse(final_export);
+
         out.close();
     }
 
@@ -624,6 +630,24 @@ namespace rocket_bundle {
         }
 
         out << mf->codegen_result << std::endl;
+    }
+
+    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl() {
+        auto result = std::make_shared<ExportNamedDeclaration>();
+
+        for (auto& tuple : modules_map_) {
+            tuple.second->visited_mark = false;
+        }
+
+        auto export_names = GetAllExportVars();
+        for (auto& name : export_names) {
+            auto spec = std::make_shared<ExportSpecifier>();
+            spec->local = MakeId(name);
+            spec->exported = MakeId(name);
+            result->specifiers.push_back(std::move(spec));
+        }
+
+        return result;
     }
 
 }

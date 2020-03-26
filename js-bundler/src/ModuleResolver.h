@@ -112,10 +112,12 @@ namespace rocket_bundle {
         void FinishOne();
 
         json GetImportStat();
-        json GetAllExportVars();
+        std::vector<UString> GetAllExportVars();
 
-        void TraverseModulePushExportVars(json& arr,
+        void TraverseModulePushExportVars(std::vector<UString>& arr,
                 const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
+
+        Sp<ExportNamedDeclaration> GenFinalExportDecl();
 
         std::mutex map_mutex_;
 

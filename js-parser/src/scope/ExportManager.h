@@ -54,7 +54,7 @@ namespace rocket_bundle {
         std::vector<UString> local_export_name;
 //        robin_hood::unordered_map<UString, ExternalVariable> external_export_vars;
 
-        std::vector<std::weak_ptr<SyntaxNode>> external_asts;
+        std::vector<std::shared_ptr<SyntaxNode>> external_asts;
 
         std::vector<ExternalInfo> CollectExternalInfos();
 

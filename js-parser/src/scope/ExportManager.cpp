@@ -35,8 +35,7 @@ namespace rocket_bundle {
     std::vector<ExternalInfo> ExportManager::CollectExternalInfos() {
         std::vector<ExternalInfo> result;
 
-        for (auto& weak_ast : external_asts) {
-            auto ast = weak_ast.lock();
+        for (auto& ast : external_asts) {
             switch (ast->type) {
                 case SyntaxNodeType::ExportAllDeclaration: {
                     auto export_all_decl = std::dynamic_pointer_cast<ExportAllDeclaration>(ast);
