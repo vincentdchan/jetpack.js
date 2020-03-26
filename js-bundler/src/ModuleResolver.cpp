@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 
 #include "Path.h"
 #include "./ModuleResolver.h"
@@ -488,6 +489,7 @@ namespace rocket_bundle {
 
         mf->ast = parser.ParseModule();
         mf->ast->scope->ResolveAllSymbols();
+        // fill all symbols to rename map;
     }
 
     std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {
@@ -615,6 +617,12 @@ namespace rocket_bundle {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
+        // distribute root level var name
+        std::unordered_set<UString> used_name;
+
+        auto export_vars = GetAllExportVars();
+        used_name.insert(std::begin(export_vars), std::end(export_vars));
+        RenameAllRootLevelVariable(used_name);
 
         // BEGIN every modules gen their own code
         for (auto& tuple : modules_map_) {
@@ -634,10 +642,7 @@ namespace rocket_bundle {
 
         std::ofstream out(out_path, std::ios::out);
 
-        for (auto& tuple : modules_map_) {
-            tuple.second->visited_mark = false;
-        }
-
+        ClearAllVisitedMark();
         MergeModules(entry_module, out);
 
         auto final_export = GenFinalExportDecl();
@@ -646,6 +651,39 @@ namespace rocket_bundle {
         codegen.Traverse(final_export);
 
         out.close();
+    }
+
+    void ModuleResolver::RenameAllRootLevelVariable(std::unordered_set<UString> &used_name) {
+        ClearAllVisitedMark();
+
+        std::int32_t counter = 0;
+        RenameAllRootLevelVariableTraverser(entry_module, counter, used_name);
+    }
+
+    void ModuleResolver::RenameAllRootLevelVariableTraverser(const std::shared_ptr<ModuleFile> &mf,
+                                                             std::int32_t& counter,
+                                                             std::unordered_set<UString> &used_name) {
+        if (mf->visited_mark) {
+            return;
+        }
+        mf->visited_mark = true;
+
+        for (auto weak_child : mf->ref_mods) {
+            auto child = weak_child.lock();
+            RenameAllRootLevelVariableTraverser(child, counter, used_name);
+        }
+
+        // do your own work
+        for (auto& var : mf->ast->scope->own_variables) {
+            if (used_name.find(var.first) != used_name.end()) {
+                UString new_name = var.first + u"_" + utils::To_UTF16(std::to_string(counter++));
+                mf->module_scope_rename_map[var.first] = new_name;
+                used_name.insert(new_name);
+
+//                Debug:
+//                std::cout << "found: " << utils::To_UTF8(var.first) << " -> " << utils::To_UTF8(new_name) << std::endl;
+            }
+        }
     }
 
     void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, std::ofstream &out) {

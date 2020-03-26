@@ -38,8 +38,14 @@ namespace rocket_bundle {
 
     class ModuleFile {
     public:
+        /**
+         * Unique id in module resolver
+         */
         std::int32_t id = 0;
 
+        /**
+         * Abosolute path
+         */
         std::string path;
 
         std::weak_ptr<ModuleResolver> module_resolver;
@@ -51,14 +57,25 @@ namespace rocket_bundle {
          */
         robin_hood::unordered_map<std::string, std::string> resolved_map;
 
-        bool visited_mark = false;
-
+        /**
+         * Temp for parallel codegen
+         */
         std::string codegen_result;
 
+        /**
+         * For Postorder traversal
+         */
+        bool visited_mark = false;
+
+        /**
+         * For Postorder traversal
+         */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
         std::vector<Sp<VariableDeclaration>>
         HandleImportDeclaration(Sp<ImportDeclaration>& import_decl);
+
+        robin_hood::unordered_map<UString, UString> module_scope_rename_map;
 
         void CodeGenFromAst();
 
@@ -106,6 +123,12 @@ namespace rocket_bundle {
             return name_counter_++;
         }
 
+        inline void ClearAllVisitedMark() {
+            for (auto& tuple : modules_map_) {
+                tuple.second->visited_mark = false;
+            }
+        }
+
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
 
     private:
@@ -117,6 +140,10 @@ namespace rocket_bundle {
 
         void TraverseModulePushExportVars(std::vector<UString>& arr,
                 const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
+
+        void RenameAllRootLevelVariable(std::unordered_set<UString>& used_name);
+        void RenameAllRootLevelVariableTraverser(
+                const std::shared_ptr<ModuleFile>& mf, std::int32_t& counter, std::unordered_set<UString>& used_name);
 
         Sp<ExportNamedDeclaration> GenFinalExportDecl();
 

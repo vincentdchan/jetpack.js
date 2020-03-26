@@ -17,12 +17,12 @@ using namespace rocket_bundle::parser;
 /**
  * do not generate duplicate var name
  */
-TEST(UniqueNameGenerator, Next) {
-    UniqueNameGenerator gen;
-    std::unordered_set<std::string> gen_set;
+TEST(MinifyNameGenerator, Next) {
+    MinifyNameGenerator gen;
+    std::unordered_set<std::u16string> gen_set;
 
     for (int i = 0; i < 10000; i++) {
-        auto next_str = gen.Next();
+        auto next_str = gen.Next(u"");
         EXPECT_TRUE(gen_set.find(next_str) == gen_set.end());
         gen_set.insert(next_str);
     }

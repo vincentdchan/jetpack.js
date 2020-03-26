@@ -199,9 +199,11 @@ TEST(Scope, RenameImport) {
 }
 
 TEST(Scope, RenameImport2) {
-    std::string src = "import { cc as name } from 'main';\n";
+    std::string src = "import { cc as name } from 'main';\n"
+                      "console.log(name);\n";
 
-    std::string expected = "import { cc as renamed } from 'main';\n";
+    std::string expected = "import { cc as renamed } from 'main';\n"
+                           "console.log(renamed);\n";
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
