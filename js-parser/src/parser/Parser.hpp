@@ -135,6 +135,7 @@ namespace rocket_bundle::parser {
         Sp<Expression> ParseExponentiationExpression(Scope& scope);
 
         Sp<Expression> ParseBinaryExpression(Scope& scope);
+        Sp<Expression> ParseBinaryExpression(Scope& scope, const Sp<Expression>& left, const Token& left_tk);
 
         Sp<Expression> ParseConditionalExpression(Scope& scope);
 
@@ -270,7 +271,7 @@ namespace rocket_bundle::parser {
 
         Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier();
 
-        Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier();
+        Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier(Scope& scope);
 
         Sp<ImportDeclaration> ParseImportDeclaration(Scope& scope);
 

@@ -62,6 +62,23 @@ TEST(Scope, Rename) {
     EXPECT_EQ(GenCode(mod), "var new_name = 3;\n");
 }
 
+TEST(Scope, RenameImportNamespace) {
+    std::string src = "import * as name from 'main';\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    mod->scope->RenameSymbol(u"name", u"new_name");
+
+    EXPECT_EQ(mod->scope->own_variables.size(), 1);
+    EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), "import * as new_name from 'main';\n");
+}
+
 TEST(Scope, RenameFunction1) {
     std::string src = "var name = 3;\n"
                       "function ok() {\n"

@@ -54,8 +54,8 @@ namespace rocket_bundle {
             case SyntaxNodeType::BinaryExpression:
                 return 14;
 
-                // TODO: Logical?
-//        case SyntaxNodeType:::
+//                 TODO: Logical?
+//            case SyntaxNodeType::Logi
 //            return 13;
 
             case SyntaxNodeType::ConditionalExpression:

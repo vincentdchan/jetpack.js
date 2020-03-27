@@ -73,6 +73,15 @@ namespace rocket_bundle {
 
         void SetParent(Scope* parent_);
 
+        inline bool RemoveVariable(const UString& name) {
+            auto iter = own_variables.find(name);
+            if (iter == own_variables.end()) {
+                return false;
+            }
+            own_variables.erase(iter);
+            return true;
+        }
+
         inline Scope* GetParent() {
             return parent;
         }

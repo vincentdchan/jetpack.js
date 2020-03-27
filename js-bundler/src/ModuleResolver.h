@@ -48,6 +48,8 @@ namespace rocket_bundle {
          */
         std::string path;
 
+        UString default_export_name;
+
         std::weak_ptr<ModuleResolver> module_resolver;
 
         Sp<Module> ast;
@@ -80,6 +82,8 @@ namespace rocket_bundle {
         void CodeGenFromAst();
 
         void ReplaceAllNamedExports();
+
+        void RenameSymbolByMap();
 
         UString GetModuleVarName();
 
@@ -136,9 +140,9 @@ namespace rocket_bundle {
         void FinishOne();
 
         json GetImportStat();
-        std::vector<UString> GetAllExportVars();
+        std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
 
-        void TraverseModulePushExportVars(std::vector<UString>& arr,
+        void TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
 
         void RenameAllRootLevelVariable(std::unordered_set<UString>& used_name);

@@ -101,3 +101,26 @@ TEST(CodeGen, ObjectExpression) {
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
+
+TEST(CodeGen, BinaryExpression) {
+    std::string src =
+        "if ((currentBackground !== background) || ((currentBackgroundVersion !== texture.version) || (currentTonemapping !== renderer.toneMapping))) {\n"
+        "  boxMesh.material.needsUpdate = true;\n"
+        "  currentBackground = background;\n"
+        "  currentBackgroundVersion = texture.version;\n"
+        "  currentTonemapping = renderer.toneMapping;\n"
+        "}\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, ForIn) {
+    std::string src =
+        "for (var nextKey in source) {\n"
+        "  if (Object.prototype.hasOwnProperty.call(source, nextKey)) {\n"
+        "    output[nextKey] = source[nextKey];\n"
+        "  }\n"
+        "}\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}

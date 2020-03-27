@@ -84,11 +84,18 @@ namespace rocket_bundle {
             auto import_ns = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(import_decl->specifiers[0]);
 
             auto decl = std::make_shared<VariableDeclaration>();
-            decl->kind = VarKind::Const;
+            decl->kind = VarKind::Var;
 
             auto declarator = std::make_shared<VariableDeclarator>();
 
-            declarator->id = MakeId(import_ns->local->name);  // try not to use old ast
+            auto new_id = MakeId(import_ns->local->name);
+
+            // debug
+//            std::cout << utils::To_UTF8(ast->scope->own_variables[import_ns->local->name].name) << std::endl;
+
+            ast->scope->own_variables[import_ns->local->name].identifiers.push_back(new_id);
+
+            declarator->id = new_id;  // try not to use old ast
 
             auto obj = std::make_shared<ObjectExpression>();
 
@@ -109,49 +116,8 @@ namespace rocket_bundle {
             decl->declarations.push_back(std::move(declarator));
             result.push_back(std::move(decl));
         } else {
-//            auto result = std::make_shared<VariableDeclaration>();
-//            result->kind = VarKind::Const;
-//
-//            auto pattern = std::make_shared<ObjectPattern>();
-//
-//            for (auto& spec : import_decl->specifiers) {
-//                switch (spec->type) {
-//                    case SyntaxNodeType::ImportDefaultSpecifier: {
-//                        auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
-//
-//                        auto prop = std::make_shared<Property>();
-//
-//                        prop->key = MakeId("default");
-//                        prop->value = { MakeId(default_spec->local->name) };
-//
-//                        pattern->properties.push_back(std::move(prop));
-//                        break;
-//                    }
-//
-//                    case SyntaxNodeType::ImportSpecifier: {
-//                        auto named_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
-//
-//                        auto prop = std::make_shared<Property>();
-//
-//                        prop->key = MakeId(named_spec->imported->name);
-//                        if (named_spec->imported->name != named_spec->local->name) {
-//                            prop->value = { MakeId(named_spec->local->name) };
-//                        }
-//
-//                        pattern->properties.push_back(std::move(prop));
-//                        break;
-//                    }
-//
-//                    default:
-//                        break;
-//
-//                }
-//            }
-//
-//            declarator->id = std::move(pattern);
-//            declarator->init = { MakeId(target_mode_name) };
-//
-//            result->declarations.push_back(declarator);
+            for (auto& spec : import_decl->specifiers) {
+            }
         }
 
         return result;
@@ -171,6 +137,17 @@ namespace rocket_bundle {
                     continue;
                 }
 
+                /**
+                 * export const name = 3;
+                 *
+                 * TO
+                 *
+                 * const name = 3;
+                 *
+                 * AND
+                 *
+                 * REMOVE export {}
+                 */
                 case SyntaxNodeType::ExportNamedDeclaration: {
                     auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
                     if (export_named_decl->declaration.has_value()) {  // is local
@@ -179,63 +156,32 @@ namespace rocket_bundle {
                     break;
                 }
 
+                /**
+                 * export default 1 + 1;
+                 *
+                 * TO
+                 *
+                 * var default_0 = 1 + 1;
+                 */
                 case SyntaxNodeType::ExportDefaultDeclaration: {
                     auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
                     auto resolver = module_resolver.lock();
                     std::string new_name = "default_" + std::to_string(resolver->NextNameId());
+                    default_export_name = utils::To_UTF16(new_name);
 
-                    /**
-                     * export defaut var1
-                     *
-                     * TO
-                     *
-                     * const defaut_0 = var1;
-                     */
-                    if (export_default_decl->declaration->type == SyntaxNodeType::AssignmentExpression) {
-                        auto exist_assign = std::dynamic_pointer_cast<AssignmentExpression>(export_default_decl->declaration);
-
-                        auto var_decl1 = std::make_shared<VariableDeclaration>();
-                        var_decl1->kind = VarKind::Const;
-
-                        auto dector1 = std::make_shared<VariableDeclarator>();
-
-                        if (exist_assign->left->type != SyntaxNodeType::Identifier) {
-                            std::runtime_error("left of assign should be identifer");
-                        }
-
-                        auto assign_left_id = std::dynamic_pointer_cast<Identifier>(exist_assign->left);
-                        dector1->id = assign_left_id;
-                        dector1->init = {  exist_assign->right };
-                        var_decl1->declarations.push_back(dector1);
-
-                        new_body.push_back(var_decl1);
-                        // ---------------
-                        auto var_decl2 = std::make_shared<VariableDeclaration>();
-                        var_decl2->kind = VarKind::Const;
-
-                        auto dector2 = std::make_shared<VariableDeclarator>();
-                        dector2->id = MakeId(new_name);
-
-                        auto right_id = std::make_shared<Identifier>();
-                        right_id->name = assign_left_id->name;  // copy name
-
-                        dector2->init = { right_id };
-
-                        var_decl2->declarations.push_back(dector2);
-
-                        new_body.push_back(var_decl2);
-
-                        continue;
-                    } else if (export_default_decl->declaration->IsExpression()) {
+                    if (export_default_decl->declaration->IsExpression()) {
                         auto exist_id = std::dynamic_pointer_cast<Expression>(export_default_decl->declaration);
 
                         auto var_decl = std::make_shared<VariableDeclaration>();
-                        var_decl->kind = VarKind::Const;
+                        var_decl->kind = VarKind::Var;
 
                         auto var_dector = std::make_shared<VariableDeclarator>();
 
-                        var_dector->id = MakeId(new_name);
+                        auto new_id = MakeId(new_name);
+                        var_dector->id = new_id;
                         var_dector->init = { exist_id };
+
+                        ast->scope->CreateVariable(new_id, VarKind::Var);
 
                         var_decl->declarations.push_back(var_dector);
 
@@ -271,18 +217,21 @@ namespace rocket_bundle {
                         case SyntaxNodeType::FunctionDeclaration: {
                             auto fun_decl = std::dynamic_pointer_cast<FunctionDeclaration>(export_default_decl->declaration);
 
+                            auto new_id = MakeId(new_name);
+                            ast->scope->CreateVariable(new_id, VarKind::Var);
                             if (fun_decl->id.has_value()) {
                                 stmt = fun_decl;
 
                                 auto var_decl = std::make_shared<VariableDeclaration>();
-                                var_decl->kind = VarKind::Const;
+                                var_decl->kind = VarKind::Var;
 
                                 auto dector = std::make_shared<VariableDeclarator>();
 
-                                dector->id = MakeId(new_name);
+                                dector->id = new_id;
 
-                                auto right_id = std::make_shared<Identifier>();
-                                right_id->name = (*fun_decl->id)->name;
+
+                                auto right_id = MakeId((*fun_decl->id)->name);
+                                ast->scope->CreateVariable(right_id, VarKind::Var);
 
                                 dector->init = { right_id };
 
@@ -304,15 +253,18 @@ namespace rocket_bundle {
                         case SyntaxNodeType::ClassDeclaration: {
                             auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(export_default_decl->declaration);
 
+                            auto new_id = MakeId(new_name);
+                            ast->scope->CreateVariable(new_id, VarKind::Var);
+
                             if (cls_decl->id.has_value()) {
                                 stmt = cls_decl;
 
                                 auto var_decl = std::make_shared<VariableDeclaration>();
-                                var_decl->kind = VarKind::Const;
+                                var_decl->kind = VarKind::Var;
 
                                 auto dector = std::make_shared<VariableDeclarator>();
 
-                                dector->id = MakeId(new_name);
+                                dector->id = new_id;
 
                                 auto right_id = std::make_shared<Identifier>();
                                 right_id->name = (*cls_decl->id)->name;
@@ -324,7 +276,7 @@ namespace rocket_bundle {
                                 new_body.push_back(stmt);
                                 new_body.push_back(var_decl);
                             } else {
-                                cls_decl->id = { MakeId(new_name) };
+                                cls_decl->id = { new_id };
 
                                 new_body.push_back(cls_decl);
                             }
@@ -354,6 +306,12 @@ namespace rocket_bundle {
 
 //        ast->body.insert(std::end(ast->body), std::begin(tail), std::end(tail));
         ast->body = std::move(new_body);
+    }
+
+    void ModuleFile::RenameSymbolByMap() {
+        for (auto& tuple : module_scope_rename_map) {
+            ast->scope->RenameSymbol(tuple.first, tuple.second);
+        }
     }
 
     UString ModuleFile::GetModuleVarName() {
@@ -509,11 +467,16 @@ namespace rocket_bundle {
 
         ModuleScope& mod_scope = *entry_module->ast->scope;
 
+        json exports = json::array();
+        for (auto& tuple : GetAllExportVars()) {
+            exports.push_back(utils::To_UTF8(std::get<1>(tuple)));
+        }
+
         json result = json::object();
         result["entry"] = entry_module->path;
         result["importStat"] = GetImportStat();
         result["totalFiles"] = finished_files_count_;
-        result["exports"] = GetAllExportVars();
+        result["exports"] = std::move(exports);
 
         if (!worker_errors_.empty()) {
             PrintErrors();
@@ -523,8 +486,8 @@ namespace rocket_bundle {
         std::cout << result.dump(2) << std::endl;
     }
 
-    std::vector<UString> ModuleResolver::GetAllExportVars() {
-        std::vector<UString> result;
+    std::vector<std::tuple<Sp<ModuleFile>, UString>> ModuleResolver::GetAllExportVars() {
+        std::vector<std::tuple<Sp<ModuleFile>, UString>> result;
 
         TraverseModulePushExportVars(result, entry_module, nullptr);
 
@@ -532,7 +495,7 @@ namespace rocket_bundle {
     }
 
     void ModuleResolver::TraverseModulePushExportVars(
-            std::vector<UString>& arr, const Sp<rocket_bundle::ModuleFile>& mod,
+            std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr, const Sp<rocket_bundle::ModuleFile>& mod,
             std::unordered_set<UString>* white_list) {
 
         if (mod->visited_mark) {
@@ -544,7 +507,7 @@ namespace rocket_bundle {
             if (white_list && white_list->find(local_name) == white_list->end()) {
                 continue;
             }
-            arr.push_back(local_name);
+            arr.emplace_back(mod, local_name);
         }
 
         auto external_infos = mod->ast->scope->export_manager.CollectExternalInfos();
@@ -617,17 +580,25 @@ namespace rocket_bundle {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
+        /**
+         * Using the relationship, cannot be parallel
+         */
+        for (auto& tuple : modules_map_) {
+            tuple.second->ReplaceAllNamedExports();
+        }
+
         // distribute root level var name
         std::unordered_set<UString> used_name;
 
-        auto export_vars = GetAllExportVars();
-        used_name.insert(std::begin(export_vars), std::end(export_vars));
+        for (auto& tuple : GetAllExportVars()) {
+            used_name.insert(std::get<1>(tuple));
+        }
         RenameAllRootLevelVariable(used_name);
 
         // BEGIN every modules gen their own code
         for (auto& tuple : modules_map_) {
             EnqueueOne([this, mod = tuple.second] {
-                mod->ReplaceAllNamedExports();
+                mod->RenameSymbolByMap();
                 mod->CodeGenFromAst();
                 FinishOne();
             });
@@ -678,11 +649,11 @@ namespace rocket_bundle {
             if (used_name.find(var.first) != used_name.end()) {
                 UString new_name = var.first + u"_" + utils::To_UTF16(std::to_string(counter++));
                 mf->module_scope_rename_map[var.first] = new_name;
-                used_name.insert(new_name);
 
 //                Debug:
 //                std::cout << "found: " << utils::To_UTF8(var.first) << " -> " << utils::To_UTF8(new_name) << std::endl;
             }
+            used_name.insert(var.first);
         }
     }
 
@@ -708,10 +679,21 @@ namespace rocket_bundle {
         }
 
         auto export_names = GetAllExportVars();
-        for (auto& name : export_names) {
+        for (auto& tuple : export_names) {
+            UString& export_name = std::get<1>(tuple);
+            Sp<ModuleFile>& mf = std::get<0>(tuple);
+            UString local_name = export_name;
+
+            if (export_name == u"default" && !mf->default_export_name.empty()) {
+                local_name = mf->default_export_name;
+            } else if (auto iter = mf->module_scope_rename_map.find(export_name);
+                iter != mf->module_scope_rename_map.end()) {
+                local_name = iter->second;
+            }
+
             auto spec = std::make_shared<ExportSpecifier>();
-            spec->local = MakeId(name);
-            spec->exported = MakeId(name);
+            spec->local = MakeId(local_name);
+            spec->exported = MakeId(export_name);
             result->specifiers.push_back(std::move(spec));
         }
 

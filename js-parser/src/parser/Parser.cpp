@@ -1704,6 +1704,7 @@ namespace rocket_bundle::parser {
                         TolerateError(ParseMessages::ForInOfLoopInitializer);
                     }
                     auto node = Alloc<VariableDeclaration>();
+                    node->declarations = declarations;
                     node->kind = VarKind::Var;
                     init = Finalize(marker, node);
                     NextToken();
@@ -2601,89 +2602,57 @@ namespace rocket_bundle::parser {
         if (prec > 0) {
             NextToken();
 
-            ctx->is_assignment_target_ = false;
-            ctx->is_binding_element_ = false;
-
-            stack<Token> markers;
-            markers.push(start_token);
-            markers.push(ctx->lookahead_);
-
-            Sp<Expression> left = expr;
-            Sp<Expression> right = IsolateCoverGrammar<Expression>([this, &scope] {
-                return ParseExponentiationExpression(scope);
-            });
-
-            stack<int> precedences;
-            stack<Sp<Expression>> expr_stack;
-            stack<UString> op_stack;
-
-            op_stack.push(token.value_);
-            expr_stack.push(left);
-            expr_stack.push(right);
-            precedences.push(prec);
-
-            while (true) {
-                prec = BinaryPrecedence(ctx->lookahead_);
-                if (prec <= 0) break;
-
-                // reduce
-                while ((expr_stack.size() >= 2) && (prec <= precedences.top())) {
-                    right = expr_stack.top();
-                    expr_stack.pop();
-
-                    auto operator_ = move(op_stack.top());
-                    op_stack.pop();
-
-                    precedences.pop();
-
-                    left = expr_stack.top();
-                    expr_stack.pop();
-
-                    markers.pop();
-
-                    auto top_marker = markers.top();
-                    auto node = Alloc<BinaryExpression>();
-                    node->operator_ = operator_;
-                    node->left = left;
-                    node->right = right;
-                    expr_stack.push(Finalize(StartNode(top_marker), node));
-                }
-
-                // shift
-                Token next_ = NextToken();
-                op_stack.push(next_.value_);
-                precedences.push(prec);
-                markers.push(ctx->lookahead_);
-                auto temp_expr = IsolateCoverGrammar<Expression>([this, &scope] {
-                    return ParseExponentiationExpression(scope);
-                });
-                expr_stack.push(temp_expr);
-            }
-
-            expr = expr_stack.top();
-
-            auto last_marker = markers.top();
-            markers.pop();
-            while (expr_stack.size() >= 2) {
-                Assert(!markers.empty(), "ParseBinaryExpression: markers should not be mepty");
-                auto marker = markers.top();
-                markers.pop();
-                auto last_line_start = last_marker.line_start_;
-                auto operator_ = move(op_stack.top());
-                op_stack.pop();
-                auto start_marker = StartNode(last_marker, last_line_start);
-                auto node = Alloc<BinaryExpression>();
-                node->operator_ = operator_;
-                node->right = expr;
-                expr_stack.pop();
-                node->left = expr_stack.top();
-                expr_stack.pop();
-                expr = Finalize(start_marker, node);
-                last_marker = last_marker;
-            }
+            return ParseBinaryExpression(scope, expr, token);
         }
 
         return expr;
+    }
+
+    Sp<Expression> Parser::ParseBinaryExpression(Scope &scope,
+                                                 const Sp<Expression>& left,
+                                                 const Token &left_tk) {
+        auto marker = CreateStartMarker();
+
+        auto expr = IsolateCoverGrammar<Expression>([this, &scope] {
+            return ParseExponentiationExpression(scope);
+        });
+
+        int left_prec = BinaryPrecedence(left_tk);
+        while (true) {
+            Token right_tk = ctx->lookahead_;
+            int right_prec = BinaryPrecedence(right_tk);
+
+            if (left_prec < right_prec) {
+                NextToken();
+                expr = ParseBinaryExpression(scope, expr, right_tk);
+            } else if (left_prec == right_prec) {
+                if (left_prec <= 0) {
+                    return expr;
+                }
+                auto binary = Alloc<BinaryExpression>();
+                binary->left = left;
+                binary->right = expr;
+                binary->operator_ = left_tk.value_;
+                expr = binary;
+                NextToken();
+                return Finalize(marker, ParseBinaryExpression(scope, expr, right_tk));
+            } else {  // left_op > right_op
+                auto binary = Alloc<BinaryExpression>();
+                binary->operator_ = left_tk.value_;
+                binary->left = left;
+                binary->right = expr;
+
+                expr = Finalize(marker, binary);
+
+                if (right_prec <= 0) {
+                    return expr;
+                }
+                NextToken();
+                return ParseBinaryExpression(scope, expr, right_tk);
+            }
+        }
+        Assert(false, "unreachable code");
+        return nullptr;
     }
 
     Sp<Expression> Parser::ParseExponentiationExpression(Scope& scope) {
@@ -2893,7 +2862,7 @@ namespace rocket_bundle::parser {
                 auto children = ParseNamedImports(scope);
                 specifiers.insert(specifiers.end(), children.begin(), children.end());
             } else if (Match(JsTokenType::Mul)) {
-                specifiers.push_back(ParseImportNamespaceSpecifier());
+                specifiers.push_back(ParseImportNamespaceSpecifier(scope));
             } else if (IsIdentifierName(ctx->lookahead_) && !Match(JsTokenType::K_Default)) {
                 auto default_ = ParseImportDefaultSpecifier();
                 specifiers.push_back(move(default_));
@@ -2901,7 +2870,7 @@ namespace rocket_bundle::parser {
                 if (Match(JsTokenType::Comma)) {
                     NextToken();
                     if (Match(JsTokenType::Mul)) {
-                        specifiers.push_back(ParseImportNamespaceSpecifier());
+                        specifiers.push_back(ParseImportNamespaceSpecifier(scope));
                     } else if (Match(JsTokenType::LeftBracket)) {
                         auto children = ParseNamedImports(scope);
                         specifiers.insert(specifiers.end(), children.begin(), children.end());
@@ -3016,7 +2985,7 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportNamespaceSpecifier> Parser::ParseImportNamespaceSpecifier() {
+    Sp<ImportNamespaceSpecifier> Parser::ParseImportNamespaceSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::Mul);
@@ -3028,6 +2997,8 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<ImportNamespaceSpecifier>();
         node->local = move(local);
+
+        scope.CreateVariable(node->local, VarKind::Var);
         return Finalize(start_marker, node);
     }
 
