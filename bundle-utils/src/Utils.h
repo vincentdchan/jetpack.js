@@ -17,6 +17,16 @@ typedef std::u16string UString;
 namespace rocket_bundle::utils {
     using std::int64_t;
 
+    inline std::string GetRunningDir() {
+        static char buffer[1024];
+        memset(buffer, 0, 1024);
+        auto result = getcwd(buffer, 1024);
+        if (result == nullptr) {
+            return "";
+        }
+        return result;
+    }
+
     inline int64_t GetCurrentMs() {
         using namespace std::chrono;
         milliseconds ms = duration_cast< milliseconds >(

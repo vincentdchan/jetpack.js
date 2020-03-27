@@ -65,7 +65,6 @@ namespace rocket_bundle {
             return false;
         }
 
-
         Variable tmp = iter->second;
         own_variables.erase(iter);
 

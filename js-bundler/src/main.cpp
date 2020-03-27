@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
         return 0;
     } catch (std::exception& ex) {
         std::cerr << ex.what() << std::endl;
-        return 1;
+        return 3;
     }
 }
 
@@ -80,21 +80,30 @@ static int AnalyzeModule(const std::string& self_path_str, const std::string& pa
     // do not release memory
     // it will save your time
     auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-    resolver->SetTraceFile(trace_file);
-    resolver->BeginFromEntry(self_path.ToString(), path);
-    resolver->PrintStatistic();
 
-    return 0;
+    try {
+        resolver->SetTraceFile(trace_file);
+        resolver->BeginFromEntry(self_path.ToString(), path);
+        resolver->PrintStatistic();
+        return 0;
+    } catch (ModuleResolveException& err) {
+        err.PrintToStdErr();
+        return 3;
+    }
 }
 
 static int BundleModule(const std::string& self_path_str, const std::string& path, const std::string& out_path) {
     Path self_path(self_path_str);
     self_path.Pop();
 
-    auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-    resolver->SetTraceFile(true);
-    resolver->BeginFromEntry(self_path.ToString(), path);
-    resolver->CodeGenAllModules(out_path);
-
-    return 0;
+    try {
+        auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
+        resolver->SetTraceFile(true);
+        resolver->BeginFromEntry(self_path.ToString(), path);
+        resolver->CodeGenAllModules(out_path);
+        return 0;
+    } catch (ModuleResolveException& err) {
+        err.PrintToStdErr();
+        return 3;
+    }
 }

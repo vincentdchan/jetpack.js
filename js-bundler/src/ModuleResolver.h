@@ -36,6 +36,17 @@ namespace rocket_bundle {
 
     };
 
+    class ModuleResolveException : std::exception {
+    public:
+        std::string file_path;
+        std::string error_content;
+
+        ModuleResolveException(const std::string& path, const std::string& content);
+
+        void PrintToStdErr();
+
+    };
+
     class ModuleFile {
     public:
         /**
@@ -151,11 +162,11 @@ namespace rocket_bundle {
         void ReplaceExports(const Sp<ModuleFile>& mf);
 
     private:
-        bool TraverseRenameAllImports(const Sp<ModuleFile>& mf);
+        void TraverseRenameAllImports(const Sp<ModuleFile>& mf);
 
-        bool ReplaceImports(const Sp<ModuleFile>& mf);
+        void ReplaceImports(const Sp<ModuleFile>& mf);
 
-        bool HandleImportDeclaration(const Sp<ModuleFile>& mf,
+        void HandleImportDeclaration(const Sp<ModuleFile>& mf,
                                      Sp<ImportDeclaration>& import_decl,
                                      std::vector<Sp<VariableDeclaration>>& result);
 

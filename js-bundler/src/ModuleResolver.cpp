@@ -59,6 +59,16 @@ namespace rocket_bundle {
         return utils::To_UTF16(tmp);
     }
 
+    ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
+    : file_path(path), error_content(content) {
+
+    }
+
+    void ModuleResolveException::PrintToStdErr() {
+        std::cerr << "File: " << file_path << std::endl;
+        std::cerr << "Error: " << error_content << std::endl;
+    }
+
     void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {
         std::string path;
         if (target_path.empty()) {
@@ -66,7 +76,7 @@ namespace rocket_bundle {
         } else if (target_path[0] == Path::PATH_DIV) {
             path = target_path;
         } else {
-            Path p(base_path);
+            Path p(utils::GetRunningDir());
             p.Join(target_path);
             path = p.ToString();
         }
@@ -93,6 +103,11 @@ namespace rocket_bundle {
         main_cv_.wait(lk, [this] {
             return finished_files_count_ >= enqueued_files_count_;
         });
+
+        if (!worker_errors_.empty()) {
+            PrintErrors();
+            return;
+        }
     }
 
     void ModuleResolver::ParseFileFromPath(const std::string &path) {
@@ -349,10 +364,7 @@ namespace rocket_bundle {
         RenameAllRootLevelVariable(used_name);
 
         ClearAllVisitedMark();
-        if (!TraverseRenameAllImports(entry_module)) {
-            PrintErrors();
-            return;
-        }
+        TraverseRenameAllImports(entry_module);
 
         // BEGIN every modules gen their own code
         ClearAllVisitedMark();
@@ -602,23 +614,21 @@ namespace rocket_bundle {
         mf->ast->body = std::move(new_body);
     }
 
-    bool ModuleResolver::TraverseRenameAllImports(const Sp<rocket_bundle::ModuleFile> &mf) {
+    void ModuleResolver::TraverseRenameAllImports(const Sp<rocket_bundle::ModuleFile> &mf) {
         if (mf->visited_mark) {
-            return true;
+            return;
         }
         mf->visited_mark = true;
 
         for (auto& weak_ptr : mf->ref_mods) {
             auto ptr = weak_ptr.lock();
-            if (!TraverseRenameAllImports(ptr)) {
-                return false;
-            }
+            TraverseRenameAllImports(ptr);
         }
 
-        return ReplaceImports(mf);
+        ReplaceImports(mf);
     }
 
-    bool ModuleResolver::ReplaceImports(const Sp<rocket_bundle::ModuleFile> &mf) {
+    void ModuleResolver::ReplaceImports(const Sp<rocket_bundle::ModuleFile> &mf) {
         std::vector<Sp<SyntaxNode>> new_body;
 
         for (auto& stmt : mf->ast->body) {
@@ -627,9 +637,7 @@ namespace rocket_bundle {
                     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
 
                     std::vector<Sp<VariableDeclaration>> result;
-                    if (!HandleImportDeclaration(mf, import_decl, result)) {
-                        return false; // no need to continue;
-                    }
+                    HandleImportDeclaration(mf, import_decl, result);
                     new_body.insert(std::end(new_body), std::begin(result), std::end(result));
                     continue;
                 }
@@ -642,7 +650,6 @@ namespace rocket_bundle {
         }
 
         mf->ast->body = std::move(new_body);
-        return true;
     }
 
     /**
@@ -652,28 +659,26 @@ namespace rocket_bundle {
      *
      * const { a, b: c } = mod_1;
      */
-    bool ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
+    void ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
                                                  Sp<rocket_bundle::ImportDeclaration> &import_decl,
                                                  std::vector<Sp<VariableDeclaration>>& result) {
         auto full_path_iter = mf->resolved_map.find(utils::To_UTF8(import_decl->source->str_));
         if (full_path_iter == mf->resolved_map.end()) {
-            WorkerError err { mf->path, format("can not resolver path: {}", utils::To_UTF8(import_decl->source->str_)) };
-            worker_errors_.emplace_back(std::move(err));
-            return false;
+            throw ModuleResolveException(
+                    mf->path,
+                    format("can not resolver path: {}", utils::To_UTF8(import_decl->source->str_)));
         }
 
         auto target_module = modules_map_[full_path_iter->second];
 
         if (target_module == nullptr) {
-            WorkerError err { mf->path, format("can not find module: {}", full_path_iter->second) };
-            worker_errors_.emplace_back(std::move(err));
-            return false;
+            throw ModuleResolveException(mf->path, format("can not find module: {}", full_path_iter->second));
         }
 
-        auto target_mode_name = target_module->GetModuleVarName();
+//        auto target_mode_name = target_module->GetModuleVarName();
 
         if (import_decl->specifiers.empty()) {
-            return true;
+            return;
         }
 
         if (import_decl->specifiers[0]->type == SyntaxNodeType::ImportNamespaceSpecifier) {
@@ -736,45 +741,33 @@ namespace rocket_bundle {
                     }
 
                     default:
-                        worker_errors_.push_back({
-                                                         mf->path,
-                                                         "unknown specifier type"
-                                                 });
-                        return false;
+                        throw ModuleResolveException(mf->path, "unknown specifier type");
 
                 }
 
                 auto ref_mod = modules_map_[absolute_path];
                 if (ref_mod == nullptr) {
-                    WorkerError err { mf->path, format("can not resolve path: {}", absolute_path) };
-                    worker_errors_.emplace_back(std::move(err));
-                    return false;
+                    throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
                 }
 
                 std::set<std::int32_t> visited_mods;
                 auto local_export_opt = FindLocalExportByPath(absolute_path, target_export_name, visited_mods);
 
                 if (!local_export_opt.has_value()) {
-                    WorkerError err {
-                            mf->path,
-                            format("find symbol failed: {}", utils::To_UTF8(import_local_name))
-                    };
-                    worker_errors_.emplace_back(std::move(err));
-                    return false;
+                    throw ModuleResolveException(
+                        mf->path,
+                        format("find symbol failed: {}", utils::To_UTF8(import_local_name))
+                    );
                 }
 
                 if (!mf->ast->scope->RenameSymbol(import_local_name, (*local_export_opt)->local_name)) {
-                    WorkerError err {
-                            mf->path,
-                            format("rename symbol failed: {}", utils::To_UTF8(import_local_name))
-                    };
-                    worker_errors_.emplace_back(std::move(err));
-                    return false;
+                    throw ModuleResolveException(
+                        mf->path,
+                        format("rename symbol failed: {}", utils::To_UTF8(import_local_name))
+                    );
                 }
             }
         }
-
-        return true;
     }
 
     std::optional<Sp<LocalExportInfo>>
