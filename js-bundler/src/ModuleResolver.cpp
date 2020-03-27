@@ -64,6 +64,13 @@ namespace rocket_bundle {
 
     }
 
+    void WokerErrorCollection::PrintToStdErr() {
+        for (auto& err : errors) {
+            std::cerr << "File: " << err.file_path << std::endl;
+            std::cerr << "Error: " << err.error_content << std::endl;
+        }
+    }
+
     void ModuleResolveException::PrintToStdErr() {
         std::cerr << "File: " << file_path << std::endl;
         std::cerr << "Error: " << error_content << std::endl;
@@ -105,8 +112,9 @@ namespace rocket_bundle {
         });
 
         if (!worker_errors_.empty()) {
-            PrintErrors();
-            return;
+            WokerErrorCollection col;
+            col.errors = std::move(worker_errors_);
+            throw col;
         }
     }
 
@@ -146,7 +154,7 @@ namespace rocket_bundle {
         auto ctx = std::make_shared<ParserContext>(src, config);
         Parser parser(ctx);
 
-        parser.OnNewImportLocationAdded([this, &mf] (const UString& path) {
+        parser.OnNewImportLocationAdded([this, &mf] (bool is_import, const UString& path) {
             if (!trace_file) return;
 
             auto u8path = utils::To_UTF8(path);
@@ -174,7 +182,11 @@ namespace rocket_bundle {
             std::shared_ptr<ModuleFile> new_mf;
             {
                 std::lock_guard<std::mutex> guard(map_mutex_);
-                if (modules_map_.find(source_path) != modules_map_.end()) return;  // exists
+                auto exist_iter = modules_map_.find(source_path);
+                if (exist_iter != modules_map_.end()) {  // exists
+                    mf->ref_mods.push_back(exist_iter->second);
+                    return;
+                }
 
                 new_mf = std::make_shared<ModuleFile>();
                 new_mf->id = mod_counter_++;
@@ -356,10 +368,10 @@ namespace rocket_bundle {
 
         // distribute root level var name
         std::unordered_set<UString> used_name;
-
-        for (auto& tuple : final_export_vars) {
-            used_name.insert(std::get<1>(tuple));
-        }
+//
+//        for (auto& tuple : final_export_vars) {
+//            used_name.insert(std::get<1>(tuple));
+//        }
 
         RenameAllRootLevelVariable(used_name);
 
@@ -417,15 +429,22 @@ namespace rocket_bundle {
 
         // do your own work
 
+        // RenameSymbol() will change iterator, call it later
+        std::vector<std::tuple<UString, UString>> rename_vec;
+
         // Distribute new name to root level variables
         for (auto& var : mf->ast->scope->own_variables) {
             if (used_name.find(var.first) != used_name.end()) {
                 UString new_name = var.first + u"_" + utils::To_UTF16(std::to_string(counter++));
-                mf->ast->scope->RenameSymbol(var.first, new_name);
-//                Debug:
-//                std::cout << "found: " << utils::To_UTF8(var.first) << " -> " << utils::To_UTF8(new_name) << std::endl;
+
+                rename_vec.emplace_back(var.first, new_name);
+                used_name.insert(new_name);
             }
             used_name.insert(var.first);
+        }
+
+        for (auto& tuple : rename_vec) {
+            mf->ast->scope->RenameSymbol(std::get<0>(tuple), std::get<1>(tuple));
         }
 
         // replace exports to variable declaration

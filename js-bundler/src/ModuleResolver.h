@@ -43,7 +43,17 @@ namespace rocket_bundle {
 
         ModuleResolveException(const std::string& path, const std::string& content);
 
-        void PrintToStdErr();
+        virtual void PrintToStdErr();
+
+    };
+
+    class WokerErrorCollection : public ModuleResolveException {
+    public:
+        std::vector<WorkerError> errors;
+
+        WokerErrorCollection(): ModuleResolveException("", "") {}
+
+        void PrintToStdErr() override;
 
     };
 

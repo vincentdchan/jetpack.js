@@ -26,7 +26,7 @@ namespace rocket_bundle::parser {
         friend class JSXParser;
         friend class TypeScriptParser;
 
-        typedef std::function<void (const UString&)> NewImportLocationAddedCallback;
+        typedef std::function<void (bool, const UString&)> NewImportLocationAddedCallback;
 
         Parser(std::shared_ptr<ParserContext> state):
         ParserCommon(state) {}
@@ -290,9 +290,9 @@ namespace rocket_bundle::parser {
         ~Parser() = default;
 
     private:
-        inline void EmitNewLocationAdded(const UString& location) {
+        inline void EmitNewLocationAdded(bool is_import, const UString& location) {
             for (auto& handler : import_decl_handlers_) {
-                handler(location);
+                handler(is_import, location);
             }
         }
 

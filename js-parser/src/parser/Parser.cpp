@@ -2342,7 +2342,7 @@ namespace rocket_bundle::parser {
             ConsumeSemicolon();
 
             // notify other thread to parse
-            EmitNewLocationAdded(node->source->str_);
+            EmitNewLocationAdded(false, node->source->str_);
 
             Assert(module_scope->export_manager.ResolveAllDecl(node) == ExportManager::Ok,
                     "resolve export failed");
@@ -2407,7 +2407,7 @@ namespace rocket_bundle::parser {
             }
 
             if (node->source.has_value()) {
-                EmitNewLocationAdded((*node->source)->str_);
+                EmitNewLocationAdded(false, (*node->source)->str_);
             }
 
             Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
@@ -2904,7 +2904,7 @@ namespace rocket_bundle::parser {
             auto finalized_node = Finalize(start_marker, node);
 
             // notify callback to analyze another module
-            EmitNewLocationAdded(finalized_node->source->str_);
+            EmitNewLocationAdded(true, finalized_node->source->str_);
 
             // notify module scope to analyze variable ref
             if (module_scope->import_manager.ResolveImportDecl(finalized_node) != ImportManager::EC::Ok) {
