@@ -74,18 +74,13 @@ namespace rocket_bundle {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
-        std::vector<Sp<VariableDeclaration>>
-        HandleImportDeclaration(Sp<ImportDeclaration>& import_decl);
-
-        robin_hood::unordered_map<UString, UString> module_scope_rename_map;
-
         void CodeGenFromAst();
 
-        void ReplaceAllNamedExports();
-
-        void RenameSymbolByMap();
-
         UString GetModuleVarName();
+
+        inline ExportManager& GetExportManager() {
+            return ast->scope->export_manager;
+        }
 
     };
 
@@ -142,14 +137,32 @@ namespace rocket_bundle {
         json GetImportStat();
         std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
 
-        void TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
-                const Sp<ModuleFile>&, std::unordered_set<UString>* white_list);
+        void TraverseModulePushExportVars(
+                std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
+                const Sp<ModuleFile>&,
+                std::unordered_set<UString>* white_list);
 
         void RenameAllRootLevelVariable(std::unordered_set<UString>& used_name);
-        void RenameAllRootLevelVariableTraverser(
-                const std::shared_ptr<ModuleFile>& mf, std::int32_t& counter, std::unordered_set<UString>& used_name);
+        void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
+                                                 std::int32_t& counter,
+                                                 std::unordered_set<UString>& used_name);
 
-        Sp<ExportNamedDeclaration> GenFinalExportDecl();
+    public:
+        void ReplaceExports(const Sp<ModuleFile>& mf);
+
+    private:
+        bool TraverseRenameAllImports(const Sp<ModuleFile>& mf);
+
+        bool ReplaceImports(const Sp<ModuleFile>& mf);
+
+        bool HandleImportDeclaration(const Sp<ModuleFile>& mf,
+                                     Sp<ImportDeclaration>& import_decl,
+                                     std::vector<Sp<VariableDeclaration>>& result);
+
+        std::optional<Sp<LocalExportInfo>>
+        FindLocalExportByPath(const std::string& path, const UString& export_name, std::set<std::int32_t>& visited);
+
+        Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
 
         std::mutex map_mutex_;
 

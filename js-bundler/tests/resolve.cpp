@@ -40,7 +40,7 @@ inline std::string ReplaceDefault(const std::string& src) {
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
-    mod->ReplaceAllNamedExports();
+    resolver->ReplaceExports(mod);
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;

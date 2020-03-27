@@ -53,7 +53,7 @@ TEST(Scope, Rename) {
     mod->scope->RenameSymbol(u"name", u"new_name");
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -70,7 +70,7 @@ TEST(Scope, RenameImportNamespace) {
     mod->scope->RenameSymbol(u"name", u"new_name");
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -94,7 +94,7 @@ TEST(Scope, RenameFunction1) {
     mod->scope->ResolveAllSymbols();
     EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"new_name"));
 
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;

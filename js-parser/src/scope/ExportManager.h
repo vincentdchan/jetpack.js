@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <set>
 #include <vector>
 #include <Utils.h>
 #include <robin_hood.h>
+#include <optional>
 #include "../parser/NodeTypes.h"
 
 namespace rocket_bundle {
@@ -22,11 +24,26 @@ namespace rocket_bundle {
 
     };
 
-    struct ExternalInfo {
+    struct LocalExportInfo {
     public:
-        UString path;
+        UString export_name;
+        UString local_name;
+        std::optional<std::shared_ptr<ExportDefaultDeclaration>> default_export_ast;
+
+    };
+
+    struct ExternalExportAlias {
+    public:
+        UString source_name;
+        UString export_name;
+
+    };
+
+    struct ExternalExportInfo {
+    public:
+        UString relative_path;
         bool is_export_all = false;
-        std::vector<UString> names;
+        std::vector<ExternalExportAlias> names;
 
     };
 
@@ -39,8 +56,14 @@ namespace rocket_bundle {
             Ok = 0,
 
             UnknownSpecifier = -1,
+            FunctionHasNoId = -2,
+            ClassHasNoId = -3,
+
+            UnsupportExport = -4,
 
         };
+
+        static const char* ECToStr(EC ec);
 
         ExportManager() = default;
         ExportManager(const ExportManager&) = delete;
@@ -51,12 +74,18 @@ namespace rocket_bundle {
         EC ResolveDefaultDecl(const std::shared_ptr<ExportDefaultDeclaration>&);
         EC ResolveNamedDecl(const std::shared_ptr<ExportNamedDeclaration>&);
 
-        std::vector<UString> local_export_name;
-//        robin_hood::unordered_map<UString, ExternalVariable> external_export_vars;
+        void AddLocalExport(const std::shared_ptr<LocalExportInfo>& info);
 
-        std::vector<std::shared_ptr<SyntaxNode>> external_asts;
+        // key: export name
+        robin_hood::unordered_map<UString, std::shared_ptr<LocalExportInfo>> local_exports_name;
 
-        std::vector<ExternalInfo> CollectExternalInfos();
+        // key: local_name
+        robin_hood::unordered_map<UString, std::shared_ptr<LocalExportInfo>> local_exports_by_local_name;
+
+        // key: absolute path
+        robin_hood::unordered_map<UString, ExternalExportInfo> external_exports_map;
+
+        std::vector<ExternalExportInfo> CollectExternalInfos();
 
     };
 

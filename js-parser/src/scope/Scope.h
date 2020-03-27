@@ -88,7 +88,7 @@ namespace rocket_bundle {
 
         void ResolveAllSymbols();
 
-        bool RenameSymbol(const UString& old_name, const UString& new_name);
+        virtual bool RenameSymbol(const UString& old_name, const UString& new_name);
 
         virtual ~Scope() = default;
 
@@ -128,6 +128,8 @@ namespace rocket_bundle {
     public:
 
         ModuleScope();
+
+        bool RenameSymbol(const UString& old_name, const UString& new_name) override;
 
         ImportManager import_manager;
         ExportManager export_manager;

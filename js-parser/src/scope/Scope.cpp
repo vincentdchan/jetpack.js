@@ -65,10 +65,16 @@ namespace rocket_bundle {
             return false;
         }
 
-        iter->second.name = new_name;
-        for (auto& id : iter->second.identifiers) {
+
+        Variable tmp = iter->second;
+        own_variables.erase(iter);
+
+        tmp.name = new_name;
+        for (auto& id : tmp.identifiers) {
             id->name = new_name;
         }
+
+        own_variables[tmp.name] = std::move(tmp);
 
         return true;
     }
@@ -81,8 +87,27 @@ namespace rocket_bundle {
     LeftValueScope LeftValueScope::default_;
 
     ModuleScope::ModuleScope() : Scope(ScopeType::Module) {
-
     };
+
+    bool ModuleScope::RenameSymbol(const UString &old_name, const UString &new_name) {
+        if (!Scope::RenameSymbol(old_name, new_name)) {
+            return false;
+        }
+
+        auto iter = export_manager.local_exports_by_local_name.find(old_name);
+        if (iter == export_manager.local_exports_by_local_name.end()) {  // not a local export
+            return true;
+        }
+
+        auto local_export_info = iter->second;
+        export_manager.local_exports_by_local_name.erase(iter);  // remove old index
+
+        local_export_info->local_name = new_name;
+
+        export_manager.local_exports_by_local_name[local_export_info->local_name] = local_export_info;  // add new index
+
+        return true;
+    }
 
     ModuleScope * Scope::CastToMoudle() {
         if (type != ScopeType::Module) return nullptr;
