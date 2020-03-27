@@ -10,4 +10,4 @@ add_subdirectory(./third_party/googletest)
 
 add_subdirectory(./bundle-utils)
 add_subdirectory(./js-parser)
-add_subdirectory(./js-bundler)
+add_subdirectory(bundler)

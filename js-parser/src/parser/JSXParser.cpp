@@ -2,7 +2,6 @@
 // Created by Duzhong Chen on 2019/10/25.
 //
 
-#include <jemalloc/jemalloc.h>
 #include <stack>
 #include <fmt/format.h>
 #include "JSXParser.h"

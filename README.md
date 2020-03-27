@@ -37,13 +37,33 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - Module resolution.
 - Bundle a ES project into a single file.
 - Scope hoisting.
-- Minify the code.
+- Minify the code(WIP).
 - Sourcemap generation(WIP).
 - Dead Code Elimination(WIP).
 
 # Usage
 
-TODO
+Use command line to bundle a js module.
+```shell script
+./rocket-bundle main.js --out bundle.js
+```
+
+Help command:
+
+```shell script
+./rocket-bundle --help
+Rocket Bundle command line
+Usage:
+  rocket-bundle [OPTION...] positional parameters
+
+      --tolerant            tolerant parsing error
+      --es-module           parsing as ES module
+      --jsx                 support jsx syntax
+      --help                produce help message
+      --analyze-module arg  analyze a module and print result
+      --no-trace            do not trace ref file when analyze module
+      --out arg             output filename of bundle
+```
 
 # Use the parser as a library
 
@@ -53,7 +73,7 @@ Please install jemalloc on your mac:
 brew install jemalloc
 ```
 
-ZEP is built with CMake, so it can be
+rocket-bundle.js is built with CMake, so it can be
 easily integrated to your project.
 
 ```cmake
@@ -98,5 +118,5 @@ And the WASM version is in the roadmap. The web version of ZEP would be released
 `rocket-bundle.js` supports all popular system including:
 
 - macOS
-- Linux
-- Windows
+- Windows(WIP)
+- Linux(WIP)

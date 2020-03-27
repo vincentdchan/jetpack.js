@@ -4,7 +4,6 @@
 
 #include "ParserCommon.h"
 #include "ErrorMessage.h"
-#include <jemalloc/jemalloc.h>
 #include <fmt/format.h>
 
 namespace rocket_bundle::parser {

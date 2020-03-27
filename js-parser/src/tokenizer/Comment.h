@@ -13,6 +13,4 @@ struct Comment {
     std::pair<std::uint32_t, std::uint32_t> range_;
     SourceLocation loc_;
 
-    void* operator new(std::size_t size);
-    void operator delete(void* chunk);
 };
