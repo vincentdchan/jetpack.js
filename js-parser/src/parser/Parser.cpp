@@ -2864,7 +2864,7 @@ namespace rocket_bundle::parser {
             } else if (Match(JsTokenType::Mul)) {
                 specifiers.push_back(ParseImportNamespaceSpecifier(scope));
             } else if (IsIdentifierName(ctx->lookahead_) && !Match(JsTokenType::K_Default)) {
-                auto default_ = ParseImportDefaultSpecifier();
+                auto default_ = ParseImportDefaultSpecifier(scope);
                 specifiers.push_back(move(default_));
 
                 if (Match(JsTokenType::Comma)) {
@@ -2977,11 +2977,12 @@ namespace rocket_bundle::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportDefaultSpecifier> Parser::ParseImportDefaultSpecifier() {
+    Sp<ImportDefaultSpecifier> Parser::ParseImportDefaultSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto local = ParseIdentifierName();
         auto node = Alloc<ImportDefaultSpecifier>();
-        node->local = move(local);
+        node->local = local;
+        scope.CreateVariable(local, VarKind::Var);
         return Finalize(start_marker, node);
     }
 

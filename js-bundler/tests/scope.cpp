@@ -215,6 +215,22 @@ TEST(Scope, RenameImport) {
     EXPECT_EQ(GenCode(mod), expected);
 }
 
+TEST(Scope, RenameImportDefault) {
+    std::string src = "import React from 'react';\n";
+
+    std::string expected = "import Angular from 'react';\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"React", u"Angular"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
+
 TEST(Scope, RenameImport2) {
     std::string src = "import { cc as name } from 'main';\n"
                       "console.log(name);\n";

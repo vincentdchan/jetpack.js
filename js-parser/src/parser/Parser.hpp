@@ -269,7 +269,7 @@ namespace rocket_bundle::parser {
 
         std::vector<Sp<SyntaxNode>> ParseNamedImports(Scope& scope);
 
-        Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier();
+        Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier(Scope& scope);
 
         Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier(Scope& scope);
 
