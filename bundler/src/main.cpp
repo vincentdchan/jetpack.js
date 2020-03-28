@@ -5,9 +5,9 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
-#ifndef _WIN32
-#include <jemalloc/jemalloc.h>
-#endif
+//#ifndef _WIN32
+//#include <jemalloc/jemalloc.h>
+//#endif
 
 #include "Path.h"
 #include "ModuleResolver.h"
@@ -15,7 +15,6 @@
 #define OPT_HELP "help"
 #define OPT_ENTRY "entry"
 #define OPT_TOLERANT "tolerant"
-#define OPT_ES_MODULE "es-module"
 #define OPT_JSX "jsx"
 #define OPT_ANALYZE_MODULE "analyze-module"
 #define OPT_NO_TRACE "no-trace"
@@ -32,7 +31,6 @@ int main(int argc, char** argv) {
         options.add_options()
                 (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
                 (OPT_TOLERANT, "tolerant parsing error")
-                (OPT_ES_MODULE, "parsing as ES module")
                 (OPT_JSX, "support jsx syntax")
                 (OPT_HELP, "produce help message")
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())

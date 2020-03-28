@@ -58,7 +58,6 @@ Usage:
   rocket-bundle [OPTION...] positional parameters
 
       --tolerant            tolerant parsing error
-      --es-module           parsing as ES module
       --jsx                 support jsx syntax
       --help                produce help message
       --analyze-module arg  analyze a module and print result
