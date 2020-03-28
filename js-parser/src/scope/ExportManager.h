@@ -9,6 +9,7 @@
 #include <Utils.h>
 #include <robin_hood.h>
 #include <optional>
+#include <memory>
 #include "../parser/NodeTypes.h"
 
 namespace rocket_bundle {

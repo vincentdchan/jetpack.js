@@ -28,10 +28,20 @@ link_libraries(bundle-utils js-parser fmt)
 
 add_executable(rocket-bundle ${SOURCE_FILES} src/main.cpp)
 
-IF (NOT WIN32)
+if (UNIX)
+
 include_directories("../third_party/jemalloc/include")
+
+if (APPLE)
 link_libraries(../third_party/jemalloc/lib/mac/libjemalloc.a)
-ENDIF()
+else()
+
+SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
+link_libraries(../third_party/jemalloc/lib/linux/libjemalloc.a)
+
+endif()
+
+endif()
 
 add_executable(rocket-bundle-test ${SOURCE_FILES}
         tests/scope.cpp

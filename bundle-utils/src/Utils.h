@@ -7,6 +7,8 @@
 #include <codecvt>
 #include <string>
 #include <chrono>
+#include <cstdlib>
+#include <cstring>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -21,7 +23,7 @@ namespace rocket_bundle::utils {
 
     inline std::string GetRunningDir() {
         static char buffer[1024];
-        memset(buffer, 0, 1024);
+        std::memset(buffer, 0, 1024);
 #ifndef _WIN32
         auto result = getcwd(buffer, 1024);
         if (result == nullptr) {

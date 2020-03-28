@@ -119,4 +119,4 @@ And the WASM version is in the roadmap. The web version of ZEP would be released
 
 - macOS
 - Windows
-- Linux(WIP)
+- Linux

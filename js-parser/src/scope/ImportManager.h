@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <robin_hood.h>
 #include "Utils.h"
 #include "../parser/NodeTypes.h"

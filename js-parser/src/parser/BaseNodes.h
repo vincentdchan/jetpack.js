@@ -2,6 +2,8 @@
 // Created by Duzhong Chen on 2019/9/8.
 //
 #pragma once
+
+#include <memory>
 #include "NodeTypes.h"
 #include "../macros.h"
 #include "../tokenizer/Token.h"
