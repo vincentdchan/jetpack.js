@@ -117,7 +117,7 @@ namespace rocket_bundle {
         static std::u16string ReadFileStream(const std::string& filename);
 
         ModuleResolver() : mod_counter_(0) {
-            name_generator = std::make_shared<ReadableNameGenerator>();
+            name_generator = ReadableNameGenerator::Make();
         }
 
         void BeginFromEntry(std::string base_path, std::string origin_path);

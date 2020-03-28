@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <optional>
@@ -12,40 +13,71 @@ namespace rocket_bundle {
 
     class UniqueNameGenerator {
     public:
-        UniqueNameGenerator();
 
         virtual std::optional<std::u16string> Next(const std::u16string& original_name) = 0;
 
-        std::unordered_set<std::u16string> used_name;
+        virtual std::shared_ptr<UniqueNameGenerator> Fork() = 0;
+
+        virtual bool IsNameUsed(const std::u16string& name) { return false; };
 
         virtual ~UniqueNameGenerator() = default;
 
     };
 
-    class ReadableNameGenerator : public UniqueNameGenerator {
-    public:
-        ReadableNameGenerator() = default;
+    class UniqueNameGeneratorWithUsedName : public UniqueNameGenerator {
+    protected:
+        UniqueNameGeneratorWithUsedName() = default;
 
-        std::optional<std::u16string> Next(const std::u16string& original_name) override;
+        std::unordered_set<std::u16string> used_name;
 
-    private:
-        std::int32_t counter = 0;
+        void InsertJsKeywords();
 
     };
 
-    class MinifyNameGenerator : public UniqueNameGenerator {
+    class ReadableNameGenerator : public UniqueNameGeneratorWithUsedName {
+    public:
+        static std::shared_ptr<ReadableNameGenerator> Make();
+
+        std::optional<std::u16string> Next(const std::u16string& original_name) override;
+
+        bool IsNameUsed(const std::u16string& name) override;
+
+        std::shared_ptr<UniqueNameGenerator> Fork() override;
+
+    private:
+        ReadableNameGenerator() = default;
+
+        std::int32_t counter = 0;
+
+        std::shared_ptr<ReadableNameGenerator> prev;
+
+        std::weak_ptr<ReadableNameGenerator> weak_self;
+
+    };
+
+    class MinifyNameGenerator : public UniqueNameGeneratorWithUsedName {
     public:
         static constexpr std::size_t BUFFER_SIZE = 32;
 
-        MinifyNameGenerator() = default;
+        static std::shared_ptr<MinifyNameGenerator> Make();
 
         std::optional<std::u16string> Next(const std::u16string& original_name) override;
+
+        bool IsNameUsed(const std::u16string& name) override;
+
+        std::shared_ptr<UniqueNameGenerator> Fork() override;
 
         std::u16string GenAName();
 
     private:
+        MinifyNameGenerator();
+
         std::int32_t buffer[BUFFER_SIZE];
         std::int32_t counter = 0;
+
+        std::shared_ptr<MinifyNameGenerator> prev;
+
+        std::weak_ptr<MinifyNameGenerator> weak_self;
 
     };
 

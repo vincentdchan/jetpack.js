@@ -117,7 +117,7 @@ static int BundleModule(const std::string& self_path_str,
         if (minify) {
             config.minify = true;
             config.comments = false;
-            resolver->SetNameGenerator(std::make_shared<MinifyNameGenerator>());
+            resolver->SetNameGenerator(MinifyNameGenerator::Make());
         }
 
         resolver->SetTraceFile(true);
