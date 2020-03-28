@@ -1320,7 +1320,7 @@ namespace rocket_bundle::parser {
         if (IsPunctuatorToken(ctx->lookahead_.type_)) {
             switch (ctx->lookahead_.type_) {
                 case JsTokenType::LeftBracket:
-                    return ParseBlock(scope);
+                    return ParseBlock(scope, true);
 
                 case JsTokenType::LeftParen:
                     return ParseExpressionStatement(scope);
@@ -1413,18 +1413,27 @@ namespace rocket_bundle::parser {
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseBlock(Scope& parent_scope) {
+    Sp<BlockStatement> Parser::ParseBlock(Scope& parent_scope, bool new_scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
-        node->scope = std::make_unique<Scope>();
-        node->scope->SetParent(&parent_scope);
+        if (new_scope) {
+            auto new_scope_ins = std::make_unique<Scope>();
+            new_scope_ins->type = ScopeType::Block;
+            new_scope_ins->SetParent(&parent_scope);
+            node->scope = { std::move(new_scope_ins) };
+        }
 
         Expect(JsTokenType::LeftBracket);
         while (true) {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SyntaxNode> stmt = ParseStatementListItem(*node->scope.get());
+            Sp<SyntaxNode> stmt;
+            if (new_scope) {
+                stmt = ParseStatementListItem(**node->scope);
+            } else {
+                stmt = ParseStatementListItem(parent_scope);
+            }
             node->body.push_back(std::move(stmt));
         }
         Expect(JsTokenType::RightBracket);
@@ -1971,7 +1980,7 @@ namespace rocket_bundle::parser {
         Expect(JsTokenType::K_Try);
         auto node = Alloc<TryStatement>();
 
-        node->block = ParseBlock(scope);
+        node->block = ParseBlock(scope, true);
         if (Match(JsTokenType::K_Catch)) {
             node->handler = ParseCatchClause(scope);
         }
@@ -2020,14 +2029,14 @@ namespace rocket_bundle::parser {
         }
 
         Expect(JsTokenType::RightParen);
-        node->body = ParseBlock(scope);
+        node->body = ParseBlock(scope, false);
 
         return Finalize(marker, node);
     }
 
     Sp<BlockStatement> Parser::ParseFinallyClause(Scope& scope) {
         Expect(JsTokenType::K_Finally);
-        return ParseBlock(scope);
+        return ParseBlock(scope, true);
     }
 
     Sp<VariableDeclaration> Parser::ParseVariableStatement(Scope& scope) {

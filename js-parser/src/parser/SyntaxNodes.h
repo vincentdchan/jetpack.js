@@ -89,7 +89,7 @@ namespace rocket_bundle {
 
         std::vector<Sp<SyntaxNode>> body;
 
-        std::unique_ptr<Scope> scope;
+        std::optional<std::unique_ptr<Scope>> scope;
 
     };
 

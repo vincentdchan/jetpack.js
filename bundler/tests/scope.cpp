@@ -125,6 +125,28 @@ TEST(Scope, RenameFunction2) {
     EXPECT_EQ(GenCode(mod), expected);
 }
 
+TEST(Scope, RenameFunction3) {
+    std::string src = "var name = 3;\n"
+                      "function ok(name) {\n"
+                      "  console.log(name);\n"
+                      "}\n";
+
+    std::string expected = "var rename = 3;\n"
+                           "function ok(name) {\n"
+                           "  console.log(name);\n"
+                           "}\n";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"rename"));
+
+    std::stringstream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, ss);
+    codegen.Traverse(mod);
+    EXPECT_EQ(GenCode(mod), expected);
+}
+
 TEST(Scope, RenameObjectPattern) {
     std::string src = "var { name: other } = obj;\n";
 

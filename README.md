@@ -38,7 +38,7 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - Module resolution.
 - Bundle a ES project into a single file.
 - Scope hoisting.
-- Minify the code(WIP).
+- Minify the code.
 - Sourcemap generation(WIP).
 - Dead Code Elimination(WIP).
 

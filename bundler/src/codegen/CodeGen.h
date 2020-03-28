@@ -41,6 +41,7 @@ namespace rocket_bundle {
         public:
             Config() = default;
 
+            bool minify = false;
             std::uint32_t start_indent_level = 0;
             std::string indent = "  ";
             std::string line_end = "\n";

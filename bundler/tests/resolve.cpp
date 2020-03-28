@@ -57,7 +57,7 @@ TEST(ModuleResolver, HandleExportDefault) {
 
     auto result = ReplaceDefault(src);
 
-    EXPECT_EQ(result, "var default_0 = a = 3;\n");
+    EXPECT_EQ(result, "var _default = a = 3;\n");
 }
 
 TEST(ModuleResolver, HandleExportDefaultFunction1) {
@@ -67,7 +67,7 @@ TEST(ModuleResolver, HandleExportDefaultFunction1) {
     auto result = ReplaceDefault(src);
 
     EXPECT_EQ(result,
-              "function default_0() {}\n");
+              "function _default() {}\n");
 }
 
 TEST(ModuleResolver, HandleExportDefaultFunction2) {
@@ -78,7 +78,7 @@ TEST(ModuleResolver, HandleExportDefaultFunction2) {
 
     EXPECT_EQ(result,
               "function name() {}\n"
-              "var default_0 = name;\n");
+              "var _default = name;\n");
 }
 
 TEST(ModuleResolver, HandleExportDefaultLiteral) {
@@ -87,7 +87,7 @@ TEST(ModuleResolver, HandleExportDefaultLiteral) {
     auto result = ReplaceDefault(src);
 
     EXPECT_EQ(result,
-              "var default_0 = 3;\n");
+              "var _default = 3;\n");
 }
 
 TEST(ModuleResolver, HandleExportDefaultLiteral2) {
@@ -96,7 +96,7 @@ TEST(ModuleResolver, HandleExportDefaultLiteral2) {
     auto result = ReplaceDefault(src);
 
     EXPECT_EQ(result,
-              "var default_0 = `3`;\n");
+              "var _default = `3`;\n");
 }
 
 TEST(ModuleResolver, HandleExportDefaultLiteral3) {
@@ -107,7 +107,7 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
     auto result = ReplaceDefault(src);
 
     EXPECT_EQ(result,
-              "var default_0 = `\n"
+              "var _default = `\n"
               "aaaabb\n"
               "ddd`;\n");
 }

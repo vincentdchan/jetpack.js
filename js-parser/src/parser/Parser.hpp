@@ -144,7 +144,7 @@ namespace rocket_bundle::parser {
 
         Sp<Statement> ParseStatementListItem(Scope& scope);
 
-        Sp<BlockStatement> ParseBlock(Scope& scope);
+        Sp<BlockStatement> ParseBlock(Scope& scope, bool new_scope);
 
         Sp<VariableDeclarator> ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for);
 
