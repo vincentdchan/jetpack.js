@@ -12,7 +12,7 @@ namespace rocket_bundle {
 
     class UniqueNameGenerator {
     public:
-        UniqueNameGenerator() = default;
+        UniqueNameGenerator();
 
         virtual std::optional<std::u16string> Next(const std::u16string& original_name) = 0;
 
@@ -40,6 +40,8 @@ namespace rocket_bundle {
         MinifyNameGenerator() = default;
 
         std::optional<std::u16string> Next(const std::u16string& original_name) override;
+
+        std::u16string GenAName();
 
     private:
         std::int32_t buffer[BUFFER_SIZE];

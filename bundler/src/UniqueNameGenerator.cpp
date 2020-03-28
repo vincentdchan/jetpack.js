@@ -15,6 +15,20 @@ namespace rocket_bundle {
     static constexpr std::size_t FirstCharCandidatesSize = sizeof(FirstCharCandidates) - 1;
     static constexpr std::size_t CharCandidatesSize = sizeof(CharCandidates) - 1;
 
+    static auto JsKeywords = {
+        "await", "break", "case", "catch", "class", "const", "continue", "debugger",
+        "default", "delete", "do", "else", "enum", "export", "extends", "false", "finally",
+        "for", "function", "if", "import", "ininstanceof", "new", "null", "return", "super",
+        "switch", "this", "throw", "true", "try", "typeof", "var", "void", "while", "with",
+        "yield"
+    };
+
+    UniqueNameGenerator::UniqueNameGenerator() {
+        for (auto& keyword : JsKeywords) {
+            used_name.insert(utils::To_UTF16(keyword));
+        }
+    };
+
     std::optional<std::u16string>
     ReadableNameGenerator::Next(const std::u16string &original_name) {
         if (used_name.find(original_name) == used_name.end()) {  // not exist
@@ -29,6 +43,16 @@ namespace rocket_bundle {
 
     std::optional<std::u16string>
     MinifyNameGenerator::Next(const std::u16string& original) {
+        std::u16string result;
+
+        do {
+            result = GenAName();
+        } while(used_name.find(result) != used_name.end());
+
+        return { result };
+    }
+
+    std::u16string MinifyNameGenerator::GenAName() {
         std::string result;
 
         std::memset(buffer, 0, BUFFER_SIZE * sizeof(std::int32_t));
@@ -64,7 +88,8 @@ namespace rocket_bundle {
         }
 
         counter++;
-        return { utils::To_UTF16(result) };
+
+        return utils::To_UTF16(result);
     }
 
 }
