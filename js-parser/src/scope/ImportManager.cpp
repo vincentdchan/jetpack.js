@@ -3,7 +3,7 @@
 //
 
 #include "ImportManager.h"
-#import "../parser/SyntaxNodes.h"
+#include "../parser/SyntaxNodes.h"
 
 namespace rocket_bundle {
 

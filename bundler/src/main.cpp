@@ -4,7 +4,10 @@
 
 #include <iostream>
 #include <cxxopts.hpp>
+
+#ifndef _WIN32
 #include <jemalloc/jemalloc.h>
+#endif
 
 #include "Path.h"
 #include "ModuleResolver.h"

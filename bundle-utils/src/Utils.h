@@ -10,6 +10,8 @@
 
 #ifndef _WIN32
 #include <unistd.h>
+#else
+#include <Windows.h>
 #endif
 
 typedef std::u16string UString;
@@ -20,11 +22,19 @@ namespace rocket_bundle::utils {
     inline std::string GetRunningDir() {
         static char buffer[1024];
         memset(buffer, 0, 1024);
+#ifndef _WIN32
         auto result = getcwd(buffer, 1024);
         if (result == nullptr) {
             return "";
         }
         return result;
+#else
+        if (GetCurrentDirectoryA(1024, buffer) == 0) {
+            return "";
+        }
+
+        return buffer;
+#endif
     }
 
     inline int64_t GetCurrentMs() {
@@ -47,18 +57,85 @@ namespace rocket_bundle::utils {
     }
 
     inline std::u16string To_UTF16(const std::string &s) {
+#ifndef _WIN32
         std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> conv;
         return conv.from_bytes(s);
+#else
+        std::int32_t buffer_size = s.size() + 1;
+        char16_t* buffer = new char16_t[buffer_size];
+        memset(buffer, 0, buffer_size);
+
+        static_assert(sizeof(wchar_t) == sizeof(char16_t));
+
+        int ret = MultiByteToWideChar(
+            CP_UTF8, MB_PRECOMPOSED,
+            s.c_str(), s.size(),
+            reinterpret_cast<wchar_t*>(buffer), buffer_size);
+
+        if (ret == 0) {
+            delete[] buffer;
+            return u"";
+        }
+        delete[] buffer;
+        return std::u16string(buffer, ret);
+#endif
     }
 
     inline std::string To_UTF8(const std::u16string &s) {
+#ifndef _WIN32
         std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> conv;
         return conv.to_bytes(s);
+#else
+        std::size_t buffer_size = s.size() * 2;
+        char* buffer = new char[buffer_size];
+        memset(buffer, 0, buffer_size);
+
+        int ret = WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK,
+            reinterpret_cast<const wchar_t*>(s.c_str()),
+            s.size(), buffer, buffer_size, NULL, NULL);
+        
+        if (ret == 0) {
+            delete[] buffer;
+            return "";
+        }
+
+        delete[] buffer;
+        return std::string(buffer, ret);
+#endif
     }
 
     inline std::string To_UTF8(const std::u32string &s) {
+#ifndef _WIN32
         std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
         return conv.to_bytes(s);
+#else
+
+        auto U32ToU16 = [](char32_t cUTF32, char16_t& h, char16_t& l) -> char32_t {
+            if (cUTF32 < 0x10000)
+            {
+                h = 0;
+                l = cUTF32;
+                return cUTF32;
+            }
+            unsigned int t = cUTF32 - 0x10000;
+            h = (((t << 12) >> 22) + 0xD800);
+            l = (((t << 22) >> 22) + 0xDC00);
+            char32_t ret = ((h << 16) | (l & 0x0000FFFF));
+            return ret;
+        };
+
+        std::u16string u16;
+
+        for (char32_t ch : s) {
+            char16_t h = 0;
+            char16_t l = 0;
+            U32ToU16(ch, h, l);
+            u16.push_back(h);
+            u16.push_back(l);
+        }
+
+        return utils::To_UTF8(u16);
+#endif
     }
 
     inline void AddU32ToUtf16(UString& target, char32_t code) {
@@ -126,9 +203,11 @@ namespace rocket_bundle::utils {
 #ifndef _WIN32
         return access(path.c_str(), F_OK) == 0;
 #else
-        return false;
+        DWORD dwAttrib = GetFileAttributesA(path.c_str());
+
+        return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+            !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 #endif
     }
-
 
 }

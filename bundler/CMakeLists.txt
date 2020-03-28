@@ -20,7 +20,6 @@ set(SOURCE_FILES
 include_directories(PUBLIC
         "../bundle-utils/src"
         "../js-parser/src"
-        "../third_party/jemalloc/include"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
@@ -29,7 +28,10 @@ link_libraries(bundle-utils js-parser fmt)
 
 add_executable(rocket-bundle ${SOURCE_FILES} src/main.cpp)
 
+IF (NOT WIN32)
+include_directories("../third_party/jemalloc/include")
 link_libraries(../third_party/jemalloc/lib/mac/libjemalloc.a)
+ENDIF()
 
 add_executable(rocket-bundle-test ${SOURCE_FILES}
         tests/scope.cpp

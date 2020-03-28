@@ -118,5 +118,5 @@ And the WASM version is in the roadmap. The web version of ZEP would be released
 `rocket-bundle.js` supports all popular system including:
 
 - macOS
-- Windows(WIP)
+- Windows
 - Linux(WIP)
