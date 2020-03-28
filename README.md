@@ -13,6 +13,7 @@ The parser can be used as a library independently.
 - [Use the parser as a library](#use-the-parser-as-a-library)
   - [Example](#example)
 - [Performance](#performance)
+- [Architecture](#architecture)
 - [Compatibility](#compatibility)
 - [Platform](#platform)
 
@@ -24,13 +25,13 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 
 ## Parser
 
+- Can be used standalone
 - Implemented in C++ with excellent performance
 - Full support for ECMAScript 2017([ECMA-262 8th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
 - JSON output of sensible [syntax tree](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
 - Experimental support for [JSX](https://facebook.github.io/jsx/), a syntax extension for [React](https://facebook.github.io/react/)
 - Syntax node location (index-based and line-column)
 - Friendly error message
-- TypeScript Support(WIP)
 
 ## Bundler
 
@@ -105,6 +106,12 @@ other ES parsers implemented in ES(Running on Node.js).
 
 With the power of jemalloc,
 ZEP's performance is equal to other ES parsers implemented in Rust.
+
+# Architecture
+
+![](./images/Rocket-Bundle-Arch.png)
+
+The code are well commented, please read the code.
 
 # Compatibility
 
