@@ -42,6 +42,8 @@ namespace rocket_bundle {
 
     class ModuleScope;
 
+    class VariableExistsError;
+
     class Scope {
     public:
 
@@ -133,6 +135,13 @@ namespace rocket_bundle {
 
         ImportManager import_manager;
         ExportManager export_manager;
+
+    };
+
+    class VariableExistsError : public std::exception {
+    public:
+        std::shared_ptr<Identifier> exist_var;
+        UString name;
 
     };
 

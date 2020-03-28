@@ -28,11 +28,22 @@ namespace rocket_bundle {
             }
         }
 
+        if (auto iter = target_scope->own_variables.find(var_id->name); iter != target_scope->own_variables.end()) {
+            VariableExistsError err;
+            err.name = iter->second.name;
+            if (iter->second.identifiers.empty()) {
+                throw std::runtime_error("identifiers can not be empty");
+            }
+            err.exist_var = iter->second.identifiers[0];
+            throw std::move(err);
+        }
+
         Variable& var = target_scope->own_variables[var_id->name];
         var.scope = target_scope;
         var.name = var_id->name;
         var.kind = kind;
         var.identifiers.push_back(var_id);
+
         return &var;
     }
 

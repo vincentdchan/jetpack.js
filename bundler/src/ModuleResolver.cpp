@@ -99,12 +99,17 @@ namespace rocket_bundle {
                 ParseFileFromPath(path);
             } catch (parser::ParseError& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                WorkerError err { path, ex.ErrorMessage() };
-                worker_errors_.emplace_back(std::move(err));
+                worker_errors_.push_back({ path, ex.ErrorMessage() });
+            } catch (VariableExistsError& err) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                std::string message = format("variable '{}' has been defined, location: {}:{}",
+                                             utils::To_UTF8(err.name),
+                                             err.exist_var->location.start_.line_,
+                                             err.exist_var->location.start_.column_);
+                worker_errors_.push_back({ path, std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                WorkerError err { path, ex.what() };
-                worker_errors_.emplace_back(std::move(err));
+                worker_errors_.push_back({ path, ex.what() });
             }
             FinishOne();
         });
@@ -205,12 +210,17 @@ namespace rocket_bundle {
                     ParseFile(new_mf);
                 } catch (parser::ParseError& ex) {
                     std::lock_guard<std::mutex> guard(error_mutex_);
-                    WorkerError err {new_mf->path, ex.ErrorMessage() };
-                    worker_errors_.emplace_back(std::move(err));
+                    worker_errors_.push_back({ new_mf->path, ex.ErrorMessage() });
+                } catch (VariableExistsError& err) {
+                    std::lock_guard<std::mutex> guard(error_mutex_);
+                    std::string message = format("variable '{}' has been defined, location: {}:{}",
+                                                 utils::To_UTF8(err.name),
+                                                 err.exist_var->location.start_.line_ + 1,
+                                                 err.exist_var->location.start_.column_);
+                    worker_errors_.push_back({ new_mf->path, std::move(message) });
                 } catch (std::exception& ex) {
                     std::lock_guard<std::mutex> guard(error_mutex_);
-                    WorkerError err {new_mf->path, ex.what() };
-                    worker_errors_.emplace_back(std::move(err));
+                    worker_errors_.push_back({ new_mf->path, ex.what() });
                 }
                 FinishOne();
             });
