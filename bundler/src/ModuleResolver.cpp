@@ -45,6 +45,31 @@ namespace rocket_bundle {
         return mod_var;
     }
 
+    void ModuleFile::RenameInnerScopes(const Sp<UniqueNameGenerator> &renamer) {
+        for (auto child : ast->scope->children) {
+            RenameInnerScopes(*child, renamer);
+        }
+    }
+
+    void ModuleFile::RenameInnerScopes(Scope &scope, const Sp<UniqueNameGenerator> &renamer) {
+        std::vector<std::tuple<UString, UString>> renames;
+
+        for (auto& variable : scope.own_variables) {
+            auto new_opt = renamer->Next(variable.first);
+            if (new_opt.has_value()) {
+                renames.emplace_back(variable.first, *new_opt);
+            }
+        }
+
+        for (auto& tuple : renames) {
+            scope.RenameSymbol(std::get<0>(tuple), std::get<1>(tuple));
+        }
+
+        for (auto child : scope.children) {
+            RenameInnerScopes(*child, renamer);
+        }
+    }
+
     void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
         std::stringstream ss;
 
@@ -388,7 +413,16 @@ namespace rocket_bundle {
         // BEGIN every modules gen their own code
         ClearAllVisitedMark();
         for (auto& tuple : modules_map_) {
-            EnqueueOne([this, mod = tuple.second, config] {
+            std::shared_ptr<UniqueNameGenerator> renamer;
+
+            if (config.minify) {
+                renamer = name_generator->Fork();
+            }
+
+            EnqueueOne([this, mod = tuple.second, config, renamer] {
+                if (renamer) {
+                    mod->RenameInnerScopes(renamer);
+                }
                 mod->CodeGenFromAst(config);
                 FinishOne();
             });

@@ -96,6 +96,8 @@ namespace rocket_bundle {
 
         robin_hood::unordered_map<UString, Variable> own_variables;
 
+        std::vector<Scope*> children;
+
     protected:
         Scope* parent = nullptr;
 
@@ -103,8 +105,6 @@ namespace rocket_bundle {
          * log identifier when parsing
          */
         std::list<std::shared_ptr<Identifier>> unresolved_id;
-
-        std::vector<Scope*> children;
 
     };
 

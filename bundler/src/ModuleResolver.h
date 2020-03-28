@@ -98,6 +98,9 @@ namespace rocket_bundle {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
+        void RenameInnerScopes(const Sp<UniqueNameGenerator>& renamer);
+        void RenameInnerScopes(Scope& scope, const Sp<UniqueNameGenerator>& renamer);
+
         void CodeGenFromAst(const CodeGen::Config &config);
 
         UString GetModuleVarName();
