@@ -67,12 +67,6 @@ Usage:
 
 # Use the parser as a library
 
-Please install jemalloc on your mac:
-
-```shell script
-brew install jemalloc
-```
-
 rocket-bundle.js is built with CMake, so it can be
 easily integrated to your project.
 
@@ -88,7 +82,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC js-parser)
 Parser parser(src, config);
 ParserContext::Config config = ParserContext::Config::Default();
 auto src = std::make_shared<UString>();
-(*src) = Artery::ReadFileStream(mf->path);
+(*src) = ModuleResolver::ReadFileStream(mf->path);
 auto ctx = std::make_shared<ParserContext>(src, config);
 Parser parser(ctx);
 

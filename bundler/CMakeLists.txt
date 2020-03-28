@@ -34,7 +34,7 @@ add_executable(rocket-bundle-test ${SOURCE_FILES}
 target_include_directories(rocket-bundle-test PUBLIC "../third_party/googletest/googletest/include")
 target_link_libraries(rocket-bundle-test gtest_main)
 
-set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE} "-g3 -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
 
 if (UNIX)
 

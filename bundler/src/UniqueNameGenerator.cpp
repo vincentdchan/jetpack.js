@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "UniqueNameGenerator.h"
 #include "Utils.h"
+#include <string>
 
 namespace rocket_bundle {
 
@@ -14,10 +15,20 @@ namespace rocket_bundle {
     static constexpr std::size_t FirstCharCandidatesSize = sizeof(FirstCharCandidates) - 1;
     static constexpr std::size_t CharCandidatesSize = sizeof(CharCandidates) - 1;
 
-    MinifyNameGenerator::MinifyNameGenerator() {
+    std::optional<std::u16string>
+    ReadableNameGenerator::Next(const std::u16string &original_name) {
+        if (used_name.find(original_name) == used_name.end()) {  // not exist
+            used_name.insert(original_name);
+            return std::nullopt;
+        }
+
+        std::u16string new_name = original_name + u"_" + utils::To_UTF16(std::to_string(counter++));
+        used_name.insert(new_name);
+        return { new_name };
     }
 
-    std::u16string MinifyNameGenerator::Next(const std::u16string& original) {
+    std::optional<std::u16string>
+    MinifyNameGenerator::Next(const std::u16string& original) {
         std::string result;
 
         std::memset(buffer, 0, BUFFER_SIZE * sizeof(std::int32_t));
@@ -53,7 +64,7 @@ namespace rocket_bundle {
         }
 
         counter++;
-        return utils::To_UTF16(result);
+        return { utils::To_UTF16(result) };
     }
 
 }

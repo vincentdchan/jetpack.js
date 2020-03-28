@@ -18,12 +18,16 @@
 #define OPT_JSX "jsx"
 #define OPT_ANALYZE_MODULE "analyze-module"
 #define OPT_NO_TRACE "no-trace"
+#define OPT_MINIFY "minify"
 #define OPT_OUT "out"
 
 using namespace rocket_bundle;
 
 static int AnalyzeModule(const std::string& self_path, const std::string& path, bool trace_file);
-static int BundleModule(const std::string& self_path, const std::string& path, const std::string& out_path);
+static int BundleModule(const std::string& self_path,
+                        bool minify,
+                        const std::string& path,
+                        const std::string& out_path);
 
 int main(int argc, char** argv) {
     try {
@@ -35,6 +39,7 @@ int main(int argc, char** argv) {
                 (OPT_HELP, "produce help message")
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
                 (OPT_NO_TRACE, "do not trace ref file when analyze module")
+                (OPT_MINIFY, "minify the code")
                 (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
                 ;
 
@@ -42,6 +47,7 @@ int main(int argc, char** argv) {
 
         auto result = options.parse(argc, argv);
         bool trace_file = true;
+        bool minify = false;
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -51,6 +57,9 @@ int main(int argc, char** argv) {
 
         if (result[OPT_NO_TRACE].count()) {
             trace_file = false;
+        }
+        if (result[OPT_MINIFY].count()) {
+            minify = true;
         }
 
         if (result[OPT_ANALYZE_MODULE].count()) {
@@ -62,7 +71,7 @@ int main(int argc, char** argv) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(argv[0], entry_path, out_path);
+            return BundleModule(argv[0], minify, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;
@@ -92,12 +101,21 @@ static int AnalyzeModule(const std::string& self_path_str, const std::string& pa
     }
 }
 
-static int BundleModule(const std::string& self_path_str, const std::string& path, const std::string& out_path) {
+static int BundleModule(const std::string& self_path_str,
+                        bool minify,
+                        const std::string& path,
+                        const std::string& out_path) {
+
     Path self_path(self_path_str);
     self_path.Pop();
 
     try {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
+
+        if (minify) {
+            resolver->SetNameGenerator(std::make_shared<MinifyNameGenerator>());
+        }
+
         resolver->SetTraceFile(true);
         resolver->BeginFromEntry(self_path.ToString(), path);
         resolver->CodeGenAllModules(out_path);

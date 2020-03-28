@@ -22,10 +22,11 @@ TEST(MinifyNameGenerator, Next) {
     std::unordered_set<std::u16string> gen_set;
 
     for (int i = 0; i < 10000; i++) {
-        auto next_str = gen.Next(u"");
+        auto next_str_opt = gen.Next(u"");
+        EXPECT_TRUE(next_str_opt.has_value());
 //        std::cout << utils::To_UTF8(next_str) << std::endl;
-        EXPECT_TRUE(gen_set.find(next_str) == gen_set.end());
-        gen_set.insert(next_str);
+        EXPECT_TRUE(gen_set.find(*next_str_opt) == gen_set.end());
+        gen_set.insert(*next_str_opt);
     }
 }
 

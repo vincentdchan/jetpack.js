@@ -367,13 +367,7 @@ namespace rocket_bundle {
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
-        std::unordered_set<UString> used_name;
-//
-//        for (auto& tuple : final_export_vars) {
-//            used_name.insert(std::get<1>(tuple));
-//        }
-
-        RenameAllRootLevelVariable(used_name);
+        RenameAllRootLevelVariable();
 
         ClearAllVisitedMark();
         TraverseRenameAllImports(entry_module);
@@ -407,16 +401,15 @@ namespace rocket_bundle {
         out.close();
     }
 
-    void ModuleResolver::RenameAllRootLevelVariable(std::unordered_set<UString> &used_name) {
+    void ModuleResolver::RenameAllRootLevelVariable() {
         ClearAllVisitedMark();
 
         std::int32_t counter = 0;
-        RenameAllRootLevelVariableTraverser(entry_module, counter, used_name);
+        RenameAllRootLevelVariableTraverser(entry_module, counter);
     }
 
     void ModuleResolver::RenameAllRootLevelVariableTraverser(const std::shared_ptr<ModuleFile> &mf,
-                                                             std::int32_t& counter,
-                                                             std::unordered_set<UString> &used_name) {
+                                                             std::int32_t& counter) {
         if (mf->visited_mark) {
             return;
         }
@@ -424,7 +417,7 @@ namespace rocket_bundle {
 
         for (auto& weak_child : mf->ref_mods) {
             auto child = weak_child.lock();
-            RenameAllRootLevelVariableTraverser(child, counter, used_name);
+            RenameAllRootLevelVariableTraverser(child, counter);
         }
 
         // do your own work
@@ -434,13 +427,11 @@ namespace rocket_bundle {
 
         // Distribute new name to root level variables
         for (auto& var : mf->ast->scope->own_variables) {
-            if (used_name.find(var.first) != used_name.end()) {
-                UString new_name = var.first + u"_" + utils::To_UTF16(std::to_string(counter++));
+            auto new_name_opt = name_generator->Next(var.first);
 
-                rename_vec.emplace_back(var.first, new_name);
-                used_name.insert(new_name);
+            if (new_name_opt.has_value()) {
+                rename_vec.emplace_back(var.first, *new_name_opt);
             }
-            used_name.insert(var.first);
         }
 
         for (auto& tuple : rename_vec) {

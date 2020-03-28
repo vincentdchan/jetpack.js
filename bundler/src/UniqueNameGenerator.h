@@ -5,6 +5,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
+#include <optional>
 
 namespace rocket_bundle {
 
@@ -12,9 +14,22 @@ namespace rocket_bundle {
     public:
         UniqueNameGenerator() = default;
 
-        virtual std::u16string Next(const std::u16string& original_name) = 0;
+        virtual std::optional<std::u16string> Next(const std::u16string& original_name) = 0;
+
+        std::unordered_set<std::u16string> used_name;
 
         virtual ~UniqueNameGenerator() = default;
+
+    };
+
+    class ReadableNameGenerator : public UniqueNameGenerator {
+    public:
+        ReadableNameGenerator() = default;
+
+        std::optional<std::u16string> Next(const std::u16string& original_name) override;
+
+    private:
+        std::int32_t counter = 0;
 
     };
 
@@ -22,9 +37,9 @@ namespace rocket_bundle {
     public:
         static constexpr std::size_t BUFFER_SIZE = 32;
 
-        MinifyNameGenerator();
+        MinifyNameGenerator() = default;
 
-        std::u16string Next(const std::u16string& original_name) override;
+        std::optional<std::u16string> Next(const std::u16string& original_name) override;
 
     private:
         std::int32_t buffer[BUFFER_SIZE];

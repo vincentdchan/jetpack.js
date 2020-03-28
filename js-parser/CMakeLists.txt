@@ -36,6 +36,8 @@ add_library(js-parser STATIC ${source_files})
 target_link_libraries(js-parser
         PUBLIC nlohmann_json::nlohmann_json tsl::ordered_map)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
+
 IF (CMAKE_BUILD_TYPE STREQUAL Debug)
   ADD_DEFINITIONS(-DDEBUG)
 ENDIF()

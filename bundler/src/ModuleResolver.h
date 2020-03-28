@@ -18,6 +18,8 @@
 #include <fstream>
 #include <parser/Parser.hpp>
 
+#include "./UniqueNameGenerator.h"
+
 namespace rocket_bundle {
 
     template<class Key, class T, class Ignore, class Allocator,
@@ -114,6 +116,7 @@ namespace rocket_bundle {
         static std::u16string ReadFileStream(const std::string& filename);
 
         ModuleResolver() : mod_counter_(0) {
+            name_generator = std::make_shared<ReadableNameGenerator>();
         }
 
         void BeginFromEntry(std::string base_path, std::string origin_path);
@@ -149,6 +152,10 @@ namespace rocket_bundle {
             }
         }
 
+        inline void SetNameGenerator(std::shared_ptr<UniqueNameGenerator> generator) {
+            name_generator = std::move(generator);
+        }
+
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
 
     private:
@@ -163,10 +170,9 @@ namespace rocket_bundle {
                 const Sp<ModuleFile>&,
                 std::unordered_set<UString>* white_list);
 
-        void RenameAllRootLevelVariable(std::unordered_set<UString>& used_name);
+        void RenameAllRootLevelVariable();
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
-                                                 std::int32_t& counter,
-                                                 std::unordered_set<UString>& used_name);
+                                                 std::int32_t& counter);
 
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
@@ -184,6 +190,8 @@ namespace rocket_bundle {
         FindLocalExportByPath(const std::string& path, const UString& export_name, std::set<std::int32_t>& visited);
 
         Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
+
+        std::shared_ptr<UniqueNameGenerator> name_generator;
 
         std::mutex map_mutex_;
 
