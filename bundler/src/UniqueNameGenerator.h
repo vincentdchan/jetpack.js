@@ -14,6 +14,8 @@ namespace rocket_bundle {
 
         virtual std::u16string Next(const std::u16string& original_name) = 0;
 
+        virtual ~UniqueNameGenerator() = default;
+
     };
 
     class MinifyNameGenerator : public UniqueNameGenerator {

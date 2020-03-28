@@ -8,10 +8,11 @@
 
 namespace rocket_bundle {
 
-    static const char FirstCharCandidates[] = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
-//    static const char CharCandidates[] = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+    static const char FirstCharCandidates[] = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_$";
+    static const char CharCandidates[] = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_$";
 
-    static_assert(sizeof(FirstCharCandidates) == 53);
+    static constexpr std::size_t FirstCharCandidatesSize = sizeof(FirstCharCandidates) - 1;
+    static constexpr std::size_t CharCandidatesSize = sizeof(CharCandidates) - 1;
 
     MinifyNameGenerator::MinifyNameGenerator() {
     }
@@ -26,14 +27,28 @@ namespace rocket_bundle {
         if (x == 0) {
             result.push_back(FirstCharCandidates[0]);
         } else {
+            bool is_first = true;
+
             while(x) {
-                buffer[i] = x % 52;
-                x /= 52;
+
+                if (is_first) {
+                    buffer[i] = x % FirstCharCandidatesSize;
+                    x /= FirstCharCandidatesSize;
+                    is_first = false;
+                } else {
+                    buffer[i] = x % CharCandidatesSize;
+                    x /= CharCandidatesSize;
+                }
+
                 i++;
             }
 
-            for (std::int32_t j = i - 0; j >= 0; j--) {
-                result.push_back(FirstCharCandidates[buffer[j]]);
+            for (std::int32_t j = 0; j < i; j++) {
+                if (j == 0) {
+                    result.push_back(FirstCharCandidates[buffer[j]]);
+                } else {
+                    result.push_back(CharCandidates[buffer[j]]);
+                }
             }
         }
 

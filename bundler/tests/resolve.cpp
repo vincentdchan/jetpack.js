@@ -23,6 +23,7 @@ TEST(MinifyNameGenerator, Next) {
 
     for (int i = 0; i < 10000; i++) {
         auto next_str = gen.Next(u"");
+//        std::cout << utils::To_UTF8(next_str) << std::endl;
         EXPECT_TRUE(gen_set.find(next_str) == gen_set.end());
         gen_set.insert(next_str);
     }
