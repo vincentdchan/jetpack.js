@@ -2,7 +2,7 @@
 
 `rocket-bundls.js` is an extremely fast js bundler and minifier.
 
-Rocket Bundle a well-designed tool. It's modulize into parser and bundler.
+Rocket Bundle a well designed tool. It's modulize into parser and bundler.
 The parser can be used as a library independently.
 
 - [Why](#why)
@@ -62,6 +62,7 @@ Usage:
       --help                produce help message
       --analyze-module arg  analyze a module and print result
       --no-trace            do not trace ref file when analyze module
+      --minify              minify the code
       --out arg             output filename of bundle
 ```
 
