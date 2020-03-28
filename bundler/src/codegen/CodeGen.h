@@ -38,11 +38,15 @@ namespace rocket_bundle {
 
     public:
         struct Config {
+        public:
+            Config() = default;
+
             std::uint32_t start_indent_level = 0;
             std::string indent = "  ";
             std::string line_end = "\n";
             bool source_map = false;
             bool comments = true;
+
         };
 
         CodeGen();

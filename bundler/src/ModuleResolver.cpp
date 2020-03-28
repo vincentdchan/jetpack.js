@@ -45,10 +45,13 @@ namespace rocket_bundle {
         return mod_var;
     }
 
-    void ModuleFile::CodeGenFromAst() {
+    void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
         std::stringstream ss;
-        ss << "// " << this->path << std::endl;
-        CodeGen::Config config;
+
+        if (config.comments) {
+            ss << "// " << this->path << std::endl;
+        }
+
         CodeGen codegen(config, ss);
         codegen.Traverse(ast);
         codegen_result = ss.str();
@@ -360,7 +363,7 @@ namespace rocket_bundle {
      * 3. replace all import declarations
      * 4. generate final export declaration
      */
-    void ModuleResolver::CodeGenAllModules(const std::string& out_path) {
+    void ModuleResolver::CodeGenAllModules(const CodeGen::Config& config, const std::string& out_path) {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
@@ -375,8 +378,8 @@ namespace rocket_bundle {
         // BEGIN every modules gen their own code
         ClearAllVisitedMark();
         for (auto& tuple : modules_map_) {
-            EnqueueOne([this, mod = tuple.second] {
-                mod->CodeGenFromAst();
+            EnqueueOne([this, mod = tuple.second, config] {
+                mod->CodeGenFromAst(config);
                 FinishOne();
             });
         }
@@ -394,7 +397,6 @@ namespace rocket_bundle {
         MergeModules(entry_module, out);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen::Config config;
         CodeGen codegen(config, out);
         codegen.Traverse(final_export);
 
@@ -479,8 +481,13 @@ namespace rocket_bundle {
                  */
                 case SyntaxNodeType::ExportDefaultDeclaration: {
                     auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
-                    std::string new_name = "default_" + std::to_string(NextNameId());
-                    mf->default_export_name = utils::To_UTF16(new_name);
+                    UString new_name = u"_default";
+                    auto new_name_opt = name_generator->Next(new_name);
+                    if (new_name_opt.has_value()) {
+                        new_name = *new_name_opt;
+                    }
+
+                    mf->default_export_name = new_name;
 
                     if (export_default_decl->declaration->IsExpression()) {
                         auto exist_id = std::dynamic_pointer_cast<Expression>(export_default_decl->declaration);
@@ -602,7 +609,7 @@ namespace rocket_bundle {
 
                     auto export_info = mf->GetExportManager().local_exports_name[u"default"];
                     if (export_info) {
-                        export_info->local_name = utils::To_UTF16(new_name);
+                        export_info->local_name = new_name;
                     }
 
                     break;

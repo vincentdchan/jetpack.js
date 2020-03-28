@@ -19,6 +19,7 @@
 #include <parser/Parser.hpp>
 
 #include "./UniqueNameGenerator.h"
+#include "codegen/CodeGen.h"
 
 namespace rocket_bundle {
 
@@ -97,7 +98,7 @@ namespace rocket_bundle {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
-        void CodeGenFromAst();
+        void CodeGenFromAst(const CodeGen::Config &config);
 
         UString GetModuleVarName();
 
@@ -137,14 +138,9 @@ namespace rocket_bundle {
 
         void PrintErrors();
 
-        void CodeGenAllModules(const std::string& out_path);
+        void CodeGenAllModules(const CodeGen::Config& config, const std::string& out_path);
 
         void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
-
-        inline std::int32_t NextNameId() {
-            std::lock_guard<std::mutex> guard(main_lock_);
-            return name_counter_++;
-        }
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_map_) {
@@ -154,6 +150,10 @@ namespace rocket_bundle {
 
         inline void SetNameGenerator(std::shared_ptr<UniqueNameGenerator> generator) {
             name_generator = std::move(generator);
+        }
+
+        inline std::int32_t ModCount() const {
+            return mod_counter_;
         }
 
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
@@ -204,8 +204,6 @@ namespace rocket_bundle {
 
         std::int32_t enqueued_files_count_ = 0;
         std::int32_t finished_files_count_ = 0;
-
-        std::int32_t name_counter_ = 0;
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;

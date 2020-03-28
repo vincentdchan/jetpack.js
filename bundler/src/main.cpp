@@ -11,6 +11,7 @@
 
 #include "Path.h"
 #include "ModuleResolver.h"
+#include "codegen/CodeGen.h"
 
 #define OPT_HELP "help"
 #define OPT_ENTRY "entry"
@@ -111,14 +112,19 @@ static int BundleModule(const std::string& self_path_str,
 
     try {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
+        CodeGen::Config config;
 
         if (minify) {
+            config.comments = false;
             resolver->SetNameGenerator(std::make_shared<MinifyNameGenerator>());
         }
 
         resolver->SetTraceFile(true);
         resolver->BeginFromEntry(self_path.ToString(), path);
-        resolver->CodeGenAllModules(out_path);
+        resolver->CodeGenAllModules(config, out_path);
+
+        std::cout << "Finished." << std::endl;
+        std::cout << "Totally " << resolver->ModCount() << " file(s)." << std::endl;
         return 0;
     } catch (ModuleResolveException& err) {
         err.PrintToStdErr();
