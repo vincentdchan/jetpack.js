@@ -83,6 +83,7 @@ namespace rocket_bundle {
         }
 
         inline void WriteLineEnd() {
+//            if (config_.minify) return;
             output << config_.line_end;
             state_.line++;
 #ifdef DEBUG
@@ -91,6 +92,7 @@ namespace rocket_bundle {
         }
 
         inline void WriteIndent() {
+            if (config_.minify) return;
             for (std::uint32_t i = 0; i < state_.indent_level; i++) {
                 Write(config_.indent);
             }

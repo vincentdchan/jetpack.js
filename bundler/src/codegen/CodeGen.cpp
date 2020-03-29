@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define S_COMMA (config_.minify ? "," : ", ")
+
 namespace rocket_bundle {
 
     CodeGen::CodeGen(): CodeGen(Config(), std::cout) {
@@ -102,7 +104,7 @@ namespace rocket_bundle {
             for (std::size_t i = 0; i < node->declarations.size(); i++) {
                 this->Traverse(node->declarations[i]);
                 if (i < node->declarations.size() - 1) {
-                    Write(", ");
+                    Write(S_COMMA);
                 }
             }
         }
@@ -129,7 +131,7 @@ namespace rocket_bundle {
         for (std::size_t i = 0; i < params.size(); i++) {
             TraverseNode(params[i]);
             if (i < params.size() - 1) {
-                Write(", ");
+                Write(S_COMMA);
             }
         }
         Write(")");
@@ -195,9 +197,9 @@ namespace rocket_bundle {
                 TraverseNode(*elem);
             }
             if (count++ < node->elements.size() - 1) {
-                output << ", ";
+                output << S_COMMA;
             } else if (!elem.has_value()) {
-                output << ", ";
+                output << S_COMMA;
             }
         }
         output << ']';
@@ -208,10 +210,14 @@ namespace rocket_bundle {
         state_.indent_level++;
 
         if (!node->body.empty()) {
-            WriteLineEnd();
+            if (!config_.minify) {
+                WriteLineEnd();
+            }
             for (auto& elem : node->body) {
                 WriteCommentBefore(elem);
+
                 WriteIndent();
+
                 TraverseNode(elem);
                 WriteLineEnd();
             }
@@ -240,11 +246,12 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<IfStatement> &node) {
-        Write("if (");
+        Write(config_.minify ? "if(" : "if (");
         TraverseNode(node->test);
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->consequent);
         if (node->alternate.has_value()) {
+//            Write(config_.minify ? "else" : " else ");
             Write(" else ");
             TraverseNode(*node->alternate);
         }
@@ -275,16 +282,16 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<WithStatement> &node) {
-        Write("with (");
+        Write(config_.minify ? "with(" : "with (");
         TraverseNode(node->object);
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<SwitchStatement> &node) {
-        Write("switch (");
+        Write(config_.minify ? "switch(" : "switch (");
         TraverseNode(node->discrimiant);
-        Write(") {");
+        Write(config_.minify ? "){" : ") {");
         WriteLineEnd();
         state_.indent_level++;
 
@@ -329,40 +336,40 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<TryStatement> &node) {
-        Write("try ");
+        Write(config_.minify ? "try" : "try ");
         TraverseNode(node->block);
 
         if (node->handler.has_value()) {
             auto handler = *node->handler;
-            Write(" catch (");
+            Write(config_.minify ? "catch(" : " catch (");
             TraverseNode(handler->param);
             Write(")");
             TraverseNode(handler->body);
         }
 
         if (node->finalizer.has_value()) {
-            Write(" finally ");
+            Write(config_.minify ? "finally" : " finally ");
             TraverseNode(*node->finalizer);
         }
     }
 
     void CodeGen::Traverse(const Sp<WhileStatement> &node) {
-        Write("while (");
+        Write(config_.minify ? "while(" : "while (");
         TraverseNode(node->test);
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<DoWhileStatement> &node) {
-        Write("do ");
+        Write(config_.minify ? "do" : "do ");
         TraverseNode(node->body);
-        Write(" while (");
+        Write(config_.minify ? "while(" : " while (");
         TraverseNode(node->test);
         Write(");");
     }
 
     void CodeGen::Traverse(const Sp<ForStatement> &node) {
-        Write("for (");
+        Write(config_.minify ? "for(" : "for (");
         if (node->init.has_value()) {
             auto init = *node->init;
             if (init->type == SyntaxNodeType::VariableDeclaration) {
@@ -372,20 +379,20 @@ namespace rocket_bundle {
                 TraverseNode(init);
             }
         }
-        Write("; ");
+        Write(config_.minify ? ";" : "; ");
         if (node->test.has_value()) {
             TraverseNode(*node->test);
         }
-        Write("; ");
+        Write(config_.minify ? ";" : "; ");
         if (node->update.has_value()) {
             TraverseNode(*node->update);
         }
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<ForInStatement> &node) {
-        Write("for (");
+        Write(config_.minify ? "for(" : "for (");
         if (node->left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_pointer_cast<VariableDeclaration>(node->left);
             FormatVariableDeclaration(decl);
@@ -394,12 +401,12 @@ namespace rocket_bundle {
         }
         Write(" in ");
         TraverseNode(node->right);
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<ForOfStatement> & node) {
-        Write("for (");
+        Write(config_.minify ? "for(" : "for (");
         if (node->left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_pointer_cast<VariableDeclaration>(node->left);
             FormatVariableDeclaration(decl);
@@ -408,7 +415,7 @@ namespace rocket_bundle {
         }
         Write(" of ");
         TraverseNode(node->right);
-        Write(") ");
+        Write(config_.minify ? ")" : ") ");
         TraverseNode(node->body);
     }
 
@@ -433,7 +440,9 @@ namespace rocket_bundle {
         }
 
         FormatSequence(node->params);
-        Write(" ");
+        if (!config_.minify) {
+            Write(" ");
+        }
         TraverseNode(node->body);
     }
 
@@ -453,7 +462,9 @@ namespace rocket_bundle {
         }
 
         FormatSequence(node->params);
-        Write(" ");
+        if (!config_.minify) {
+            Write(" ");
+        }
         TraverseNode(node->body);
     }
 
@@ -465,7 +476,7 @@ namespace rocket_bundle {
     void CodeGen::Traverse(const Sp<VariableDeclarator> &node) {
         TraverseNode(node->id);
         if (node->init.has_value()) {
-            Write(" = ");
+            Write(config_.minify ? "=" : " = ");
             TraverseNode(*node->init);
         }
     }
@@ -479,7 +490,9 @@ namespace rocket_bundle {
         if (node->super_class.has_value()) {
             Write("extends ");
             TraverseNode(*node->super_class);
-            Write(" ");
+            if (!config_.minify) {
+                Write(" ");
+            }
         }
         TraverseNode(node->body);
     }
@@ -509,7 +522,7 @@ namespace rocket_bundle {
         if (node->specifiers.size() > 0) {
             for (auto& spec : node->specifiers) {
                 if (i > 0) {
-                    Write(", ");
+                    Write(config_.minify ? "," : ", ");
                 }
                 if (spec->type == SyntaxNodeType::ImportDefaultSpecifier) {
                     auto default_ = dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
@@ -525,7 +538,7 @@ namespace rocket_bundle {
                 }
             }
             if (i < node->specifiers.size()) {
-                Write("{ ");
+                Write(config_.minify ? "{" : "{ ");
                 while (true) {
                     auto spec = node->specifiers[i];
                     auto import_ = dynamic_pointer_cast<ImportSpecifier>(spec);
@@ -535,12 +548,12 @@ namespace rocket_bundle {
                         Write(temp);
                     }
                     if (++i < node->specifiers.size()) {
-                        Write(", ");
+                        Write(S_COMMA);
                     } else {
                         break;
                     }
                 }
-                Write(" }");
+                Write(config_.minify ? "}" : " }");
             }
             Write(" from ");
         }
@@ -563,7 +576,7 @@ namespace rocket_bundle {
         if (node->declaration.has_value()) {
             TraverseNode(*node->declaration);
         } else {
-            Write("{ ");
+            Write(config_.minify ? "{" : "{ ");
             if (node->specifiers.size() > 0) {
                 std::uint32_t i = 0;
                 for (auto& spec : node->specifiers) {
@@ -573,13 +586,13 @@ namespace rocket_bundle {
                         Write(temp);
                     }
                     if (++i < node->specifiers.size()) {
-                        Write(", ");
+                        Write(S_COMMA);
                     } else {
                         break;
                     }
                 }
             }
-            Write(" }");
+            Write(config_.minify ? "}" : " }");
             if (node->source.has_value()) {
                 Write(" from ");
                 this->Traverse(*node->source);
@@ -632,7 +645,9 @@ namespace rocket_bundle {
                 TraverseNode(*node->key);
             }
             FormatSequence(fun_expr->params);
-            Write(" ");
+            if (!config_.minify) {
+                Write(" ");
+            }
             TraverseNode(fun_expr->body);
         }
     }
@@ -650,7 +665,7 @@ namespace rocket_bundle {
                 FormatSequence(params);
             }
         }
-        Write(" => ");
+        Write(config_.minify ? "=>" : " => ");
         if (node->body->type == SyntaxNodeType::ObjectExpression) {
             Write("(");
             Sp<ObjectExpression> oe = dynamic_pointer_cast<ObjectExpression>(node->body);
@@ -758,7 +773,7 @@ namespace rocket_bundle {
         }
         if (node->value.has_value()) {
             if (!shorthand) {
-                Write(": ");
+                Write(config_.minify ? ":" : ": ");
             }
             TraverseNode(*node->value);
         }
@@ -795,13 +810,17 @@ namespace rocket_bundle {
 
     void CodeGen::Traverse(const Sp<AssignmentExpression> &node) {
         TraverseNode(node->left);
-        Write(UString(u" ") + node->operator_ + u" ");
+        if (config_.minify) {
+            Write(node->operator_);
+        } else {
+            Write(UString(u" ") + node->operator_ + u" ");
+        }
         TraverseNode(node->right);
     }
 
     void CodeGen::Traverse(const Sp<AssignmentPattern> &node) {
         TraverseNode(node->left);
-        Write(" = ");
+        Write(config_.minify ? "=" : " = ");
         TraverseNode(node->right);
     }
 
@@ -811,7 +830,11 @@ namespace rocket_bundle {
             Write("(");
         }
         FormatBinaryExpression(node->left, node, false);
-        Write(u" " + node->operator_ + u" ");
+        if (config_.minify && node->operator_ != u"in" && node->operator_ != u"instanceof") {
+            Write(node->operator_);
+        } else {
+            Write(u" " + node->operator_ + u" ");
+        }
         FormatBinaryExpression(node->right, node, true);
         if (is_in) {
             Write(")");
@@ -828,9 +851,9 @@ namespace rocket_bundle {
             TraverseNode(node->test);
             Write(")");
         }
-        Write(" ? ");
+        Write(config_.minify ? "?" : " ? ");
         TraverseNode(node->consequent);
-        Write(" : ");
+        Write(config_.minify ? ":" : " : ");
         TraverseNode(node->alternate);
     }
 
@@ -905,7 +928,7 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<ObjectPattern>& node) {
-        Write("{ ");
+        Write(config_.minify ? "{" : "{ ");
         for (std::size_t i = 0; ;) {
             TraverseNode(node->properties[i]);
             if (++i < node->properties.size()) {
@@ -914,7 +937,7 @@ namespace rocket_bundle {
                 break;
             }
         }
-        Write(" }");
+        Write(config_.minify ? "}" : " }");
     }
 
     void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {
