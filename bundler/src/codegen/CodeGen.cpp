@@ -906,7 +906,11 @@ namespace rocket_bundle {
     }
 
     void CodeGen::Traverse(const Sp<Identifier> &node) {
-        Write(node->name, node);
+        if (config_.minify && node->name == u"undefined") {
+            Write("void 0");
+        } else {
+            Write(node->name, node);
+        }
     }
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
