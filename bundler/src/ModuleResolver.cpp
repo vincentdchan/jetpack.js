@@ -45,14 +45,30 @@ namespace rocket_bundle {
         return mod_var;
     }
 
-    void ModuleFile::RenameInnerScopes(const Sp<UniqueNameGenerator> &renamer) {
+    void ModuleFile::RenameInnerScopes(RenamerCollection& renamer) {
+        std::vector<Sp<MinifyNameGenerator>> result;
+        result.reserve(ast->scope->children.size());
         for (auto child : ast->scope->children) {
-            RenameInnerScopes(*child, renamer);
+            result.push_back(RenameInnerScopes(*child));
+        }
+
+        auto final = MinifyNameGenerator::Merge(result);
+        {
+            std::lock_guard<std::mutex> lk(renamer.mutex_);
+            renamer.content.push_back(std::move(final));
         }
     }
 
-    void ModuleFile::RenameInnerScopes(Scope &scope, const Sp<UniqueNameGenerator> &renamer) {
+    Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope) {
+        std::vector<Sp<MinifyNameGenerator>> temp;
+        temp.reserve(scope.children.size());
+
+        for (auto child : scope.children) {
+            temp.push_back(RenameInnerScopes(*child));
+        }
+
         std::vector<std::tuple<UString, UString>> renames;
+        auto renamer = MinifyNameGenerator::Merge(temp);
 
         for (auto& variable : scope.own_variables) {
             auto new_opt = renamer->Next(variable.first);
@@ -65,9 +81,7 @@ namespace rocket_bundle {
             scope.RenameSymbol(std::get<0>(tuple), std::get<1>(tuple));
         }
 
-        for (auto child : scope.children) {
-            RenameInnerScopes(*child, renamer);
-        }
+        return renamer;
     }
 
     void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
@@ -405,7 +419,32 @@ namespace rocket_bundle {
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
-        RenameAllRootLevelVariable();
+        if (config.minify) {
+            ClearAllVisitedMark();
+            RenamerCollection collection;
+
+            for (auto& tuple : modules_map_) {
+                EnqueueOne([this, mod = tuple.second, config, &collection] {
+                    mod->RenameInnerScopes(collection);
+                    mod->CodeGenFromAst(config);
+                    FinishOne();
+                });
+            }
+            std::unique_lock<std::mutex> lk(main_lock_);
+            main_cv_.wait(lk, [this] {
+                return finished_files_count_ >= enqueued_files_count_;
+            });
+            if (!worker_errors_.empty()) {
+                WokerErrorCollection col;
+                col.errors = std::move(worker_errors_);
+                throw col;
+            }
+            std::vector<std::tuple<UString, UString>> renames;
+            name_generator = MinifyNameGenerator::Merge(collection.content);
+            RenameAllRootLevelVariable();
+        } else {
+            RenameAllRootLevelVariable();
+        }
 
         ClearAllVisitedMark();
         TraverseRenameAllImports(entry_module);
@@ -413,16 +452,7 @@ namespace rocket_bundle {
         // BEGIN every modules gen their own code
         ClearAllVisitedMark();
         for (auto& tuple : modules_map_) {
-            std::shared_ptr<UniqueNameGenerator> renamer;
-
-            if (config.minify) {
-                renamer = name_generator->Fork();
-            }
-
-            EnqueueOne([this, mod = tuple.second, config, renamer] {
-                if (renamer) {
-                    mod->RenameInnerScopes(renamer);
-                }
+            EnqueueOne([this, mod = tuple.second, config] {
                 mod->CodeGenFromAst(config);
                 FinishOne();
             });

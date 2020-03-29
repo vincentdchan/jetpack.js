@@ -16,6 +16,7 @@
 #include <functional>
 #include <robin_hood.h>
 #include <fstream>
+#include <mutex>
 #include <parser/Parser.hpp>
 
 #include "./UniqueNameGenerator.h"
@@ -60,6 +61,14 @@ namespace rocket_bundle {
 
     };
 
+    struct RenamerCollection {
+    public:
+        std::vector<Sp<MinifyNameGenerator>> content;
+
+        std::mutex mutex_;
+
+    };
+
     class ModuleFile {
     public:
         /**
@@ -98,8 +107,8 @@ namespace rocket_bundle {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
-        void RenameInnerScopes(const Sp<UniqueNameGenerator>& renamer);
-        void RenameInnerScopes(Scope& scope, const Sp<UniqueNameGenerator>& renamer);
+        void RenameInnerScopes(RenamerCollection& col);
+        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope);
 
         void CodeGenFromAst(const CodeGen::Config &config);
 
