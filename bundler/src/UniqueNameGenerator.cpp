@@ -3,9 +3,10 @@
 //
 
 #include <cstdlib>
+#include <string>
+#include <vector>
 #include "UniqueNameGenerator.h"
 #include "Utils.h"
-#include <string>
 
 namespace rocket_bundle {
 
@@ -127,6 +128,19 @@ namespace rocket_bundle {
     std::shared_ptr<MinifyNameGenerator> MinifyNameGenerator::Make() {
         std::shared_ptr<MinifyNameGenerator> result(new MinifyNameGenerator);
         result->weak_self = result;
+        return result;
+    }
+
+    std::shared_ptr<MinifyNameGenerator>
+    MinifyNameGenerator::Merge(std::vector<std::shared_ptr<MinifyNameGenerator>> &vec) {
+        auto result = Make();
+
+        for (auto& ptr : vec) {
+            if (ptr->counter > result->counter) {
+                result->counter = ptr->counter;
+            }
+        }
+
         return result;
     }
 

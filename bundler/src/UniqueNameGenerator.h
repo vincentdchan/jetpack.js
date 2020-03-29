@@ -66,6 +66,10 @@ namespace rocket_bundle {
 
         static std::shared_ptr<MinifyNameGenerator> Make();
 
+        static
+        std::shared_ptr<MinifyNameGenerator>
+        Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec);
+
         std::optional<std::u16string> Next(const std::u16string& original_name) override;
 
         bool IsNameUsed(const std::u16string& name) override;

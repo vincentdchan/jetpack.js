@@ -2,9 +2,9 @@
 // Created by Duzhong Chen on 2020/3/20.
 //
 
-#ifndef _WIN32
-#include <jemalloc/jemalloc.h>
-#endif
+//#ifndef _WIN32
+//#include <jemalloc/jemalloc.h>
+//#endif
 
 #include <iostream>
 #include <cxxopts.hpp>
