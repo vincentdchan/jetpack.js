@@ -4,13 +4,13 @@
 #include <limits.h>
 #include <strings.h>
 
-#define JEMALLOC_VERSION "5.2.1-234-g4a78c6d81b3f431070f362c29ab7b492ee0b9e70"
+#define JEMALLOC_VERSION "5.2.1-0-gea6b3e973b477b8061e0076bb257dbd7f3faa756"
 #define JEMALLOC_VERSION_MAJOR 5
 #define JEMALLOC_VERSION_MINOR 2
 #define JEMALLOC_VERSION_BUGFIX 1
-#define JEMALLOC_VERSION_NREV 234
-#define JEMALLOC_VERSION_GID "4a78c6d81b3f431070f362c29ab7b492ee0b9e70"
-#define JEMALLOC_VERSION_GID_IDENT 4a78c6d81b3f431070f362c29ab7b492ee0b9e70
+#define JEMALLOC_VERSION_NREV 0
+#define JEMALLOC_VERSION_GID "ea6b3e973b477b8061e0076bb257dbd7f3faa756"
+#define JEMALLOC_VERSION_GID_IDENT ea6b3e973b477b8061e0076bb257dbd7f3faa756
 
 #define MALLOCX_LG_ALIGN(la)	((int)(la))
 #if LG_SIZEOF_PTR == 2
@@ -71,7 +71,6 @@
 #  endif
 #  define JEMALLOC_FORMAT_ARG(i)
 #  define JEMALLOC_FORMAT_PRINTF(s, i)
-#  define JEMALLOC_FALLTHROUGH
 #  define JEMALLOC_NOINLINE __declspec(noinline)
 #  ifdef __cplusplus
 #    define JEMALLOC_NOTHROW __declspec(nothrow)
@@ -110,11 +109,6 @@
 #  else
 #    define JEMALLOC_FORMAT_PRINTF(s, i)
 #  endif
-#  ifdef JEMALLOC_HAVE_ATTR_FALLTHROUGH
-#    define JEMALLOC_FALLTHROUGH JEMALLOC_ATTR(fallthrough)
-#  else
-#    define JEMALLOC_FALLTHROUGH
-#  endif
 #  define JEMALLOC_NOINLINE JEMALLOC_ATTR(noinline)
 #  define JEMALLOC_NOTHROW JEMALLOC_ATTR(nothrow)
 #  define JEMALLOC_SECTION(s) JEMALLOC_ATTR(section(s))
@@ -127,7 +121,6 @@
 #  define JEMALLOC_ALLOC_SIZE2(s1, s2)
 #  define JEMALLOC_EXPORT
 #  define JEMALLOC_FORMAT_PRINTF(s, i)
-#  define JEMALLOC_FALLTHROUGH
 #  define JEMALLOC_NOINLINE
 #  define JEMALLOC_NOTHROW
 #  define JEMALLOC_SECTION(s)

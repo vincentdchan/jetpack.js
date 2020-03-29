@@ -452,12 +452,13 @@ namespace rocket_bundle {
         }
 
         if (node->generator) {
-            Write("function* ");
+            Write("function*");
         } else {
-            Write("function ");
+            Write("function");
         }
 
         if (node->id.has_value()) {
+            Write(" ");
             Write((*node->id)->name);
         }
 

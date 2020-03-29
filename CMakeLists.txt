@@ -3,6 +3,8 @@ project(rocket-bundle)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
 add_subdirectory(./third_party/nlohmann_json)
 add_subdirectory(./third_party/ordered-map)
 add_subdirectory(./third_party/fmt)

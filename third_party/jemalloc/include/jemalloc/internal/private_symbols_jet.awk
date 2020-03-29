@@ -1,31 +1,42 @@
 #!/usr/bin/env awk -f
 
 BEGIN {
-  sym_prefix = "_"
+  sym_prefix = ""
   split("\
-        _jet_aligned_alloc \
-        _jet_calloc \
-        _jet_dallocx \
-        _jet_free \
-        _jet_mallctl \
-        _jet_mallctlbymib \
-        _jet_mallctlnametomib \
-        _jet_malloc \
-        _jet_malloc_conf \
-        _jet_malloc_message \
-        _jet_malloc_stats_print \
-        _jet_malloc_usable_size \
-        _jet_mallocx \
-        _jet_smallocx_4a78c6d81b3f431070f362c29ab7b492ee0b9e70 \
-        _jet_nallocx \
-        _jet_posix_memalign \
-        _jet_rallocx \
-        _jet_realloc \
-        _jet_sallocx \
-        _jet_sdallocx \
-        _jet_xallocx \
-        _jet_valloc \
-        _pthread_create \
+        jet_aligned_alloc \
+        jet_calloc \
+        jet_dallocx \
+        jet_free \
+        jet_mallctl \
+        jet_mallctlbymib \
+        jet_mallctlnametomib \
+        jet_malloc \
+        jet_malloc_conf \
+        jet_malloc_message \
+        jet_malloc_stats_print \
+        jet_malloc_usable_size \
+        jet_mallocx \
+        jet_smallocx_ea6b3e973b477b8061e0076bb257dbd7f3faa756 \
+        jet_nallocx \
+        jet_posix_memalign \
+        jet_rallocx \
+        jet_realloc \
+        jet_sallocx \
+        jet_sdallocx \
+        jet_xallocx \
+        jet_memalign \
+        jet_valloc \
+        __libc_calloc \
+        __libc_free \
+        __libc_malloc \
+        __libc_memalign \
+        __libc_realloc \
+        __libc_valloc \
+        pthread_create \
+        __free_hook \
+        __malloc_hook \
+        __realloc_hook \
+        __memalign_hook \
         ", exported_symbol_names)
   # Store exported symbol names as keys in exported_symbols.
   for (i in exported_symbol_names) {

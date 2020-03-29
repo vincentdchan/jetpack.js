@@ -11,7 +11,7 @@ malloc_message:malloc_message
 malloc_stats_print:malloc_stats_print
 malloc_usable_size:malloc_usable_size
 mallocx:mallocx
-smallocx_4a78c6d81b3f431070f362c29ab7b492ee0b9e70:smallocx_4a78c6d81b3f431070f362c29ab7b492ee0b9e70
+smallocx_ea6b3e973b477b8061e0076bb257dbd7f3faa756:smallocx_ea6b3e973b477b8061e0076bb257dbd7f3faa756
 nallocx:nallocx
 posix_memalign:posix_memalign
 rallocx:rallocx
@@ -19,4 +19,5 @@ realloc:realloc
 sallocx:sallocx
 sdallocx:sdallocx
 xallocx:xallocx
+memalign:memalign
 valloc:valloc

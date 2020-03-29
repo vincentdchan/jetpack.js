@@ -40,7 +40,6 @@
  */
 #define MALLOC_PRINTF_BUFSIZE	4096
 
-void wrtmessage(void *cbopaque, const char *s);
 int buferror(int err, char *buf, size_t buflen);
 uintmax_t malloc_strtoumax(const char *restrict nptr, char **restrict endptr,
     int base);

@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_set>
 #include <optional>
+#include <mutex>
 
 namespace rocket_bundle {
 
@@ -26,11 +27,15 @@ namespace rocket_bundle {
 
     class UniqueNameGeneratorWithUsedName : public UniqueNameGenerator {
     protected:
-        UniqueNameGeneratorWithUsedName() = default;
+        UniqueNameGeneratorWithUsedName();
 
         std::unordered_set<std::u16string> used_name;
 
-        void InsertJsKeywords();
+        bool IsJsKeyword(const std::u16string name);
+
+    private:
+        static std::once_flag init_once_;
+        static std::unordered_set<std::u16string> long_keywords_set;
 
     };
 

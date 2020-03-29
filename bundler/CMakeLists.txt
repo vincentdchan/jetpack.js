@@ -15,6 +15,23 @@ set(SOURCE_FILES
         "src/codegen/CodeGen.h"
         "src/codegen/CodeGen.cpp")
 
+if (UNIX)
+
+    include_directories("../third_party/jemalloc/include")
+
+    if (APPLE)
+
+        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/libjemalloc.a)
+
+    else()
+
+        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
+        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
+
+    endif()
+
+endif()
+
 include_directories(PUBLIC
         "../bundle-utils/src"
         "../js-parser/src"
@@ -35,21 +52,3 @@ target_include_directories(rocket-bundle-test PUBLIC "../third_party/googletest/
 target_link_libraries(rocket-bundle-test gtest_main)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
-
-if (UNIX)
-
-    include_directories("../third_party/jemalloc/include")
-
-    if (APPLE)
-
-        link_libraries(../third_party/jemalloc/lib/mac/libjemalloc.a)
-
-    else()
-
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        link_libraries(../third_party/jemalloc/lib/linux/libjemalloc.a)
-
-    endif()
-
-endif()
-

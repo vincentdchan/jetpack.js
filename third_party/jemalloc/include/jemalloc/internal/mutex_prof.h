@@ -7,11 +7,8 @@
 
 #define MUTEX_PROF_GLOBAL_MUTEXES					\
     OP(background_thread)						\
-    OP(max_per_bg_thd)							\
     OP(ctl)								\
-    OP(prof)								\
-    OP(prof_thds_data)							\
-    OP(prof_dump)
+    OP(prof)
 
 typedef enum {
 #define OP(mtx) global_prof_mutex_##mtx,

@@ -15,53 +15,35 @@
 
 /*
  * Thread-Specific-Data layout
- * --- data accessed on tcache fast path: state, rtree_ctx, stats ---
+ * --- data accessed on tcache fast path: state, rtree_ctx, stats, prof ---
  * s: state
- * m: thread_allocated
- * k: thread_allocated_next_event_fast
- * f: thread_deallocated
- * h: thread_deallocated_next_event_fast
+ * e: tcache_enabled
+ * m: thread_allocated (config_stats)
+ * f: thread_deallocated (config_stats)
+ * p: prof_tdata (config_prof)
  * c: rtree_ctx (rtree cache accessed on deallocation)
  * t: tcache
  * --- data not accessed on tcache fast path: arena-related fields ---
- * e: tcache_enabled
  * d: arenas_tdata_bypass
  * r: reentrancy_level
- * n: narenas_tdata
- * l: thread_allocated_last_event
- * j: thread_allocated_next_event
- * q: thread_deallocated_last_event
- * u: thread_deallocated_next_event
- * g: tcache_gc_event_wait
- * y: tcache_gc_dalloc_event_wait
- * w: prof_sample_event_wait (config_prof)
- * x: prof_sample_last_event (config_prof)
- * z: stats_interval_event_wait
- * e: stats_interval_last_event
- * p: prof_tdata (config_prof)
- * v: prng_state
+ * x: narenas_tdata
  * i: iarena
  * a: arena
  * o: arenas_tdata
- * b: binshards
  * Loading TSD data is on the critical path of basically all malloc operations.
  * In particular, tcache and rtree_ctx rely on hot CPU cache to be effective.
  * Use a compact layout to reduce cache footprint.
  * +--- 64-bit and 64B cacheline; 1B each letter; First byte on the left. ---+
  * |----------------------------  1st cacheline  ----------------------------|
- * | sedrnnnn mmmmmmmm kkkkkkkk ffffffff hhhhhhhh [c * 24  ........ ........]|
+ * | sedrxxxx mmmmmmmm ffffffff pppppppp [c * 32  ........ ........ .......] |
  * |----------------------------  2nd cacheline  ----------------------------|
- * | [c * 64  ........ ........ ........ ........ ........ ........ ........]|
+ * | [c * 64  ........ ........ ........ ........ ........ ........ .......] |
  * |----------------------------  3nd cacheline  ----------------------------|
- * | [c * 40  ........ ........ ........ .......] llllllll jjjjjjjj qqqqqqqq |
- * +----------------------------  4th cacheline  ----------------------------+
- * | uuuuuuuu gggggggg yyyyyyyy wwwwwwww xxxxxxxx zzzzzzzz eeeeeeee pppppppp |
- * +----------------------------  5th and after  ----------------------------+
- * | vvvvvvvv iiiiiiii aaaaaaaa oooooooo [b * 40; then embedded tcache ..... |
+ * | [c * 32  ........ ........ .......] iiiiiiii aaaaaaaa oooooooo [t...... |
  * +-------------------------------------------------------------------------+
  * Note: the entire tcache is embedded into TSD and spans multiple cachelines.
  *
- * The elements after rtree_ctx and before tcache aren't really needed on tcache
+ * The last 3 members (i, a and o) before tcache isn't really needed on tcache
  * fast path.  However we have a number of unused tcache bins and witnesses
  * (never touched unless config_debug) at the end of tcache, so we place them
  * there to avoid breaking the cachelines and possibly paging in an extra page.
@@ -78,29 +60,18 @@ typedef void (*test_callback_t)(int *);
 #  define MALLOC_TEST_TSD_INITIALIZER
 #endif
 
-/*  O(name,			type,			nullable type) */
+/*  O(name,			type,			nullable type */
 #define MALLOC_TSD							\
     O(tcache_enabled,		bool,			bool)		\
     O(arenas_tdata_bypass,	bool,			bool)		\
     O(reentrancy_level,		int8_t,			int8_t)		\
     O(narenas_tdata,		uint32_t,		uint32_t)	\
+    O(offset_state,		uint64_t,		uint64_t)	\
     O(thread_allocated,		uint64_t,		uint64_t)	\
-    O(thread_allocated_next_event_fast,	uint64_t,	uint64_t)	\
     O(thread_deallocated,	uint64_t,		uint64_t)	\
-    O(thread_deallocated_next_event_fast, uint64_t,	uint64_t)	\
-    O(rtree_ctx,		rtree_ctx_t,		rtree_ctx_t)	\
-    O(thread_allocated_last_event,	uint64_t,	uint64_t)	\
-    O(thread_allocated_next_event,	uint64_t,	uint64_t)	\
-    O(thread_deallocated_last_event,	uint64_t,	uint64_t)	\
-    O(thread_deallocated_next_event,	uint64_t,	uint64_t)	\
-    O(tcache_gc_event_wait,	uint64_t,		uint64_t)	\
-    O(tcache_gc_dalloc_event_wait,	uint64_t,	uint64_t)	\
-    O(prof_sample_event_wait,	uint64_t,		uint64_t)	\
-    O(prof_sample_last_event,	uint64_t,		uint64_t)	\
-    O(stats_interval_event_wait,	uint64_t,	uint64_t)	\
-    O(stats_interval_last_event,	uint64_t,	uint64_t)	\
+    O(bytes_until_sample,	int64_t,		int64_t)	\
     O(prof_tdata,		prof_tdata_t *,		prof_tdata_t *)	\
-    O(prng_state,		uint64_t,		uint64_t)	\
+    O(rtree_ctx,		rtree_ctx_t,		rtree_ctx_t)	\
     O(iarena,			arena_t *,		arena_t *)	\
     O(arena,			arena_t *,		arena_t *)	\
     O(arenas_tdata,		arena_tdata_t *,	arena_tdata_t *)\
@@ -109,42 +80,25 @@ typedef void (*test_callback_t)(int *);
     O(witness_tsd,              witness_tsd_t,		witness_tsdn_t)	\
     MALLOC_TEST_TSD
 
-/*
- * TE_MIN_START_WAIT should not exceed the minimal allocation usize.
- */
-#define TE_MIN_START_WAIT ((uint64_t)1U)
-#define TE_MAX_START_WAIT UINT64_MAX
-
 #define TSD_INITIALIZER {						\
-    /* state */			ATOMIC_INIT(tsd_state_uninitialized),	\
-    /* tcache_enabled */	TCACHE_ENABLED_ZERO_INITIALIZER,	\
-    /* arenas_tdata_bypass */	false,					\
-    /* reentrancy_level */	0,					\
-    /* narenas_tdata */		0,					\
-    /* thread_allocated */	0,					\
-    /* thread_allocated_next_event_fast */ 0, 				\
-    /* thread_deallocated */	0,					\
-    /* thread_deallocated_next_event_fast */	0,			\
-    /* rtree_ctx */		RTREE_CTX_ZERO_INITIALIZER,		\
-    /* thread_allocated_last_event */	0,				\
-    /* thread_allocated_next_event */	TE_MIN_START_WAIT,		\
-    /* thread_deallocated_last_event */	0,				\
-    /* thread_deallocated_next_event */	TE_MIN_START_WAIT,		\
-    /* tcache_gc_event_wait */		TE_MIN_START_WAIT,		\
-    /* tcache_gc_dalloc_event_wait */	TE_MIN_START_WAIT,		\
-    /* prof_sample_event_wait */	TE_MIN_START_WAIT,		\
-    /* prof_sample_last_event */	0,				\
-    /* stats_interval_event_wait */	TE_MIN_START_WAIT,		\
-    /* stats_interval_last_event */	0,				\
-    /* prof_tdata */		NULL,					\
-    /* prng_state */		0,					\
-    /* iarena */		NULL,					\
-    /* arena */			NULL,					\
-    /* arenas_tdata */		NULL,					\
-    /* binshards */		TSD_BINSHARDS_ZERO_INITIALIZER,		\
-    /* tcache */		TCACHE_ZERO_INITIALIZER,		\
-    /* witness */		WITNESS_TSD_INITIALIZER			\
-    /* test data */		MALLOC_TEST_TSD_INITIALIZER		\
+    ATOMIC_INIT(tsd_state_uninitialized),				\
+    TCACHE_ENABLED_ZERO_INITIALIZER,					\
+    false,								\
+    0,									\
+    0,									\
+    0,									\
+    0,									\
+    0,									\
+    0,									\
+    NULL,								\
+    RTREE_CTX_ZERO_INITIALIZER,						\
+    NULL,								\
+    NULL,								\
+    NULL,								\
+    TSD_BINSHARDS_ZERO_INITIALIZER,					\
+    TCACHE_ZERO_INITIALIZER,						\
+    WITNESS_TSD_INITIALIZER						\
+    MALLOC_TEST_TSD_INITIALIZER						\
 }
 
 void *malloc_tsd_malloc(size_t size);
@@ -428,10 +382,7 @@ tsd_fetch(void) {
 
 static inline bool
 tsd_nominal(tsd_t *tsd) {
-	bool nominal = tsd_state_get(tsd) <= tsd_state_nominal_max;
-	assert(nominal || tsd_reentrancy_level_get(tsd) > 0);
-
-	return nominal;
+	return (tsd_state_get(tsd) <= tsd_state_nominal_max);
 }
 
 JEMALLOC_ALWAYS_INLINE tsdn_t *
@@ -459,38 +410,6 @@ tsdn_rtree_ctx(tsdn_t *tsdn, rtree_ctx_t *fallback) {
 		return fallback;
 	}
 	return tsd_rtree_ctx(tsdn_tsd(tsdn));
-}
-
-static inline bool
-tsd_state_nocleanup(tsd_t *tsd) {
-	return tsd_state_get(tsd) == tsd_state_reincarnated ||
-	    tsd_state_get(tsd) == tsd_state_minimal_initialized;
-}
-
-/*
- * These "raw" tsd reentrancy functions don't have any debug checking to make
- * sure that we're not touching arena 0.  Better is to call pre_reentrancy and
- * post_reentrancy if this is possible.
- */
-static inline void
-tsd_pre_reentrancy_raw(tsd_t *tsd) {
-	bool fast = tsd_fast(tsd);
-	assert(tsd_reentrancy_level_get(tsd) < INT8_MAX);
-	++*tsd_reentrancy_levelp_get(tsd);
-	if (fast) {
-		/* Prepare slow path for reentrancy. */
-		tsd_slow_update(tsd);
-		assert(tsd_state_get(tsd) == tsd_state_nominal_slow);
-	}
-}
-
-static inline void
-tsd_post_reentrancy_raw(tsd_t *tsd) {
-	int8_t *reentrancy_level = tsd_reentrancy_levelp_get(tsd);
-	assert(*reentrancy_level > 0);
-	if (--*reentrancy_level == 0) {
-		tsd_slow_update(tsd);
-	}
 }
 
 #endif /* JEMALLOC_INTERNAL_TSD_H */
