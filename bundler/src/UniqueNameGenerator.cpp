@@ -89,7 +89,7 @@ namespace rocket_bundle {
 
     std::optional<std::u16string>
     ReadableNameGenerator::Next(const std::u16string &original_name) {
-        if (IsNameUsed(original_name)) {  // not exist
+        if (!IsNameUsed(original_name)) {  // not exist
             used_name.insert(original_name);
             return std::nullopt;
         }

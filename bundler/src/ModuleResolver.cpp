@@ -424,9 +424,8 @@ namespace rocket_bundle {
             RenamerCollection collection;
 
             for (auto& tuple : modules_map_) {
-                EnqueueOne([this, mod = tuple.second, config, &collection] {
+                EnqueueOne([this, mod = tuple.second, &collection] {
                     mod->RenameInnerScopes(collection);
-                    mod->CodeGenFromAst(config);
                     FinishOne();
                 });
             }
