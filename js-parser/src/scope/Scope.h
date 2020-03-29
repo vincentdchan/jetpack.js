@@ -90,7 +90,7 @@ namespace rocket_bundle {
 
         void ResolveAllSymbols();
 
-        virtual bool RenameSymbol(const UString& old_name, const UString& new_name);
+        virtual bool BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset);
 
         virtual ~Scope() = default;
 
@@ -128,10 +128,11 @@ namespace rocket_bundle {
      */
     class ModuleScope : public Scope {
     public:
+        using ChangeSet = std::vector<std::tuple<UString, UString>>;
 
         ModuleScope();
 
-        bool RenameSymbol(const UString& old_name, const UString& new_name) override;
+        bool BatchRenameSymbols(const ChangeSet& changeset) override;
 
         ImportManager import_manager;
         ExportManager export_manager;

@@ -76,21 +76,29 @@ namespace rocket_bundle {
         }
     }
 
-    bool Scope::RenameSymbol(const UString &old_name, const UString &new_name) {
-        auto iter = own_variables.find(old_name);
-        if (iter == own_variables.end()) {
-            return false;
+    bool Scope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
+        std::vector<Variable> buffer;
+        buffer.reserve(changeset.size());
+
+        for (auto& tuple : changeset) {
+            auto iter = own_variables.find(std::get<0>(tuple));
+            if (iter == own_variables.end()) {
+                return false;
+            }
+
+            Variable& var = buffer.emplace_back(std::move(iter->second));
+            var.name = std::get<1>(tuple);
+
+            for (auto& id : var.identifiers) {
+                id->name = std::get<1>(tuple);
+            }
+
+            own_variables.erase(iter);
         }
 
-        Variable tmp = iter->second;
-        own_variables.erase(iter);
-
-        tmp.name = new_name;
-        for (auto& id : tmp.identifiers) {
-            id->name = new_name;
+        for (auto& var : buffer) {
+            own_variables[var.name] = std::move(var);
         }
-
-        own_variables[tmp.name] = std::move(tmp);
 
         return true;
     }
@@ -105,22 +113,30 @@ namespace rocket_bundle {
     ModuleScope::ModuleScope() : Scope(ScopeType::Module) {
     };
 
-    bool ModuleScope::RenameSymbol(const UString &old_name, const UString &new_name) {
-        if (!Scope::RenameSymbol(old_name, new_name)) {
+    bool ModuleScope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
+        if (!Scope::BatchRenameSymbols(changeset)) {
             return false;
         }
 
-        auto iter = export_manager.local_exports_by_local_name.find(old_name);
-        if (iter == export_manager.local_exports_by_local_name.end()) {  // not a local export
-            return true;
+        std::vector<std::shared_ptr<LocalExportInfo>> info_changeset;
+
+        for (auto& tuple : changeset) {
+            auto iter = export_manager.local_exports_by_local_name.find(std::get<0>(tuple));
+            if (iter == export_manager.local_exports_by_local_name.end()) {  // not a local export
+                return true;
+            }
+
+            auto local_export_info = iter->second;
+            export_manager.local_exports_by_local_name.erase(iter);  // remove old index
+
+            local_export_info->local_name = std::get<1>(tuple);
+
+            info_changeset.push_back(std::move(local_export_info));
         }
 
-        auto local_export_info = iter->second;
-        export_manager.local_exports_by_local_name.erase(iter);  // remove old index
-
-        local_export_info->local_name = new_name;
-
-        export_manager.local_exports_by_local_name[local_export_info->local_name] = local_export_info;  // add new index
+        for (auto& item : info_changeset) {
+            export_manager.local_exports_by_local_name[item->local_name] = item;  // add new index
+        }
 
         return true;
     }

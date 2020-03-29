@@ -77,9 +77,7 @@ namespace rocket_bundle {
             }
         }
 
-        for (auto& tuple : renames) {
-            scope.RenameSymbol(std::get<0>(tuple), std::get<1>(tuple));
-        }
+        scope.BatchRenameSymbols(renames);
 
         return renamer;
     }
@@ -509,9 +507,7 @@ namespace rocket_bundle {
             }
         }
 
-        for (auto& tuple : rename_vec) {
-            mf->ast->scope->RenameSymbol(std::get<0>(tuple), std::get<1>(tuple));
-        }
+        mf->ast->scope->BatchRenameSymbols(rename_vec);
 
         // replace exports to variable declaration
         ReplaceExports(mf);
@@ -850,7 +846,9 @@ namespace rocket_bundle {
                     );
                 }
 
-                if (!mf->ast->scope->RenameSymbol(import_local_name, (*local_export_opt)->local_name)) {
+                std::vector<std::tuple<UString, UString>> changeset;
+                changeset.emplace_back(import_local_name, (*local_export_opt)->local_name);
+                if (!mf->ast->scope->BatchRenameSymbols(changeset)) {
                     throw ModuleResolveException(
                         mf->path,
                         format("rename symbol failed: {}", utils::To_UTF8(import_local_name))

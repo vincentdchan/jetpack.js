@@ -50,7 +50,10 @@ TEST(Scope, Rename) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    mod->scope->RenameSymbol(u"name", u"new_name");
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"new_name");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
@@ -67,7 +70,10 @@ TEST(Scope, RenameImportNamespace) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    mod->scope->RenameSymbol(u"name", u"new_name");
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"new_name");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
@@ -92,7 +98,10 @@ TEST(Scope, RenameFunction1) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"new_name"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"new_name");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
@@ -116,7 +125,10 @@ TEST(Scope, RenameFunction2) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"ok", u"ok1"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"ok", u"ok1");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -138,7 +150,10 @@ TEST(Scope, RenameFunction3) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"rename"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"rename");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -154,7 +169,10 @@ TEST(Scope, RenameObjectPattern) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"other", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"other", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -170,7 +188,10 @@ TEST(Scope, RenameObjectPattern2) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_FALSE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"ok1");
+    EXPECT_FALSE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -186,7 +207,10 @@ TEST(Scope, RenameObjectPattern3) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -212,7 +236,10 @@ TEST(Scope, Cls) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"print", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"print", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -228,13 +255,39 @@ TEST(Scope, RenameImport) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
+}
+
+TEST(Scope, RenameImport3) {
+    std::string src = "import { a, fun, ooo } from './a';\n"
+                      "\n"
+                      "var b = 44444;\n"
+                      "\n"
+                      "export default a + 3 + b + fun();";
+
+    auto mod = ParseString(src);
+    mod->scope->ResolveAllSymbols();
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"a", u"p");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
+
+    auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(mod->body[0]);
+    EXPECT_NE(import_decl, nullptr);
+
+    auto first_spec = std::dynamic_pointer_cast<ImportSpecifier>(import_decl->specifiers[0]);
+    EXPECT_NE(import_decl, nullptr);
+
+    EXPECT_EQ(first_spec->local->name, u"p");
 }
 
 TEST(Scope, RenameImportDefault) {
@@ -244,7 +297,10 @@ TEST(Scope, RenameImportDefault) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"React", u"Angular"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"React", u"Angular");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -262,7 +318,10 @@ TEST(Scope, RenameImport2) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -280,7 +339,10 @@ TEST(Scope, RenameExport1) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
@@ -298,7 +360,10 @@ TEST(Scope, RenameExport2) {
 
     auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols();
-    EXPECT_TRUE(mod->scope->RenameSymbol(u"name", u"renamed"));
+
+    ModuleScope::ChangeSet changeset;
+    changeset.emplace_back(u"name", u"renamed");
+    EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     std::stringstream ss;
     CodeGen::Config code_gen_config;
