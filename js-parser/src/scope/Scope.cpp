@@ -8,10 +8,11 @@
 
 namespace rocket_bundle {
 
-    Variable * Scope::RecursivelyFindVariable(const UString &var_name) {
+    Scope::PVar
+    Scope::RecursivelyFindVariable(const UString &var_name) {
         auto iter = own_variables.find(var_name);
         if (iter != own_variables.end()) {
-            return &iter->second;
+            return iter->second;
         }
         if (parent == nullptr) {
             return nullptr;
@@ -19,7 +20,8 @@ namespace rocket_bundle {
         return parent->RecursivelyFindVariable(var_name);
     }
 
-    Variable* Scope::CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) {
+    Scope::PVar
+    Scope::CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) {
         Scope* target_scope = this;
 
         if (kind == VarKind::Var) {
@@ -28,24 +30,25 @@ namespace rocket_bundle {
             }
         }
 
-        Variable* var = nullptr;
+        PVar var;
         if (auto iter = target_scope->own_variables.find(var_id->name); iter != target_scope->own_variables.end()) {
             if (kind == VarKind::Var) {
-                var = &iter->second;
+                var = iter->second;
             } else {
                 VariableExistsError err;
-                err.name = iter->second.name;
-                if (iter->second.identifiers.empty()) {
+                err.name = iter->second->name;
+                if (iter->second->identifiers.empty()) {
                     throw std::runtime_error("identifiers can not be empty");
                 }
-                err.exist_var = iter->second.identifiers[0];
+                err.exist_var = iter->second->identifiers[0];
                 throw std::move(err);
             }
         } else {  // contruct a new
-            var = &target_scope->own_variables[var_id->name];
+            var = std::make_shared<Variable>();
             var->scope = target_scope;
             var->name = var_id->name;
             var->kind = kind;
+            target_scope->own_variables[var_id->name] = var;
         }
 
         var->identifiers.push_back(var_id);
@@ -77,7 +80,7 @@ namespace rocket_bundle {
     }
 
     bool Scope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
-        std::vector<Variable> buffer;
+        std::vector<PVar> buffer;
         buffer.reserve(changeset.size());
 
         for (auto& tuple : changeset) {
@@ -85,11 +88,12 @@ namespace rocket_bundle {
             if (iter == own_variables.end()) {
                 return false;
             }
+            PVar pvar = iter->second;
 
-            Variable& var = buffer.emplace_back(std::move(iter->second));
-            var.name = std::get<1>(tuple);
+            buffer.push_back(pvar);
+            pvar->name = std::get<1>(tuple);
 
-            for (auto& id : var.identifiers) {
+            for (auto& id : pvar->identifiers) {
                 id->name = std::get<1>(tuple);
             }
 
@@ -97,7 +101,7 @@ namespace rocket_bundle {
         }
 
         for (auto& var : buffer) {
-            own_variables[var.name] = std::move(var);
+            own_variables[var->name] = std::move(var);
         }
 
         return true;

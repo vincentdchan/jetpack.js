@@ -46,6 +46,7 @@ namespace rocket_bundle {
 
     class Scope {
     public:
+        using PVar = std::shared_ptr<Variable>;
 
         Scope() = default;
         Scope(const Scope&) = delete;
@@ -65,9 +66,9 @@ namespace rocket_bundle {
             return type == ScopeType::Module;
         }
 
-        virtual Variable* RecursivelyFindVariable(const UString& var_name);
+        virtual PVar RecursivelyFindVariable(const UString& var_name);
 
-        virtual Variable* CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind);
+        virtual PVar CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind);
 
         virtual void AddUnresolvedId(const std::shared_ptr<Identifier>& id) {
             unresolved_id.push_back(id);
@@ -94,7 +95,7 @@ namespace rocket_bundle {
 
         virtual ~Scope() = default;
 
-        robin_hood::unordered_map<UString, Variable> own_variables;
+        robin_hood::unordered_map<UString, PVar> own_variables;
 
         std::vector<Scope*> children;
 
@@ -115,7 +116,7 @@ namespace rocket_bundle {
     public:
         static LeftValueScope default_;
 
-        Variable* CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) override {
+        PVar CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) override {
             return nullptr;
         }
 

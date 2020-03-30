@@ -780,7 +780,11 @@ namespace rocket_bundle {
             // debug
 //            std::cout << utils::To_UTF8(ast->scope->own_variables[import_ns->local->name].name) << std::endl;
 
-            mf->ast->scope->own_variables[import_ns->local->name].identifiers.push_back(new_id);
+            auto pvar = mf->ast->scope->own_variables[import_ns->local->name];
+            if (pvar == nullptr) {
+                return;
+            }
+            pvar->identifiers.push_back(new_id);
 
             declarator->id = new_id;  // try not to use old ast
 
