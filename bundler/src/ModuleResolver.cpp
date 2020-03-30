@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <parser/ParserCommon.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -434,7 +435,7 @@ namespace rocket_bundle {
             if (!worker_errors_.empty()) {
                 WokerErrorCollection col;
                 col.errors = std::move(worker_errors_);
-                throw col;
+                throw std::move(col);
             }
             std::vector<std::tuple<UString, UString>> renames;
             name_generator = MinifyNameGenerator::Merge(collection.content);
@@ -494,16 +495,24 @@ namespace rocket_bundle {
         }
 
         // do your own work
+        std::vector<Scope::PVar> variables;
+        for (auto& tuple : mf->ast->scope->own_variables) {
+            variables.push_back(tuple.second);
+        }
+
+        std::sort(std::begin(variables), std::end(variables), [] (const Scope::PVar& p1, const Scope::PVar& p2) {
+            return p1->identifiers.size() >= p2->identifiers.size();
+        });
 
         // RenameSymbol() will change iterator, call it later
         std::vector<std::tuple<UString, UString>> rename_vec;
 
         // Distribute new name to root level variables
-        for (auto& var : mf->ast->scope->own_variables) {
-            auto new_name_opt = name_generator->Next(var.first);
+        for (auto& var : variables) {
+            auto new_name_opt = name_generator->Next(var->name);
 
             if (new_name_opt.has_value()) {
-                rename_vec.emplace_back(var.first, *new_name_opt);
+                rename_vec.emplace_back(var->name, *new_name_opt);
             }
         }
 

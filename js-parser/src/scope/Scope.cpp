@@ -127,7 +127,7 @@ namespace rocket_bundle {
         for (auto& tuple : changeset) {
             auto iter = export_manager.local_exports_by_local_name.find(std::get<0>(tuple));
             if (iter == export_manager.local_exports_by_local_name.end()) {  // not a local export
-                return true;
+                continue;
             }
 
             auto local_export_info = iter->second;
