@@ -501,7 +501,7 @@ namespace rocket_bundle {
         }
 
         std::sort(std::begin(variables), std::end(variables), [] (const Scope::PVar& p1, const Scope::PVar& p2) {
-            return p1->identifiers.size() >= p2->identifiers.size();
+            return p1->identifiers.size() > p2->identifiers.size();
         });
 
         // RenameSymbol() will change iterator, call it later
