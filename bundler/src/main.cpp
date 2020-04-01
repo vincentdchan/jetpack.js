@@ -12,6 +12,7 @@
 #include "Path.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
+#include "parser/ParserContext.h"
 
 #define OPT_HELP "help"
 #define OPT_ENTRY "entry"
@@ -24,8 +25,12 @@
 
 using namespace rocket_bundle;
 
-static int AnalyzeModule(const std::string& self_path, const std::string& path, bool trace_file);
+static int AnalyzeModule(const std::string& self_path,
+                         const std::string& path,
+                         bool jsx,
+                         bool trace_file);
 static int BundleModule(const std::string& self_path,
+                        bool jsx,
                         bool minify,
                         const std::string& path,
                         const std::string& out_path);
@@ -49,6 +54,7 @@ int main(int argc, char** argv) {
         auto result = options.parse(argc, argv);
         bool trace_file = true;
         bool minify = false;
+        bool jsx = false;
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -63,16 +69,20 @@ int main(int argc, char** argv) {
             minify = true;
         }
 
+        if (result[OPT_JSX].count()) {
+            jsx = true;
+        }
+
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
-            return AnalyzeModule(argv[0], path, trace_file);
+            return AnalyzeModule(argv[0], path, jsx, trace_file);
         }
 
         if (result[OPT_OUT].count()) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(argv[0], minify, entry_path, out_path);
+            return BundleModule(argv[0], jsx, minify, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;
@@ -83,9 +93,17 @@ int main(int argc, char** argv) {
     }
 }
 
-static int AnalyzeModule(const std::string& self_path_str, const std::string& path, bool trace_file) {
+static int AnalyzeModule(const std::string& self_path_str,
+                         const std::string& path,
+                         bool jsx,
+                         bool trace_file) {
     Path self_path(self_path_str);
     self_path.Pop();
+
+    parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+    if (jsx) {
+        parser_config.jsx = true;
+    }
 
     // do not release memory
     // it will save your time
@@ -93,7 +111,7 @@ static int AnalyzeModule(const std::string& self_path_str, const std::string& pa
 
     try {
         resolver->SetTraceFile(trace_file);
-        resolver->BeginFromEntry(self_path.ToString(), path);
+        resolver->BeginFromEntry(parser_config, self_path.ToString(), path);
         resolver->PrintStatistic();
         return 0;
     } catch (ModuleResolveException& err) {
@@ -103,6 +121,7 @@ static int AnalyzeModule(const std::string& self_path_str, const std::string& pa
 }
 
 static int BundleModule(const std::string& self_path_str,
+                        bool jsx,
                         bool minify,
                         const std::string& path,
                         const std::string& out_path) {
@@ -112,17 +131,23 @@ static int BundleModule(const std::string& self_path_str,
 
     try {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-        CodeGen::Config config;
+        CodeGen::Config codegen_config;
+        parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+
+        if (jsx) {
+            parser_config.jsx = true;
+            parser_config.transpile_jsx = true;
+        }
 
         if (minify) {
-            config.minify = true;
-            config.comments = false;
+            codegen_config.minify = true;
+            codegen_config.comments = false;
             resolver->SetNameGenerator(MinifyNameGenerator::Make());
         }
 
         resolver->SetTraceFile(true);
-        resolver->BeginFromEntry(self_path.ToString(), path);
-        resolver->CodeGenAllModules(config, out_path);
+        resolver->BeginFromEntry(parser_config, self_path.ToString(), path);
+        resolver->CodeGenAllModules(codegen_config, out_path);
 
         std::cout << "Finished." << std::endl;
         std::cout << "Totally " << resolver->ModCount() << " file(s)." << std::endl;
