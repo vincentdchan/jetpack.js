@@ -28,9 +28,7 @@ namespace rocket_bundle::parser {
 
         typedef std::function<void (bool, const UString&)> NewImportLocationAddedCallback;
 
-        Parser(std::shared_ptr<ParserContext> state):
-        ParserCommon(state) {}
-//            nodes_pool(node_size::max_node_size) {}
+        Parser(std::shared_ptr<ParserContext> state);
 
         void OnNewImportLocationAdded(NewImportLocationAddedCallback callback);
 

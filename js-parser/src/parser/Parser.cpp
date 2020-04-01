@@ -10,6 +10,30 @@
 namespace rocket_bundle::parser {
     using namespace std;
 
+    Parser::Parser(std::shared_ptr<ParserContext> state):
+    ParserCommon(state) {
+
+        ctx->start_marker_ = ParserContext::Marker {
+            0,
+            ctx->scanner_->LineNumber(),
+            0,
+        };
+
+        ctx->last_marker_ = ParserContext::Marker {
+            0,
+            ctx->scanner_->LineNumber(),
+            0,
+        };
+
+        NextToken();
+
+        ctx->last_marker_ = ParserContext::Marker {
+            ctx->scanner_->Index(),
+            ctx->scanner_->LineNumber(),
+            ctx->scanner_->Column(),
+        };
+    }
+
     Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
         switch (expr->type) {
             case SyntaxNodeType::Identifier:
@@ -342,7 +366,7 @@ namespace rocket_bundle::parser {
         auto& config = ctx->config_;
 
         if (config.jsx && Match(JsTokenType::LessThan)) {
-            JSXParser jsxParser(ctx);
+            JSXParser jsxParser(*this, ctx);
             return jsxParser.ParseJSXRoot(scope);
         }
         auto marker = CreateStartMarker();

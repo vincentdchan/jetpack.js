@@ -46,7 +46,8 @@ add_executable(rocket-bundle ${SOURCE_FILES} src/main.cpp)
 add_executable(rocket-bundle-test ${SOURCE_FILES}
         tests/scope.cpp
         tests/resolve.cpp
-        tests/codegen.cpp)
+        tests/codegen.cpp
+        tests/jsx.cpp)
 
 target_include_directories(rocket-bundle-test PUBLIC "../third_party/googletest/googletest/include")
 target_link_libraries(rocket-bundle-test gtest_main)
