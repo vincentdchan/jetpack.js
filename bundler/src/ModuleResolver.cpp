@@ -162,7 +162,7 @@ namespace rocket_bundle {
         if (!worker_errors_.empty()) {
             WokerErrorCollection col;
             col.errors = std::move(worker_errors_);
-            throw col;
+            throw std::move(col);
         }
     }
 

@@ -18,8 +18,6 @@ namespace rocket_bundle {
 
         virtual std::optional<std::u16string> Next(const std::u16string& original_name) = 0;
 
-        virtual std::shared_ptr<UniqueNameGenerator> Fork() = 0;
-
         virtual bool IsNameUsed(const std::u16string& name) { return false; };
 
         virtual ~UniqueNameGenerator() = default;
@@ -48,8 +46,6 @@ namespace rocket_bundle {
 
         bool IsNameUsed(const std::u16string& name) override;
 
-        std::shared_ptr<UniqueNameGenerator> Fork() override;
-
     private:
         ReadableNameGenerator() = default;
 
@@ -74,8 +70,6 @@ namespace rocket_bundle {
         std::optional<std::u16string> Next(const std::u16string& original_name) override;
 
         bool IsNameUsed(const std::u16string& name) override;
-
-        std::shared_ptr<UniqueNameGenerator> Fork() override;
 
         std::u16string GenAName();
 

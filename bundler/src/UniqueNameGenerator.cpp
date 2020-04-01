@@ -99,15 +99,6 @@ namespace rocket_bundle {
         return { new_name };
     }
 
-    std::shared_ptr<UniqueNameGenerator> ReadableNameGenerator::Fork() {
-        std::shared_ptr<ReadableNameGenerator> result(new ReadableNameGenerator);
-        result->weak_self = result;
-        result->prev = this->weak_self.lock();
-        result->counter = this->counter;
-        // used_name is empty
-        return result;
-    }
-
     bool ReadableNameGenerator::IsNameUsed(const std::u16string &name) {
         if (IsJsKeyword(name)) {
             return true;
@@ -155,15 +146,6 @@ namespace rocket_bundle {
         } while(IsNameUsed(result));
 
         return { result };
-    }
-
-    std::shared_ptr<UniqueNameGenerator> MinifyNameGenerator::Fork() {
-        std::shared_ptr<MinifyNameGenerator> result(new MinifyNameGenerator);
-        result->weak_self = result;
-        result->prev = this->weak_self.lock();
-        result->counter = this->counter;
-        // used_name is empty
-        return result;
     }
 
     bool MinifyNameGenerator::IsNameUsed(const std::u16string &name) {
