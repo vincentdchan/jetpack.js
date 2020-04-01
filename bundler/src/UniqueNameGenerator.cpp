@@ -206,4 +206,15 @@ namespace rocket_bundle {
         return utils::To_UTF16(result);
     }
 
+    void UnresolvedNameCollector::InsertByList(std::vector<std::shared_ptr<Identifier>> list) {
+        std::lock_guard<std::mutex> lk(logger_mutex);
+        for (auto& id : list){
+            used_name.insert(id->name);
+        }
+    }
+
+    bool UnresolvedNameCollector::IsNameUsed(const std::u16string &name) {
+        return used_name.find(name) != used_name.end();
+    }
+
 }

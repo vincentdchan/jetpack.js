@@ -19,7 +19,6 @@
 #include <mutex>
 #include <parser/Parser.hpp>
 
-#include "./GlobalUnresolvedIdLogger.h"
 #include "./UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"
 
@@ -65,7 +64,7 @@ namespace rocket_bundle {
     struct RenamerCollection {
     public:
         std::vector<Sp<MinifyNameGenerator>> content;
-        GlobalUnresolvedIdLogger* idLogger = nullptr;
+        std::shared_ptr<UnresolvedNameCollector> idLogger;
 
         std::mutex mutex_;
 
@@ -110,7 +109,7 @@ namespace rocket_bundle {
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
         void RenameInnerScopes(RenamerCollection& col);
-        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, GlobalUnresolvedIdLogger* idLogger);
+        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
 
         void CodeGenFromAst(const CodeGen::Config &config);
 
@@ -132,6 +131,7 @@ namespace rocket_bundle {
 
         ModuleResolver() : mod_counter_(0) {
             name_generator = ReadableNameGenerator::Make();
+            id_logger_ = std::make_shared<UnresolvedNameCollector>();
         }
 
         void BeginFromEntry(const parser::ParserContext::Config& config,
@@ -211,7 +211,7 @@ namespace rocket_bundle {
 
         std::shared_ptr<UniqueNameGenerator> name_generator;
 
-        GlobalUnresolvedIdLogger id_logger_;
+        std::shared_ptr<UnresolvedNameCollector> id_logger_;
 
         std::mutex map_mutex_;
 

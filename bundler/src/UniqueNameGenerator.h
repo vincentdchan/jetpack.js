@@ -10,6 +10,7 @@
 #include <optional>
 #include <mutex>
 #include <robin_hood.h>
+#include <parser/SyntaxNodes.h>
 
 namespace rocket_bundle {
 
@@ -54,6 +55,24 @@ namespace rocket_bundle {
         std::shared_ptr<ReadableNameGenerator> prev;
 
         std::weak_ptr<ReadableNameGenerator> weak_self;
+
+    };
+
+    class UnresolvedNameCollector : public UniqueNameGenerator {
+    public:
+        UnresolvedNameCollector() = default;
+
+        bool IsNameUsed(const std::u16string& name) override;
+
+        std::optional<std::u16string> Next(const std::u16string& original_name) override {
+            return std::nullopt;
+        }
+
+        robin_hood::unordered_set<std::u16string> used_name;
+
+        std::mutex logger_mutex;
+
+        void InsertByList(std::vector<std::shared_ptr<Identifier>> list);
 
     };
 

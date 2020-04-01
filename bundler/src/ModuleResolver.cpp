@@ -50,7 +50,7 @@ namespace rocket_bundle {
         std::vector<Sp<MinifyNameGenerator>> result;
         result.reserve(ast->scope->children.size());
         for (auto child : ast->scope->children) {
-            result.push_back(RenameInnerScopes(*child, renamer.idLogger));
+            result.push_back(RenameInnerScopes(*child, renamer.idLogger.get()));
         }
 
         auto final = MinifyNameGenerator::Merge(result);
@@ -60,7 +60,7 @@ namespace rocket_bundle {
         }
     }
 
-    Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope, GlobalUnresolvedIdLogger* idLogger) {
+    Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope, UnresolvedNameCollector* idLogger) {
         std::vector<Sp<MinifyNameGenerator>> temp;
         temp.reserve(scope.children.size());
 
@@ -272,7 +272,7 @@ namespace rocket_bundle {
         std::vector<Sp<Identifier>> unresolved_ids;
         mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
 
-        id_logger_.InsertByList(unresolved_ids);
+        id_logger_->InsertByList(unresolved_ids);
     }
 
     std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {
@@ -427,7 +427,7 @@ namespace rocket_bundle {
         if (config.minify) {
             ClearAllVisitedMark();
             RenamerCollection collection;
-            collection.idLogger = &this->id_logger_;
+            collection.idLogger = id_logger_;
 
             for (auto& tuple : modules_map_) {
                 EnqueueOne([this, mod = tuple.second, &collection] {
