@@ -41,15 +41,15 @@ include_directories(PUBLIC
         "../third_party/robin-hood-hashing/src/include")
 link_libraries(bundle-utils js-parser fmt)
 
-add_executable(rocket-bundle ${SOURCE_FILES} src/main.cpp)
+add_executable(jetpack ${SOURCE_FILES} src/main.cpp)
 
-add_executable(rocket-bundle-test ${SOURCE_FILES}
+add_executable(jetpack-test ${SOURCE_FILES}
         tests/scope.cpp
         tests/resolve.cpp
         tests/codegen.cpp
         tests/jsx.cpp)
 
-target_include_directories(rocket-bundle-test PUBLIC "../third_party/googletest/googletest/include")
-target_link_libraries(rocket-bundle-test gtest_main)
+target_include_directories(jetpack-test PUBLIC "../third_party/googletest/googletest/include")
+target_link_libraries(jetpack-test gtest_main)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")

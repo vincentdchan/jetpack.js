@@ -15,7 +15,7 @@ using Sp = std::shared_ptr<T>;
 typedef double JS_Number;
 typedef UString JS_RegExp;
 
-namespace rocket_bundle {
+namespace jetpack {
 
     enum class TSAccessibility {
         Private,

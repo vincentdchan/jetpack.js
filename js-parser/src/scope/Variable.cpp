@@ -5,6 +5,6 @@
 #include "./Variable.h"
 #include "../parser/SyntaxNodes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
 }

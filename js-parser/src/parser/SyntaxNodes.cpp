@@ -2,7 +2,7 @@
 
 #include "SyntaxNodes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     ArrayExpression::ArrayExpression(): Expression() {
         type = SyntaxNodeType::ArrayExpression;

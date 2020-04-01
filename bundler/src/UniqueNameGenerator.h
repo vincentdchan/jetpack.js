@@ -12,7 +12,7 @@
 #include <robin_hood.h>
 #include <parser/SyntaxNodes.h>
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class UniqueNameGenerator {
     public:

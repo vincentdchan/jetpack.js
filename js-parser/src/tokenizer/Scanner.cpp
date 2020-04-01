@@ -7,7 +7,7 @@
 #include "Utils.h"
 #include "../parser/ErrorMessage.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     using namespace std;
 

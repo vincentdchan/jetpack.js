@@ -11,7 +11,7 @@
 #include "Token.h"
 #include "Comment.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class Scanner final {
     public:

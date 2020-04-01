@@ -11,8 +11,8 @@
 #include "../src/ModuleResolver.h"
 #include "../src/codegen/CodeGen.h"
 
-using namespace rocket_bundle;
-using namespace rocket_bundle::parser;
+using namespace jetpack;
+using namespace jetpack::parser;
 
 inline std::string ParseJSXAndCodeGen(UString content) {
     auto src = std::make_shared<UString>();

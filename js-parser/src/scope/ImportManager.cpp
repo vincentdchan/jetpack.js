@@ -5,7 +5,7 @@
 #include "ImportManager.h"
 #include "../parser/SyntaxNodes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     ImportManager::EC ImportManager::ResolveImportDecl(const Sp<ImportDeclaration>& importDecl) {
         for (auto& spec : importDecl->specifiers) {

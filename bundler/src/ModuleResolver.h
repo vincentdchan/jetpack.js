@@ -22,7 +22,7 @@
 #include "./UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -173,6 +173,8 @@ namespace rocket_bundle {
         inline std::int32_t ModCount() const {
             return mod_counter_;
         }
+
+        std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
 
         robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
 

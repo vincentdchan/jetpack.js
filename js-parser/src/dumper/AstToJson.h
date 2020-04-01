@@ -8,7 +8,7 @@
 #include <tsl/ordered_map.h>
 #include "Utils.h"
 
-namespace rocket_bundle::dumper {
+namespace jetpack::dumper {
 
     template<class Key, class T, class Ignore, class Allocator,
          class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,

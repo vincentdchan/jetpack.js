@@ -10,7 +10,7 @@
 #include <variant>
 #include "../scope/Scope.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class ArrayExpression: public Expression {
     public:

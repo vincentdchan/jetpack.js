@@ -9,7 +9,7 @@
 #include "Utils.h"
 #include "../parser/NodeTypes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class ImportIdentifierInfo {
     public:

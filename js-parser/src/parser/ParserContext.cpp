@@ -3,7 +3,7 @@
 //
 #include "ParserContext.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
     using namespace std;
 
     ParserContext::Config ParserContext::Config::Default() {

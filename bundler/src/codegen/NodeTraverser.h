@@ -4,7 +4,7 @@
 #pragma once
 #include "../../../js-parser/src/parser/SyntaxNodes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class AutoNodeTraverser {
     public:

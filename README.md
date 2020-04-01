@@ -1,8 +1,8 @@
-# Rocket Bundle
+# Jetpack
 
-`rocket-bundls.js` is an extremely fast js bundler and minifier.
+`jetpack.js` is an extremely fast js bundler and minifier.
 
-Rocket Bundle a well designed tool. It's modulize into parser and bundler.
+`jetpack.js` a well designed tool. It's modulize into parser and bundler.
 The parser can be used as a library independently.
 
 - [Why](#why)
@@ -46,16 +46,16 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 
 Use command line to bundle a js module.
 ```shell script
-./rocket-bundle main.js --out bundle.js
+jetpack main.js --out bundle.js
 ```
 
 Help command:
 
 ```shell script
-./rocket-bundle --help
-Rocket Bundle command line
+jetpack --help
+Jetpack command line
 Usage:
-  rocket-bundle [OPTION...] positional parameters
+  Jetpack [OPTION...] positional parameters
 
       --tolerant            tolerant parsing error
       --jsx                 support jsx syntax
@@ -68,7 +68,7 @@ Usage:
 
 # Use the parser as a library
 
-rocket-bundle.js is built with CMake, so it can be
+jetpack.js is built with CMake, so it can be
 easily integrated to your project.
 
 ```cmake
@@ -99,7 +99,7 @@ ZEP(release version)'s parsing speed would be nearly 1x faster than
 other ES parsers implemented in ES(Running on Node.js).
 
 With the power of jemalloc,
-ZEP's performance is equal to other ES parsers implemented in Rust.
+Jetpack's parser's performance is equal to other ES parsers implemented in Rust.
 
 # Architecture
 
@@ -116,7 +116,7 @@ And the WASM version is in the roadmap. The web version of ZEP would be released
 
 # Platform
 
-`rocket-bundle.js` supports all popular system including:
+`jetpack.js` supports all popular system including:
 
 - macOS
 - Windows

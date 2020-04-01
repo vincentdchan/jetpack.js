@@ -1,7 +1,7 @@
 
 #include "NodeTraverser.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
         switch (node->type) {

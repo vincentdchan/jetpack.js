@@ -18,10 +18,12 @@
 #include "./Error.h"
 #include "./codegen/CodeGen.h"
 
-namespace rocket_bundle {
+namespace jetpack {
     using fmt::format;
     using parser::ParserContext;
     using parser::Parser;
+
+    static const char* PackageJsonName = "package.json";
 
     inline Sp<Identifier> MakeId(const UString& content) {
         auto id = std::make_shared<Identifier>();
@@ -327,7 +329,7 @@ namespace rocket_bundle {
      * Then a would be in white list
      */
     void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
-                                                      const Sp<rocket_bundle::ModuleFile>& mod,
+                                                      const Sp<jetpack::ModuleFile>& mod,
                                                       robin_hood::unordered_set<UString>* white_list) {
 
         if (mod->visited_mark) {
@@ -716,7 +718,7 @@ namespace rocket_bundle {
         mf->ast->body = std::move(new_body);
     }
 
-    void ModuleResolver::TraverseRenameAllImports(const Sp<rocket_bundle::ModuleFile> &mf) {
+    void ModuleResolver::TraverseRenameAllImports(const Sp<jetpack::ModuleFile> &mf) {
         if (mf->visited_mark) {
             return;
         }
@@ -730,7 +732,7 @@ namespace rocket_bundle {
         ReplaceImports(mf);
     }
 
-    void ModuleResolver::ReplaceImports(const Sp<rocket_bundle::ModuleFile> &mf) {
+    void ModuleResolver::ReplaceImports(const Sp<jetpack::ModuleFile> &mf) {
         std::vector<Sp<SyntaxNode>> new_body;
 
         for (auto& stmt : mf->ast->body) {
@@ -762,7 +764,7 @@ namespace rocket_bundle {
      * const { a, b: c } = mod_1;
      */
     void ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
-                                                 Sp<rocket_bundle::ImportDeclaration> &import_decl,
+                                                 Sp<jetpack::ImportDeclaration> &import_decl,
                                                  std::vector<Sp<VariableDeclaration>>& result) {
         auto full_path_iter = mf->resolved_map.find(utils::To_UTF8(import_decl->source->str_));
         if (full_path_iter == mf->resolved_map.end()) {
@@ -962,6 +964,25 @@ namespace rocket_bundle {
         }
 
         return result;
+    }
+
+    std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entry_path) {
+        Path _path(entry_path);
+        _path.slices.pop_back();
+
+        while (_path.slices.empty()) {
+            _path.slices.push_back(PackageJsonName);
+
+            auto full_path = _path.ToString();
+            if (utils::IsFileExist(full_path)) {
+                return { full_path };
+            }
+
+            _path.slices.pop_back();
+            _path.slices.pop_back();
+        }
+
+        return std::nullopt;
     }
 
 }

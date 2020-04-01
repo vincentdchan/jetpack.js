@@ -8,7 +8,7 @@
 #include <vector>
 #include <robin_hood.h>
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
 
     class JSXParser: private ParserCommon {
     public:

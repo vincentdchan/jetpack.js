@@ -23,7 +23,7 @@
 #define OPT_MINIFY "minify"
 #define OPT_OUT "out"
 
-using namespace rocket_bundle;
+using namespace jetpack;
 
 static int AnalyzeModule(const std::string& self_path,
                          const std::string& path,

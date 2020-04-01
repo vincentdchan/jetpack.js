@@ -18,7 +18,7 @@
 
 typedef std::u16string UString;
 
-namespace rocket_bundle::utils {
+namespace jetpack::utils {
     using std::int64_t;
 
     inline std::string GetRunningDir() {

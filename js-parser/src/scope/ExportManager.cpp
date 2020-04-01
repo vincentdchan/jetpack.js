@@ -6,7 +6,7 @@
 #include "../parser/SyntaxNodes.h"
 #include "../parser/BaseNodes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     const char * ExportManager::ECToStr(EC ec) {
         switch (ec) {

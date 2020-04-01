@@ -8,7 +8,7 @@
 #include <vector>
 #include <sstream>
 
-namespace rocket_bundle {
+namespace jetpack {
 
     /**
      * a mutable absolute path

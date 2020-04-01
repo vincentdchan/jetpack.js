@@ -11,7 +11,7 @@ using namespace std;
 
 #define S_COMMA (config_.minify ? "," : ", ")
 
-namespace rocket_bundle {
+namespace jetpack {
 
     CodeGen::CodeGen(): CodeGen(Config(), std::cout) {
     }

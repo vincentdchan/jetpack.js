@@ -12,7 +12,7 @@
 #include <memory>
 #include "../parser/NodeTypes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class SyntaxNode;
 

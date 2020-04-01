@@ -8,7 +8,7 @@
 #include "UniqueNameGenerator.h"
 #include "Utils.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     static const char FirstCharCandidates[] = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_$";
     static const char CharCandidates[] = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_$";

@@ -4,7 +4,7 @@
 
 #include <cinttypes>
 
-namespace rocket_bundle {
+namespace jetpack {
 
     enum class SyntaxNodeType: std::int16_t {
         Invalid = 0,

@@ -9,7 +9,7 @@
 #include "../tokenizer/Scanner.h"
 #include "SyntaxNodes.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
 
     class ParserContext final {
     public:

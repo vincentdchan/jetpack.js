@@ -17,7 +17,7 @@
 #include "SyntaxNodes.h"
 #include "ParserContext.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
 
     class ParserCommon {
     public:

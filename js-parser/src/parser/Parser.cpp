@@ -7,7 +7,7 @@
 #include "TypescriptParser.h"
 #include "../tokenizer/Token.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
     using namespace std;
 
     Parser::Parser(std::shared_ptr<ParserContext> state):

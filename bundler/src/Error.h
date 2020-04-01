@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace rocket_bundle {
+namespace jetpack {
 
     class Error : std::exception {
     public:

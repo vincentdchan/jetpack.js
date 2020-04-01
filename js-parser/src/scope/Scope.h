@@ -14,7 +14,7 @@
 #include "ImportManager.h"
 #include "ExportManager.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     enum class ScopeType {
         Invalid = 0,

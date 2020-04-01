@@ -6,7 +6,7 @@
 #include "ErrorMessage.h"
 #include <fmt/format.h>
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
     using namespace std;
 
     ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state)

@@ -6,7 +6,7 @@
 #include <memory>
 #include "ParserCommon.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
 
     class TypeScriptParser: private ParserCommon {
     public:

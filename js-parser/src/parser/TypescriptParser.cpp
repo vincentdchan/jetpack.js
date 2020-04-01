@@ -5,7 +5,7 @@
 #include "TypescriptParser.h"
 #include "Parser.hpp"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
 
     TypeScriptParser::TypeScriptParser(std::shared_ptr<ParserContext> state):
     ParserCommon(std::move(state)) {

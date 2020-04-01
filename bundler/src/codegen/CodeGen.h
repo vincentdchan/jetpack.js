@@ -12,7 +12,7 @@
 #include "Utils.h"
 #include "NodeTraverser.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     /**
      * Reference: https://github.com/davidbonnet/astring/blob/master/src/astring.js

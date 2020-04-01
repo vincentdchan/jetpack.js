@@ -11,8 +11,8 @@
 #include "../src/UniqueNameGenerator.h"
 #include "../src/ModuleResolver.h"
 
-using namespace rocket_bundle;
-using namespace rocket_bundle::parser;
+using namespace jetpack;
+using namespace jetpack::parser;
 
 /**
  * do not generate duplicate var name

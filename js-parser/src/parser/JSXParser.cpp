@@ -6,7 +6,7 @@
 #include <fmt/format.h>
 #include "JSXParser.h"
 
-namespace rocket_bundle::parser {
+namespace jetpack::parser {
     using namespace std;
 
     JSXParser::JSXParser(Parser& parent, std::shared_ptr<ParserContext> ctx)

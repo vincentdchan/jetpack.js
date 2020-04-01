@@ -9,8 +9,8 @@
 
 #include "../src/codegen/CodeGen.h"
 
-using namespace rocket_bundle;
-using namespace rocket_bundle::parser;
+using namespace jetpack;
+using namespace jetpack::parser;
 
 inline Sp<Module> ParseString(const std::string& src) {
     auto u16src = std::make_shared<UString>();
@@ -39,7 +39,7 @@ TEST(Scope, Collect) {
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
@@ -49,7 +49,7 @@ TEST(Scope, Rename) {
     std::string src = "var name = 3;\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"new_name");
@@ -69,7 +69,7 @@ TEST(Scope, RenameImportNamespace) {
     std::string src = "import * as name from 'main';\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"new_name");
@@ -97,7 +97,7 @@ TEST(Scope, RenameFunction1) {
                            "}\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"new_name");
@@ -124,7 +124,7 @@ TEST(Scope, RenameFunction2) {
                            "}\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"ok", u"ok1");
@@ -149,7 +149,7 @@ TEST(Scope, RenameFunction3) {
                            "}\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"rename");
@@ -168,7 +168,7 @@ TEST(Scope, RenameObjectPattern) {
     std::string expected = "var { name: renamed } = obj;\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"other", u"renamed");
@@ -187,7 +187,7 @@ TEST(Scope, RenameObjectPattern2) {
     std::string expected = "var { name: other } = obj;\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"ok1");
@@ -206,7 +206,7 @@ TEST(Scope, RenameObjectPattern3) {
     std::string expected = "var { name: renamed } = obj;\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"renamed");
@@ -235,7 +235,7 @@ TEST(Scope, Cls) {
                            "}\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"print", u"renamed");
@@ -254,7 +254,7 @@ TEST(Scope, RenameImport) {
     std::string expected = "import { name as renamed } from 'main';\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"renamed");
@@ -275,7 +275,7 @@ TEST(Scope, RenameImport3) {
                       "export default a + 3 + b + fun();";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"a", u"p");
@@ -296,7 +296,7 @@ TEST(Scope, RenameImportDefault) {
     std::string expected = "import Angular from 'react';\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"React", u"Angular");
@@ -317,7 +317,7 @@ TEST(Scope, RenameImport2) {
                            "console.log(renamed);\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"renamed");
@@ -338,7 +338,7 @@ TEST(Scope, RenameExport1) {
                            "export { renamed as foo };\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"renamed");
@@ -359,7 +359,7 @@ TEST(Scope, RenameExport2) {
                            "export { renamed as name };\n";
 
     auto mod = ParseString(src);
-    mod->scope->ResolveAllSymbols();
+    mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
     changeset.emplace_back(u"name", u"renamed");

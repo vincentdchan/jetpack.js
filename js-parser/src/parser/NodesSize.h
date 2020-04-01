@@ -7,7 +7,7 @@
 #include "BaseNodes.h"
 #include "SyntaxNodes.h"
 
-namespace rocket_bundle::node_size {
+namespace jetpack::node_size {
 
     constexpr int nodes_size_array[] = {
          sizeof(SyntaxNode),

@@ -2,7 +2,7 @@
 
 #include "NodeTypes.h"
 
-namespace rocket_bundle {
+namespace jetpack {
 
     const char* SyntaxNodeTypeToString(SyntaxNodeType type_) {
         switch (type_) {
