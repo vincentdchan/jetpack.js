@@ -117,7 +117,9 @@ namespace rocket_bundle {
         std::cerr << "Error: " << error_content << std::endl;
     }
 
-    void ModuleResolver::BeginFromEntry(std::string base_path, std::string target_path) {
+    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config,
+                                        std::string base_path,
+                                        std::string target_path) {
         std::string path;
         if (target_path.empty()) {
             return;
@@ -132,9 +134,9 @@ namespace rocket_bundle {
         auto thread_pool_size = std::thread::hardware_concurrency();
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
 
-        EnqueueOne([this, &path] {
+        EnqueueOne([this, &config, &path] {
             try {
-                ParseFileFromPath(path);
+                ParseFileFromPath(config, path);
             } catch (parser::ParseError& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 worker_errors_.push_back({ path, ex.ErrorMessage() });
@@ -164,12 +166,13 @@ namespace rocket_bundle {
         }
     }
 
-    void ModuleResolver::ParseFileFromPath(const std::string &path) {
+    void ModuleResolver::ParseFileFromPath(const parser::ParserContext::Config& config,
+                                           const std::string &path) {
         if (!utils::IsFileExist(path)) {
             Path exist_path(path);
             if (!exist_path.EndsWith(".js")) {
                 exist_path.slices[exist_path.slices.size() - 1] += ".js";
-                ParseFileFromPath(exist_path.ToString());
+                ParseFileFromPath(config, exist_path.ToString());
                 return;
             }
 
@@ -190,17 +193,17 @@ namespace rocket_bundle {
             modules_map_[path] = entry_module;
         }
 
-        ParseFile(entry_module);
+        ParseFile(config, entry_module);
     }
 
-    void ModuleResolver::ParseFile(Sp<ModuleFile> mf) {
-        ParserContext::Config config = ParserContext::Config::Default();
+    void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
+                                   Sp<ModuleFile> mf) {
         auto src = std::make_shared<UString>();
         (*src) = ReadFileStream(mf->path);
         auto ctx = std::make_shared<ParserContext>(src, config);
         Parser parser(ctx);
 
-        parser.OnNewImportLocationAdded([this, &mf] (bool is_import, const UString& path) {
+        parser.OnNewImportLocationAdded([this, &config, &mf] (bool is_import, const UString& path) {
             if (!trace_file) return;
 
             auto u8path = utils::To_UTF8(path);
@@ -243,9 +246,9 @@ namespace rocket_bundle {
 
             mf->ref_mods.push_back(new_mf);
 
-            EnqueueOne([this, new_mf] {
+            EnqueueOne([this, &config, new_mf] {
                 try {
-                    ParseFile(new_mf);
+                    ParseFile(config, new_mf);
                 } catch (parser::ParseError& ex) {
                     std::lock_guard<std::mutex> guard(error_mutex_);
                     worker_errors_.push_back({ new_mf->path, ex.ErrorMessage() });

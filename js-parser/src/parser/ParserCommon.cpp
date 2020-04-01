@@ -9,28 +9,8 @@
 namespace rocket_bundle::parser {
     using namespace std;
 
-    ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state):
-        ctx(std::move(state)) {
-
-        ctx->start_marker_ = ParserContext::Marker {
-            0,
-            ctx->scanner_->LineNumber(),
-            0,
-        };
-
-        ctx->last_marker_ = ParserContext::Marker {
-            0,
-            ctx->scanner_->LineNumber(),
-            0,
-        };
-
-        NextToken();
-
-        ctx->last_marker_ = ParserContext::Marker {
-            ctx->scanner_->Index(),
-            ctx->scanner_->LineNumber(),
-            ctx->scanner_->Column(),
-        };
+    ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state)
+    : ctx(std::move(state)) {
     }
 
     void ParserCommon::TolerateError(const std::string &message) {

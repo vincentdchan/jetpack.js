@@ -9,7 +9,8 @@
 namespace rocket_bundle::parser {
     using namespace std;
 
-    JSXParser::JSXParser(std::shared_ptr<ParserContext> ctx): ParserCommon(ctx)  {
+    JSXParser::JSXParser(Parser& parent, std::shared_ptr<ParserContext> ctx)
+    : ParserCommon(ctx), parent_(parent)  {
     }
 
     UString JSXParser::GetQualifiedElementName(const Sp<SyntaxNode> &node) {
@@ -46,12 +47,179 @@ namespace rocket_bundle::parser {
         return qualified_name;
     }
 
-    Sp<JSXElement> JSXParser::ParseJSXRoot(Scope& scope) {
+    Sp<Expression> JSXParser::ParseJSXRoot(Scope& scope) {
         StartJSX();
         auto elem = ParseJSXElement(scope);
         FinishJSX();
 
+        if (this->ctx->config_.transpile_jsx) {
+            return TranspileJSX(scope, elem);
+        }
         return elem;
+    }
+
+    inline Sp<Identifier> MakeId(const UString& content) {
+        auto id = std::make_shared<Identifier>();
+        id->name = content;
+        return id;
+    }
+
+    Sp<Expression> JSXParser::TranspileJSX(Scope& scope, const Sp<JSXElement>& jsx) {
+        auto result = std::make_shared<CallExpression>();
+
+        auto left = std::make_shared<MemberExpression>();
+        auto id = MakeId(u"React");
+        left->object = id;
+        left->property = MakeId(u"createElement");
+
+        scope.AddUnresolvedId(id);
+
+        result->callee = left;
+
+        bool has_added_lit = false;
+        if (jsx->opening_element->name->type == SyntaxNodeType::JSXIdentifier) {
+            auto jsx_id = std::dynamic_pointer_cast<JSXIdentifier>(jsx->opening_element->name);
+            if (!jsx_id->name.empty()) {
+                char16_t ch = jsx_id->name[0];
+                if (ch >= u'a' && ch <= u'z') {
+                    auto new_lit = std::make_shared<Literal>();
+                    new_lit->str_ = jsx_id->name;
+                    new_lit->raw = u"\"" + jsx_id->name + u"\"";
+
+                    result->arguments.push_back(new_lit);
+
+                    has_added_lit = true;
+                }
+            }
+        }
+
+        if (!has_added_lit) {
+            // do something
+        }
+
+        if (!jsx->opening_element->attributes.empty()) {
+            auto obj_expr = std::make_shared<ObjectExpression>();
+            for (auto& attrib : jsx->opening_element->attributes) {
+                switch (attrib->type) {
+                    case SyntaxNodeType::JSXAttribute: {
+                        auto named_attr = std::dynamic_pointer_cast<JSXAttribute>(attrib);
+                        auto jsx_name = std::dynamic_pointer_cast<JSXIdentifier>(named_attr->name);
+
+                        auto prop = std::make_shared<Property>();
+                        prop->key = MakeId(jsx_name->name);
+
+                        if (named_attr->value.has_value()) {
+                            auto value = *named_attr->value;
+                            switch (value->type) {
+                                case SyntaxNodeType::JSXElement: {
+                                    auto jsx_elem = std::dynamic_pointer_cast<JSXElement>(value);
+                                    prop->value = TranspileJSX(scope, jsx_elem);
+                                    break;
+                                }
+
+                                case SyntaxNodeType::Literal: {
+                                    auto lit = std::dynamic_pointer_cast<Literal>(value);
+                                    prop->value = lit;
+                                    break;
+                                }
+
+                                case SyntaxNodeType::JSXExpressionContainer: {
+                                    auto expr_container = std::dynamic_pointer_cast<JSXExpressionContainer>(value);
+                                    prop->value = expr_container->expression;
+                                    break;
+                                }
+
+                                default:
+                                    break;
+
+                            }
+
+                        } else {
+                            auto bool_lit = std::make_shared<Literal>();
+                            bool_lit->ty = Literal::Ty::Boolean;
+                            bool_lit->raw = u"true";
+                            bool_lit->str_ = u"true";
+                            prop->value = std::move(bool_lit);
+                        }
+
+                        obj_expr->properties.push_back(std::move(prop));
+                        break;
+                    }
+
+                    case SyntaxNodeType::JSXSpreadAttribute: {
+                        auto spread_attr = std::dynamic_pointer_cast<JSXSpreadAttribute>(attrib);
+
+                        auto spread_element = std::make_shared<SpreadElement>();
+
+                        spread_element->argument = spread_attr->argument;
+
+                        obj_expr->properties.push_back(spread_element);
+                        break;
+                    }
+
+                    default:
+                        break;
+
+                }
+            }
+            result->arguments.push_back(std::move(obj_expr));
+        } else {
+            if (!jsx->children.empty()) {
+                auto null_lit = std::make_shared<Literal>();
+                null_lit->ty = Literal::Ty::Null;
+                null_lit->str_ = u"null";
+                null_lit->raw = u"null";
+                result->arguments.push_back(std::move(null_lit));
+            }
+        }
+
+        auto children = TranspileJSXChildren(scope, jsx->children);
+        result->arguments.insert(std::end(result->arguments),
+                                 std::begin(children),
+                                 std::end(children));
+
+        return result;
+    }
+
+    std::vector<Sp<SyntaxNode>>
+    JSXParser::TranspileJSXChildren(Scope& scope,
+                                    const std::vector<Sp<SyntaxNode>> &children) {
+        std::vector<Sp<SyntaxNode>> result;
+
+        for (auto& child : children) {
+            switch (child->type) {
+                case SyntaxNodeType::JSXText: {
+                    auto text = std::dynamic_pointer_cast<JSXText>(child);
+
+                    auto str_lit = std::make_shared<Literal>();
+                    str_lit->ty = Literal::Ty::String;
+                    str_lit->str_ = text->value;
+                    str_lit->raw = u"\"" + text->raw + u"\"";
+
+                    result.push_back(std::move(str_lit));
+                    break;
+                }
+
+                case SyntaxNodeType::JSXElement: {
+                    auto child_elem = std::dynamic_pointer_cast<JSXElement>(child);
+                    result.push_back(TranspileJSX(scope, child_elem));
+                    break;
+                }
+
+                case SyntaxNodeType::JSXExpressionContainer: {
+                    auto expr = std::dynamic_pointer_cast<JSXExpressionContainer>(child);
+                    result.push_back(expr->expression);
+                    break;
+                }
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        return result;
     }
 
     Sp<JSXElement> JSXParser::ParseJSXElement(Scope& scope) {
@@ -201,8 +369,7 @@ namespace rocket_bundle::parser {
         auto node = Alloc<JSXSpreadAttribute>();
         FinishJSX();
 
-        Parser parser(ctx);
-        node->argument = parser.ParseAssignmentExpression(scope);
+        node->argument = parent_.ParseAssignmentExpression(scope);
         ReEnterJSX();
 
         return Finalize(start_marker, node);
@@ -262,8 +429,7 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<JSXExpressionContainer>();
 
-        Parser parser(ctx);
-        node->expression = parser.ParseAssignmentExpression(scope);
+        node->expression = parent_.ParseAssignmentExpression(scope);
 
         ReEnterJSX();
         return Finalize(start_marker, node);
@@ -314,8 +480,7 @@ namespace rocket_bundle::parser {
 
         auto node = Alloc<JSXExpressionContainer>();
 
-        Parser parser(ctx);
-        node->expression = parser.ParseAssignmentExpression(scope);
+        node->expression = parent_.ParseAssignmentExpression(scope);
 
         ReEnterJSX();
 

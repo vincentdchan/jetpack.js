@@ -132,11 +132,15 @@ namespace rocket_bundle {
             name_generator = ReadableNameGenerator::Make();
         }
 
-        void BeginFromEntry(std::string base_path, std::string origin_path);
+        void BeginFromEntry(const parser::ParserContext::Config& config,
+                            std::string base_path,
+                            std::string origin_path);
 
-        void ParseFileFromPath(const std::string& path);
+        void ParseFileFromPath(const parser::ParserContext::Config& config,
+                               const std::string& path);
 
-        void ParseFile(Sp<ModuleFile>);
+        void ParseFile(const parser::ParserContext::Config& config,
+                       Sp<ModuleFile>);
 
         inline void SetTraceFile(bool val) {
             trace_file = val;

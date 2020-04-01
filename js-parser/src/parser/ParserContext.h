@@ -24,6 +24,11 @@ namespace rocket_bundle::parser {
             bool jsx;
             bool typescript;
 
+            /**
+             * transpile jsx when parsing
+             */
+            bool transpile_jsx;
+
         private:
             Config() = delete;
 

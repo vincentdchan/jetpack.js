@@ -25,14 +25,19 @@ namespace rocket_bundle::parser {
 
         static UString GetQualifiedElementName(const Sp<SyntaxNode>& node);
 
-        JSXParser(std::shared_ptr<ParserContext> ctx);
+        JSXParser(Parser& parent, std::shared_ptr<ParserContext> ctx);
         JSXParser(const JSXParser& parser) = delete;
         JSXParser(JSXParser&&) = delete;
 
         JSXParser& operator=(const JSXParser& parser) = delete;
         JSXParser& operator=(JSXParser&&) = delete;
 
-        Sp<JSXElement> ParseJSXRoot(Scope& scope);
+        Sp<Expression> ParseJSXRoot(Scope& scope);
+
+        Sp<Expression> TranspileJSX(Scope& scope, const Sp<JSXElement>& jsx);
+
+        std::vector<Sp<SyntaxNode>>
+        TranspileJSXChildren(Scope& scope, const std::vector<Sp<SyntaxNode>>& children);
 
         Sp<JSXElement> ParseJSXElement(Scope& scope);
 
@@ -79,6 +84,8 @@ namespace rocket_bundle::parser {
         static std::unique_ptr<robin_hood::unordered_map<std::u16string, char16_t>> XHTMLEntities;
 
         void InitXHTMLEntities();
+
+        Parser& parent_;
 
     public:
         inline bool JSXMatch(JsTokenType jt) {
