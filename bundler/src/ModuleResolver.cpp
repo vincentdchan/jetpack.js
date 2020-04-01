@@ -445,7 +445,7 @@ namespace rocket_bundle {
                 throw std::move(col);
             }
             std::vector<std::tuple<UString, UString>> renames;
-            name_generator = MinifyNameGenerator::Merge(collection.content);
+            name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
             RenameAllRootLevelVariable();
         } else {
             RenameAllRootLevelVariable();
@@ -862,7 +862,7 @@ namespace rocket_bundle {
                 if (!local_export_opt.has_value()) {
                     throw ModuleResolveException(
                         mf->path,
-                        format("find symbol failed: {}", utils::To_UTF8(import_local_name))
+                        format("can not find export variable '{}' from {}", utils::To_UTF8(target_export_name), absolute_path)
                     );
                 }
 

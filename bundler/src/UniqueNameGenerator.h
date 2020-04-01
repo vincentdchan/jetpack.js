@@ -58,6 +58,9 @@ namespace rocket_bundle {
 
     };
 
+    /**
+     * As base prevous generator of MinifyNameGenerator;
+     */
     class UnresolvedNameCollector : public UniqueNameGenerator {
     public:
         UnresolvedNameCollector() = default;
@@ -86,6 +89,11 @@ namespace rocket_bundle {
         std::shared_ptr<MinifyNameGenerator>
         Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec);
 
+        static
+        std::shared_ptr<MinifyNameGenerator>
+        Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec,
+              const std::shared_ptr<UniqueNameGenerator>& prev);
+
         std::optional<std::u16string> Next(const std::u16string& original_name) override;
 
         bool IsNameUsed(const std::u16string& name) override;
@@ -97,7 +105,7 @@ namespace rocket_bundle {
 
         std::int32_t counter = 0;
 
-        std::shared_ptr<MinifyNameGenerator> prev;
+        std::shared_ptr<UniqueNameGenerator> prev;
 
         std::weak_ptr<MinifyNameGenerator> weak_self;
 

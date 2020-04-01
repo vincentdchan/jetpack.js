@@ -137,6 +137,16 @@ namespace rocket_bundle {
         return result;
     }
 
+    std::shared_ptr<MinifyNameGenerator>
+    MinifyNameGenerator::Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec,
+                               const std::shared_ptr<UniqueNameGenerator>& prev) {
+        auto result = Merge(vec);
+
+        result->prev = prev;
+
+        return result;
+    }
+
     std::optional<std::u16string>
     MinifyNameGenerator::Next(const std::u16string& original) {
         std::u16string result;
@@ -153,16 +163,11 @@ namespace rocket_bundle {
             return true;
         }
 
-        std::shared_ptr<MinifyNameGenerator> self = weak_self.lock();
-
-        while (self != nullptr) {
-            if (self->used_name.find(name) != self->used_name.end()) {  // found
-                return true;
-            }
-            self = self->prev;
+        if (used_name.find(name) != used_name.end()) {  // found
+            return true;
         }
 
-        return false;
+        return prev != nullptr && prev->IsNameUsed(name);
     }
 
     std::u16string MinifyNameGenerator::GenAName() {
