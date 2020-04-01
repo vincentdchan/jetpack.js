@@ -50,7 +50,7 @@ namespace rocket_bundle {
         std::vector<Sp<MinifyNameGenerator>> result;
         result.reserve(ast->scope->children.size());
         for (auto child : ast->scope->children) {
-            result.push_back(RenameInnerScopes(*child));
+            result.push_back(RenameInnerScopes(*child, renamer.idLogger));
         }
 
         auto final = MinifyNameGenerator::Merge(result);
@@ -60,12 +60,12 @@ namespace rocket_bundle {
         }
     }
 
-    Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope) {
+    Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope, GlobalUnresolvedIdLogger* idLogger) {
         std::vector<Sp<MinifyNameGenerator>> temp;
         temp.reserve(scope.children.size());
 
         for (auto child : scope.children) {
-            temp.push_back(RenameInnerScopes(*child));
+            temp.push_back(RenameInnerScopes(*child, idLogger));
         }
 
         std::vector<std::tuple<UString, UString>> renames;
@@ -268,8 +268,11 @@ namespace rocket_bundle {
         });
 
         mf->ast = parser.ParseModule();
-        mf->ast->scope->ResolveAllSymbols();
-        // fill all symbols to rename map;
+
+        std::vector<Sp<Identifier>> unresolved_ids;
+        mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
+
+        id_logger_.InsertByList(unresolved_ids);
     }
 
     std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {
@@ -325,7 +328,7 @@ namespace rocket_bundle {
      */
     void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                                                       const Sp<rocket_bundle::ModuleFile>& mod,
-                                                      std::unordered_set<UString>* white_list) {
+                                                      robin_hood::unordered_set<UString>* white_list) {
 
         if (mod->visited_mark) {
             return;
@@ -360,7 +363,7 @@ namespace rocket_bundle {
             if (info.is_export_all) {
                 TraverseModulePushExportVars(arr, iter->second, nullptr);
             } else {
-                std::unordered_set<UString> new_white_list;
+                robin_hood::unordered_set<UString> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }
@@ -424,6 +427,7 @@ namespace rocket_bundle {
         if (config.minify) {
             ClearAllVisitedMark();
             RenamerCollection collection;
+            collection.idLogger = &this->id_logger_;
 
             for (auto& tuple : modules_map_) {
                 EnqueueOne([this, mod = tuple.second, &collection] {

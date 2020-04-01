@@ -19,6 +19,7 @@
 #include <mutex>
 #include <parser/Parser.hpp>
 
+#include "./GlobalUnresolvedIdLogger.h"
 #include "./UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"
 
@@ -64,6 +65,7 @@ namespace rocket_bundle {
     struct RenamerCollection {
     public:
         std::vector<Sp<MinifyNameGenerator>> content;
+        GlobalUnresolvedIdLogger* idLogger = nullptr;
 
         std::mutex mutex_;
 
@@ -108,7 +110,7 @@ namespace rocket_bundle {
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
         void RenameInnerScopes(RenamerCollection& col);
-        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope);
+        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, GlobalUnresolvedIdLogger* idLogger);
 
         void CodeGenFromAst(const CodeGen::Config &config);
 
@@ -184,7 +186,7 @@ namespace rocket_bundle {
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&,
-                std::unordered_set<UString>* white_list);
+                robin_hood::unordered_set<UString>* white_list);
 
         void RenameAllRootLevelVariable();
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
@@ -208,6 +210,8 @@ namespace rocket_bundle {
         Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
 
         std::shared_ptr<UniqueNameGenerator> name_generator;
+
+        GlobalUnresolvedIdLogger id_logger_;
 
         std::mutex map_mutex_;
 

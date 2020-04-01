@@ -40,7 +40,7 @@ namespace rocket_bundle {
         });
     }
 
-    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const std::u16string name) {
+    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const std::u16string& name) {
         if (name.size() == 1) {
             return false;
         } else if (name.size() == 2) {
@@ -79,7 +79,7 @@ namespace rocket_bundle {
     }
 
     std::once_flag UniqueNameGeneratorWithUsedName::init_once_;
-    std::unordered_set<std::u16string> UniqueNameGeneratorWithUsedName::long_keywords_set;
+    robin_hood::unordered_set<std::u16string> UniqueNameGeneratorWithUsedName::long_keywords_set;
 
     std::shared_ptr<ReadableNameGenerator> ReadableNameGenerator::Make() {
         std::shared_ptr<ReadableNameGenerator> result(new ReadableNameGenerator);
@@ -139,13 +139,11 @@ namespace rocket_bundle {
             if (ptr->counter > result->counter) {
                 result->counter = ptr->counter;
             }
+            result->used_name.insert(std::begin(ptr->used_name),
+                                     std::end(ptr->used_name));
         }
 
         return result;
-    }
-
-    MinifyNameGenerator::MinifyNameGenerator() {
-        std::memset(buffer, 0, BUFFER_SIZE * sizeof(std::int32_t));
     }
 
     std::optional<std::u16string>
@@ -188,6 +186,7 @@ namespace rocket_bundle {
     std::u16string MinifyNameGenerator::GenAName() {
         std::string result;
 
+        std::int32_t buffer[BUFFER_SIZE];
         std::memset(buffer, 0, BUFFER_SIZE * sizeof(std::int32_t));
 
         int i = 0;

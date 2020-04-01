@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <robin_hood.h>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <optional>
 #include <mutex>
+#include <robin_hood.h>
 
 namespace rocket_bundle {
 
@@ -29,13 +30,13 @@ namespace rocket_bundle {
     protected:
         UniqueNameGeneratorWithUsedName();
 
-        std::unordered_set<std::u16string> used_name;
+        robin_hood::unordered_set<std::u16string> used_name;
 
-        bool IsJsKeyword(const std::u16string name);
+        bool IsJsKeyword(const std::u16string& name);
 
     private:
         static std::once_flag init_once_;
-        static std::unordered_set<std::u16string> long_keywords_set;
+        static robin_hood::unordered_set<std::u16string> long_keywords_set;
 
     };
 
@@ -79,9 +80,8 @@ namespace rocket_bundle {
         std::u16string GenAName();
 
     private:
-        MinifyNameGenerator();
+        MinifyNameGenerator() = default;
 
-        std::int32_t buffer[BUFFER_SIZE];
         std::int32_t counter = 0;
 
         std::shared_ptr<MinifyNameGenerator> prev;

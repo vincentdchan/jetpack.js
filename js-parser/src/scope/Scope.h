@@ -89,7 +89,10 @@ namespace rocket_bundle {
             return parent;
         }
 
-        void ResolveAllSymbols();
+        /**
+         * @param unresolve_collector collect unresolved ids
+         */
+        void ResolveAllSymbols(std::vector<std::shared_ptr<Identifier>>* unresolve_collector);
 
         virtual bool BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset);
 

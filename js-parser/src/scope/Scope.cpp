@@ -63,19 +63,22 @@ namespace rocket_bundle {
      *
      * Do this after parsing.
      */
-    void Scope::ResolveAllSymbols() {
+    void Scope::ResolveAllSymbols(std::vector<std::shared_ptr<Identifier>>* unresolve_collector) {
         for (auto iter = unresolved_id.begin(); iter != unresolved_id.end();) {
             auto var = RecursivelyFindVariable((*iter)->name);
             if (var != nullptr) {
                 var->identifiers.push_back(*iter);
                 iter = unresolved_id.erase(iter);
             } else {
+                if (unresolve_collector) {
+                    unresolve_collector->push_back(*iter);
+                }
                 iter++;
             }
         }
 
         for (auto child : children) {
-            child->ResolveAllSymbols();
+            child->ResolveAllSymbols(unresolve_collector);
         }
     }
 
