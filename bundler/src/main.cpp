@@ -18,6 +18,7 @@
 #define OPT_ENTRY "entry"
 #define OPT_TOLERANT "tolerant"
 #define OPT_JSX "jsx"
+#define OPT_LIBRARY "library"
 #define OPT_ANALYZE_MODULE "analyze-module"
 #define OPT_NO_TRACE "no-trace"
 #define OPT_MINIFY "minify"
@@ -29,9 +30,11 @@ static int AnalyzeModule(const std::string& self_path,
                          const std::string& path,
                          bool jsx,
                          bool trace_file);
+
 static int BundleModule(const std::string& self_path,
                         bool jsx,
                         bool minify,
+                        bool library,
                         const std::string& path,
                         const std::string& out_path);
 
@@ -42,6 +45,7 @@ int main(int argc, char** argv) {
                 (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
                 (OPT_TOLERANT, "tolerant parsing error")
                 (OPT_JSX, "support jsx syntax")
+                (OPT_LIBRARY, "bundle as library, do not bundle node_modules")
                 (OPT_HELP, "produce help message")
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
                 (OPT_NO_TRACE, "do not trace ref file when analyze module")
@@ -55,6 +59,7 @@ int main(int argc, char** argv) {
         bool trace_file = true;
         bool minify = false;
         bool jsx = false;
+        bool library = false;
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -65,12 +70,17 @@ int main(int argc, char** argv) {
         if (result[OPT_NO_TRACE].count()) {
             trace_file = false;
         }
+
         if (result[OPT_MINIFY].count()) {
             minify = true;
         }
 
         if (result[OPT_JSX].count()) {
             jsx = true;
+        }
+
+        if (result[OPT_LIBRARY].count()) {
+            library = true;
         }
 
         if (result[OPT_ANALYZE_MODULE].count()) {
@@ -82,7 +92,7 @@ int main(int argc, char** argv) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(argv[0], jsx, minify, entry_path, out_path);
+            return BundleModule(argv[0], jsx, minify, library, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;
@@ -123,6 +133,7 @@ static int AnalyzeModule(const std::string& self_path_str,
 static int BundleModule(const std::string& self_path_str,
                         bool jsx,
                         bool minify,
+                        bool library,
                         const std::string& path,
                         const std::string& out_path) {
 
