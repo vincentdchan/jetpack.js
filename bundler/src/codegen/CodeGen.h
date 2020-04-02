@@ -83,7 +83,7 @@ namespace jetpack {
         }
 
         inline void WriteLineEnd() {
-//            if (config_.minify) return;
+            if (config_.minify) return;
             output << config_.line_end;
             state_.line++;
 #ifdef DEBUG

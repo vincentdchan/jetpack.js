@@ -962,7 +962,15 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
-        Write(lit->raw, lit);
+        if (lit->ty == Literal::Ty::Boolean) {
+            if (lit->raw == u"true") {
+                Write(u"!0");
+            } else {
+                Write(u"!1");
+            }
+        } else {
+            Write(lit->raw, lit);
+        }
     }
 
     void CodeGen::Traverse(const Sp<RegexLiteral> &lit) {
