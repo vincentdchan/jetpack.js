@@ -330,7 +330,7 @@ namespace jetpack {
      */
     void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                                                       const Sp<jetpack::ModuleFile>& mod,
-                                                      robin_hood::unordered_set<UString>* white_list) {
+                                                      HashSet<UString>* white_list) {
 
         if (mod->visited_mark) {
             return;
@@ -365,7 +365,7 @@ namespace jetpack {
             if (info.is_export_all) {
                 TraverseModulePushExportVars(arr, iter->second, nullptr);
             } else {
-                robin_hood::unordered_set<UString> new_white_list;
+                HashSet<UString> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }

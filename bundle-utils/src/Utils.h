@@ -12,11 +12,28 @@
 
 #ifndef _WIN32
 #include <unistd.h>
+#include <robin_hood.h>
 #else
+#include <unordered_set>
+#include <unordered_map>
 #include <Windows.h>
 #endif
 
 typedef std::u16string UString;
+
+#ifndef _WIN32
+template <typename Key>
+using HashSet = robin_hood::unordered_set<Key>;
+
+template <typename Key, typename Value>
+using HashMap = robin_hood::unordered_map<Key, Value>;
+#else
+template <typename Key>
+using HashSet = std::unordered_set<Key>;
+
+template <typename Key, typename Value>
+using HashMap = std::unordered_map<Key, Value>;
+#endif
 
 namespace jetpack::utils {
     using std::int64_t;

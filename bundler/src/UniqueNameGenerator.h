@@ -29,13 +29,13 @@ namespace jetpack {
     protected:
         UniqueNameGeneratorWithUsedName();
 
-        robin_hood::unordered_set<std::u16string> used_name;
+        HashSet<std::u16string> used_name;
 
         bool IsJsKeyword(const std::u16string& name);
 
     private:
         static std::once_flag init_once_;
-        static robin_hood::unordered_set<std::u16string> long_keywords_set;
+        static HashSet<std::u16string> long_keywords_set;
 
     };
 
@@ -71,7 +71,7 @@ namespace jetpack {
             return std::nullopt;
         }
 
-        robin_hood::unordered_set<std::u16string> used_name;
+        HashSet<std::u16string> used_name;
 
         std::mutex logger_mutex;
 

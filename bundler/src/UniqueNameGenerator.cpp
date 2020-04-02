@@ -79,7 +79,7 @@ namespace jetpack {
     }
 
     std::once_flag UniqueNameGeneratorWithUsedName::init_once_;
-    robin_hood::unordered_set<std::u16string> UniqueNameGeneratorWithUsedName::long_keywords_set;
+    HashSet<std::u16string> UniqueNameGeneratorWithUsedName::long_keywords_set;
 
     std::shared_ptr<ReadableNameGenerator> ReadableNameGenerator::Make() {
         std::shared_ptr<ReadableNameGenerator> result(new ReadableNameGenerator);

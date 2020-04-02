@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <unordered_set>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
@@ -14,7 +13,6 @@
 #include <string>
 #include <atomic>
 #include <functional>
-#include <robin_hood.h>
 #include <fstream>
 #include <mutex>
 #include <parser/Parser.hpp>
@@ -91,7 +89,7 @@ namespace jetpack {
         /**
          * relative path -> absolute path
          */
-        robin_hood::unordered_map<std::string, std::string> resolved_map;
+        HashMap<std::string, std::string> resolved_map;
 
         /**
          * Temp for parallel codegen
@@ -176,7 +174,7 @@ namespace jetpack {
 
         std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
 
-        robin_hood::unordered_map<std::string, Sp<ModuleFile>> modules_map_;
+        HashMap<std::string, Sp<ModuleFile>> modules_map_;
 
     private:
         void EnqueueOne(std::function<void()> unit);
@@ -188,7 +186,7 @@ namespace jetpack {
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&,
-                robin_hood::unordered_set<UString>* white_list);
+                HashSet<UString>* white_list);
 
         void RenameAllRootLevelVariable();
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,

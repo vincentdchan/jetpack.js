@@ -7,8 +7,6 @@
 #include <vector>
 #include <list>
 #include <memory>
-#include <robin_hood.h>
-#include <unordered_set>
 
 #include "Variable.h"
 #include "ImportManager.h"
@@ -98,7 +96,7 @@ namespace jetpack {
 
         virtual ~Scope() = default;
 
-        robin_hood::unordered_map<UString, PVar> own_variables;
+        HashMap<UString, PVar> own_variables;
 
         std::vector<Scope*> children;
 
