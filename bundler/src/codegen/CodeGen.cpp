@@ -13,14 +13,56 @@ using namespace std;
 
 namespace jetpack {
 
+#define DEF_OP_PREC(OP_STR, OP_VAL) } else if (op == OP_STR) { \
+    return OP_VAL;
+
+    inline int BinaryStrPrecedence(const std::u16string& op) {
+        if (false) {
+
+        DEF_OP_PREC(u"||", 1)
+        DEF_OP_PREC(u"&&", 2)
+        DEF_OP_PREC(u"|", 3)
+        DEF_OP_PREC(u"^", 4)
+        DEF_OP_PREC(u"&", 5)
+
+        DEF_OP_PREC(u"==", 6)
+        DEF_OP_PREC(u"!=", 6)
+        DEF_OP_PREC(u"===", 6)
+        DEF_OP_PREC(u"!==", 6)
+
+        DEF_OP_PREC(u"<", 7)
+        DEF_OP_PREC(u">", 7)
+        DEF_OP_PREC(u"<=", 7)
+        DEF_OP_PREC(u">=", 7)
+
+        DEF_OP_PREC(u">>", 8)
+        DEF_OP_PREC(u"<<", 8)
+        DEF_OP_PREC(u">>>", 8)
+
+        DEF_OP_PREC(u"+", 9)
+        DEF_OP_PREC(u"-", 9)
+
+        DEF_OP_PREC(u"*", 11)
+        DEF_OP_PREC(u"/", 11)
+        DEF_OP_PREC(u"%", 11)
+
+        } else if (op == u"instanceof") {
+            return 7;
+        } else if (op == u"in") {
+            return 7;
+        }
+
+        return 0;
+    }
+
     CodeGen::CodeGen(): CodeGen(Config(), std::cout) {
     }
 
     CodeGen::CodeGen(const Config& config, std::ostream& output_stream):
             config_(config), output(output_stream) {}
 
-    int CodeGen::ExpressionPrecedence(SyntaxNodeType t) {
-        switch (t) {
+    int CodeGen::ExpressionPrecedence(const Sp<SyntaxNode>& node) {
+        switch (node->type) {
             case SyntaxNodeType::ArrayExpression:
             case SyntaxNodeType::TaggedTemplateExpression:
             case SyntaxNodeType::ThisExpression:
@@ -53,12 +95,16 @@ namespace jetpack {
             case SyntaxNodeType::UnaryExpression:
                 return 15;
 
-            case SyntaxNodeType::BinaryExpression:
-                return 14;
+            case SyntaxNodeType::BinaryExpression: {
+                auto bin_expr = std::dynamic_pointer_cast<BinaryExpression>(node);
 
-//                 TODO: Logical?
-//            case SyntaxNodeType::Logi
-//            return 13;
+                // is logical
+                if (bin_expr->operator_ == u"&&" || bin_expr->operator_ == u"||") {
+                    return 13;
+                }
+
+                return 14;
+            }
 
             case SyntaxNodeType::ConditionalExpression:
                 return 4;
@@ -139,11 +185,11 @@ namespace jetpack {
 
     bool CodeGen::ExpressionNeedsParenthesis(const Sp<Expression> &node, const Sp<BinaryExpression> &parent,
                                              bool is_right) {
-        int prec = ExpressionPrecedence(node->type);
+        int prec = ExpressionPrecedence(node);
         if (prec == needs_parentheses) {
             return true;
         }
-        int parent_prec = ExpressionPrecedence(parent->type);
+        int parent_prec = ExpressionPrecedence(parent);
         if (prec != parent_prec) {
             return (
                     (!is_right &&
@@ -156,11 +202,17 @@ namespace jetpack {
         if (prec != 13 && prec != 14) {
             return false;
         }
-        if (auto cb = dynamic_pointer_cast<BinaryExpression>(node); cb && cb->operator_ == u"**" && parent->operator_ == u"**") {
+        if (node->type != SyntaxNodeType::BinaryExpression) {
+            return false;
+        }
+        auto cb = dynamic_pointer_cast<BinaryExpression>(node);
+        if (cb->operator_ == u"**" && parent->operator_ == u"**") {
             return !is_right;
         }
-        // TODO:
-        return true;
+//        if (is_right) {
+//            return BinaryStrPrecedence(cb->operator_) <= BinaryStrPrecedence(parent->operator_);
+//        }
+        return BinaryStrPrecedence(cb->operator_) < BinaryStrPrecedence(parent->operator_);
     }
 
     void CodeGen::Traverse(const Sp<Script> &node) {
@@ -232,7 +284,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<ExpressionStatement> &node) {
-        int precedence = ExpressionPrecedence(node->type);
+        int precedence = ExpressionPrecedence(node);
         if (
                 (precedence == needs_parentheses) ||
                 (precedence == 3 && node->expression->type == SyntaxNodeType::ObjectPattern)) {
@@ -566,7 +618,7 @@ namespace jetpack {
     void CodeGen::Traverse(const Sp<ExportDefaultDeclaration> &node) {
         Write("export default ");
         TraverseNode(node->declaration);
-        if (ExpressionPrecedence(node->declaration->type) > 0 &&
+        if (ExpressionPrecedence(node->declaration) > 0 &&
             node->declaration->type == SyntaxNodeType::FunctionExpression) {
             Write(";");
         }
@@ -794,8 +846,8 @@ namespace jetpack {
             if (node->operator_.size() > 1) {
                 Write(" ");
             }
-            if (ExpressionPrecedence(node->argument->type) <
-                ExpressionPrecedence(SyntaxNodeType::UnaryExpression)
+            if (ExpressionPrecedence(node->argument) <
+                ExpressionPrecedence(std::make_shared<UnaryExpression>())
                     ) {
                 Write("(");
                 TraverseNode(node->argument);
@@ -843,9 +895,8 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<ConditionalExpression> &node) {
-        if (ExpressionPrecedence(node->test->type) >
-            ExpressionPrecedence(SyntaxNodeType::ConditionalExpression)
-                ) {
+        if (ExpressionPrecedence(node->test) >
+            ExpressionPrecedence(std::make_shared<ConditionalExpression>())) {
             TraverseNode(node->test);
         } else {
             Write("(");
@@ -860,11 +911,9 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<NewExpression> &node) {
         Write("new ");
-        if (
-                ExpressionPrecedence(node->callee->type) <
-                ExpressionPrecedence(SyntaxNodeType::CallExpression) ||
-                HasCallExpression(node->callee)
-                ) {
+        if (ExpressionPrecedence(node->callee) <
+            ExpressionPrecedence(std::make_shared<CallExpression>()) ||
+            HasCallExpression(node->callee)) {
             Write("(");
             TraverseNode(node->callee);
             Write(")");
@@ -875,7 +924,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<MemberExpression> &node) {
-        if (ExpressionPrecedence(node->object->type) < ExpressionPrecedence(SyntaxNodeType::MemberExpression)) {
+        if (ExpressionPrecedence(node->object) < ExpressionPrecedence(std::make_shared<MemberExpression>())) {
             Write('(');
             TraverseNode(node->object);
             Write(')');
@@ -893,10 +942,8 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<CallExpression> &node) {
-        if (
-                ExpressionPrecedence(node->callee->type) <
-                ExpressionPrecedence(SyntaxNodeType::CallExpression)
-                ) {
+        if (ExpressionPrecedence(node->callee) <
+            ExpressionPrecedence(std::make_shared<CallExpression>())) {
             Write("(");
             TraverseNode(node->callee);
             Write(")");

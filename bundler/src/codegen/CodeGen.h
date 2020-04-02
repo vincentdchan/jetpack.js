@@ -113,7 +113,7 @@ namespace jetpack {
 
         static const int needs_parentheses = 17;
 
-        static int ExpressionPrecedence(SyntaxNodeType t);
+        static int ExpressionPrecedence(const Sp<SyntaxNode>& node);
 
         void FormatVariableDeclaration(const Sp<VariableDeclaration>& node);
         void FormatSequence(std::vector<Sp<SyntaxNode>>& params);

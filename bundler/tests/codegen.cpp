@@ -104,7 +104,7 @@ TEST(CodeGen, ObjectExpression) {
 
 TEST(CodeGen, BinaryExpression) {
     std::string src =
-        "if ((currentBackground !== background) || ((currentBackgroundVersion !== texture.version) || (currentTonemapping !== renderer.toneMapping))) {\n"
+        "if (currentBackground !== background || currentBackgroundVersion !== texture.version || currentTonemapping !== renderer.toneMapping) {\n"
         "  boxMesh.material.needsUpdate = true;\n"
         "  currentBackground = background;\n"
         "  currentBackgroundVersion = texture.version;\n"
@@ -121,6 +121,48 @@ TEST(CodeGen, ForIn) {
         "    output[nextKey] = source[nextKey];\n"
         "  }\n"
         "}\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, BinaryExpression2) {
+    std::string src =
+        "1 + 2 + 3 + 4 + 5;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, BinaryExpression3) {
+    std::string src =
+        "1 * 2 + 3 + 4 + 5;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, BinaryExpression4) {
+    std::string src =
+        "1 + 2 * (3 + 4) + 5;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, BinaryExpression5) {
+    std::string src =
+        "1 + 2 * 3 + 4 + 5;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, LogicalExpression1) {
+    std::string src =
+        "a || b && c || d;\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, LogicalExpression2) {
+    std::string src =
+        "(a || b) && (c || d);\n";
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
