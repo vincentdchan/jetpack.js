@@ -48,6 +48,34 @@ namespace jetpack {
         return mod_var;
     }
 
+    inline Sp<Literal> MakeStringLiteral(const UString& str) {
+        auto lit = std::make_shared<Literal>();
+        lit->ty = Literal::Ty::String;
+        lit->str_ = str;
+        lit->raw = u"\"" + str + u"\"";
+        return lit;
+    }
+
+    inline Sp<Literal> MakeNull() {
+        auto null_lit = std::make_shared<Literal>();
+        null_lit->ty = Literal::Ty::Null;
+        null_lit->str_ = u"null";
+        null_lit->raw = u"null";
+
+        return null_lit;
+    }
+
+    inline void AddKeyValueToObject(const std::shared_ptr<ObjectExpression>& expr,
+                                    const UString& key,
+                                    const UString& value) {
+
+        auto prop = std::make_shared<Property>();
+        prop->key = MakeId(key);
+        prop->value = MakeId(value);
+
+        expr->properties.push_back(std::move(prop));
+    }
+
     void ModuleFile::RenameInnerScopes(RenamerCollection& renamer) {
         std::vector<Sp<MinifyNameGenerator>> result;
         result.reserve(ast->scope->children.size());
@@ -808,17 +836,43 @@ namespace jetpack {
 
             auto obj = std::make_shared<ObjectExpression>();
 
-            auto __proto__ = std::make_shared<Property>();
-            __proto__->key = MakeId("__proto__");
+            {
+                auto __proto__ = std::make_shared<Property>();
 
-            auto null_lit = std::make_shared<Literal>();
-            null_lit->ty = Literal::Ty::Null;
-            null_lit->str_ = u"null";
-            null_lit->raw = u"null";
+                __proto__->key = MakeId("__proto__");
+                __proto__->value = MakeNull();
 
-            __proto__->value = null_lit;
+                obj->properties.push_back(__proto__);
+            }
 
-            obj->properties.push_back(__proto__);
+            {
+                auto& relative_path = import_decl->source->str_;
+                std::string absolute_path = mf->resolved_map[utils::To_UTF8(relative_path)];
+
+                auto ref_mod = modules_map_[absolute_path];
+                if (ref_mod == nullptr) {
+                    throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
+                }
+
+                auto& export_manager = ref_mod->GetExportManager();
+
+                for (auto& tuple : export_manager.local_exports_name) {
+                    auto prop = std::make_shared<Property>();
+
+                    prop->kind = VarKind::Get;
+                    prop->key = MakeId(tuple.first);
+
+                    auto fun = std::make_shared<FunctionExpression>();
+                    auto block = std::make_shared<BlockStatement>();
+                    auto ret_stmt = std::make_shared<ReturnStatement>();
+                    ret_stmt->argument = { MakeId(tuple.second->local_name) };
+
+                    block->body.push_back(std::move(ret_stmt));
+                    fun->body = std::move(block);
+                    prop->value = std::move(fun);
+                    obj->properties.push_back(std::move(prop));
+                }
+            }
 
             declarator->init = { obj };
 
