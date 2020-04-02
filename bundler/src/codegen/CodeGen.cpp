@@ -807,28 +807,63 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<Property> &node) {
-        bool shorthand = node->shorthand;
-        if (node->value.has_value()
-            && node->key->type == SyntaxNodeType::Identifier
-            && (*node->value)->type == SyntaxNodeType::Identifier) {
-            auto key_id = std::dynamic_pointer_cast<Identifier>(node->key);
-            auto val_id = std::dynamic_pointer_cast<Identifier>(*node->value);
-            shorthand = key_id->name == val_id->name;
-        }
-        if (!shorthand) {
-            if (node->computed) {
-                Write("[");
+        switch (node->kind) {
+            case VarKind::Get: {
+                Write("get ");
                 TraverseNode(node->key);
-                Write("]");
-            } else {
+                if (!node->value.has_value()) return;
+                auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node->value);
+                if (fun == nullptr) return;
+
+                FormatSequence(fun->params);
+                if (!config_.minify) {
+                    Write(" ");
+                }
+                TraverseNode(fun->body);
+                break;
+            }
+
+            case VarKind::Set: {
+                Write("set ");
                 TraverseNode(node->key);
+                if (!node->value.has_value()) return;
+                auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node->value);
+                if (fun == nullptr) return;
+
+                FormatSequence(fun->params);
+                if (!config_.minify) {
+                    Write(" ");
+                }
+                TraverseNode(fun->body);
+                break;
             }
-        }
-        if (node->value.has_value()) {
-            if (!shorthand) {
-                Write(config_.minify ? ":" : ": ");
+
+            default: {
+                bool shorthand = node->shorthand;
+                if (node->value.has_value()
+                    && node->key->type == SyntaxNodeType::Identifier
+                    && (*node->value)->type == SyntaxNodeType::Identifier) {
+                    auto key_id = std::dynamic_pointer_cast<Identifier>(node->key);
+                    auto val_id = std::dynamic_pointer_cast<Identifier>(*node->value);
+                    shorthand = key_id->name == val_id->name;
+                }
+                if (!shorthand) {
+                    if (node->computed) {
+                        Write("[");
+                        TraverseNode(node->key);
+                        Write("]");
+                    } else {
+                        TraverseNode(node->key);
+                    }
+                }
+                if (node->value.has_value()) {
+                    if (!shorthand) {
+                        Write(config_.minify ? ":" : ": ");
+                    }
+                    TraverseNode(*node->value);
+                }
+                break;
             }
-            TraverseNode(*node->value);
         }
     }
 
@@ -962,7 +997,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
-        if (lit->ty == Literal::Ty::Boolean) {
+        if (config_.minify && lit->ty == Literal::Ty::Boolean) {
             if (lit->raw == u"true") {
                 Write(u"!0");
             } else {

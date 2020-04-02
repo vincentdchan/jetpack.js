@@ -166,3 +166,25 @@ TEST(CodeGen, LogicalExpression2) {
 
     EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
 }
+
+TEST(CodeGen, Getter) {
+    std::string src =
+            "const a = {\n"
+            "  get hello() {\n"
+            "    return 'world';\n"
+            "  }\n"
+            "};\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
+
+TEST(CodeGen, Setter) {
+    std::string src =
+            "const a = {\n"
+            "  set hello(value) {\n"
+            "    this.name = value;\n"
+            "  }\n"
+            "};\n";
+
+    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+}
