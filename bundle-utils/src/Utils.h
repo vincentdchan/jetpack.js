@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -206,6 +207,26 @@ namespace jetpack::utils {
 
     inline bool IsDecimalDigit(char32_t cp) {
         return (cp >= 0x30 && cp <= 0x39);      // 0..9
+    }
+
+    inline std::int32_t ToSimpleInt(const std::u16string& str) {
+        std::int64_t result = 0;
+
+        for (std::size_t i = 0; i < str.size(); i++) {
+            auto ch = str[i];
+            if (i == 0 && ch == u'0') {
+                return -1;
+            }
+            if (!IsDecimalDigit(ch)) {
+                return -1;
+            }
+            result = result * 10 + (ch - u'0');
+            if (result > std::numeric_limits<std::int32_t>::max()) {
+                return -1;
+            }
+        }
+
+        return static_cast<std::int32_t>(result);
     }
 
     inline bool IsHexDigit(char32_t cp) {

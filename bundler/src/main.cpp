@@ -151,6 +151,7 @@ static int BundleModule(const std::string& self_path_str,
         }
 
         if (minify) {
+            parser_config.constant_folding = true;
             codegen_config.minify = true;
             codegen_config.comments = false;
             resolver->SetNameGenerator(MinifyNameGenerator::Make());

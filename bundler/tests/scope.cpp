@@ -2,7 +2,6 @@
 // Created by Duzhong Chen on 2020/3/26.
 //
 
-#include <string>
 #include <memory>
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>

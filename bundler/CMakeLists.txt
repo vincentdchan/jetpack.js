@@ -47,7 +47,8 @@ add_executable(jetpack-test ${SOURCE_FILES}
         tests/scope.cpp
         tests/resolve.cpp
         tests/codegen.cpp
-        tests/jsx.cpp)
+        tests/jsx.cpp
+        tests/contant_folding.cpp)
 
 target_include_directories(jetpack-test PUBLIC "../third_party/googletest/googletest/include")
 target_link_libraries(jetpack-test gtest_main)

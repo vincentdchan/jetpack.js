@@ -23,6 +23,7 @@ namespace jetpack::parser {
             bool tolerant;
             bool jsx;
             bool typescript;
+            bool constant_folding;
 
             /**
              * transpile jsx when parsing

@@ -5,6 +5,7 @@
 #include "Parser.hpp"
 #include "JSXParser.h"
 #include "TypescriptParser.h"
+#include "ConstantFolding.h"
 #include "../tokenizer/Token.h"
 
 namespace jetpack::parser {
@@ -419,6 +420,9 @@ namespace jetpack::parser {
 
             case JsTokenType::NumericLiteral:
             case JsTokenType::StringLiteral: {
+                Literal::Ty lty = ctx->lookahead_.type_ == JsTokenType::NumericLiteral
+                                                           ? Literal::Ty::Double
+                                                           : Literal::Ty::String;
                 if (ctx->strict_ && Lookahead().octal_) {
                     ThrowUnexpectedToken(Lookahead());
 //                this.tolerateUnexpectedToken(this.lookahead, Messages.StrictOctalLiteral);
@@ -427,7 +431,7 @@ namespace jetpack::parser {
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
-                node->ty = Literal::Ty::String;
+                node->ty = lty;
                 node->str_ = token.value_;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
@@ -2666,7 +2670,11 @@ namespace jetpack::parser {
                 binary->left = left;
                 binary->right = expr;
                 binary->operator_ = left_tk.value_;
-                expr = binary;
+                if (ctx->config_.constant_folding) {
+                    expr = ContantFolding::TryBinaryExpression(binary);
+                } else {
+                    expr = binary;
+                }
                 NextToken();
                 return Finalize(marker, ParseBinaryExpression(scope, expr, right_tk));
             } else {  // left_op > right_op
@@ -2675,7 +2683,11 @@ namespace jetpack::parser {
                 binary->left = left;
                 binary->right = expr;
 
-                expr = Finalize(marker, binary);
+                if (ctx->config_.constant_folding) {
+                    expr = Finalize(marker, ContantFolding::TryBinaryExpression(binary));
+                } else {
+                    expr = Finalize(marker, binary);
+                }
 
                 if (right_prec <= 0) {
                     return expr;
