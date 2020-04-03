@@ -244,15 +244,22 @@ namespace jetpack {
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
-            HandleNewLocationAdded(config, mf, true, import_decl->source->str_);
+            std::string u8path = utils::To_UTF8(import_decl->source->str_);
+            if (IsExternalImportModulePath(u8path)) {
+                external_import_handler_.HandleImport(import_decl);
+                return;
+            }
+            HandleNewLocationAdded(config, mf, true, u8path);
         });
         parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
             if (export_decl->source.has_value()) {
-                HandleNewLocationAdded(config, mf, false, (*export_decl->source)->str_);
+                std::string u8path = utils::To_UTF8((*export_decl->source)->str_);
+                HandleNewLocationAdded(config, mf, false, u8path);
             }
         });
         parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
-            HandleNewLocationAdded(config, mf, false, export_decl->source->str_);
+            std::string u8path = utils::To_UTF8(export_decl->source->str_);
+            HandleNewLocationAdded(config, mf, false, u8path);
         });
 
         mf->ast = parser.ParseModule();
@@ -265,13 +272,12 @@ namespace jetpack {
 
     void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
                                                 const Sp<jetpack::ModuleFile> &mf, bool is_import,
-                                                const UString &path) {
+                                                const std::string &path) {
         if (!trace_file) return;
 
-        auto u8path = utils::To_UTF8(path);
         Path module_path(mf->path);
         module_path.Pop();
-        module_path.Join(u8path);
+        module_path.Join(path);
 
         auto source_path = module_path.ToString();
 
@@ -288,7 +294,7 @@ namespace jetpack {
             }
         }
 
-        mf->resolved_map[u8path] = source_path;
+        mf->resolved_map[path] = source_path;
 
         std::shared_ptr<ModuleFile> new_mf;
         {
@@ -793,6 +799,9 @@ namespace jetpack {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
                     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
+                    if (external_import_handler_.IsImportExternal(import_decl)) {  // remove from body
+                        return;
+                    }
 
                     std::vector<Sp<VariableDeclaration>> result;
                     HandleImportDeclaration(mf, import_decl, result);

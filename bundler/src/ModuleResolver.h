@@ -198,7 +198,7 @@ namespace jetpack {
         void HandleNewLocationAdded(const parser::ParserContext::Config& config,
                                     const Sp<ModuleFile>& mf,
                                     bool is_import,
-                                    const UString& path);
+                                    const std::string& path);
 
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
