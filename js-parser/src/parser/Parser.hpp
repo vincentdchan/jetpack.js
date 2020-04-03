@@ -26,11 +26,7 @@ namespace jetpack::parser {
         friend class JSXParser;
         friend class TypeScriptParser;
 
-        typedef std::function<void (bool, const UString&)> NewImportLocationAddedCallback;
-
         Parser(std::shared_ptr<ParserContext> state);
-
-        void OnNewImportLocationAdded(NewImportLocationAddedCallback callback);
 
         template <typename T>
         Sp<T> IsolateCoverGrammar(std::function<Sp<T>()> cb) {
@@ -287,14 +283,9 @@ namespace jetpack::parser {
 
         ~Parser() = default;
 
-    private:
-        inline void EmitNewLocationAdded(bool is_import, const UString& location) {
-            for (auto& handler : import_decl_handlers_) {
-                handler(is_import, location);
-            }
-        }
-
-        std::vector<NewImportLocationAddedCallback> import_decl_handlers_;
+        NodeCreatedEventEmitter<ImportDeclaration> import_decl_created_listener;
+        NodeCreatedEventEmitter<ExportNamedDeclaration> export_named_decl_created_listener;
+        NodeCreatedEventEmitter<ExportAllDeclaration> export_all_decl_created_listener;
 
     };
 

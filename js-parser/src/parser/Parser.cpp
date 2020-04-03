@@ -2379,7 +2379,7 @@ namespace jetpack::parser {
             ConsumeSemicolon();
 
             // notify other thread to parse
-            EmitNewLocationAdded(false, node->source->str_);
+            export_all_decl_created_listener.Emit(node);
 
             Assert(module_scope->export_manager.ResolveAllDecl(node) == ExportManager::Ok,
                     "resolve export failed");
@@ -2404,6 +2404,7 @@ namespace jetpack::parser {
             Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
                    "resolve export failed");
 
+            export_named_decl_created_listener.Emit(node);
             export_decl = Finalize(start_marker, node);
         } else if (MatchAsyncFunction()) {
             auto node = Alloc<ExportNamedDeclaration>();
@@ -2412,6 +2413,7 @@ namespace jetpack::parser {
             Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
                    "resolve export failed");
 
+            export_named_decl_created_listener.Emit(node);
             export_decl = Finalize(start_marker, node);
         } else {
             auto node = Alloc<ExportNamedDeclaration>();
@@ -2443,13 +2445,10 @@ namespace jetpack::parser {
                 ConsumeSemicolon();
             }
 
-            if (node->source.has_value()) {
-                EmitNewLocationAdded(false, (*node->source)->str_);
-            }
-
             Assert(module_scope->export_manager.ResolveNamedDecl(node) == ExportManager::Ok,
                    "resolve export failed");
 
+            export_named_decl_created_listener.Emit(node);
             export_decl = Finalize(start_marker, node);
         }
 
@@ -2949,7 +2948,7 @@ namespace jetpack::parser {
             auto finalized_node = Finalize(start_marker, node);
 
             // notify callback to analyze another module
-            EmitNewLocationAdded(true, finalized_node->source->str_);
+            import_decl_created_listener.Emit(finalized_node);
 
             // notify module scope to analyze variable ref
             if (module_scope->import_manager.ResolveImportDecl(finalized_node) != ImportManager::EC::Ok) {
@@ -3742,10 +3741,6 @@ namespace jetpack::parser {
             return lit->ty == Literal::Ty::String && lit->str_ == name;
         }
         return false;
-    }
-
-    void Parser::OnNewImportLocationAdded(NewImportLocationAddedCallback callback) {
-        import_decl_handlers_.push_back(callback);
     }
 
 }

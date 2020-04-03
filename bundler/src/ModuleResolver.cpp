@@ -226,6 +226,16 @@ namespace jetpack {
         ParseFile(config, entry_module);
     }
 
+    bool ModuleResolver::IsExternalImportModulePath(const std::string &path) {
+        // TODO: if alias path
+
+        if (path.empty()) {
+            return false;
+        }
+
+        return path[0] != '.' && path[0] != '/';
+    }
+
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
         auto src = std::make_shared<UString>();
@@ -233,68 +243,16 @@ namespace jetpack {
         auto ctx = std::make_shared<ParserContext>(src, config);
         Parser parser(ctx);
 
-        parser.OnNewImportLocationAdded([this, &config, &mf] (bool is_import, const UString& path) {
-            if (!trace_file) return;
-
-            auto u8path = utils::To_UTF8(path);
-            Path module_path(mf->path);
-            module_path.Pop();
-            module_path.Join(u8path);
-
-            auto source_path = module_path.ToString();
-
-            if (!utils::IsFileExist(source_path)) {
-                if (!module_path.EndsWith(".js")) {
-                    module_path.slices[module_path.slices.size() - 1] += ".js";
-                    source_path = module_path.ToString();
-                }
-
-                if (!utils::IsFileExist(source_path)) {
-                    WorkerError err { source_path, std::string("file doesn't exist: ") + source_path };
-                    worker_errors_.emplace_back(std::move(err));
-                    return;
-                }
+        parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
+            HandleNewLocationAdded(config, mf, true, import_decl->source->str_);
+        });
+        parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
+            if (export_decl->source.has_value()) {
+                HandleNewLocationAdded(config, mf, false, (*export_decl->source)->str_);
             }
-
-            mf->resolved_map[u8path] = source_path;
-
-            std::shared_ptr<ModuleFile> new_mf;
-            {
-                std::lock_guard<std::mutex> guard(map_mutex_);
-                auto exist_iter = modules_map_.find(source_path);
-                if (exist_iter != modules_map_.end()) {  // exists
-                    mf->ref_mods.push_back(exist_iter->second);
-                    return;
-                }
-
-                new_mf = std::make_shared<ModuleFile>();
-                new_mf->id = mod_counter_++;
-                new_mf->module_resolver = shared_from_this();
-                new_mf->path = std::move(source_path);
-                modules_map_[new_mf->path] = new_mf;
-            }
-
-            mf->ref_mods.push_back(new_mf);
-
-            EnqueueOne([this, &config, new_mf] {
-                try {
-                    ParseFile(config, new_mf);
-                } catch (parser::ParseError& ex) {
-                    std::lock_guard<std::mutex> guard(error_mutex_);
-                    worker_errors_.push_back({ new_mf->path, ex.ErrorMessage() });
-                } catch (VariableExistsError& err) {
-                    std::lock_guard<std::mutex> guard(error_mutex_);
-                    std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                                 utils::To_UTF8(err.name),
-                                                 err.exist_var->location.start_.line_ + 1,
-                                                 err.exist_var->location.start_.column_);
-                    worker_errors_.push_back({ new_mf->path, std::move(message) });
-                } catch (std::exception& ex) {
-                    std::lock_guard<std::mutex> guard(error_mutex_);
-                    worker_errors_.push_back({ new_mf->path, ex.what() });
-                }
-                FinishOne();
-            });
+        });
+        parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
+            HandleNewLocationAdded(config, mf, false, export_decl->source->str_);
         });
 
         mf->ast = parser.ParseModule();
@@ -305,10 +263,76 @@ namespace jetpack {
         id_logger_->InsertByList(unresolved_ids);
     }
 
+    void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
+                                                const Sp<jetpack::ModuleFile> &mf, bool is_import,
+                                                const UString &path) {
+        if (!trace_file) return;
+
+        auto u8path = utils::To_UTF8(path);
+        Path module_path(mf->path);
+        module_path.Pop();
+        module_path.Join(u8path);
+
+        auto source_path = module_path.ToString();
+
+        if (!utils::IsFileExist(source_path)) {
+            if (!module_path.EndsWith(".js")) {
+                module_path.slices[module_path.slices.size() - 1] += ".js";
+                source_path = module_path.ToString();
+            }
+
+            if (!utils::IsFileExist(source_path)) {
+                WorkerError err { source_path, std::string("file doesn't exist: ") + source_path };
+                worker_errors_.emplace_back(std::move(err));
+                return;
+            }
+        }
+
+        mf->resolved_map[u8path] = source_path;
+
+        std::shared_ptr<ModuleFile> new_mf;
+        {
+            std::lock_guard<std::mutex> guard(map_mutex_);
+            auto exist_iter = modules_map_.find(source_path);
+            if (exist_iter != modules_map_.end()) {  // exists
+                mf->ref_mods.push_back(exist_iter->second);
+                return;
+            }
+
+            new_mf = std::make_shared<ModuleFile>();
+            new_mf->id = mod_counter_++;
+            new_mf->module_resolver = shared_from_this();
+            new_mf->path = std::move(source_path);
+            modules_map_[new_mf->path] = new_mf;
+        }
+
+        mf->ref_mods.push_back(new_mf);
+
+        EnqueueOne([this, &config, new_mf] {
+            try {
+                ParseFile(config, new_mf);
+            } catch (parser::ParseError& ex) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                worker_errors_.push_back({ new_mf->path, ex.ErrorMessage() });
+            } catch (VariableExistsError& err) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                std::string message = format("variable '{}' has been defined, location: {}:{}",
+                                             utils::To_UTF8(err.name),
+                                             err.exist_var->location.start_.line_ + 1,
+                                             err.exist_var->location.start_.column_);
+                worker_errors_.push_back({ new_mf->path, std::move(message) });
+            } catch (std::exception& ex) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                worker_errors_.push_back({ new_mf->path, ex.what() });
+            }
+            FinishOne();
+        });
+    }
+
     std::u16string ModuleResolver::ReadFileStream(const std::string& filename) {
         std::ifstream t(filename);
         std::string str((std::istreambuf_iterator<char>(t)),
-                   std::istreambuf_iterator<char>());
+                        std::istreambuf_iterator<char>());
         return utils::To_UTF16(str);
     }
 

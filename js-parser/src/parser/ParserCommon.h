@@ -19,6 +19,26 @@
 
 namespace jetpack::parser {
 
+    template <typename T>
+    class NodeCreatedEventEmitter {
+    public:
+
+        using Callback = std::function<void(const Sp<T>&)>;
+
+        inline void Emit(const Sp<T>& obj) {
+            for (auto& fun : callbacks) {
+                fun(obj);
+            }
+        }
+
+        inline void On(Callback cb) {
+            callbacks.push_back(std::move(cb));
+        }
+
+        std::vector<Callback> callbacks;
+
+    };
+
     class ParserCommon {
     public:
         struct FormalParameterOptions {
