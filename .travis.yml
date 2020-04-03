@@ -1,0 +1,20 @@
+language: cpp
+
+compiler:
+- clang
+os:
+- osx
+
+script:
+- mkdir build
+- cd build && cmake ..
+- cmake --build . --target jetpack-test --config Release
+- ./bundler/jetpack-test
+
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake-data
+      - cmake
