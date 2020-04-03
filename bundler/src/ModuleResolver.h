@@ -156,6 +156,8 @@ namespace jetpack {
 
         void CodeGenAllModules(const CodeGen::Config& config, const std::string& out_path);
 
+        void RenameAllInnerScopes();
+
         void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
 
         inline void ClearAllVisitedMark() {

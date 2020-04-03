@@ -455,31 +455,9 @@ namespace jetpack {
 
         // distribute root level var name
         if (config.minify) {
-            ClearAllVisitedMark();
-            RenamerCollection collection;
-            collection.idLogger = id_logger_;
-
-            for (auto& tuple : modules_map_) {
-                EnqueueOne([this, mod = tuple.second, &collection] {
-                    mod->RenameInnerScopes(collection);
-                    FinishOne();
-                });
-            }
-            std::unique_lock<std::mutex> lk(main_lock_);
-            main_cv_.wait(lk, [this] {
-                return finished_files_count_ >= enqueued_files_count_;
-            });
-            if (!worker_errors_.empty()) {
-                WokerErrorCollection col;
-                col.errors = std::move(worker_errors_);
-                throw std::move(col);
-            }
-            std::vector<std::tuple<UString, UString>> renames;
-            name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
-            RenameAllRootLevelVariable();
-        } else {
-            RenameAllRootLevelVariable();
+            RenameAllInnerScopes();
         }
+        RenameAllRootLevelVariable();
 
         ClearAllVisitedMark();
         TraverseRenameAllImports(entry_module);
@@ -510,6 +488,30 @@ namespace jetpack {
         codegen.Traverse(final_export);
 
         out.close();
+    }
+
+    void ModuleResolver::RenameAllInnerScopes() {
+        ClearAllVisitedMark();
+        RenamerCollection collection;
+        collection.idLogger = id_logger_;
+
+        for (auto& tuple : modules_map_) {
+            EnqueueOne([this, mod = tuple.second, &collection] {
+                mod->RenameInnerScopes(collection);
+                FinishOne();
+            });
+        }
+        std::unique_lock<std::mutex> lk(main_lock_);
+        main_cv_.wait(lk, [this] {
+            return finished_files_count_ >= enqueued_files_count_;
+        });
+        if (!worker_errors_.empty()) {
+            WokerErrorCollection col;
+            col.errors = std::move(worker_errors_);
+            throw std::move(col);
+        }
+        std::vector<std::tuple<UString, UString>> renames;
+        name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
     }
 
     void ModuleResolver::RenameAllRootLevelVariable() {
