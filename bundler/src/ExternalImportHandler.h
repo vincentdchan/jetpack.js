@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <set>
+#include "Utils.h"
 #include "parser/SyntaxNodes.h"
 
 namespace jetpack {
@@ -22,6 +23,8 @@ namespace jetpack {
          * use set of pointers to mark external imports
          */
         std::set<std::uintptr_t> external_import_ptrs;
+
+        HashMap<UString, std::vector<UString>> import_infos;
 
     };
 

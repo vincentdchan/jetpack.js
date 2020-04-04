@@ -196,6 +196,34 @@ namespace jetpack {
         }
     }
 
+    void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
+                                              const char16_t* value) {
+
+        auto src = std::make_shared<UString>();
+        (*src) = UString(value);
+        auto ctx = std::make_shared<ParserContext>(src, config);
+        Parser parser(ctx);
+
+        entry_module = std::make_shared<ModuleFile>();
+        entry_module->id = mod_counter_++;
+        entry_module->module_resolver = shared_from_this();
+        entry_module->path = "memory0";
+
+        parser.import_decl_created_listener.On([this] (const Sp<ImportDeclaration>& import_decl) {
+            std::string u8path = utils::To_UTF8(import_decl->source->str_);
+            external_import_handler_.HandleImport(import_decl);
+        });
+
+        modules_map_[entry_module->path] = entry_module;
+
+        entry_module->ast = parser.ParseModule();
+
+        std::vector<Sp<Identifier>> unresolved_ids;
+        entry_module->ast->scope->ResolveAllSymbols(&unresolved_ids);
+
+        id_logger_->InsertByList(unresolved_ids);
+    }
+
     void ModuleResolver::ParseFileFromPath(const parser::ParserContext::Config& config,
                                            const std::string &path) {
         if (!utils::IsFileExist(path)) {
@@ -445,7 +473,11 @@ namespace jetpack {
             enqueued_files_count_++;
         }
 
+#ifdef JETPACK_SINGLE_THREAD
+        unit();
+#else
         thread_pool_->enqueue(std::move(unit));
+#endif
     }
 
     void ModuleResolver::FinishOne() {
@@ -800,7 +832,7 @@ namespace jetpack {
                 case SyntaxNodeType::ImportDeclaration: {
                     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
                     if (external_import_handler_.IsImportExternal(import_decl)) {  // remove from body
-                        return;
+                        continue;
                     }
 
                     std::vector<Sp<VariableDeclaration>> result;

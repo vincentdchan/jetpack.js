@@ -17,7 +17,7 @@ set(SOURCE_FILES
         "src/codegen/CodeGen.h"
         "src/codegen/CodeGen.cpp")
 
-if (UNIX)
+if (UNIX AND NOT EMSCRIPTEN)
 
     include_directories("../third_party/jemalloc/include")
 
@@ -32,6 +32,11 @@ if (UNIX)
 
     endif()
 
+endif()
+
+if (EMSCRIPTEN)
+add_definitions(-DJETPACK_SINGLE_THREAD)
+set(CMAKE_CXX_FLAGS "-s \"EXTRA_EXPORTED_RUNTIME_METHODS=['UTF8ToString', 'lengthBytesUTF8', 'stringToUTF8', 'stringToUTF16']\"")
 endif()
 
 include_directories(PUBLIC

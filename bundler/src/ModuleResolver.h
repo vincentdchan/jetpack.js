@@ -137,6 +137,9 @@ namespace jetpack {
                             std::string base_path,
                             std::string origin_path);
 
+        void BeginFromEntryString(const parser::ParserContext::Config& config,
+                                  const char16_t* str);
+
         void ParseFileFromPath(const parser::ParserContext::Config& config,
                                const std::string& path);
 
@@ -179,19 +182,21 @@ namespace jetpack {
 
         HashMap<std::string, Sp<ModuleFile>> modules_map_;
 
-    private:
-        void EnqueueOne(std::function<void()> unit);
-        void FinishOne();
-
         json GetImportStat();
         std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
 
+        void RenameAllRootLevelVariable();
+
+        inline Sp<ModuleFile> GetEntryModule() {
+            return entry_module;
+        }
+
+    private:
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&,
                 HashSet<UString>* white_list);
 
-        void RenameAllRootLevelVariable();
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
                                                  std::int32_t& counter);
 
@@ -204,6 +209,9 @@ namespace jetpack {
         void ReplaceExports(const Sp<ModuleFile>& mf);
 
     private:
+        void EnqueueOne(std::function<void()> unit);
+        void FinishOne();
+
         void TraverseRenameAllImports(const Sp<ModuleFile>& mf);
 
         void ReplaceImports(const Sp<ModuleFile>& mf);

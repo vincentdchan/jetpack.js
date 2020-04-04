@@ -112,6 +112,48 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
               "ddd`;\n");
 }
 
+TEST(ModuleResolver, SingleMemoryFile) {
+    GTEST_SKIP();
+    UString buffer =
+            u"function hello(world) {\n"
+            "  console.log(world);\n"
+            "}\n"
+            "hello('world');\n";
+
+    bool jsx = true;
+    bool minify = true;
+
+    auto resolver = std::make_shared<ModuleResolver>();
+    CodeGen::Config codegen_config;
+    parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+
+    if (jsx) {
+        parser_config.jsx = true;
+        parser_config.transpile_jsx = true;
+    }
+
+    if (minify) {
+        parser_config.constant_folding = true;
+        codegen_config.minify = true;
+        codegen_config.comments = false;
+        resolver->SetNameGenerator(MinifyNameGenerator::Make());
+    }
+
+    resolver->SetTraceFile(false);
+    resolver->BeginFromEntryString(parser_config, buffer.c_str());
+
+    auto final_export_vars = resolver->GetAllExportVars();
+    if (minify) {
+        resolver->RenameAllInnerScopes();
+    }
+    resolver->RenameAllRootLevelVariable();
+
+    auto entry_mod = resolver->GetEntryModule();
+    entry_mod->CodeGenFromAst(codegen_config);
+
+    std::cout << entry_mod->codegen_result << std::endl;
+}
+
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {
 //    std::string src = "export default /* glsl */`\n"
 //                      "#ifdef USE_ALPHAMAP\n"
