@@ -211,7 +211,7 @@ namespace jetpack {
 
         parser.import_decl_created_listener.On([this] (const Sp<ImportDeclaration>& import_decl) {
             std::string u8path = utils::To_UTF8(import_decl->source->str_);
-            external_import_handler_.HandleImport(import_decl);
+            global_import_handler_.HandleImport(import_decl);
         });
 
         modules_map_[entry_module->path] = entry_module;
@@ -274,7 +274,7 @@ namespace jetpack {
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
             std::string u8path = utils::To_UTF8(import_decl->source->str_);
             if (IsExternalImportModulePath(u8path)) {
-                external_import_handler_.HandleImport(import_decl);
+                global_import_handler_.HandleImport(import_decl);
                 return;
             }
             HandleNewLocationAdded(config, mf, true, u8path);
@@ -519,6 +519,9 @@ namespace jetpack {
         if (config.minify) {
             RenameAllInnerScopes();
         }
+
+        global_import_handler_.GenAst(name_generator);  // global import
+
         RenameAllRootLevelVariable();
 
         ClearAllVisitedMark();
@@ -541,6 +544,7 @@ namespace jetpack {
         // END every modules gen their own code
 
         std::ofstream out(out_path, std::ios::out);
+        global_import_handler_.GenCode(config, out);
 
         ClearAllVisitedMark();
         MergeModules(entry_module, out);
@@ -744,9 +748,9 @@ namespace jetpack {
                                 break;
                             }
 
-                                /**
-                                 * Similar to FunctionDeclaration
-                                 */
+                            /**
+                             * Similar to FunctionDeclaration
+                             */
                             case SyntaxNodeType::ClassDeclaration: {
                                 auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(export_default_decl->declaration);
 
@@ -831,7 +835,8 @@ namespace jetpack {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
                     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
-                    if (external_import_handler_.IsImportExternal(import_decl)) {  // remove from body
+                    if (global_import_handler_.IsImportExternal(import_decl)) {  // remove from body
+                        RenameExternalImports(mf, import_decl);
                         continue;
                     }
 
@@ -849,6 +854,54 @@ namespace jetpack {
         }
 
         mf->ast->body = std::move(new_body);
+    }
+
+    void ModuleResolver::RenameExternalImports(const Sp<jetpack::ModuleFile> &mf,
+                                               const Sp<jetpack::ImportDeclaration> &import_decl) {
+        std::vector<std::tuple<UString, UString>> renames;
+
+        auto& source_path = import_decl->source->str_;
+        auto& info = global_import_handler_.import_infos[source_path];
+
+        for (auto& spec : import_decl->specifiers) {
+            switch (spec->type) {
+                case SyntaxNodeType::ImportDefaultSpecifier: {
+                    auto import_default = spec->As<ImportDefaultSpecifier>();
+                    auto& local_name = import_default->local->name;
+
+                    if (local_name != info.default_local_name) {
+                        renames.emplace_back(local_name, info.default_local_name);
+                    }
+                    break;
+                }
+
+                case SyntaxNodeType::ImportSpecifier: {
+                    auto import_spec = spec->As<ImportSpecifier>();
+
+                    if (auto iter = info.alias_map.find(import_spec->local->name); iter != info.alias_map.end()) {
+                        renames.emplace_back(import_spec->local->name, iter->second);
+                    }
+                    break;
+                }
+
+                case SyntaxNodeType::ImportNamespaceSpecifier: {
+                    auto import_ns = spec->As<ImportNamespaceSpecifier>();
+                    auto& local_name = import_ns->local->name;
+
+                    if (local_name != info.ns_import_name) {
+                        renames.emplace_back(local_name, info.ns_import_name);
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        mf->ast->scope->BatchRenameSymbols(renames);
     }
 
     /**

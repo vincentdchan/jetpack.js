@@ -39,6 +39,11 @@ namespace jetpack {
 
         virtual ~SyntaxNode() = default;
 
+        template <typename T>
+        inline T* As() {
+            return reinterpret_cast<T*>(this);
+        }
+
     };
 
     class TSType: virtual public SyntaxNode {

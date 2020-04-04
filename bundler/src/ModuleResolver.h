@@ -18,7 +18,7 @@
 #include <parser/Parser.hpp>
 
 #include "./UniqueNameGenerator.h"
-#include "./ExternalImportHandler.h"
+#include "GlobalImportHandler.h"
 #include "codegen/CodeGen.h"
 
 namespace jetpack {
@@ -216,6 +216,8 @@ namespace jetpack {
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
 
+        void RenameExternalImports(const Sp<ModuleFile>& mf, const Sp<ImportDeclaration>& import_decl);
+
         void HandleImportDeclaration(const Sp<ModuleFile>& mf,
                                      Sp<ImportDeclaration>& import_decl,
                                      std::vector<Sp<VariableDeclaration>>& result);
@@ -227,7 +229,7 @@ namespace jetpack {
 
         Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
 
-        ExternalImportHandler external_import_handler_;
+        GlobalImportHandler global_import_handler_;
 
         std::shared_ptr<UniqueNameGenerator> name_generator;
 
