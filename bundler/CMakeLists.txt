@@ -10,6 +10,8 @@ set(SOURCE_FILES
         "src/UniqueNameGenerator.cpp"
         "src/GlobalImportHandler.h"
         "src/GlobalImportHandler.cpp"
+        "src/TreeShaking.h"
+        "src/TreeShaking.cpp"
         "src/Error.h"
         "src/Error.cpp"
         "src/codegen/NodeTraverser.h"

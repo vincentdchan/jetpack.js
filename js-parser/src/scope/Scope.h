@@ -100,6 +100,11 @@ namespace jetpack {
 
         std::vector<Scope*> children;
 
+        /**
+         * for tree-shaking and DCE
+         */
+        bool reach = false;
+
     protected:
         Scope* parent = nullptr;
 

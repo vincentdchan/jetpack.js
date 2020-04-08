@@ -30,6 +30,7 @@
 #define OPT_ANALYZE_MODULE "analyze-module"
 #define OPT_NO_TRACE "no-trace"
 #define OPT_MINIFY "minify"
+#define OPT_TREE_SHAKING "tree-shaking"
 #define OPT_OUT "out"
 
 using namespace jetpack;
@@ -50,7 +51,7 @@ static int BundleModule(const std::string& self_path,
 
 int main(int argc, char** argv) {
     try {
-        cxxopts::Options options("rocket-bundle", "Rocket Bundle command line");
+        cxxopts::Options options("jetpack", "Jetpack.js command line");
         options.add_options()
                 (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
                 (OPT_TOLERANT, "tolerant parsing error")
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
                 (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
                 (OPT_NO_TRACE, "do not trace ref file when analyze module")
                 (OPT_MINIFY, "minify the code")
+                (OPT_TREE_SHAKING, "enable tree-shaking (unstable)")
                 (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
                 ;
 
