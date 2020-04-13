@@ -50,7 +50,7 @@ static int BundleModule(const std::string& self_path,
 
 int main(int argc, char** argv) {
     try {
-        cxxopts::Options options("rocket-bundle", "Rocket Bundle command line");
+        cxxopts::Options options("Jetpack++", "Jetpack++ command line");
         options.add_options()
                 (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
                 (OPT_TOLERANT, "tolerant parsing error")
