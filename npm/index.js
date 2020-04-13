@@ -29,7 +29,7 @@ switch (os.platform()) {
   }
 
   case 'win32': {
-    const execPath = path.join(__dirname, `./bin/${os.platform()}/jetpack`);
+    const execPath = path.join(__dirname, `./bin/${os.platform()}/jetpack.exe`);
     spawnExe(execPath);
     break;
   }

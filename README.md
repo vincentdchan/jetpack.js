@@ -1,4 +1,4 @@
-# Jetpack
+# Jetpack++
 
 `jetpack.js` is an extremely fast js bundler and minifier.
 
@@ -9,6 +9,7 @@ The parser can be used as a library independently.
 - [Features](#Features)
   - [Parser](#parser)
   - [Bundler](#bundler)
+- [Installation](#Installation)
 - [Usage](#usage)
 - [Use the parser as a library](#use-the-parser-as-a-library)
   - [Example](#example)
@@ -41,6 +42,18 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - Contant folding.
 - Minify the code.
 
+# Installation
+
+```
+npm install -g jetpackpp
+```
+
+Or
+
+```
+yarn global add jetpackpp
+```
+
 # Usage
 
 Use command line to bundle a js module.
@@ -51,10 +64,11 @@ jetpack main.js --out bundle.js
 Help command:
 
 ```shell script
-jetpack --help
-Jetpack command line
+$ jetpackpp --help
+
+$ Jetpack++ command line
 Usage:
-  Jetpack [OPTION...] positional parameters
+  Jetpack++ [OPTION...] positional parameters
 
       --tolerant            tolerant parsing error
       --jsx                 support jsx syntax
