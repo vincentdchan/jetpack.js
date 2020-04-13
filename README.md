@@ -1,4 +1,4 @@
-# Jetpack
+# Jetpack++
 
 `jetpack.js` is an extremely fast js bundler and minifier.
 
@@ -9,6 +9,7 @@ The parser can be used as a library independently.
 - [Features](#Features)
   - [Parser](#parser)
   - [Bundler](#bundler)
+- [Installation](#Installation)
 - [Usage](#usage)
 - [Use the parser as a library](#use-the-parser-as-a-library)
   - [Example](#example)
@@ -40,8 +41,18 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - Scope hoisting.
 - Contant folding.
 - Minify the code.
-- Sourcemap generation(WIP).
-- Dead Code Elimination(WIP).
+
+# Installation
+
+```
+npm install -g jetpackpp
+```
+
+Or
+
+```
+yarn global add jetpackpp
+```
 
 # Usage
 
@@ -53,10 +64,11 @@ jetpack main.js --out bundle.js
 Help command:
 
 ```shell script
-jetpack --help
-Jetpack command line
+$ jetpackpp --help
+
+$ Jetpack++ command line
 Usage:
-  Jetpack [OPTION...] positional parameters
+  Jetpack++ [OPTION...] positional parameters
 
       --tolerant            tolerant parsing error
       --jsx                 support jsx syntax
@@ -67,7 +79,7 @@ Usage:
       --out arg             output filename of bundle
 ```
 
-# Use the parser as a library
+# Use the parser as a standalone library
 
 jetpack.js is built with CMake, so it can be
 easily integrated to your project.
@@ -78,29 +90,16 @@ target_include_directories(${PROJECT_NAME} ./js-parser/src)
 target_link_libraries(${PROJECT_NAME} PUBLIC js-parser)
 ```
 
-## Example
-
-```cpp
-Parser parser(src, config);
-ParserContext::Config config = ParserContext::Config::Default();
-auto src = std::make_shared<UString>();
-(*src) = ModuleResolver::ReadFileStream(mf->path);
-auto ctx = std::make_shared<ParserContext>(src, config);
-Parser parser(ctx);
-
-auto script = parser.ParseScript();
-// or
-auto module = parser.ParseModule();
-
-```
-
 # Performance
 
-ZEP(release version)'s parsing speed would be nearly 1x faster than
-other ES parsers implemented in ES(Running on Node.js).
+I do the same benchmark provided by [esbuild](https://github.com/evanw/esbuild).
 
-With the power of jemalloc,
-Jetpack's parser's performance is equal to other ES parsers implemented in Rust.
+> My main benchmark approximates a large codebase by duplicating the three.js library 10 times and building a single bundle from scratch, without any caches. For this benchmark, esbuild is 10-100x faster than the other JavaScript bundlers I tested (Webpack, Rollup, Parcel, and FuseBox). The benchmark can be run with make bench-three.
+
+![](./images/chart.svg)
+
+The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
+(similar to esbuild).
 
 # Architecture
 
@@ -108,17 +107,10 @@ Jetpack's parser's performance is equal to other ES parsers implemented in Rust.
 
 The code are well commented, please read the code.
 
-# Compatibility
-
-The json output of ZEP would as same as esprima. So I think maybe ZEP can be
-a faster alternative to some ES parsers.
-
-And the WASM version is in the roadmap. The web version of ZEP would be released ASAP.
-
 # Platform
 
 `jetpack.js` supports all popular system including:
 
 - macOS
-- Windows
-- Linux
+- Windows 64bit
+- Linux 64bit

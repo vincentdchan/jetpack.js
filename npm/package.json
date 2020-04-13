@@ -1,7 +1,10 @@
 {
-  "name": "esjp",
-  "version": "0.0.1",
+  "name": "jetpackpp",
+  "version": "0.0.2",
   "main": "index.js",
   "author": "Vincent Chan",
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "jetpackpp": "./index.js"
+  }
 }

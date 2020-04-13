@@ -50,7 +50,7 @@ static int BundleModule(const std::string& self_path,
 
 int main(int argc, char** argv) {
     try {
-        cxxopts::Options options("rocket-bundle", "Rocket Bundle command line");
+        cxxopts::Options options("Jetpack++", "Jetpack++ command line");
         options.add_options()
                 (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
                 (OPT_TOLERANT, "tolerant parsing error")
@@ -147,6 +147,7 @@ static int BundleModule(const std::string& self_path_str,
                         const std::string& path,
                         const std::string& out_path) {
 
+    auto start = utils::GetCurrentMs();
     Path self_path(self_path_str);
     self_path.Pop();
 
@@ -172,7 +173,7 @@ static int BundleModule(const std::string& self_path_str,
         resolver->CodeGenAllModules(codegen_config, out_path);
 
         std::cout << "Finished." << std::endl;
-        std::cout << "Totally " << resolver->ModCount() << " file(s)." << std::endl;
+        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << utils::GetCurrentMs() - start << " ms." << std::endl;
         return 0;
     } catch (ModuleResolveException& err) {
         err.PrintToStdErr();
