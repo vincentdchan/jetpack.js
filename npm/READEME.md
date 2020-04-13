@@ -11,7 +11,7 @@ The parser can be used as a library independently.
   - [Bundler](#bundler)
 - [Installation](#Installation)
 - [Usage](#usage)
-- [Use the parser as a library](#use-the-parser-as-a-standalone-library)
+- [Use the parser as a library](#use-the-parser-as-a-library)
   - [Example](#example)
 - [Performance](#performance)
 - [Architecture](#architecture)
