@@ -8,5 +8,6 @@ add_library(${PROJECT_NAME} STATIC
         "cutils.c"
         "jsheap.h"
         "jsheap.c"
+        "static-str.h"
         "jsrt.h"
         "jsrt.c")
