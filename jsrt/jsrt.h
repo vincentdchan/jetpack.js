@@ -11,15 +11,18 @@
 
 #include "jsheap.h"
 
-#define JS_ARR_DEFAULT_CAP   4
-#define JS_SMI_OFFSET        32u
-#define JS_OBJ_BUCKET_CAP    4
-#define JS_DOUBLE_RAW        double
-#define JS_CHAR_RAW          unsigned int
-#define JS_FLAGS_RAW         uint32_t
-#define JS_RC_RAW            uint32_t
-#define JS_INVALID_PTR       ((uint64_t)-1)
-#define JS_INVALID_STR_HASH  ((uint32_t)-1)
+#define JS_STACK_TMP_SIZE     4
+#define JS_STACK_VAR_SIZE     64
+#define JS_ARR_DEFAULT_CAP    4
+#define JS_SMI_OFFSET         32u
+#define JS_OBJ_BUCKET_CAP     4
+#define JS_TY_DOUBLE          double
+#define JS_TY_CHAR            unsigned int
+#define JS_TY_FLAGS           uint32_t
+#define JS_TY_RC              int32_t
+#define JS_INVALID_PTR        ((uint64_t)-1)
+#define JS_INVALID_STR_HASH   ((uint32_t)-1)
+#define JS_ANONYMOUS_FUN_NAME "anonymous"
 
 #define JS_VAL               uint64_t
 #define JS_PTR               JsObjectHead*
@@ -42,6 +45,9 @@ typedef enum : int {
 
 struct JSRT_CTX;
 struct JsObjectHead;
+struct JsFunClosureEnv;
+
+typedef void (*JSRT_RawFunction)(struct JSRT_CTX* ctx, JS_VAL args, struct JsFunClosureEnv* env);
 
 #define IS_SMI(x) (((JS_VAL)(x) & 1u) == 0)
 #define JS_VAL_TO_PTR(x) ((JS_PTR)((x) & (~1u)))
@@ -62,8 +68,8 @@ static const int64_t JSRT_MinSmiValue = 0xFFFFFFFF;
 #define JS_FLAGS_STATIC_VAL  0b00010000000000000000000000000000u
 
 typedef struct {
-    JS_FLAGS_RAW flags;
-    JS_RC_RAW rc;
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
 } JsObjectHead;
 
 #define PTR_TYPE(x) (x->flags & JS_OBJ_FLAGS_TYPE)
@@ -71,8 +77,8 @@ typedef struct {
 // String
 
 typedef struct {
-    JS_FLAGS_RAW flags;
-    JS_RC_RAW rc;
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
     uint32_t      str_size;
     uint32_t      simple_hash;
 } JsStrCommon ;
@@ -81,13 +87,13 @@ uint16_t JsStrDepth(JsStrCommon* str);
 uint16_t JsStrNodeSize(JsStrCommon* str);
 
 typedef struct {
-    JS_FLAGS_RAW flags;
-    JS_RC_RAW rc;
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
     uint32_t      str_size;
     uint32_t      simple_hash;
     // str common end
 
-    JS_CHAR_RAW   str_val[0];
+    JS_TY_CHAR   str_val[0];
 } JsStdStr;
 
 /**
@@ -96,8 +102,8 @@ typedef struct {
  * TODO: make it a rope tree
  */
 typedef struct {
-    JS_FLAGS_RAW  flags;
-    JS_RC_RAW     rc;
+    JS_TY_FLAGS  flags;
+    JS_TY_RC     rc;
     uint32_t      str_size;
     uint32_t      simple_hash;
     // str common end
@@ -113,11 +119,11 @@ typedef struct {
 // Array
 
 typedef struct {
-    JS_FLAGS_RAW  flags;
-    JS_RC_RAW     rc;
+    JS_TY_FLAGS  flags;
+    JS_TY_RC     rc;
     uint32_t      size;
     uint32_t      capacity;
-    JS_VAL        data[0];
+    JS_VAL*       data;
 } JsArray;
 
 // Static Values
@@ -141,7 +147,7 @@ void FreeJsStaticVal(struct JSRT_CTX* ctx, JsStaticVal* jsv);
 // StandardObject
 
 typedef struct JsStdObjectProp {
-    JS_VAL key;
+    JsStrCommon* key;
     JS_VAL value;
     struct JsStdObjectProp* next;
 } JsStdObjectProp;
@@ -153,8 +159,8 @@ typedef struct JsStdObjectPropBucket {
 } JsStdObjectPropBucket;
 
 typedef struct {
-    JS_FLAGS_RAW flags;
-    JS_RC_RAW rc;
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
     // 8 bytes
     uint32_t prop_size;
     uint32_t bucket_cap;
@@ -168,17 +174,44 @@ typedef struct {
 // Object
 
 typedef struct {
-    JS_FLAGS_RAW flags;
-    JS_RC_RAW rc;
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
     union {
         int32_t       bool_val;
-        JS_DOUBLE_RAW num_val;
+        JS_TY_DOUBLE num_val;
     };
 } JsObject;
 
 #define JS_TYPE(x) (((JsObject*)x)->flags & JS_OBJ_FLAGS_TYPE)
 
+// Function
+
+typedef struct JsFunClosureEnv {
+    uint32_t val_size;
+    JS_VAL   data[0];
+} JsFunClosureEnv;
+
+typedef struct JsFunction {
+    JS_TY_FLAGS flags;
+    JS_TY_RC rc;
+    JSRT_RawFunction  raw_function;
+    JsFunClosureEnv*  closure_env;
+} JsFunction;
+
+typedef struct JsVirtualStack {
+    const char*            name;
+    struct JsVirtualStack* prev;
+    struct JsVirtualStack* next;
+    uint32_t               height;
+    JS_VAL                 argument;
+    JS_VAL                 temp_val[JS_STACK_TMP_SIZE];
+    uint32_t               var_size;
+    JS_VAL                 variable[JS_STACK_VAR_SIZE];
+} JsVirtualStack;
+
 typedef struct JSRT_CTX {
+    JsVirtualStack* stack_start;
+    JsVirtualStack* stack_end;
     JsStaticVal *js_static;
     JsHeap* js_heap;
     uint32_t seed;
@@ -187,25 +220,33 @@ typedef struct JSRT_CTX {
 JSRT_CTX* JSRT_NewCtx();
 void JSRT_FreeCtx(JSRT_CTX* ctx);
 
-JS_VAL JSRT_NewUndefined(JSRT_CTX* ctx, JS_FLAGS_RAW flags);
-JS_VAL JSRT_NewBool(JSRT_CTX* ctx, JS_FLAGS_RAW flags, int val);
+JS_VAL JSRT_NewUndefined(JSRT_CTX* ctx, JS_TY_FLAGS flags);
+JS_VAL JSRT_NewBool(JSRT_CTX* ctx, JS_TY_FLAGS flags, int val);
 JS_VAL JSRT_NewI32(JSRT_CTX* ctx, int32_t value);
-JS_VAL JSRT_NewDouble(JSRT_CTX*ctx, double value);
-JS_VAL JSRT_NewStrUTF8Auto(JSRT_CTX* ctx, JS_FLAGS_RAW flags, const char* utf8);
-JS_VAL JSRT_NewStrUTF8(JSRT_CTX* ctx, JS_FLAGS_RAW flags, const uint8_t* utf8, uint32_t str_size);
+JS_VAL JSRT_NewDouble(JSRT_CTX* ctx, double value);
+JS_VAL JSRT_NewNaN(JSRT_CTX* ctx);
+JS_VAL JSRT_NewStrUTF8Auto(JSRT_CTX* ctx, JS_TY_FLAGS flags, const char* utf8);
+JS_VAL JSRT_NewStrUTF8(JSRT_CTX* ctx, JS_TY_FLAGS flags, const uint8_t* utf8, uint32_t str_size);
 int JSRT_StdStrToUTF8(JSRT_CTX* ctx, JS_VAL val, uint8_t* bytes, uint32_t size);
 
-JS_VAL JSRT_NewArray(JSRT_CTX* ctx, JS_FLAGS_RAW flags, uint32_t cap);
+JS_VAL JSRT_NewArray(JSRT_CTX* ctx, JS_TY_FLAGS flags, uint32_t cap);
 
-JS_VAL JSRT_NewStdObject(JSRT_CTX* ctx, JS_FLAGS_RAW flags);
-JS_VAL JSRT_StdObjectGetVal(JSRT_CTX* ctx, JsStdObject* std_obj, JS_VAL key);
+JS_VAL JSRT_NewStdObject(JSRT_CTX* ctx, JS_TY_FLAGS flags);
+
+JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, JSRT_RawFunction raw, JsFunClosureEnv* env);
+
+JsVirtualStack* JSRT_NewVirtualStack(JSRT_CTX* ctx, const char* name, JS_VAL arg, uint32_t var_size);
+JsVirtualStack* JSRT_NewVirtualStack2(JSRT_CTX* ctx, const char* name, JS_VAL arg, uint32_t var_size, JsVirtualStack* prev);
+void JSRT_ReleaseVirtualStack(struct JSRT_CTX*ctx, JsVirtualStack* st);
 
 JS_VAL JSRT_StrictEq(JSRT_CTX* ctx, JS_VAL val1, JS_VAL val2);
 JS_VAL JSRT_ValAdd(JSRT_CTX* ctx, JS_VAL val1, JS_VAL val2);
 
-uint32_t JSRT_SimpleHash(const JS_CHAR_RAW *str, size_t l, uint32_t seed);
+uint32_t JSRT_SimpleHash(const JS_TY_CHAR *str, size_t l, uint32_t seed);
 
-JS_RC_RAW JSRT_GetRetainCount(JS_VAL val);
+JS_VAL JSRT_TypeOf(JSRT_CTX* ctx, JS_VAL val);
+
+JS_TY_RC JSRT_GetRetainCount(JS_VAL val);
 JS_VAL JSRT_Retain(JSRT_CTX* ctx, JS_VAL val);
 void JSRT_Release(JSRT_CTX* ctx, JS_VAL val);
 
