@@ -2,8 +2,20 @@
 // Created by Duzhong Chen on 2020/6/30.
 //
 
+#if defined(__APPLE__)
+#include <malloc/malloc.h>
+#elif defined(__linux__)
+#include <malloc.h>
+#endif
+
 #include <string.h>
 #include "jsheap.h"
+
+#if defined(__APPLE__)
+#define MALLOC_OVERHEAD  0
+#else
+#define MALLOC_OVERHEAD  8
+#endif
 
 #define FIND_0   0b10000000u
 #define FIND_1   0b01000000u
@@ -14,6 +26,23 @@
 #define FIND_6   0b00000010u
 #define FIND_7   0b00000001u
 #define FULL_BIT 0b11111111u
+
+/* default memory allocation functions with memory limitation */
+static inline size_t js_trace_malloc_usable_size(void *ptr)
+{
+#if defined(__APPLE__)
+    return malloc_size(ptr);
+#elif defined(_WIN32)
+    return _msize(ptr);
+#elif defined(EMSCRIPTEN)
+    return 0;
+#elif defined(__linux__)
+    return malloc_usable_size(ptr);
+#else
+    /* change this to `return 0;` if compilation fails */
+    return malloc_usable_size(ptr);
+#endif
+}
 
 JsHeap* JsHeap_New() {
     JsHeap* result = (JsHeap*)JSRT_MALLOC(sizeof(JsHeap));
@@ -77,12 +106,16 @@ uint8_t* JsHeap_Allocate(JsHeap* heap, uint64_t size) {
         if (pos < 0) {
             return NULL;
         }
+        heap->allocated_size += JS_MINIMAL_OBJ_SIZE;
+        heap->malloc_count++;
         return heap->smo_heap + pos * JS_MINIMAL_OBJ_SIZE;
     }
     uint8_t* result = JSRT_MALLOC(size);
     if (result == NULL) {
         return NULL;
     }
+    heap->allocated_size += js_trace_malloc_usable_size(result) + MALLOC_OVERHEAD;
+    heap->malloc_count++;
     return result;
 }
 
@@ -134,7 +167,10 @@ void JsHeap_Free(JsHeap* heap, void* ptr) {
 
         }
         heap->allocated_size -= JS_MINIMAL_OBJ_SIZE;
+        heap->malloc_count++;
         return;
     }
+    heap->allocated_size += js_trace_malloc_usable_size(ptr) + MALLOC_OVERHEAD;
+    heap->malloc_count++;
     JSRT_FREE(ptr);
 }
