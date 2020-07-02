@@ -46,6 +46,8 @@ typedef enum : int {
 struct JSRT_CTX;
 struct JsObjectHead;
 struct JsFunClosureEnv;
+struct JsStdObjectProp;
+struct JsStdObjectPropBucket;
 
 typedef void (*JSRT_RawFunction)(struct JSRT_CTX* ctx, JS_VAL args, struct JsFunClosureEnv* env);
 
@@ -66,6 +68,15 @@ static const int64_t JSRT_MinSmiValue = 0xFFFFFFFF;
 
 #define JS_GC_FLAGS_TYPE     0b11110000000000000000000000000000u
 #define JS_FLAGS_STATIC_VAL  0b00010000000000000000000000000000u
+
+#define JSRT_STD_OBJECT_PROPS \
+    JS_TY_FLAGS flags; \
+    JS_TY_RC rc; \
+    uint32_t prop_size; \
+    uint32_t bucket_cap; \
+    struct JsStdObjectProp* start_prop; \
+    struct JsStdObjectProp* end_prop; \
+    struct JsStdObjectPropBucket* bucket;
 
 typedef struct {
     JS_TY_FLAGS flags;
@@ -119,8 +130,8 @@ typedef struct {
 // Array
 
 typedef struct {
-    JS_TY_FLAGS  flags;
-    JS_TY_RC     rc;
+    JSRT_STD_OBJECT_PROPS
+
     uint32_t      size;
     uint32_t      capacity;
     JS_VAL*       data;
@@ -159,16 +170,7 @@ typedef struct JsStdObjectPropBucket {
 } JsStdObjectPropBucket;
 
 typedef struct {
-    JS_TY_FLAGS flags;
-    JS_TY_RC rc;
-    // 8 bytes
-    uint32_t prop_size;
-    uint32_t bucket_cap;
-    // 16 bytes
-    JsStdObjectProp* start_prop;
-    JsStdObjectProp* end_prop;
-    // 32 bytes
-    JsStdObjectPropBucket* bucket;
+    JSRT_STD_OBJECT_PROPS
 } JsStdObject;
 
 // Object
@@ -219,6 +221,7 @@ typedef struct JSRT_CTX {
 
 JSRT_CTX* JSRT_NewCtx();
 void JSRT_FreeCtx(JSRT_CTX* ctx);
+uint32_t JSRT_StackHeight(JSRT_CTX* ctx);
 
 JS_VAL JSRT_NewUndefined(JSRT_CTX* ctx, JS_TY_FLAGS flags);
 JS_VAL JSRT_NewBool(JSRT_CTX* ctx, JS_TY_FLAGS flags, int val);

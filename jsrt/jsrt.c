@@ -26,6 +26,8 @@ static BOOL JsArrSetVal(JSRT_CTX* ctx, JsArray* arr, uint32_t index, JS_VAL val)
 
 static BOOL JsStdObjectGetVal(JSRT_CTX* ctx, JsStdObject* std_obj, JsStrCommon* key, JS_VAL* result);
 
+static void InitStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj);
+static void ReleaseStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj);
 static void ReleaseStr(JSRT_CTX* ctx, JsStrCommon* str);
 static void ReleaseArray(JSRT_CTX* ctx, JsArray* arr);
 static void ReleaseStdObject(JSRT_CTX* ctx, JsStdObject* std_obj);
@@ -115,6 +117,13 @@ JSRT_CTX* JSRT_NewCtx() {
     ctx->stack_start = ctx->stack_end = NULL;
 
     return ctx;
+}
+
+uint32_t JSRT_StackHeight(JSRT_CTX* ctx) {
+    if (ctx->stack_end == NULL) {
+        return 0;
+    }
+    return ctx->stack_end->height;
 }
 
 void JSRT_FreeCtx(JSRT_CTX* ctx) {
@@ -316,6 +325,9 @@ JS_VAL JSRT_NewArray(JSRT_CTX* ctx, JS_TY_FLAGS flags, uint32_t cap) {
     memset(arr, 0 , sizeof(JsArray));
 
     arr->flags = JS_ARR | flags;
+
+    InitStdObjectProps(ctx, (JsStdObject*)arr);
+
     arr->rc = 1;
     arr->size = 0;
     arr->capacity = cap;
@@ -328,6 +340,8 @@ JS_VAL JSRT_NewArray(JSRT_CTX* ctx, JS_TY_FLAGS flags, uint32_t cap) {
 }
 
 static void ReleaseArray(JSRT_CTX* ctx, JsArray* arr) {
+    ReleaseStdObjectProps(ctx, (JsStdObject*)arr);
+
     for (uint32_t i = 0; i < arr->size; i++) {
         JSRT_Release(ctx, arr->data[i]);
     }
@@ -340,13 +354,61 @@ JS_VAL JSRT_NewStdObject(JSRT_CTX* ctx, JS_TY_FLAGS flags) {
 
     std_obj->flags = JS_OBJ | flags;
     std_obj->rc = 1;
+    InitStdObjectProps(ctx, std_obj);
+
+    return PTR_TO_JS_VAL(std_obj);
+}
+
+static void InitStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj) {
     std_obj->prop_size = 0u;
     std_obj->bucket_cap = JS_OBJ_BUCKET_CAP;
     std_obj->start_prop = NULL;
     std_obj->end_prop = NULL;
     std_obj->bucket = NULL;
+}
 
-    return PTR_TO_JS_VAL(std_obj);
+/**
+ * Clean jobs:
+ * 1. decrease ref of (key, value)
+ * 2. clean all the bucket
+ * 3. clean the bucket array
+ * 4. free std_obj itself
+ *
+ * start_propt* -> prop1
+ *                   |
+ *                 prop2
+ *                   |
+ * end_prop*    -> prop3
+ *
+ * bucket** ->
+ *   [0] NULL
+ *   [1] -> bucket1
+ *   [2] NULL
+ *   [3] -> bucket1 -> bucket2 -> bucket3
+ */
+static void ReleaseStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj) {
+    JsStdObjectProp* ptr = std_obj->start_prop;
+    while (ptr != std_obj->end_prop) {
+        ReleaseObj(ctx, (JsObjectHead*)ptr->key);
+        JSRT_Release(ctx, ptr->value);
+        ptr = ptr->next;
+    }
+
+    if (std_obj->bucket != NULL) {
+        // free all the buckets on the list
+        for (uint32_t i = 0; i < std_obj->bucket_cap; i++) {
+            JsStdObjectPropBucket* bucket_ptr = std_obj->bucket[i].next;
+
+            while (bucket_ptr != NULL) {
+                JsStdObjectPropBucket* next = bucket_ptr->next;
+
+                JsHeap_Free(ctx->js_heap, bucket_ptr);
+
+                bucket_ptr = next;
+            }
+        }
+        JsHeap_Free(ctx->js_heap, std_obj->bucket);
+    }
 }
 
 JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, JSRT_RawFunction raw, JsFunClosureEnv* env) {
@@ -413,48 +475,8 @@ static void ReleaseClosure(JSRT_CTX* ctx, JsFunClosureEnv* closure) {
     JsHeap_Free(ctx->js_heap, closure);
 }
 
-/**
- * Clean jobs:
- * 1. decrease ref of (key, value)
- * 2. clean all the bucket
- * 3. clean the bucket array
- * 4. free std_obj itself
- *
- * start_propt* -> prop1
- *                   |
- *                 prop2
- *                   |
- * end_prop*    -> prop3
- *
- * bucket** ->
- *   [0] NULL
- *   [1] -> bucket1
- *   [2] NULL
- *   [3] -> bucket1 -> bucket2 -> bucket3
- */
 static void ReleaseStdObject(JSRT_CTX* ctx, JsStdObject* std_obj) {
-    JsStdObjectProp* ptr = std_obj->start_prop;
-    while (ptr != std_obj->end_prop) {
-        ReleaseObj(ctx, (JsObjectHead*)ptr->key);
-        JSRT_Release(ctx, ptr->value);
-        ptr = ptr->next;
-    }
-
-    if (std_obj->bucket != NULL) {
-        // free all the buckets on the list
-        for (uint32_t i = 0; i < std_obj->bucket_cap; i++) {
-            JsStdObjectPropBucket* bucket_ptr = std_obj->bucket[i].next;
-
-            while (bucket_ptr != NULL) {
-                JsStdObjectPropBucket* next = bucket_ptr->next;
-
-                JsHeap_Free(ctx->js_heap, bucket_ptr);
-
-                bucket_ptr = next;
-            }
-        }
-        JsHeap_Free(ctx->js_heap, std_obj->bucket);
-    }
+    ReleaseStdObject(ctx, std_obj);
 
     JsHeap_Free(ctx->js_heap, std_obj);
 }
