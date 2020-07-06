@@ -16,7 +16,9 @@
 #define STATIC_UNDEFINED    (ctx->js_static->J_undefined)
 #define STATIC_TRUE         (ctx->js_static->J_true)
 #define STATIC_FALSE        (ctx->js_static->J_false)
+#define CURRENT_STACK       (ctx->stack_end)
 
+#define NATIVE_CODE_STR     "[native code]"
 #define ERROR_MSG_NOT_PROP  "Cannot read property '%s' of %s"
 
 #define CHECK_NOT_SMI(x) if (IS_SMI(x)) { \
@@ -32,6 +34,10 @@ static BOOL JsArrSetVal(JSRT_CTX* ctx, JsArray* arr, uint32_t index, JS_VAL val)
 static BOOL JsStdObjectGetVal(JSRT_CTX* ctx, JsStdObject* std_obj, JsStrCommon* key, JS_VAL* result);
 
 static JS_VAL NewCanNotReadPropertyError(JSRT_CTX* ctx, const char* prop_name, const char* var_name);
+
+static JS_VAL I32ToJsStr(JSRT_CTX* ctx, int32_t i);
+
+static JS_VAL JsValToStr(JSRT_CTX* ctx, JS_VAL val);
 
 static void InitStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj);
 static void ReleaseStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj);
@@ -405,6 +411,72 @@ JS_VAL JSRT_NewStdObject(JSRT_CTX* ctx, JS_TY_FLAGS flags) {
     return PTR_TO_JS_VAL(std_obj);
 }
 
+static JS_VAL I32ToJsStr(JSRT_CTX* ctx, int32_t i) {
+    static char buffer[256] = { 0 };
+    memset(buffer, 0, 256);
+    int32_t len = snprintf(buffer, 256, "%d", i);
+    return JSRT_NewStrUTF8(ctx, 0, JSRT_StaticBuffer, len);
+}
+
+static inline JS_VAL JsNumToStr(JSRT_CTX* ctx, JsObject* obj) {
+    static char buffer[256] = { 0 };
+    memset(buffer, 0, 256);
+    int32_t len = snprintf(buffer, 256, "%lf", obj->num_val);
+    return JSRT_NewStrUTF8(ctx, 0, JSRT_StaticBuffer, len);
+}
+
+static inline JS_VAL JsBoolToStr(JSRT_CTX* ctx, JsObject* obj) {
+    if (obj->bool_val) {
+        return ctx->js_static->S_true;
+    } else {
+        return ctx->js_static->S_false;
+    }
+}
+
+static JS_VAL JsValToStr(JSRT_CTX* ctx, JS_VAL val) {
+    if (IS_SMI(val)) {
+        return I32ToJsStr(ctx, SMI_TO_I32(val));
+    }
+
+    JS_PTR ptr = JS_VAL_TO_PTR(val);
+    JS_TY_FLAGS ty = PTR_TYPE(ptr);
+
+    switch (ty) {
+        case JS_UNDEFINED:
+        case JS_NULL:
+            return JS_INVALID_PTR;
+
+        case JS_NUM:
+            return JsNumToStr(ctx, (JsObject*)ptr);
+
+        case JS_STR:
+            return JSRT_Retain(ctx, val);
+
+        case JS_BOOL:
+            return JsBoolToStr(ctx, (JsObject*)val);
+
+        case JS_ARR:
+            // TODO: property
+            return JS_INVALID_PTR;
+
+        case JS_OBJ:
+            // TODO: implement
+            return JS_INVALID_PTR;
+
+        case JS_FUN:
+            // TODO: implement
+            return JS_INVALID_PTR;
+
+        case JS_REGEXP:
+            // TODO: implement
+            return JS_INVALID_PTR;
+
+        default:
+            return JS_INVALID_PTR;
+
+    }
+}
+
 static void InitStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj) {
     std_obj->prop_size = 0u;
     std_obj->bucket_cap = JS_OBJ_BUCKET_CAP;
@@ -457,11 +529,12 @@ static void ReleaseStdObjectProps(JSRT_CTX* ctx, JsStdObject* std_obj) {
     }
 }
 
-JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, uint32_t length, JSRT_RawFunction raw, JsFunClosureEnv* env) {
+JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, const char* fun_str, uint32_t length, JSRT_RawFunction raw, JsFunClosureEnv* env) {
     JsFunction* fun = (JsFunction*)JsHeap_Allocate(ctx->js_heap, sizeof(JsFunction));
 
     fun->flags = JS_FUN;
     fun->rc = 1;
+    fun->fun_str = fun_str;
     fun->length = length;
     fun->raw_function = raw;
     fun->closure_env = env;
@@ -474,8 +547,18 @@ JsVirtualStack* JSRT_NewVirtualStack(JSRT_CTX* ctx, const char* name, JS_VAL arg
     memset(st, 0, sizeof(JsVirtualStack));
 
     st->name = name;
-    st->var_size = var_size;
     st->argument = arg;
+    st->tv = st->temp_val;
+
+    st->var_size = var_size;
+    if (var_size != 0) {
+        st->var = (JS_VAL*)JsHeap_Allocate(ctx->js_heap, sizeof(JS_VAL) * var_size);
+        for (uint32_t i = 0; i < var_size; i++) {
+            st->var[i] = JS_INVALID_PTR;
+        }
+    } else {
+        st->var = NULL;
+    }
 
     return st;
 }
@@ -492,16 +575,18 @@ JsVirtualStack* JSRT_NewVirtualStack2(JSRT_CTX* ctx, const char* name, JS_VAL ar
 
 void JSRT_ReleaseVirtualStack(struct JSRT_CTX*ctx, JsVirtualStack* st) {
     // release temp var and stack var
-    for (uint32_t i = 0; i < JS_STACK_TMP_SIZE; i++) {
-        if (st->temp_val[i] != 0) {
-            JSRT_Release(ctx, st->temp_val[i]);
-        }
+    for (JS_VAL* i = st->temp_val; i != st->tv; i++) {
+        JSRT_Release(ctx, *i);
     }
     for (uint32_t i = 0; i < st->var_size; i++) {
-        JSRT_Release(ctx, st->variable[i]);
+        if (st->var[i] == JS_INVALID_PTR) {  // uninitialized
+            continue;
+        }
+        JSRT_Release(ctx, st->var[i]);
     }
     // release arguments
     JSRT_Release(ctx, st->argument);
+    JsHeap_Free(ctx->js_heap, st->var);
     JsHeap_Free(ctx->js_heap, st);
 }
 
@@ -639,6 +724,27 @@ find_proto:
     return JS_INVALID_PTR;
 }
 
+static inline int JsStdObjectAssignMemStr(JSRT_CTX* ctx, JsStdObject* std_obj, JsStrCommon* key, JS_VAL obj, JS_VAL* result) {
+    *result = JSRT_Retain(ctx, obj);
+    return 0;
+}
+
+#define DEFINE_TMP(NAME, IDX) \
+  if (ctx->stack_end->temp_val[IDX] != 0) JSRT_Release(ctx, ctx->stack_end->temp_val[IDX]); \
+  NAME = ctx->stack_end->temp_val + IDX;
+
+static inline JS_VAL JsStdObjectAssignMem(JSRT_CTX* ctx, JsStdObject* std_obj, JS_VAL key, JS_VAL obj) {
+    JS_VAL result;
+    JS_VAL *str_key;
+    DEFINE_TMP(str_key, 1);  // use slot 1 to store temp
+    *str_key = JsValToStr(ctx, key);
+
+    JsStrCommon* str= NULL;
+    int ec = JsStdObjectAssignMemStr(ctx, std_obj, str, obj, &result);
+
+    return result;
+}
+
 JS_VAL JSRT_ASSIGN_MEN(JSRT_CTX* ctx, JS_VAL target, JS_VAL key, JS_VAL value) {
     if (IS_SMI(target)) {
         return target;
@@ -663,9 +769,18 @@ JS_VAL JSRT_ASSIGN_MEN(JSRT_CTX* ctx, JS_VAL target, JS_VAL key, JS_VAL value) {
         case JS_ARR:
             return JsArrAssignMem(ctx, (JsArray*)ptr, key, value);
 
-    }
+        case JS_OBJ:
+            return JsStdObjectAssignMem(ctx, (JsStdObject*)ptr, key, value);
 
-    return value;
+        default:
+            return value;
+
+    }
+}
+
+JS_VAL JSRT_ASSIGN_VAR(JSRT_CTX* ctx, int var_id, JS_VAL value) {
+    JSRT_Release(ctx, CURRENT_STACK->variable[var_id]);
+    return CURRENT_STACK->variable[var_id] = JSRT_Retain(ctx, value);
 }
 
 static void ReleaseFunction(JSRT_CTX* ctx, JsFunction* fun) {
@@ -691,7 +806,7 @@ static void ReleaseRegExp(JSRT_CTX* ctx, JsRegExp* regexp) {
 }
 
 static void ReleaseStdObject(JSRT_CTX* ctx, JsStdObject* std_obj) {
-    ReleaseStdObject(ctx, std_obj);
+    ReleaseStdObjectProps(ctx, std_obj);
 
     JsHeap_Free(ctx->js_heap, std_obj);
 }

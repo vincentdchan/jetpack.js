@@ -213,6 +213,7 @@ typedef struct JsFunClosureEnv {
 typedef struct JsFunction {
     JS_TY_FLAGS flags;
     JS_TY_RC rc;
+    const char*       fun_str;
     uint32_t          length;
     JSRT_RawFunction  raw_function;
     JsFunClosureEnv*  closure_env;
@@ -233,9 +234,10 @@ typedef struct JsVirtualStack {
     struct JsVirtualStack* next;
     uint32_t               height;
     JS_VAL                 argument;
+    JS_VAL*                tv;  // temp var
     JS_VAL                 temp_val[JS_STACK_TMP_SIZE];
     uint32_t               var_size;
-    JS_VAL                 variable[JS_STACK_VAR_SIZE];
+    JS_VAL*                var;
 } JsVirtualStack;
 
 typedef struct JsSetTryStackNode {
@@ -274,7 +276,7 @@ JS_VAL JSRT_NewArray(JSRT_CTX* ctx, JS_TY_FLAGS flags, uint32_t cap);
 
 JS_VAL JSRT_NewStdObject(JSRT_CTX* ctx, JS_TY_FLAGS flags);
 
-JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, uint32_t length, JSRT_RawFunction raw, JsFunClosureEnv* env);
+JS_VAL JSRT_NewFunction(JSRT_CTX* ctx, const char* fun_str, uint32_t length, JSRT_RawFunction raw, JsFunClosureEnv* env);
 
 JsVirtualStack* JSRT_NewVirtualStack(JSRT_CTX* ctx, const char* name, JS_VAL arg, uint32_t var_size);
 JsVirtualStack* JSRT_NewVirtualStack2(JSRT_CTX* ctx, const char* name, JS_VAL arg, uint32_t var_size, JsVirtualStack* prev);
@@ -282,6 +284,7 @@ void JSRT_ReleaseVirtualStack(JSRT_CTX*ctx, JsVirtualStack* st);
 
 JS_VAL JSRT_MEM(JSRT_CTX* ctx, JS_VAL val, JS_VAL key);
 JS_VAL JSRT_ASSIGN_MEN(JSRT_CTX* ctx, JS_VAL val, JS_VAL key, JS_VAL value);
+JS_VAL JSRT_ASSIGN_VAR(JSRT_CTX* ctx, int var_id, JS_VAL value);
 
 JsVirtualStack* JSRT_PushVirtualStack(JSRT_CTX* ctx, const char* name, JS_VAL arg, uint32_t var_size);
 void JSRT_PopVirtualStack(JSRT_CTX* ctx);
