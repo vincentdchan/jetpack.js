@@ -12,6 +12,8 @@ set(SOURCE_FILES
         "src/GlobalImportHandler.cpp"
         "src/Error.h"
         "src/Error.cpp"
+        "src/sourcemap/SourceMapGenerator.h"
+        "src/sourcemap/SourceMapGenerator.cpp"
         "src/codegen/NodeTraverser.h"
         "src/codegen/NodeTraverser.cpp"
         "src/codegen/CodeGen.h"
@@ -51,6 +53,7 @@ link_libraries(bundle-utils js-parser fmt)
 add_executable(jetpack ${SOURCE_FILES} src/main.cpp)
 
 add_executable(jetpack-test ${SOURCE_FILES}
+        tests/sourcemap.cpp
         tests/scope.cpp
         tests/resolve.cpp
         tests/codegen.cpp
