@@ -4,6 +4,8 @@ project(js-bundler)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
+        "src/OutputStream.h"
+        "src/OutputStream.cpp"
         "src/ModuleResolver.h"
         "src/ModuleResolver.cpp"
         "src/UniqueNameGenerator.h"

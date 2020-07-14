@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define S_COMMA (config_.minify ? "," : ", ")
+#define S_COMMA (config_.minify ? u"," : u", ")
 
 namespace jetpack {
 
@@ -55,10 +55,7 @@ namespace jetpack {
         return 0;
     }
 
-    CodeGen::CodeGen(): CodeGen(Config(), std::cout) {
-    }
-
-    CodeGen::CodeGen(const Config& config, std::ostream& output_stream):
+    CodeGen::CodeGen(const Config& config, std::basic_ostream<char16_t>& output_stream):
             config_(config), output(output_stream) {}
 
     int CodeGen::ExpressionPrecedence(const Sp<SyntaxNode>& node) {
@@ -130,15 +127,15 @@ namespace jetpack {
     void CodeGen::FormatVariableDeclaration(const Sp<VariableDeclaration> &node) {
         switch (node->kind) {
             case VarKind::Var:
-                Write("var ");
+                Write(u"var ");
                 break;
 
             case VarKind::Let:
-                Write("let ");
+                Write(u"let ");
                 break;
 
             case VarKind::Const:
-                Write("const ");
+                Write(u"const ");
                 break;
 
             default:
@@ -158,9 +155,9 @@ namespace jetpack {
 
     void CodeGen::FormatBinaryExpression(const Sp<Expression> &expr, const Sp<BinaryExpression> &parent, bool is_right) {
         if (ExpressionNeedsParenthesis(expr, parent, is_right)) {
-            Write("(");
+            Write(u"(");
             TraverseNode(expr);
-            Write(")");
+            Write(u")");
         } else {
             TraverseNode(expr);
         }
@@ -173,14 +170,14 @@ namespace jetpack {
     }
 
     void CodeGen::FormatSequence(std::vector<Sp<SyntaxNode>> &params) {
-        Write("(");
+        Write(u"(");
         for (std::size_t i = 0; i < params.size(); i++) {
             TraverseNode(params[i]);
             if (i < params.size() - 1) {
                 Write(S_COMMA);
             }
         }
-        Write(")");
+        Write(u")");
     }
 
     bool CodeGen::ExpressionNeedsParenthesis(const Sp<Expression> &node, const Sp<BinaryExpression> &parent,
@@ -242,7 +239,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<ArrayExpression> &node) {
-        output << '[';
+        Write(u"[");
         std::size_t count = 0;
         for (auto& elem : node->elements) {
             if (elem.has_value()) {
@@ -254,11 +251,11 @@ namespace jetpack {
                 output << S_COMMA;
             }
         }
-        output << ']';
+        Write(u"]");
     }
 
     void CodeGen::Traverse(const Sp<BlockStatement> &node) {
-        Write("{");
+        Write(u"{");
         state_.indent_level++;
 
         if (!node->body.empty()) {
@@ -276,11 +273,11 @@ namespace jetpack {
         }
 
         state_.indent_level--;
-        WriteIndentWith("}");
+        WriteIndentWith(u"}");
     }
 
     void CodeGen::Traverse(const Sp<EmptyStatement> &node) {
-        Write(';');
+        Write(u';');
     }
 
     void CodeGen::Traverse(const Sp<ExpressionStatement> &node) {
@@ -288,62 +285,62 @@ namespace jetpack {
         if (
                 (precedence == needs_parentheses) ||
                 (precedence == 3 && node->expression->type == SyntaxNodeType::ObjectPattern)) {
-            Write('(');
+            Write(u'(');
             TraverseNode(node->expression);
-            Write(')');
+            Write(u')');
         } else {
             TraverseNode(node->expression);
         }
-        Write(';');
+        Write(u';');
     }
 
     void CodeGen::Traverse(const Sp<IfStatement> &node) {
-        Write(config_.minify ? "if(" : "if (");
+        Write(config_.minify ? u"if(" : u"if (");
         TraverseNode(node->test);
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->consequent);
         if (node->alternate.has_value()) {
 //            Write(config_.minify ? "else" : " else ");
-            Write(" else ");
+            Write(u" else ");
             TraverseNode(*node->alternate);
         }
     }
 
     void CodeGen::Traverse(const Sp<LabeledStatement> &node) {
         TraverseNode(node->label);
-        Write(": ");
+        Write(u": ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<BreakStatement> &node) {
-        Write("break");
+        Write(u"break");
         if (node->label.has_value()) {
-            Write(" ");
+            Write(u" ");
             TraverseNode(*node->label);
         }
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<ContinueStatement> &node) {
-        Write("continue");
+        Write(u"continue");
         if (node->label.has_value()) {
-            Write(" ");
+            Write(u" ");
             TraverseNode(*node->label);
         }
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<WithStatement> &node) {
-        Write(config_.minify ? "with(" : "with (");
+        Write(config_.minify ? u"with(" : u"with (");
         TraverseNode(node->object);
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<SwitchStatement> &node) {
-        Write(config_.minify ? "switch(" : "switch (");
+        Write(config_.minify ? u"switch(" : u"switch (");
         TraverseNode(node->discrimiant);
-        Write(config_.minify ? "){" : ") {");
+        Write(config_.minify ? u"){" : u") {");
         WriteLineEnd();
         state_.indent_level++;
 
@@ -351,12 +348,12 @@ namespace jetpack {
 
             WriteIndent();
             if (case_->test.has_value()) {
-                Write("case ");
+                Write(u"case ");
                 TraverseNode(*case_->test);
-                Write(":");
+                Write(u":");
                 WriteLineEnd();
             } else {
-                Write("default:");
+                Write(u"default:");
                 WriteLineEnd();
             }
 
@@ -369,59 +366,59 @@ namespace jetpack {
         }
 
         state_.indent_level--;
-        WriteIndentWith("}");
+        WriteIndentWith(u"}");
     }
 
     void CodeGen::Traverse(const Sp<ReturnStatement> &node) {
-        Write("return");
+        Write(u"return");
         if (node->argument.has_value()) {
-            Write(" ");
+            Write(u" ");
             TraverseNode(*node->argument);
         }
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<ThrowStatement> &node) {
-        Write("throw ");
+        Write(u"throw ");
         TraverseNode(node->argument);
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<TryStatement> &node) {
-        Write(config_.minify ? "try" : "try ");
+        Write(config_.minify ? u"try" : u"try ");
         TraverseNode(node->block);
 
         if (node->handler.has_value()) {
             auto handler = *node->handler;
-            Write(config_.minify ? "catch(" : " catch (");
+            Write(config_.minify ? u"catch(" : u" catch (");
             TraverseNode(handler->param);
-            Write(")");
+            Write(u")");
             TraverseNode(handler->body);
         }
 
         if (node->finalizer.has_value()) {
-            Write(config_.minify ? "finally" : " finally ");
+            Write(config_.minify ? u"finally" : u" finally ");
             TraverseNode(*node->finalizer);
         }
     }
 
     void CodeGen::Traverse(const Sp<WhileStatement> &node) {
-        Write(config_.minify ? "while(" : "while (");
+        Write(config_.minify ? u"while(" : u"while (");
         TraverseNode(node->test);
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<DoWhileStatement> &node) {
-        Write(config_.minify ? "do" : "do ");
+        Write(config_.minify ? u"do" : u"do ");
         TraverseNode(node->body);
-        Write(config_.minify ? "while(" : " while (");
+        Write(config_.minify ? u"while(" : u" while (");
         TraverseNode(node->test);
-        Write(");");
+        Write(u");");
     }
 
     void CodeGen::Traverse(const Sp<ForStatement> &node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(config_.minify ? u"for(" : u"for (");
         if (node->init.has_value()) {
             auto init = *node->init;
             if (init->type == SyntaxNodeType::VariableDeclaration) {
@@ -431,60 +428,60 @@ namespace jetpack {
                 TraverseNode(init);
             }
         }
-        Write(config_.minify ? ";" : "; ");
+        Write(config_.minify ? u";" : u"; ");
         if (node->test.has_value()) {
             TraverseNode(*node->test);
         }
-        Write(config_.minify ? ";" : "; ");
+        Write(config_.minify ? u";" : u"; ");
         if (node->update.has_value()) {
             TraverseNode(*node->update);
         }
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<ForInStatement> &node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(config_.minify ? u"for(" : u"for (");
         if (node->left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_pointer_cast<VariableDeclaration>(node->left);
             FormatVariableDeclaration(decl);
         } else {
             TraverseNode(node->left);
         }
-        Write(" in ");
+        Write(u" in ");
         TraverseNode(node->right);
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<ForOfStatement> & node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(config_.minify ? u"for(" : u"for (");
         if (node->left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_pointer_cast<VariableDeclaration>(node->left);
             FormatVariableDeclaration(decl);
         } else {
             TraverseNode(node->left);
         }
-        Write(" of ");
+        Write(u" of ");
         TraverseNode(node->right);
-        Write(config_.minify ? ")" : ") ");
+        Write(config_.minify ? u")" : u") ");
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<DebuggerStatement> &node) {
-        Write("debugger;");
+        Write(u"debugger;");
         WriteLineEnd();
     }
 
     void CodeGen::Traverse(const Sp<FunctionDeclaration> &node) {
         if (node->async) {
-            Write("async ");
+            Write(u"async ");
         }
 
         if (node->generator) {
-            Write("function* ");
+            Write(u"function* ");
         } else {
-            Write("function ");
+            Write(u"function ");
         }
 
         if (node->id.has_value()) {
@@ -493,65 +490,65 @@ namespace jetpack {
 
         FormatSequence(node->params);
         if (!config_.minify) {
-            Write(" ");
+            Write(u" ");
         }
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<FunctionExpression> &node) {
         if (node->async) {
-            Write("async ");
+            Write(u"async ");
         }
 
         if (node->generator) {
-            Write("function*");
+            Write(u"function*");
         } else {
-            Write("function");
+            Write(u"function");
         }
 
         if (node->id.has_value()) {
-            Write(" ");
+            Write(u" ");
             Write((*node->id)->name);
         }
 
         FormatSequence(node->params);
         if (!config_.minify) {
-            Write(" ");
+            Write(u" ");
         }
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<VariableDeclaration> &node) {
         FormatVariableDeclaration(node);
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<VariableDeclarator> &node) {
         TraverseNode(node->id);
         if (node->init.has_value()) {
-            Write(config_.minify ? "=" : " = ");
+            Write(config_.minify ? u"=" : u" = ");
             TraverseNode(*node->init);
         }
     }
 
     void CodeGen::Traverse(const Sp<ClassDeclaration> &node) {
-        Write("class ");
+        Write(u"class ");
         if (node->id.has_value()) {
             Write((*node->id)->name);
-            Write(" ");
+            Write(u" ");
         }
         if (node->super_class.has_value()) {
-            Write("extends ");
+            Write(u"extends ");
             TraverseNode(*node->super_class);
             if (!config_.minify) {
-                Write(" ");
+                Write(u" ");
             }
         }
         TraverseNode(node->body);
     }
 
     void CodeGen::Traverse(const Sp<ClassBody>& node) {
-        Write("{");
+        Write(u"{");
         state_.indent_level++;
 
         if (!node->body.empty()) {
@@ -565,17 +562,17 @@ namespace jetpack {
         }
 
         state_.indent_level--;
-        WriteIndentWith("}");
+        WriteIndentWith(u"}");
     }
 
     void CodeGen::Traverse(const Sp<ImportDeclaration> &node) {
-        Write("import ");
+        Write(u"import ");
 
         std::uint32_t i = 0;
         if (node->specifiers.size() > 0) {
             for (auto& spec : node->specifiers) {
                 if (i > 0) {
-                    Write(config_.minify ? "," : ", ");
+                    Write(config_.minify ? u"," : u", ");
                 }
                 if (spec->type == SyntaxNodeType::ImportDefaultSpecifier) {
                     auto default_ = dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
@@ -591,7 +588,7 @@ namespace jetpack {
                 }
             }
             if (i < node->specifiers.size()) {
-                Write(config_.minify ? "{" : "{ ");
+                Write(config_.minify ? u"{" : u"{ ");
                 while (true) {
                     auto spec = node->specifiers[i];
                     auto import_ = dynamic_pointer_cast<ImportSpecifier>(spec);
@@ -606,30 +603,30 @@ namespace jetpack {
                         break;
                     }
                 }
-                Write(config_.minify ? "}" : " }");
+                Write(config_.minify ? u"}" : u" }");
             }
-            Write(" from ");
+            Write(u" from ");
         }
 
         this->Traverse(node->source);
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<ExportDefaultDeclaration> &node) {
-        Write("export default ");
+        Write(u"export default ");
         TraverseNode(node->declaration);
         if (ExpressionPrecedence(node->declaration) > 0 &&
             node->declaration->type == SyntaxNodeType::FunctionExpression) {
-            Write(";");
+            Write(u";");
         }
     }
 
     void CodeGen::Traverse(const Sp<ExportNamedDeclaration> &node) {
-        Write("export ");
+        Write(u"export ");
         if (node->declaration.has_value()) {
             TraverseNode(*node->declaration);
         } else {
-            Write(config_.minify ? "{" : "{ ");
+            Write(config_.minify ? u"{" : u"{ ");
             if (node->specifiers.size() > 0) {
                 std::uint32_t i = 0;
                 for (auto& spec : node->specifiers) {
@@ -645,32 +642,32 @@ namespace jetpack {
                     }
                 }
             }
-            Write(config_.minify ? "}" : " }");
+            Write(config_.minify ? u"}" : u" }");
             if (node->source.has_value()) {
-                Write(" from ");
+                Write(u" from ");
                 this->Traverse(*node->source);
             }
-            Write(";");
+            Write(u";");
         }
     }
 
     void CodeGen::Traverse(const Sp<ExportAllDeclaration> &node) {
-        Write("export * from ");
+        Write(u"export * from ");
         this->Traverse(node->source);
-        Write(";");
+        Write(u";");
     }
 
     void CodeGen::Traverse(const Sp<MethodDefinition> &node) {
         if (node->static_) {
-            Write("static ");
+            Write(u"static ");
         }
         switch (node->kind) {
             case VarKind::Get:
-                Write("get ");
+                Write(u"get ");
                 break;
 
             case VarKind::Set:
-                Write("set ");
+                Write(u"set ");
                 break;
 
             default:
@@ -685,10 +682,10 @@ namespace jetpack {
             }
 
             if (fun_expr->IsAsync()) {
-                Write("async ");
+                Write(u"async ");
             }
             if (fun_expr->IsGenerator()) {
-                Write("*");
+                Write(u"*");
             }
             if (fun_expr->IsComputed()) {
                 Write('[');
@@ -699,7 +696,7 @@ namespace jetpack {
             }
             FormatSequence(fun_expr->params);
             if (!config_.minify) {
-                Write(" ");
+                Write(u" ");
             }
             TraverseNode(fun_expr->body);
         }
@@ -707,7 +704,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<ArrowFunctionExpression> &node) {
         if (node->async) {
-            Write("async ", node);
+            Write(u"async ", node);
         }
         auto& params = node->params;
         if (!params.empty()) {
@@ -718,64 +715,64 @@ namespace jetpack {
                 FormatSequence(params);
             }
         }
-        Write(config_.minify ? "=>" : " => ");
+        Write(config_.minify ? u"=>" : u" => ");
         if (node->body->type == SyntaxNodeType::ObjectExpression) {
-            Write("(");
+            Write(u"(");
             Sp<ObjectExpression> oe = dynamic_pointer_cast<ObjectExpression>(node->body);
             this->Traverse(oe);
-            Write(")");
+            Write(u")");
         } else {
             TraverseNode(node->body);
         }
     }
 
     void CodeGen::Traverse(const Sp<ThisExpression> &node) {
-        Write("this", node);
+        Write(u"this", node);
     }
 
     void CodeGen::Traverse(const Sp<Super> &node) {
-        Write("super", node);
+        Write(u"super", node);
     }
 
     void CodeGen::Traverse(const Sp<RestElement> &node) {
-        Write("...");
+        Write(u"...");
         TraverseNode(node->argument);
     }
 
     void CodeGen::Traverse(const Sp<SpreadElement> &node) {
-        Write("...");
+        Write(u"...");
         TraverseNode(node->argument);
     }
 
     void CodeGen::Traverse(const Sp<YieldExpression> &node) {
         if (node->delegate) {
-            Write("yield*");
+            Write(u"yield*");
         } else {
-            Write("yield");
+            Write(u"yield");
         }
 
         if (node->argument.has_value()) {
-            Write(" ");
+            Write(u" ");
             TraverseNode(*node->argument);
         }
     }
 
     void CodeGen::Traverse(const Sp<AwaitExpression> &node) {
-        Write("await ");
+        Write(u"await ");
         TraverseNode(node->argument);
     }
 
     void CodeGen::Traverse(const Sp<TemplateLiteral> &node) {
-        Write("`");
+        Write(u"`");
         for (std::size_t i = 0; i < node->expressions.size(); i++) {
             auto expr = node->expressions[i];
             Write(node->quasis[i]->cooked);
-            Write("${");
+            Write(u"${");
             TraverseNode(expr);
-            Write("}");
+            Write(u"}");
         }
         Write(node->quasis[node->quasis.size() - 1]->cooked);
-        Write("`");
+        Write(u"`");
     }
 
     void CodeGen::Traverse(const Sp<TaggedTemplateExpression> &node) {
@@ -785,10 +782,10 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<ObjectExpression> &node) {
         state_.indent_level++;
-        Write("{");
+        Write(u"{");
         if (!node->properties.empty()) {
             WriteLineEnd();
-            string comma = "," + config_.line_end;
+            u16string comma = u"," + utils::To_UTF16(config_.line_end);
             std::size_t i = 0;
             while (true) {
                 auto prop = node->properties[i];
@@ -803,13 +800,13 @@ namespace jetpack {
             WriteLineEnd();
         }
         state_.indent_level--;
-        WriteIndentWith("}");
+        WriteIndentWith(u"}");
     }
 
     void CodeGen::Traverse(const Sp<Property> &node) {
         switch (node->kind) {
             case VarKind::Get: {
-                Write("get ");
+                Write(u"get ");
                 TraverseNode(node->key);
                 if (!node->value.has_value()) return;
                 auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node->value);
@@ -817,14 +814,14 @@ namespace jetpack {
 
                 FormatSequence(fun->params);
                 if (!config_.minify) {
-                    Write(" ");
+                    Write(u" ");
                 }
                 TraverseNode(fun->body);
                 break;
             }
 
             case VarKind::Set: {
-                Write("set ");
+                Write(u"set ");
                 TraverseNode(node->key);
                 if (!node->value.has_value()) return;
                 auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node->value);
@@ -832,7 +829,7 @@ namespace jetpack {
 
                 FormatSequence(fun->params);
                 if (!config_.minify) {
-                    Write(" ");
+                    Write(u" ");
                 }
                 TraverseNode(fun->body);
                 break;
@@ -849,16 +846,16 @@ namespace jetpack {
                 }
                 if (!shorthand) {
                     if (node->computed) {
-                        Write("[");
+                        Write(u"[");
                         TraverseNode(node->key);
-                        Write("]");
+                        Write(u"]");
                     } else {
                         TraverseNode(node->key);
                     }
                 }
                 if (node->value.has_value()) {
                     if (!shorthand) {
-                        Write(config_.minify ? ":" : ": ");
+                        Write(config_.minify ? u":" : u": ");
                     }
                     TraverseNode(*node->value);
                 }
@@ -879,14 +876,14 @@ namespace jetpack {
         if (node->prefix) {
             Write(node->operator_);
             if (node->operator_.size() > 1) {
-                Write(" ");
+                Write(u" ");
             }
             if (ExpressionPrecedence(node->argument) <
                 ExpressionPrecedence(std::make_shared<UnaryExpression>())
                     ) {
-                Write("(");
+                Write(u"(");
                 TraverseNode(node->argument);
-                Write(")");
+                Write(u")");
             } else {
                 TraverseNode(node->argument);
             }
@@ -908,14 +905,14 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<AssignmentPattern> &node) {
         TraverseNode(node->left);
-        Write(config_.minify ? "=" : " = ");
+        Write(config_.minify ? u"=" : u" = ");
         TraverseNode(node->right);
     }
 
     void CodeGen::Traverse(const Sp<BinaryExpression> &node) {
         bool is_in = node->operator_ == u"in";
         if (is_in) {
-            Write("(");
+            Write(u"(");
         }
         FormatBinaryExpression(node->left, node, false);
         if (config_.minify && node->operator_ != u"in" && node->operator_ != u"instanceof") {
@@ -925,7 +922,7 @@ namespace jetpack {
         }
         FormatBinaryExpression(node->right, node, true);
         if (is_in) {
-            Write(")");
+            Write(u")");
         }
     }
 
@@ -934,24 +931,24 @@ namespace jetpack {
             ExpressionPrecedence(std::make_shared<ConditionalExpression>())) {
             TraverseNode(node->test);
         } else {
-            Write("(");
+            Write(u"(");
             TraverseNode(node->test);
-            Write(")");
+            Write(u")");
         }
-        Write(config_.minify ? "?" : " ? ");
+        Write(config_.minify ? u"?" : u" ? ");
         TraverseNode(node->consequent);
-        Write(config_.minify ? ":" : " : ");
+        Write(config_.minify ? u":" : u" : ");
         TraverseNode(node->alternate);
     }
 
     void CodeGen::Traverse(const Sp<NewExpression> &node) {
-        Write("new ");
+        Write(u"new ");
         if (ExpressionPrecedence(node->callee) <
             ExpressionPrecedence(std::make_shared<CallExpression>()) ||
             HasCallExpression(node->callee)) {
-            Write("(");
+            Write(u"(");
             TraverseNode(node->callee);
-            Write(")");
+            Write(u")");
         } else {
             TraverseNode(node->callee);
         }
@@ -979,9 +976,9 @@ namespace jetpack {
     void CodeGen::Traverse(const Sp<CallExpression> &node) {
         if (ExpressionPrecedence(node->callee) <
             ExpressionPrecedence(std::make_shared<CallExpression>())) {
-            Write("(");
+            Write(u"(");
             TraverseNode(node->callee);
-            Write(")");
+            Write(u")");
         } else {
             TraverseNode(node->callee);
         }
@@ -990,7 +987,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<Identifier> &node) {
         if (config_.minify && node->name == u"undefined") {
-            Write("void 0");
+            Write(u"void 0");
         } else {
             Write(node->name, node);
         }
@@ -1023,16 +1020,16 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<ObjectPattern>& node) {
-        Write(config_.minify ? "{" : "{ ");
+        Write(config_.minify ? u"{" : u"{ ");
         for (std::size_t i = 0; ;) {
             TraverseNode(node->properties[i]);
             if (++i < node->properties.size()) {
-                Write(", ");
+                Write(u", ");
             } else {
                 break;
             }
         }
-        Write(config_.minify ? "}" : " }");
+        Write(config_.minify ? u"}" : u" }");
     }
 
     void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {
@@ -1054,12 +1051,12 @@ namespace jetpack {
             auto& top = ordered_comments_.front();
             if (top->range_.second < node->range.first) {
                 if (top->multi_line_) {
-                    Write("/*");
+                    Write(u"/*");
                     Write(top->value_);
-                    Write("*/");
+                    Write(u"*/");
                 } else {
                     WriteIndent();
-                    Write("//");
+                    Write(u"//");
                     Write(top->value_);
                 }
                 ordered_comments_.pop_front();

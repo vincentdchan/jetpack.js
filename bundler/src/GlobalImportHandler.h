@@ -45,7 +45,7 @@ namespace jetpack {
 
         void GenAst(const std::shared_ptr<UniqueNameGenerator>&);
 
-        void GenCode(const CodeGen::Config &config, std::ostream& os);
+        void GenCode(const CodeGen::Config &config, std::basic_ostream<char16_t>& os);
 
         std::vector<Sp<ImportDeclaration>> imports;
 

@@ -51,8 +51,7 @@ namespace jetpack {
 
         };
 
-        CodeGen();
-        CodeGen(const Config& config, std::ostream& output_stream);
+        CodeGen(const Config& config, std::basic_ostream<char16_t>& output_stream);
 
     private:
         inline void Write(char ch) {
@@ -62,22 +61,22 @@ namespace jetpack {
 #endif
         }
 
-        inline void Write(const char* c_str) {
+        inline void Write(const char16_t* c_str) {
             output << c_str;
 #ifdef DEBUG
             output.flush();
 #endif
         }
 
-        inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
-            output << str;
-#ifdef DEBUG
-            output.flush();
-#endif
-        }
+//        inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
+//            output << str;
+//#ifdef DEBUG
+//            output.flush();
+//#endif
+//        }
 
-        inline void Write(const UString& w_str, Sp<SyntaxNode> node = nullptr) {
-            Write(utils::To_UTF8(w_str), node);
+        inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
+            output << str;
 #ifdef DEBUG
             output.flush();
 #endif
@@ -85,7 +84,7 @@ namespace jetpack {
 
         inline void WriteLineEnd() {
             if (config_.minify) return;
-            output << config_.line_end;
+            output << utils::To_UTF16(config_.line_end);
             state_.line++;
 #ifdef DEBUG
             output.flush();
@@ -95,19 +94,19 @@ namespace jetpack {
         inline void WriteIndent() {
             if (config_.minify) return;
             for (std::uint32_t i = 0; i < state_.indent_level; i++) {
-                Write(config_.indent);
+                Write(utils::To_UTF16(config_.indent));
             }
 #ifdef DEBUG
             output.flush();
 #endif
         }
 
-        inline void WriteIndentWith(const char* c_str) {
+        inline void WriteIndentWith(const char16_t* c_str) {
             WriteIndent();
             Write(c_str);
         }
 
-        inline void WriteIndentWith(const std::string& str) {
+        inline void WriteIndentWith(const std::u16string& str) {
             WriteIndent();
             Write(str);
         }
@@ -181,7 +180,7 @@ namespace jetpack {
         void Traverse(const Sp<UpdateExpression>& node) override;
         void Traverse(const Sp<ObjectPattern>& node) override;
 
-        inline std::ostream& Stream() {
+        inline std::basic_ostream<char16_t>& Stream() {
             return output;
         }
 
@@ -208,7 +207,7 @@ namespace jetpack {
 
         SourceMapGenerator sourceMapGenerator_;
 
-        std::ostream& output;
+        std::basic_ostream<char16_t>& output;
 
     };
 
