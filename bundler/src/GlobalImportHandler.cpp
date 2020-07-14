@@ -173,7 +173,7 @@ namespace jetpack {
         }
     }
 
-    void GlobalImportHandler::GenCode(const CodeGen::Config &config, std::basic_ostream<char16_t>& os) {
+    void GlobalImportHandler::GenCode(const CodeGen::Config &config, OutputStream& os) {
         CodeGen codegen(config, os);
 
         for (auto& decl : gen_import_decls) {

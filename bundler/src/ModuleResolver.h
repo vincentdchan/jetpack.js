@@ -95,7 +95,7 @@ namespace jetpack {
         /**
          * Temp for parallel codegen
          */
-        std::string codegen_result;
+        std::u16string codegen_result;
 
         /**
          * For Postorder traversal
@@ -162,7 +162,7 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
+        void MergeModules(const Sp<ModuleFile>& mf, OutputStream& out_path);
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_map_) {

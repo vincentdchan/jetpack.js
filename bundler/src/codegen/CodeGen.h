@@ -12,6 +12,7 @@
 #include "Utils.h"
 #include "NodeTraverser.h"
 #include "../sourcemap/SourceMapGenerator.h"
+#include "../OutputStream.h"
 
 namespace jetpack {
 
@@ -51,7 +52,7 @@ namespace jetpack {
 
         };
 
-        CodeGen(const Config& config, std::basic_ostream<char16_t>& output_stream);
+        CodeGen(const Config& config, OutputStream& output_stream);
 
     private:
         inline void Write(char ch) {
@@ -180,7 +181,7 @@ namespace jetpack {
         void Traverse(const Sp<UpdateExpression>& node) override;
         void Traverse(const Sp<ObjectPattern>& node) override;
 
-        inline std::basic_ostream<char16_t>& Stream() {
+        inline OutputStream& Stream() {
             return output;
         }
 
@@ -207,7 +208,7 @@ namespace jetpack {
 
         SourceMapGenerator sourceMapGenerator_;
 
-        std::basic_ostream<char16_t>& output;
+        OutputStream& output;
 
     };
 

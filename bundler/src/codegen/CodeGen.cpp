@@ -55,7 +55,7 @@ namespace jetpack {
         return 0;
     }
 
-    CodeGen::CodeGen(const Config& config, std::basic_ostream<char16_t>& output_stream):
+    CodeGen::CodeGen(const Config& config, OutputStream& output_stream):
             config_(config), output(output_stream) {}
 
     int CodeGen::ExpressionPrecedence(const Sp<SyntaxNode>& node) {

@@ -114,15 +114,15 @@ namespace jetpack {
     }
 
     void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
-        std::stringstream ss;
+        MemoryOutputStream memoryOutputStream;
 
         if (config.comments) {
-            ss << "// " << this->path << std::endl;
+            memoryOutputStream << "// " << this->path << "\n";
         }
 
-        CodeGen codegen(config, ss);
+        CodeGen codegen(config, memoryOutputStream);
         codegen.Traverse(ast);
-        codegen_result = ss.str();
+        codegen_result = memoryOutputStream.ToString();
     }
 
     UString ModuleFile::GetModuleVarName() {
@@ -543,17 +543,17 @@ namespace jetpack {
 
         // END every modules gen their own code
 
-        std::ofstream out(out_path, std::ios::out);
-        global_import_handler_.GenCode(config, out);
+        FileOutputStream fileOutputStream(out_path);
+        global_import_handler_.GenCode(config, fileOutputStream);
 
         ClearAllVisitedMark();
-        MergeModules(entry_module, out);
+        MergeModules(entry_module, fileOutputStream);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, out);
+        CodeGen codegen(config, fileOutputStream);
         codegen.Traverse(final_export);
 
-        out.close();
+        fileOutputStream.Close();
     }
 
     void ModuleResolver::RenameAllInnerScopes() {
@@ -1095,7 +1095,7 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, std::ofstream &out) {
+    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, OutputStream &out) {
         if (mf->visited_mark) {
             return;
         }
