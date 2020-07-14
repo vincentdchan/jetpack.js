@@ -11,6 +11,7 @@
 #include <deque>
 #include "Utils.h"
 #include "NodeTraverser.h"
+#include "../sourcemap/SourceMapGenerator.h"
 
 namespace jetpack {
 
@@ -184,6 +185,10 @@ namespace jetpack {
             return output;
         }
 
+        inline SourceMapGenerator& SourceMap() {
+            return sourceMapGenerator_;
+        }
+
     private:
 
         inline void WriteCommentBefore(const Sp<SyntaxNode>& node) {
@@ -200,6 +205,8 @@ namespace jetpack {
         Config config_;
 
         State state_;
+
+        SourceMapGenerator sourceMapGenerator_;
 
         std::ostream& output;
 
