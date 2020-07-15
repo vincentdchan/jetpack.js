@@ -40,20 +40,30 @@ namespace jetpack {
 
     };
 
-    class MemoryOutputStream : public OutputStream {
+    class MemoryOutputStream final : public OutputStream {
     public:
 
-        MemoryOutputStream() = default;
+        MemoryOutputStream();
+        MemoryOutputStream(const MemoryOutputStream&) = delete;
+        MemoryOutputStream(MemoryOutputStream&&) = delete;
+
+        MemoryOutputStream& operator=(const MemoryOutputStream&) = delete;
+        MemoryOutputStream& operator=(MemoryOutputStream&&) = delete;
+
         OutputStream& operator<<(const char16_t* str) override;
         OutputStream& operator<<(const UString& str) override;
         OutputStream& operator<<(char ch) override;
-        MemoryOutputStream& operator<<(const char* str);
-        MemoryOutputStream& operator<<(const std::string& str);
 
-        std::string ToString() const;
+        OutputStream& Write(const char16_t* str, std::uint32_t size);
+
+        [[nodiscard]] std::u16string ToString() const;
+
+        ~MemoryOutputStream() override;
 
     private:
-        std::stringstream ss;
+        char16_t* data_ = nullptr;
+        std::uint32_t size_ = 0;
+        std::uint32_t capacity_ = 4096;
 
     };
 

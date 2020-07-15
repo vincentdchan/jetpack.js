@@ -117,7 +117,7 @@ namespace jetpack {
         MemoryOutputStream memoryOutputStream;
 
         if (config.comments) {
-            memoryOutputStream << "// " << this->path << "\n";
+            memoryOutputStream << u"// " << utils::To_UTF16(this->path) << u"\n";
         }
 
         CodeGen codegen(config, memoryOutputStream);
@@ -1106,7 +1106,7 @@ namespace jetpack {
             MergeModules(new_mf, out);
         }
 
-        out << mf->codegen_result << std::endl;
+        out << mf->codegen_result << u"\n";
     }
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {
