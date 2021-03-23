@@ -70,6 +70,10 @@ namespace jetpack {
         return std::u16string(data_, size_);
     }
 
+    std::string MemoryOutputStream::ToUTF8() const {
+        return utils::To_UTF8(ToString());
+    }
+
     MemoryOutputStream::~MemoryOutputStream() {
         free(data_);
     }

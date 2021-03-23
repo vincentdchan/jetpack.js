@@ -23,11 +23,11 @@ inline std::string ParseAndCodeGen(UString content) {
 
     auto mod = parser.ParseModule();
 
-    std::stringstream ss;
+    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, ss);
     codegen.Traverse(mod);
-    return ss.str();
+    return ss.ToUTF8();
 }
 
 TEST(CodeGen, Export) {

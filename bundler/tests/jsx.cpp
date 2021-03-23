@@ -10,6 +10,7 @@
 
 #include "../src/ModuleResolver.h"
 #include "../src/codegen/CodeGen.h"
+#include "../src/OutputStream.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
@@ -25,11 +26,11 @@ inline std::string ParseJSXAndCodeGen(UString content) {
 
     auto mod = parser.ParseModule();
 
-    std::stringstream ss;
+    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, ss);
     codegen.Traverse(mod);
-    return ss.str();
+    return ss.ToUTF8();
 }
 
 TEST(JSX, TranspileSimple1) {

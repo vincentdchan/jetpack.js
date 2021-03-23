@@ -58,6 +58,8 @@ namespace jetpack {
 
         [[nodiscard]] std::u16string ToString() const;
 
+        [[nodiscard]] std::string ToUTF8() const;
+
         ~MemoryOutputStream() override;
 
     private:
