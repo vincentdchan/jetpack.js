@@ -2,8 +2,8 @@
 // Created by Duzhong Chen on 2021/3/24.
 //
 
-#ifndef ROCKET_BUNDLE_QARRAYDATA_H
-#define ROCKET_BUNDLE_QARRAYDATA_H
+#ifndef ROCKET_BUNDLE_USTRINGDATA_H
+#define ROCKET_BUNDLE_USTRINGDATA_H
 
 #include <cinttypes>
 #include <utility>
@@ -112,7 +112,7 @@ private:
 typedef QFlags<Enum> Flags;
 
 
-struct QArrayData
+struct UStringData
 {
     enum AllocationOption {
         Grow,
@@ -177,13 +177,18 @@ struct QArrayData
         return newSize;
     }
 
-    static void *allocate(QArrayData **pdata, uint32_t objectSize,
-                          uint32_t capacity, AllocationOption option = QArrayData::KeepSize) noexcept;
-    [[nodiscard]] static std::pair<QArrayData *, void *> reallocateUnaligned(QArrayData *data, void *dataPointer,
-                                                                             uint32_t objectSize, uint32_t newCapacity, AllocationOption option) noexcept;
-    static void deallocate(QArrayData *data, uint32_t objectSize,
-                           uint32_t alignment) noexcept;
+    static void *allocate(UStringData **pdata, uint32_t objectSize,
+                          uint32_t capacity, AllocationOption option = UStringData::KeepSize) noexcept;
+
+    [[nodiscard]] static std::pair<UStringData *, char16_t*> allocate(uint32_t capacity, AllocationOption option = UStringData::KeepSize);
+
+    [[nodiscard]] static std::pair<UStringData *, char16_t*> reallocateUnaligned(UStringData *data, void *dataPointer,
+                                                                                 uint32_t newCapacity, AllocationOption option) noexcept;
+    static void deallocate(UStringData *data) noexcept;
+
+    static char16_t* dataStart(UStringData *data) noexcept;
+
 };
 
 
-#endif //ROCKET_BUNDLE_QARRAYDATA_H
+#endif //ROCKET_BUNDLE_USTRINGDATA_H

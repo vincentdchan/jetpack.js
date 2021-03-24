@@ -339,7 +339,7 @@ void UString::resize(uint32_t size)
 
     const auto capacityAtEnd = capacity() - d.freeSpaceAtBegin();
     if (d->needsDetach() || size > capacityAtEnd)
-        reallocData(size, QArrayData::Grow);
+        reallocData(size, UStringData::Grow);
     d.size = size;
     if (d->allocatedCapacity())
         d.data()[size] = 0;
@@ -609,7 +609,7 @@ std::string UString::toStdString() const {
     return convertFromUnicode(constData(), size());
 }
 
-void UString::reallocData(uint32_t alloc, QArrayData::AllocationOption option)
+void UString::reallocData(uint32_t alloc, UStringData::AllocationOption option)
 {
     if (!alloc) {
         d = DataPointer::fromRawData(&_empty, 0);
@@ -636,12 +636,12 @@ void UString::reallocGrowData(uint32_t n) {
         n = 1;
 
     if (d->needsDetach()) {
-        DataPointer dd(DataPointer::allocateGrow(d, n, QArrayData::GrowsAtEnd));
+        DataPointer dd(DataPointer::allocateGrow(d, n, UStringData::GrowsAtEnd));
         dd->copyAppend(d.data(), d.data() + d.size);
         dd.data()[dd.size] = 0;
         d = dd;
     } else {
-        d->reallocate(d.constAllocatedCapacity() + n, QArrayData::Grow);
+        d->reallocate(d.constAllocatedCapacity() + n, UStringData::Grow);
     }
 }
 

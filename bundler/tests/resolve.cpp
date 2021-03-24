@@ -112,7 +112,6 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
 }
 
 TEST(ModuleResolver, SingleMemoryFile) {
-    GTEST_SKIP();
     UString buffer =
             u"function hello(world) {\n"
             "  console.log(world);\n"

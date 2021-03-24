@@ -2,8 +2,7 @@
 // Created by Duzhong Chen on 2021/3/24.
 //
 
-#include "QArrayData.h"
-#include "CommonArrayOps.h"
+#include "UStringData.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -84,12 +83,12 @@ qCalculateGrowingBlockSize(uint32_t elementCount, uint32_t elementSize, uint32_t
     return result;
 }
 
-static inline uint32_t calculateBlockSize(uint32_t &capacity, uint32_t objectSize, uint32_t headerSize, QArrayData::AllocationOption option)
+static inline uint32_t calculateBlockSize(uint32_t &capacity, uint32_t objectSize, uint32_t headerSize, UStringData::AllocationOption option)
 {
     // Calculate the byte size
     // allocSize = objectSize * capacity + headerSize, but checked for overflow
     // plus padded to grow in size
-    if (option == QArrayData::Grow) {
+    if (option == UStringData::Grow) {
         auto r = qCalculateGrowingBlockSize(capacity, objectSize, headerSize);
         capacity = r.elementCount;
         return r.size;
@@ -109,9 +108,9 @@ static inline uint32_t reserveExtraBytes(uint32_t allocSize)
     return allocSize;
 }
 
-static QArrayData *allocateData(uint32_t allocSize)
+static UStringData *allocateData(uint32_t allocSize)
 {
-    QArrayData *header = static_cast<QArrayData *>(::malloc(size_t(allocSize)));
+    UStringData *header = static_cast<UStringData *>(::malloc(size_t(allocSize)));
     if (header) {
         header->ref_.store(1, std::memory_order_relaxed);
         header->flags = 0;
@@ -120,7 +119,7 @@ static QArrayData *allocateData(uint32_t allocSize)
     return header;
 }
 
-void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t capacity, QArrayData::AllocationOption option) noexcept
+void *UStringData::allocate(UStringData **dptr, uint32_t objectSize, uint32_t capacity, UStringData::AllocationOption option) noexcept
 {
     assert(dptr);
 
@@ -129,7 +128,7 @@ void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t capa
         return nullptr;
     }
 
-    uint32_t headerSize = sizeof(QArrayData);
+    uint32_t headerSize = sizeof(UStringData);
 
     uint32_t allocSize = calculateBlockSize(capacity, objectSize, headerSize, option);
     allocSize = reserveExtraBytes(allocSize);
@@ -138,7 +137,7 @@ void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t capa
         return nullptr;
     }
 
-    QArrayData *header = allocateData(allocSize);
+    UStringData *header = allocateData(allocSize);
     void *data = nullptr;
     if (header) {
         // find where offset should point to so that data() is aligned to alignment bytes
@@ -150,13 +149,21 @@ void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t capa
     return data;
 }
 
-std::pair<QArrayData *, void *>
-QArrayData::reallocateUnaligned(QArrayData *data, void *dataPointer,
-                                uint32_t objectSize, uint32_t capacity, AllocationOption option) noexcept
+[[nodiscard]] std::pair<UStringData *, char16_t *> UStringData::allocate(uint32_t capacity, AllocationOption option)
 {
+    UStringData *d;
+    void *result = UStringData::allocate(&d, sizeof(char16_t ), capacity, option);
+    return std::make_pair(static_cast<UStringData *>(d), static_cast<char16_t *>(result));
+}
+
+std::pair<UStringData *, char16_t*>
+UStringData::reallocateUnaligned(UStringData *data, void* dataPointer,
+                                 uint32_t capacity, AllocationOption option) noexcept
+{
+    const uint32_t objectSize = sizeof(char16_t );
     assert(!data || !data->isShared());
 
-    const uint32_t headerSize = sizeof(QArrayData);
+    const uint32_t headerSize = sizeof(UStringData);
     uint32_t allocSize = calculateBlockSize(capacity, objectSize, headerSize, option);
     const intptr_t offset = dataPointer
                             ? reinterpret_cast<char *>(dataPointer) - reinterpret_cast<char *>(data)
@@ -166,24 +173,24 @@ QArrayData::reallocateUnaligned(QArrayData *data, void *dataPointer,
 
     allocSize = reserveExtraBytes(allocSize);
     if (Q_UNLIKELY(allocSize < 0))  // handle overflow. cannot reallocate reliably
-        return std::make_pair(data, dataPointer);
+        return std::make_pair(data, reinterpret_cast<char16_t*>(dataPointer));
 
-    QArrayData *header = static_cast<QArrayData *>(::realloc(data, size_t(allocSize)));
+    UStringData *header = static_cast<UStringData *>(::realloc(data, size_t(allocSize)));
     if (header) {
         header->alloc = capacity;
-        dataPointer = reinterpret_cast<char *>(header) + offset;
+        dataPointer = reinterpret_cast<char*>(header) + offset;
     } else {
         dataPointer = nullptr;
     }
-    return std::make_pair(static_cast<QArrayData *>(header), dataPointer);
+    return std::make_pair(static_cast<UStringData *>(header), reinterpret_cast<char16_t *>(dataPointer));
 }
 
-void QArrayData::deallocate(QArrayData *data, uint32_t objectSize,
-                            uint32_t alignment) noexcept
-{
-    // Alignment is a power of two
-    assert(alignment >= uint32_t(alignof(QArrayData))
-             && !(alignment & (alignment - 1)));
-
+void UStringData::deallocate(UStringData *data) noexcept {
     ::free(data);
+}
+
+char16_t* UStringData::dataStart(UStringData *data) noexcept
+{
+    void *start =  reinterpret_cast<void *>((uintptr_t(data) + sizeof(UStringData)));
+    return static_cast<char16_t*>(start);
 }

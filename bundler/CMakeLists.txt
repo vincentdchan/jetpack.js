@@ -67,4 +67,8 @@ target_include_directories(jetpack-test PUBLIC
         )
 target_link_libraries(jetpack-test gtest_main)
 
+target_compile_definitions(jetpack-test PUBLIC
+        JETPACK_SINGLE_THREAD
+)
+
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
