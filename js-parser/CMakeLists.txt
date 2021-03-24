@@ -20,6 +20,8 @@ file(GLOB source_files
         "src/*.h"
         "src/*.hpp"
         "src/*.cpp"
+        "src/string/*.h"
+        "src/string/*.cpp"
         "src/parser/*.h"
         "src/parser/*.cpp"
         "src/scope/*.h"
