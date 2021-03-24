@@ -4,6 +4,7 @@ compiler:
 - clang
 os:
 - osx
+osx_image: xcode12
 
 script:
 - mkdir build
