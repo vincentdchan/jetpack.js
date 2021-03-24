@@ -10,6 +10,7 @@
 #include <robin_hood.h>
 #include <optional>
 #include <memory>
+#include "string/UString.h"
 #include "../parser/NodeTypes.h"
 
 namespace jetpack {

@@ -4,7 +4,7 @@
 
 #include "Variable.h"
 #include "Scope.h"
-#include "../parser/SyntaxNodes.h"
+#include "parser/SyntaxNodes.h"
 
 namespace jetpack {
 

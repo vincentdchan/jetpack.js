@@ -13,7 +13,6 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # include(...) for pulling in other CMake projects anyways.
 
 include_directories(../third_party/fmt/include)
-include_directories(../third_party/robin-hood-hashing/src/include)
 include_directories(../bundle-utils/src)
 
 file(GLOB source_files
@@ -37,6 +36,8 @@ include_directories(${JEMALLOC_INCLUDE})
 add_library(js-parser STATIC ${source_files})
 target_link_libraries(js-parser
         PUBLIC nlohmann_json::nlohmann_json tsl::ordered_map)
+
+target_include_directories(js-parser PRIVATE src)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
 

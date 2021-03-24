@@ -3,6 +3,7 @@
 //
 
 #include "UString.h"
+#include "../Utils.h"
 #include <algorithm>
 #include <string>
 
@@ -24,8 +25,6 @@ static inline bool simdDecodeAscii(uint16_t*, const unsigned char*, const unsign
 }
 
 static const char16_t utf8bom[] = { 0xef, 0xbb, 0xbf };
-
-#define Q_UNLIKELY(S) S
 
 static constexpr int ReplacementCharacter = 0xfffd;
 static constexpr int LastValidCodePoint = 0x10ffff;
@@ -75,7 +74,7 @@ uint32_t fromUtf8(char16_t b, OutputPtr &dst, InputPtr &src, InputPtr end)
         return 1;
     }
 
-    if (!Traits::isTrusted && Q_UNLIKELY(b <= 0xC1)) {
+    if (!Traits::isTrusted && unlikely(b <= 0xC1)) {
         // an UTF-8 first character must be at least 0xC0
         // however, all 0xC0 and 0xC1 first bytes can only produce overlong sequences
         return Traits::Error;
@@ -99,7 +98,7 @@ uint32_t fromUtf8(char16_t b, OutputPtr &dst, InputPtr &src, InputPtr end)
     }
 
     intptr_t bytesAvailable = Traits::availableBytes(src, end);
-    if (Q_UNLIKELY(bytesAvailable < charsNeeded - 1)) {
+    if (unlikely(bytesAvailable < charsNeeded - 1)) {
         // it's possible that we have an error instead of just unfinished bytes
         if (bytesAvailable > 0 && !isContinuationByte(Traits::peekByte(src, 0)))
             return Traits::Error;
@@ -254,9 +253,9 @@ char16_t *convertToUnicode(char16_t* buffer, const char* start, uint32_t size) n
     if (!simdDecodeAscii(dst, nextAscii, src, end)) {
         // at least one non-ASCII entry
         // check if we failed to decode the UTF-8 BOM; if so, skip it
-        if (Q_UNLIKELY(src == reinterpret_cast<const unsigned char*>(start))
+        if (unlikely(src == reinterpret_cast<const unsigned char*>(start))
             && end - src >= 3
-            && Q_UNLIKELY(src[0] == utf8bom[0] && src[1] == utf8bom[1] && src[2] == utf8bom[2])) {
+            && unlikely(src[0] == utf8bom[0] && src[1] == utf8bom[1] && src[2] == utf8bom[2])) {
             src += 3;
         }
 
@@ -279,6 +278,26 @@ char16_t *convertToUnicode(char16_t* buffer, const char* start, uint32_t size) n
     return reinterpret_cast<char16_t *>(dst);
 }
 
+std::int32_t UString::toInt() const {
+    std::int64_t result = 0;
+
+    for (std::size_t i = 0; i < size(); i++) {
+        char16_t ch = at(i);
+        if (i == 0 && ch == u'0') {
+            return -1;
+        }
+        if (!UChar::IsDecimalDigit(ch)) {
+            return -1;
+        }
+        result = result * 10 + (ch - u'0');
+        if (result > std::numeric_limits<std::int32_t>::max()) {
+            return -1;
+        }
+    }
+
+    return static_cast<int32_t>(result);
+}
+
 UString::UString(uint32_t size, bool init) noexcept {
     if (size <= 0) {
         d = DataPointer::fromRawData(&_empty, 0);
@@ -288,7 +307,7 @@ UString::UString(uint32_t size, bool init) noexcept {
     }
 }
 
-UString::UString(const char16_t *unicode, uint32_t size) {
+UString::UString(const char16_t *unicode, int64_t size) {
     if (!unicode) {
         d.clear();
     } else {
@@ -470,7 +489,7 @@ bool operator==(const UString &s1, const UString& s2) noexcept {
 }
 
 UString UString::fromUtf8(const char *utf8, uint32_t size) {
-    if (size) {
+    if (!size) {
         return UString();
     }
     UString result(size, false);
@@ -478,6 +497,10 @@ UString UString::fromUtf8(const char *utf8, uint32_t size) {
     const char16_t *end = convertToUnicode(data, utf8, size);
     result.truncate(end - data);
     return result;
+}
+
+UString UString::fromStdString(const std::string& str) {
+    return fromUtf8(str.c_str(), str.size());
 }
 
 static constexpr inline bool isHighSurrogate(char32_t ucs4) noexcept
@@ -553,13 +576,13 @@ int toUtf8(uint16_t u, OutputPtr &dst, InputPtr &src, InputPtr end)
     return 0;
 }
 
-static std::string convertFromUnicode(const char* data, uint32_t len)
+static std::string convertFromUnicode(const char16_t * data, uint32_t len)
 {
     // create a QByteArray with the worst case scenario size
     std::string result;
-    result.reserve(len * 3);
+    result.resize(len * 3);
 
-    unsigned char *dst = reinterpret_cast<unsigned char *>(const_cast<char *>(data));
+    unsigned char *dst = reinterpret_cast<unsigned char *>(const_cast<char *>(result.data()));
     const uint16_t *src = reinterpret_cast<const uint16_t *>(data);
     const uint16_t *const end = src + len;
 
@@ -583,7 +606,7 @@ std::string UString::toStdString() const {
     if (isNull() || isEmpty()) {
         return std::string();
     }
-    return std::string();
+    return convertFromUnicode(constData(), size());
 }
 
 void UString::reallocData(uint32_t alloc, QArrayData::AllocationOption option)

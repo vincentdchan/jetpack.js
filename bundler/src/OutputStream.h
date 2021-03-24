@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include "Utils.h"
+#include "string/UString.h"
 
 namespace jetpack {
 

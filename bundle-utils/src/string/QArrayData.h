@@ -177,7 +177,7 @@ struct QArrayData
         return newSize;
     }
 
-    static void *allocate(QArrayData **pdata, uint32_t objectSize, uint32_t alignment,
+    static void *allocate(QArrayData **pdata, uint32_t objectSize,
                           uint32_t capacity, AllocationOption option = QArrayData::KeepSize) noexcept;
     [[nodiscard]] static std::pair<QArrayData *, void *> reallocateUnaligned(QArrayData *data, void *dataPointer,
                                                                              uint32_t objectSize, uint32_t newCapacity, AllocationOption option) noexcept;

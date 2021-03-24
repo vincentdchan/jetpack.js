@@ -11,6 +11,7 @@
 #include <deque>
 #include "Utils.h"
 #include "NodeTraverser.h"
+#include "string/UString.h"
 #include "../sourcemap/SourceMapGenerator.h"
 #include "../OutputStream.h"
 
@@ -43,12 +44,12 @@ namespace jetpack {
         public:
             Config() = default;
 
-            bool minify = false;
-            std::uint32_t start_indent_level = 0;
-            std::string indent = "  ";
-            std::string line_end = "\n";
-            bool source_map = false;
-            bool comments = true;
+            bool     minify = false;
+            uint32_t start_indent_level = 0;
+            UString  indent = u"  ";
+            UString  line_end = u"\n";
+            bool     source_map = false;
+            bool     comments = true;
 
         };
 
@@ -85,7 +86,7 @@ namespace jetpack {
 
         inline void WriteLineEnd() {
             if (config_.minify) return;
-            output << utils::To_UTF16(config_.line_end);
+            output << config_.line_end;
             state_.line++;
 #ifdef DEBUG
             output.flush();
@@ -95,7 +96,7 @@ namespace jetpack {
         inline void WriteIndent() {
             if (config_.minify) return;
             for (std::uint32_t i = 0; i < state_.indent_level; i++) {
-                Write(utils::To_UTF16(config_.indent));
+                Write(config_.indent);
             }
 #ifdef DEBUG
             output.flush();

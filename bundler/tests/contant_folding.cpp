@@ -13,11 +13,9 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline std::string CF_ParseAndCodeGen(UString content) {
-    auto src = std::make_shared<UString>();
     ParserContext::Config config = ParserContext::Config::Default();
     config.constant_folding = true;
-    auto ctx = std::make_shared<ParserContext>(src, config);
-    *src = std::move(content);
+    auto ctx = std::make_shared<ParserContext>(content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -33,26 +31,26 @@ TEST(ConstantFolding, AddString1) {
     std::string src = "const a = 'aaa' + 'bbb';\n";
     std::string expected = "const a = \"aaabbb\";\n";
 
-    EXPECT_EQ(CF_ParseAndCodeGen(utils::To_UTF16(src)), expected);
+    EXPECT_EQ(CF_ParseAndCodeGen(UString::fromStdString(src)), expected);
 }
 
 TEST(ConstantFolding, AddString2) {
     std::string src = "const a = 'aaa' + 'bbb' + 'ccc' + 'ddd' + 2;\n";
     std::string expected = "const a = \"aaabbbcccddd\" + 2;\n";
 
-    EXPECT_EQ(CF_ParseAndCodeGen(utils::To_UTF16(src)), expected);
+    EXPECT_EQ(CF_ParseAndCodeGen(UString::fromStdString(src)), expected);
 }
 
 TEST(ConstantFolding, AddInt) {
     std::string src = "const a = 1 + 2 + 3;\n";
     std::string expected = "const a = 6;\n";
 
-    EXPECT_EQ(CF_ParseAndCodeGen(utils::To_UTF16(src)), expected);
+    EXPECT_EQ(CF_ParseAndCodeGen(UString::fromStdString(src)), expected);
 }
 
 TEST(ConstantFolding, Combite) {
     std::string src = "const a = 2 + 2 - 2 + 3;\n";
     std::string expected = "const a = 5;\n";
 
-    EXPECT_EQ(CF_ParseAndCodeGen(utils::To_UTF16(src)), expected);
+    EXPECT_EQ(CF_ParseAndCodeGen(UString::fromStdString(src)), expected);
 }

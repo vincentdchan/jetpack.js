@@ -402,9 +402,12 @@ template <typename T>
 struct QArrayDataPointer;
 
 template <class T>
-struct QCommonArrayOps : QArrayOpsSelector<T>::Type
+struct QPodArrayOps;
+
+template <class T>
+struct QCommonArrayOps : QPodArrayOps<T>
 {
-    using Base = typename QArrayOpsSelector<T>::Type;
+    using Base = QPodArrayOps<T>;
     using Data = QTypedArrayData<T>;
     using DataPointer = QArrayDataPointer<T>;
     using parameter_type = typename Base::parameter_type;

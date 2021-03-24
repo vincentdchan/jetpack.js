@@ -13,10 +13,9 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline Sp<Module> ParseString(const std::string& src) {
-    auto u16src = std::make_shared<UString>();
+    auto u16src = UString::fromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
     auto ctx = std::make_shared<ParserContext>(u16src, config);
-    *u16src = utils::To_UTF16(src);
     Parser parser(ctx);
     return parser.ParseModule();
 }
@@ -30,12 +29,10 @@ inline std::string GenCode(Sp<Module> mod) {
 }
 
 TEST(Scope, Collect) {
-    std::string src = "var name = 3;";
+    UString content(u"var name = 3;");
 
-    auto u16src = std::make_shared<UString>();
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(u16src, config);
-    *u16src = utils::To_UTF16(src);
+    auto ctx = std::make_shared<ParserContext>(content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -281,6 +278,7 @@ TEST(Scope, RenameImport3) {
     changeset.emplace_back(u"a", u"p");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
+    EXPECT_GT(mod->body.size(), 0);
     auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(mod->body[0]);
     EXPECT_NE(import_decl, nullptr);
 

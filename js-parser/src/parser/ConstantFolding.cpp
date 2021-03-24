@@ -4,6 +4,7 @@
 
 #include <string>
 #include "ConstantFolding.h"
+#include "string/UString.h"
 
 namespace jetpack {
 
@@ -18,7 +19,8 @@ namespace jetpack {
     inline Sp<Literal> MakeIntLiteral(std::int32_t tmp) {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::Double;
-        lit->str_ = utils::To_UTF16(std::to_string(tmp));
+        std::string utf8 = std::to_string(tmp);
+        lit->str_ = UString::fromUtf8(utf8.c_str(), utf8.size());
         lit->raw = lit->str_;
         return lit;
     }
@@ -38,16 +40,16 @@ namespace jetpack {
                 UString result = left_lit->str_ + right_lit->str_;
                 return MakeStringLiteral(result);
             } else if (left_lit->ty == Literal::Ty::Double && right_lit->ty == Literal::Ty::Double) {
-                std::int32_t left_int = utils::ToSimpleInt(left_lit->str_);
+                int32_t left_int = left_lit->str_.toInt();
                 if (left_int < 0) {
                     return binary;
                 }
-                std::int32_t right_int = utils::ToSimpleInt(right_lit->str_);
+                int32_t right_int = right_lit->str_.toInt();
                 if (right_int < 0) {
                     return binary;
                 }
 
-                std::int64_t tmp_result = 0;
+                int64_t tmp_result = 0;
                 if (binary->operator_ == u"+") {
                     tmp_result = left_int + right_int;
                 } else if (binary->operator_ == u"-") {

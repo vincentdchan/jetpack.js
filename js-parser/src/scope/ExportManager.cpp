@@ -3,8 +3,8 @@
 //
 
 #include "ExportManager.h"
-#include "../parser/SyntaxNodes.h"
-#include "../parser/BaseNodes.h"
+#include "parser/SyntaxNodes.h"
+#include "parser/BaseNodes.h"
 
 namespace jetpack {
 

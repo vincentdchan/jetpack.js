@@ -14,9 +14,7 @@
 
 #include "Path.h"
 #include "./ModuleResolver.h"
-#include "./Utils.h"
 #include "./Error.h"
-#include "./codegen/CodeGen.h"
 
 namespace jetpack {
     using fmt::format;
@@ -32,7 +30,7 @@ namespace jetpack {
     }
 
     inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(utils::To_UTF16(content));
+        return MakeId(UString::fromStdString(content));
     }
 
     inline Sp<SyntaxNode> MakeModuleVar(const UString& var_name) {
@@ -117,7 +115,7 @@ namespace jetpack {
         MemoryOutputStream memoryOutputStream;
 
         if (config.comments) {
-            memoryOutputStream << u"// " << utils::To_UTF16(this->path) << u"\n";
+            memoryOutputStream << u"// " << UString::fromStdString(this->path) << u"\n";
         }
 
         CodeGen codegen(config, memoryOutputStream);
@@ -127,7 +125,7 @@ namespace jetpack {
 
     UString ModuleFile::GetModuleVarName() {
         std::string tmp = "mod_" + std::to_string(id);
-        return utils::To_UTF16(tmp);
+        return UString::fromStdString(tmp);
     }
 
     ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
@@ -365,7 +363,7 @@ namespace jetpack {
         std::ifstream t(filename);
         std::string str((std::istreambuf_iterator<char>(t)),
                         std::istreambuf_iterator<char>());
-        return utils::To_UTF16(str);
+        return UString::fromStdString(str);
     }
 
     void ModuleResolver::PrintStatistic() {

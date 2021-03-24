@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <Utils.h>
+#include <string/UString.h>
 
 #define DEF_TOKEN(D) \
     D(BooleanLiteral) \

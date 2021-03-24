@@ -7,6 +7,7 @@
 #include <memory>
 #include <robin_hood.h>
 #include "Utils.h"
+#include "string/UString.h"
 #include "../parser/NodeTypes.h"
 
 namespace jetpack {

@@ -9,6 +9,7 @@
 #include "../macros.h"
 #include "Utils.h"
 #include "../parser/NodeTypes.h"
+#include "string/UString.h"
 
 namespace jetpack {
 

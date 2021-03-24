@@ -35,7 +35,7 @@ namespace jetpack {
     UniqueNameGeneratorWithUsedName::UniqueNameGeneratorWithUsedName() {
         std::call_once(init_once_, [] {
             for (auto& keyword : LongJsKeywords) {
-                long_keywords_set.insert(utils::To_UTF16(keyword));
+                long_keywords_set.insert(UString::fromUtf8(keyword, strlen(keyword)));
             }
         });
     }
@@ -94,7 +94,8 @@ namespace jetpack {
             return std::nullopt;
         }
 
-        UString new_name = original_name + u"_" + utils::To_UTF16(std::to_string(counter++));
+        std::string tmp = std::to_string(counter++);
+        UString new_name = original_name + u"_" + UString::fromUtf8(tmp.c_str(), tmp.size());
         used_name.insert(new_name);
         return { new_name };
     }
@@ -208,7 +209,7 @@ namespace jetpack {
 
         counter++;
 
-        return utils::To_UTF16(result);
+        return UString::fromUtf8(result.c_str(), result.size());
     }
 
     void UnresolvedNameCollector::InsertByList(std::vector<std::shared_ptr<Identifier>> list) {

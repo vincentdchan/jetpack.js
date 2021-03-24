@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Scanner.h"
 #include "Utils.h"
-#include "../parser/ErrorMessage.h"
+#include "parser/ErrorMessage.h"
 
 namespace jetpack {
 
@@ -62,7 +62,7 @@ namespace jetpack {
             char32_t ch = CodePointAt(index_);
             index_++;
 
-            if (utils::IsLineTerminator(ch)) {
+            if (UChar::IsLineTerminator(ch)) {
                 loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
                 auto comment = new Comment {
                         false,
@@ -107,7 +107,7 @@ namespace jetpack {
 
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
-            if (utils::IsLineTerminator(ch)) {
+            if (UChar::IsLineTerminator(ch)) {
                 if (ch == 0x0D && CodePointAt(index_ + 1) == 0x0A) {
                     ++index_;
                 }
@@ -159,9 +159,9 @@ namespace jetpack {
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
 
-            if (utils::IsWhiteSpace(ch)) {
+            if (UChar::IsWhiteSpace(ch)) {
                 ++index_;
-            } else if (utils::IsLineTerminator(ch)) {
+            } else if (UChar::IsLineTerminator(ch)) {
                 ++index_;
 
                 if (ch == 0x0D && CodePointAt(index_) == 0x0A) {
@@ -338,7 +338,7 @@ namespace jetpack {
         std::uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (std::uint32_t i = 0; i < len; ++i) {
-            if (!IsEnd() && utils::IsHexDigit(CodePointAt(index_))) {
+            if (!IsEnd() && UChar::IsHexDigit(CodePointAt(index_))) {
                 code = code * 16 + HexValue(CodePointAt(index_++));
             } else {
                 return false;
@@ -358,7 +358,7 @@ namespace jetpack {
 
         while (!IsEnd()) {
             ch = source_.at(index_++);
-            if (!utils::IsHexDigit(ch)) {
+            if (!UChar::IsHexDigit(ch)) {
                 break;
             }
             code = code * 16 + (ch - '0');
@@ -386,7 +386,7 @@ namespace jetpack {
                 index_ = start;
                 return GetComplexIdentifier();
             }
-            if (utils::IsIdentifierPart(ch)) {
+            if (UChar::IsIdentifierPart(ch)) {
                 ++index_;
             } else {
                 break;
@@ -415,7 +415,7 @@ namespace jetpack {
                 ++index_;
                 ch = ScanUnicodeCodePointEscape();
             } else {
-                if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierStart(ch)) {
+                if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierStart(ch)) {
                     ThrowUnexpectedToken();
                 }
             }
@@ -424,11 +424,11 @@ namespace jetpack {
 
         while (!IsEnd()) {
             cp = CodePointAt(index_);
-            if (!utils::IsIdentifierPart(cp)) {
+            if (!UChar::IsIdentifierPart(cp)) {
                 break;
             }
 
-            UString ch_ = utils::FromCodePoint(cp);
+            UString ch_ = FromCodePoint(cp);
 
             result.append(ch_);
 
@@ -446,7 +446,7 @@ namespace jetpack {
                     ++index_;
                     ch = ScanUnicodeCodePointEscape();
                 } else {
-                    if (!ScanHexEscape('u', ch) || ch == '\\' || !utils::IsIdentifierPart(ch)) {
+                    if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierPart(ch)) {
                         ThrowUnexpectedToken();
                     }
                 }
@@ -461,13 +461,13 @@ namespace jetpack {
         bool octal = (ch != '0');
         result = ch - '0';
 
-        if (!IsEnd() && utils::IsOctalDigit(source_.at(index_))) {
+        if (!IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
             octal = true;
             result = result * 8 + (source_.at(index_) - u'0');
 
             // 3 digits are only allowed when string starts
             // with 0, 1, 2, 3
-            if (ch - u'0' && !IsEnd() && utils::IsOctalDigit(source_.at(index_))) {
+            if (ch - u'0' && !IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
                 result = result * 8 + (source_.at(index_) - '0');
             }
         }
@@ -793,7 +793,7 @@ namespace jetpack {
         Token tok;
 
         while (!IsEnd()) {
-            if (!utils::IsHexDigit(CharAt(index_))) {
+            if (!UChar::IsHexDigit(CharAt(index_))) {
                 break;
             }
             num += CharAt(index_++);
@@ -803,7 +803,7 @@ namespace jetpack {
             ThrowUnexpectedToken();
         }
 
-        if (utils::IsIdentifierStart(CharAt(index_))) {
+        if (UChar::IsIdentifierStart(CharAt(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -836,7 +836,7 @@ namespace jetpack {
         if (!IsEnd()) {
             ch = source_.at(index_++);
             /* istanbul ignore else */
-            if (utils::IsIdentifierStart(ch) || utils::IsDecimalDigit(ch)) {
+            if (UChar::IsIdentifierStart(ch) || UChar::IsDecimalDigit(ch)) {
                 ThrowUnexpectedToken();
             }
         }
@@ -855,7 +855,7 @@ namespace jetpack {
         UString num;
         bool octal = false;
 
-        if (utils::IsOctalDigit(prefix)) {
+        if (UChar::IsOctalDigit(prefix)) {
             octal = true;
             num = '0' + source_.at(index_++);
         } else {
@@ -863,7 +863,7 @@ namespace jetpack {
         }
 
         while (!IsEnd()) {
-            if (!utils::IsOctalDigit(source_.at(index_))) {
+            if (!UChar::IsOctalDigit(source_.at(index_))) {
                 break;
             }
             num.push_back(source_.at(index_++));
@@ -874,7 +874,7 @@ namespace jetpack {
             ThrowUnexpectedToken();
         }
 
-        if (utils::IsIdentifierStart(source_.at(index_)) || utils::IsDecimalDigit(source_.at(index_))) {
+        if (UChar::IsIdentifierStart(source_.at(index_)) || UChar::IsDecimalDigit(source_.at(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -896,7 +896,7 @@ namespace jetpack {
             if (ch == '8' || ch == '9') {
                 return false;
             }
-            if (!utils::IsOctalDigit(ch)) {
+            if (!UChar::IsOctalDigit(ch)) {
                 return true;
             }
         }
@@ -906,16 +906,16 @@ namespace jetpack {
 
     Token Scanner::ScanNumericLiteral() {
         auto start = index_;
-        char16_t ch = source_.at(start);
-        if (!(utils::IsDecimalDigit(ch) || (ch == '.'))) {
+        char16_t ch = CharAt(start);
+        if (!(UChar::IsDecimalDigit(ch) || (ch == '.'))) {
             auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
             throw err;
         }
 
         UString num;
         if (ch != '.') {
-            num.push_back(source_.at(index_++));
-            ch = source_.at(index_);
+            num.push_back(CharAt(index_++));
+            ch = CharAt(index_);
 
             // Hex number starts with '0x'.
             // Octal number starts with '0'.
@@ -934,22 +934,22 @@ namespace jetpack {
                     return ScanOctalLiteral(ch, start);
                 }
 
-                if (ch && utils::IsOctalDigit(ch)) {
+                if (ch && UChar::IsOctalDigit(ch)) {
                     if (IsImplicitOctalLiteral()) {
                         return ScanOctalLiteral(ch, start);
                     }
                 }
             }
 
-            while (utils::IsDecimalDigit(source_.at(index_))) {
-                num.push_back(source_.at(index_++));
+            while (UChar::IsDecimalDigit(CharAt(index_))) {
+                num.push_back(CharAt(index_++));
             }
-            ch = source_.at(index_);
+            ch = CharAt(index_);
         }
 
         if (ch == '.') {
             num.push_back(source_.at(index_++));
-            while (utils::IsDecimalDigit(source_.at(index_))) {
+            while (UChar::IsDecimalDigit(source_.at(index_))) {
                 num.push_back(source_.at(index_++));
             }
             ch = source_.at(index_);
@@ -962,8 +962,8 @@ namespace jetpack {
             if (ch == '+' || ch == '-') {
                 num.push_back(CharAt(index_++));
             }
-            if (utils::IsDecimalDigit(CharAt(index_))) {
-                while (utils::IsDecimalDigit(CharAt(index_))) {
+            if (UChar::IsDecimalDigit(CharAt(index_))) {
+                while (UChar::IsDecimalDigit(CharAt(index_))) {
                     num.push_back(CharAt(index_++));
                 }
             } else {
@@ -971,7 +971,7 @@ namespace jetpack {
             }
         }
 
-        if (utils::IsIdentifierStart(CharAt(index_))) {
+        if (UChar::IsIdentifierStart(CharAt(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -1006,7 +1006,7 @@ namespace jetpack {
                 break;
             } else if (ch == '\\') {
                 ch = CharAt(index_++);
-                if (!ch || !utils::IsLineTerminator(ch)) {
+                if (!ch || !UChar::IsLineTerminator(ch)) {
                     char32_t unescaped = 0;
                     switch (ch) {
                         case 'u':
@@ -1014,13 +1014,13 @@ namespace jetpack {
                                 ++index_;
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                utils::AddU32ToUtf16(str, tmp);
+                                AddU32ToUtf16(str, tmp);
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                utils::AddU32ToUtf16(str, unescaped);
+                                AddU32ToUtf16(str, unescaped);
                             }
                             break;
 
@@ -1028,7 +1028,7 @@ namespace jetpack {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            utils::AddU32ToUtf16(str, unescaped);
+                            AddU32ToUtf16(str, unescaped);
                             break;
 
                         case 'n':
@@ -1056,11 +1056,11 @@ namespace jetpack {
                             break;
 
                         default:
-                            if (ch && utils::IsOctalDigit(ch)) {
+                            if (ch && UChar::IsOctalDigit(ch)) {
                                 std::uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                utils::AddU32ToUtf16(str, octToDec);
+                                AddU32ToUtf16(str, octToDec);
                             } else {
                                 str += ch;
                             }
@@ -1073,7 +1073,7 @@ namespace jetpack {
                     }
                     line_start_ = index_;
                 }
-            } else if (utils::IsLineTerminator(ch)) {
+            } else if (UChar::IsLineTerminator(ch)) {
                 break;
             } else {
                 str += ch;
@@ -1124,7 +1124,7 @@ namespace jetpack {
                 cooked.push_back(ch);
             } else if (ch == '\\') {
                 ch = source_.at(index_++);
-                if (!utils::IsLineTerminator(ch)) {
+                if (!UChar::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
                             cooked.push_back('\n');
@@ -1170,12 +1170,12 @@ namespace jetpack {
 
                         default:
                             if (ch == '0') {
-                                if (utils::IsDecimalDigit(CharAt(index_))) {
+                                if (UChar::IsDecimalDigit(CharAt(index_))) {
                                     // Illegal: \01 \02 and so on
                                     ThrowUnexpectedToken();
                                 }
                                 cooked.push_back('\0');
-                            } else if (utils::IsOctalDigit(ch)) {
+                            } else if (UChar::IsOctalDigit(ch)) {
                                 // Illegal: \1 \2
                                 ThrowUnexpectedToken();
                             } else {
@@ -1190,7 +1190,7 @@ namespace jetpack {
                     }
                     line_start_ = index_;
                 }
-            } else if (utils::IsLineTerminator(ch)) {
+            } else if (UChar::IsLineTerminator(ch)) {
                 ++line_number_;
                 if (ch == '\r' && CharAt(index_) == '\n') {
                     ++index_;
@@ -1239,11 +1239,11 @@ namespace jetpack {
             str.push_back(ch);
             if (ch == u'\\') {
                 ch = source_.at(index_++);
-                if (utils::IsLineTerminator(ch)) {
+                if (UChar::IsLineTerminator(ch)) {
                     ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
                 }
                 str.push_back(ch);
-            } else if (utils::IsLineTerminator(ch)) {
+            } else if (UChar::IsLineTerminator(ch)) {
                 ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
             } else if (class_marker) {
                 if (ch == u']') {
@@ -1271,7 +1271,7 @@ namespace jetpack {
         UString flags;
         while (!IsEnd()) {
             char16_t ch = source_.at(index_);
-            if (!utils::IsIdentifierPart(ch)) {
+            if (!UChar::IsIdentifierPart(ch)) {
                 break;
             }
 
@@ -1333,7 +1333,7 @@ namespace jetpack {
 
         char16_t cp = source_.at(index_);
 
-        if (utils::IsIdentifierStart(cp)) {
+        if (UChar::IsIdentifierStart(cp)) {
             return ScanIdentifier();
         }
         // Very common: ( and ) and ;
@@ -1349,13 +1349,13 @@ namespace jetpack {
         // Dot (.) U+002E can also start a floating-point number, hence the need
         // to check the next character.
         if (cp == 0x2E) {
-            if (utils::IsDecimalDigit(source_.at(index_ + 1))) {
+            if (UChar::IsDecimalDigit(source_.at(index_ + 1))) {
                 return ScanNumericLiteral();
             }
             return ScanPunctuator();
         }
 
-        if (utils::IsDecimalDigit(cp)) {
+        if (UChar::IsDecimalDigit(cp)) {
             return ScanNumericLiteral();
         }
 
@@ -1367,7 +1367,7 @@ namespace jetpack {
 
         // Possible identifier start in a surrogate pair.
         if (cp >= 0xD800 && cp < 0xDFFF) {
-            if (utils::IsIdentifierStart(CodePointAt(index_))) {
+            if (UChar::IsIdentifierStart(CodePointAt(index_))) {
                 return ScanIdentifier();
             }
         }

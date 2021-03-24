@@ -3,7 +3,7 @@
 //
 
 #include "ImportManager.h"
-#include "../parser/SyntaxNodes.h"
+#include "parser/SyntaxNodes.h"
 
 namespace jetpack {
 

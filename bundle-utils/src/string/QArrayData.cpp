@@ -120,22 +120,9 @@ static QArrayData *allocateData(uint32_t allocSize)
     return header;
 }
 
-static void * allDataStart(QArrayData *data, uint32_t alignment) noexcept
-{
-    // Alignment is a power of two
-    assert(alignment >= uint32_t(alignof(QArrayData)) && !(alignment & (alignment - 1)));
-    void *start =  reinterpret_cast<void *>(
-            (uintptr_t(data) + sizeof(QArrayData) + alignment - 1) & ~(alignment - 1));
-    return static_cast<void *>(start);
-}
-
-void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t alignment,
-                           uint32_t capacity, QArrayData::AllocationOption option) noexcept
+void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t capacity, QArrayData::AllocationOption option) noexcept
 {
     assert(dptr);
-    // Alignment is a power of two
-    assert(alignment >= uint32_t (alignof(QArrayData))
-             && !(alignment & (alignment - 1)));
 
     if (capacity == 0) {
         *dptr = nullptr;
@@ -143,15 +130,6 @@ void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t alig
     }
 
     uint32_t headerSize = sizeof(QArrayData);
-    const uint32_t headerAlignment = alignof(QArrayData);
-
-    if (alignment > headerAlignment) {
-        // Allocate extra (alignment - Q_ALIGNOF(QArrayData)) padding bytes so we
-        // can properly align the data array. This assumes malloc is able to
-        // provide appropriate alignment for the header -- as it should!
-        headerSize += alignment - headerAlignment;
-    }
-    assert(headerSize > 0);
 
     uint32_t allocSize = calculateBlockSize(capacity, objectSize, headerSize, option);
     allocSize = reserveExtraBytes(allocSize);
@@ -164,7 +142,7 @@ void *QArrayData::allocate(QArrayData **dptr, uint32_t objectSize, uint32_t alig
     void *data = nullptr;
     if (header) {
         // find where offset should point to so that data() is aligned to alignment bytes
-        data = allDataStart(header, alignment);
+        data = reinterpret_cast<void*>(intptr_t(header) + headerSize);
         header->alloc = uint32_t(capacity);
     }
 

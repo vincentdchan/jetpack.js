@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <atomic>
 #include <functional>
+#include <string>
+#include <locale>
+#include <codecvt>
 
 #include "CommonArrayOps.h"
 
@@ -34,18 +37,6 @@
 template <typename T>
 inline constexpr bool qIsRelocatable =  std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T>;
 
-template <typename T>
-class QTypeInfo
-{
-public:
-    enum {
-        isPointer = std::is_pointer_v<T>,
-        isIntegral = std::is_integral_v<T>,
-        isComplex = !std::is_trivial_v<T>,
-        isRelocatable = qIsRelocatable<T>,
-    };
-};
-
 template <class T>
 struct QTypedArrayData
         : QArrayData
@@ -56,7 +47,7 @@ struct QTypedArrayData
     {
         static_assert(sizeof(QTypedArrayData) == sizeof(QArrayData));
         QArrayData *d;
-        void *result = QArrayData::allocate(&d, sizeof(T), alignof(AlignmentDummy), capacity, option);
+        void *result = QArrayData::allocate(&d, sizeof(T), capacity, option);
         return std::make_pair(static_cast<QTypedArrayData *>(d), static_cast<T *>(result));
     }
 
@@ -315,12 +306,6 @@ public:
 };
 
 template <class T>
-struct QArrayOpsSelector<T>
-{
-    typedef QPodArrayOps<T> Type;
-};
-
-template <class T>
 struct QArrayDataOps
         : QCommonArrayOps<T>
 {
@@ -468,7 +453,7 @@ public:
 
     Q_NEVER_INLINE void reallocateAndGrow(QArrayData::GrowthPosition where, uint32_t n, QArrayDataPointer *old = nullptr)
     {
-        if constexpr (QTypeInfo<T>::isRelocatable && alignof(T) <= alignof(std::max_align_t)) {
+        if constexpr (alignof(T) <= alignof(std::max_align_t)) {
             if (where == QArrayData::GrowsAtEnd && !old && !needsDetach() && n > 0) {
                 (*this)->reallocate(constAllocatedCapacity() - freeSpaceAtEnd() + n, QArrayData::Grow); // fast path
                 return;
@@ -579,7 +564,7 @@ public:
     typedef QArrayDataPointer<char16_t> DataPointer;
 
     inline constexpr UString() noexcept {}
-    UString(const char16_t *unicode, uint32_t size = -1);
+    UString(const char16_t *unicode, int64_t size = -1);
     UString(char16_t ch);
     inline UString(const UString &other) noexcept: d(other.d) {}
     inline UString(UString &&other) noexcept
@@ -618,6 +603,7 @@ public:
     friend bool operator!=(const UString &s1, const UString &s2) noexcept { return !(s1 == s2); }
 
     static UString fromUtf8(const char *utf8, uint32_t size);
+    static UString fromStdString(const std::string&);
 
     std::string toStdString() const;
 
@@ -635,6 +621,8 @@ public:
     inline void detach()
     { if (d->needsDetach()) reallocData(d.size, QArrayData::KeepSize); }
 
+    std::int32_t toInt() const;
+
 private:
     UString(uint32_t size, bool init) noexcept;
     explicit UString(DataPointer &&dd) : d(std::move(dd)) {}
@@ -645,6 +633,116 @@ private:
     static const char16_t _empty;
 
 };
+
+inline UString FromCodePoint(char32_t cp) {
+    UString result;
+    if (cp < 0x10000) {
+        result.push_back(static_cast<char16_t>(cp));
+    } else {
+        result.push_back(static_cast<char16_t>(0xD800 + ((cp - 0x10000) >> 10)));
+        result.push_back(static_cast<char16_t>(0xdc00 + ((cp - 0x10000) & 1023)));
+    }
+    return result;
+}
+
+inline std::string To_UTF8(const std::u32string &s) {
+#ifndef _WIN32
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+    return conv.to_bytes(s);
+#else
+
+    auto U32ToU16 = [](char32_t cUTF32, char16_t& h, char16_t& l) -> char32_t {
+            if (cUTF32 < 0x10000)
+            {
+                h = 0;
+                l = cUTF32;
+                return cUTF32;
+            }
+            unsigned int t = cUTF32 - 0x10000;
+            h = (((t << 12) >> 22) + 0xD800);
+            l = (((t << 22) >> 22) + 0xDC00);
+            char32_t ret = ((h << 16) | (l & 0x0000FFFF));
+            return ret;
+        };
+
+        std::u16string u16;
+
+        for (char32_t ch : s) {
+            char16_t h = 0;
+            char16_t l = 0;
+            U32ToU16(ch, h, l);
+            u16.push_back(h);
+            u16.push_back(l);
+        }
+
+        return utils::To_UTF8(u16);
+#endif
+}
+
+inline void AddU32ToUtf16(UString& target, char32_t code) {
+    if (code < 0x10000) {
+        target.push_back(code);
+    }
+
+    std::u32string tmp;
+    tmp.push_back(code);
+
+    auto utf8 = To_UTF8(tmp);
+    auto utf16 = UString::fromUtf8(utf8.c_str(), utf8.size());
+
+    target.append(utf16);
+}
+
+namespace UChar {
+
+    inline bool IsDecimalDigit(char32_t cp) {
+        return (cp >= 0x30 && cp <= 0x39);      // 0..9
+    }
+
+    inline bool IsLineTerminator(char32_t cp) {
+        return (cp == 0x0A) || (cp == 0x0D) || (cp == 0x2028) || (cp == 0x2029);
+    }
+
+    static char32_t WHITE_SPACE[] = {0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x202F, 0x205F, 0x3000, 0xFEFF};
+
+    inline bool IsWhiteSpace(char32_t cp) {
+        if (cp >= 0x1680) {
+            std::size_t count = sizeof(WHITE_SPACE) / sizeof(char32_t);
+            for (std::size_t i = 0; i < count; i++) {
+                if (WHITE_SPACE[i] == cp) return true;
+            }
+        }
+        return (cp == 0x20) || (cp == 0x09) || (cp == 0x0B) || (cp == 0x0C) || (cp == 0xA0);
+    }
+
+    inline bool IsIdentifierStart(char32_t cp) {
+        return (cp == 0x24) || (cp == 0x5F) ||  // $ (dollar) and _ (underscore)
+               (cp >= 0x41 && cp <= 0x5A) ||         // A..Z
+               (cp >= 0x61 && cp <= 0x7A) ||         // a..z
+               (cp == 0x5C) ||                      // \ (backslash)
+               ((cp >= 0x80)); // && Regex.NonAsciiIdentifierStart.test(Character.fromCodePoint(cp)));
+    }
+
+    inline bool IsIdentifierPart(char32_t cp) {
+        return (cp == 0x24) || (cp == 0x5F) ||  // $ (dollar) and _ (underscore)
+               (cp >= 0x41 && cp <= 0x5A) ||         // A..Z
+               (cp >= 0x61 && cp <= 0x7A) ||         // a..z
+               (cp >= 0x30 && cp <= 0x39) ||         // 0..9
+               (cp == 0x5C) ||                      // \ (backslash)
+               ((cp >= 0x80)); //&& Regex.NonAsciiIdentifierPart.test(Character.fromCodePoint(cp)));
+    }
+
+    inline bool IsHexDigit(char32_t cp) {
+        return (cp >= 0x30 && cp <= 0x39) ||    // 0..9
+               (cp >= 0x41 && cp <= 0x46) ||       // A..F
+               (cp >= 0x61 && cp <= 0x66);         // a..f
+    }
+
+    inline bool IsOctalDigit(char32_t cp) {
+        return (cp >= 0x30 && cp <= 0x37);      // 0..7
+    }
+
+}
 
 inline const UString operator+(const UString &s1, const UString &s2)
 { UString t(s1); t += s2; return t; }

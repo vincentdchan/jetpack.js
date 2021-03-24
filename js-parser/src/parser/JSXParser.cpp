@@ -543,7 +543,7 @@ namespace jetpack::parser {
             }
             scanner.IncreaseIndex();
             text.push_back(ch);
-            if (utils::IsLineTerminator(ch)) {
+            if (UChar::IsLineTerminator(ch)) {
                 scanner.SetLineNumber(scanner.LineNumber() + 1);
                 if (ch == u'\r' && scanner.CharAt(scanner.Index()) == u'\n') {
                     scanner.IncreaseIndex();
@@ -709,12 +709,12 @@ namespace jetpack::parser {
             return token;
         }
 
-        if (utils::IsIdentifierStart(cp) && cp != 92) {
+        if (UChar::IsIdentifierStart(cp) && cp != 92) {
             auto start = scanner.Index();
             scanner.IncreaseIndex();
             while (!scanner.IsEnd()) {
                 char16_t ch = scanner.CharAt(scanner.Index());
-                if (utils::IsIdentifierPart(ch) && (ch != 92)) {
+                if (UChar::IsIdentifierPart(ch) && (ch != 92)) {
                     scanner.IncreaseIndex();
                 } else if (ch == 45) {
                     // Hyphen (char code 45) can be part of an identifier.
@@ -768,14 +768,14 @@ namespace jetpack::parser {
                         if (numeric) {
                             // e.g. '&#x41;'
                             hex = (ch == u'x');
-                            valid = hex || utils::IsDecimalDigit(ch);
+                            valid = hex || UChar::IsDecimalDigit(ch);
                             numeric &= !hex;
                         }
                         break;
 
                     default:
-                        valid &= !(numeric && !utils::IsDecimalDigit(ch));
-                        valid &= !(utils::IsHexDigit(ch));
+                        valid &= !(numeric && !UChar::IsDecimalDigit(ch));
+                        valid &= !(UChar::IsHexDigit(ch));
                         break;
 
                 }

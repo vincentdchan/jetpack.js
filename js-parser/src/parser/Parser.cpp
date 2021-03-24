@@ -6,7 +6,7 @@
 #include "JSXParser.h"
 #include "TypescriptParser.h"
 #include "ConstantFolding.h"
-#include "../tokenizer/Token.h"
+#include "tokenizer/Token.h"
 
 namespace jetpack::parser {
     using namespace std;

@@ -785,7 +785,7 @@ namespace jetpack {
         Write(u"{");
         if (!node->properties.empty()) {
             WriteLineEnd();
-            UString comma = u"," + utils::To_UTF16(config_.line_end);
+            UString comma = u"," + config_.line_end;
             std::size_t i = 0;
             while (true) {
                 auto prop = node->properties[i];
