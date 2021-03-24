@@ -4,6 +4,8 @@ project(bundle-utils)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(${PROJECT_NAME} STATIC
+        "src/string/QArrayData.h"
+        "src/string/QArrayData.cpp"
         "src/string/CommonArrayOps.h"
         "src/string/UString.h"
         "src/string/UString.cpp"
