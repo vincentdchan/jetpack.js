@@ -45,12 +45,12 @@ endif()
 
 include_directories(PUBLIC
         "../bundle-utils/src"
-        "../js-parser/src"
+        "../esparser/src"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
         "../third_party/robin-hood-hashing/src/include")
-link_libraries(bundle-utils js-parser fmt)
+link_libraries(bundle-utils esparser fmt)
 
 add_executable(jetpack ${SOURCE_FILES} src/main.cpp)
 
@@ -62,7 +62,9 @@ add_executable(jetpack-test ${SOURCE_FILES}
         tests/jsx.cpp
         tests/contant_folding.cpp)
 
-target_include_directories(jetpack-test PUBLIC "../third_party/googletest/googletest/include")
+target_include_directories(jetpack-test PUBLIC
+        "../third_party/googletest/googletest/include"
+        )
 target_link_libraries(jetpack-test gtest_main)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")

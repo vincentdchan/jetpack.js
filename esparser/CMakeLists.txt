@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(js-parser)
+project(esparser)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -33,14 +33,14 @@ file(GLOB source_files
 
 include_directories(${JEMALLOC_INCLUDE})
 
-add_library(js-parser STATIC ${source_files})
-target_link_libraries(js-parser
+add_library(esparser STATIC ${source_files})
+target_link_libraries(esparser
         PUBLIC nlohmann_json::nlohmann_json tsl::ordered_map)
 
-target_include_directories(js-parser PRIVATE src)
-
-set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
+target_include_directories(esparser PRIVATE src)
 
 IF (CMAKE_BUILD_TYPE STREQUAL Debug)
   ADD_DEFINITIONS(-DDEBUG)
+ELSE()
+  set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
 ENDIF()

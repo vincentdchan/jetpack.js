@@ -13,5 +13,5 @@ add_subdirectory(./third_party/fmt)
 add_subdirectory(./third_party/googletest)
 
 add_subdirectory(./bundle-utils)
-add_subdirectory(./js-parser)
+add_subdirectory(./esparser)
 add_subdirectory(bundler)
