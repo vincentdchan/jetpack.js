@@ -31,13 +31,13 @@ namespace jetpack::dumper {
             json loc = json::object();
 
             json start = json::object();
-            start["line"] = node->location.start_.line_;
-            start["column"] = node->location.start_.column_;
+            start["line"] = node->location.start.line;
+            start["column"] = node->location.start.column;
             loc["start"] = start;
 
             json end = json::object();
-            end["line"] = node->location.end_.line_;
-            end["column"] = node->location.end_.column_;
+            end["line"] = node->location.end.line;
+            end["column"] = node->location.end.column;
             loc["end"] = end;
 
             result["loc"] = loc;

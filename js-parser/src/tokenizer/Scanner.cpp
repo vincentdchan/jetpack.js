@@ -55,15 +55,15 @@ namespace jetpack {
         SourceLocation loc;
 
         start = index_ - offset;
-        loc.start_.line_ = line_number_;
-        loc.start_.column_ = index_ - line_start_ - offset;
+        loc.start.line = line_number_;
+        loc.start.column = index_ - line_start_ - offset;
 
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
             index_++;
 
             if (UChar::IsLineTerminator(ch)) {
-                loc.end_ = Position { line_number_, index_ - line_start_ - 1 };
+                loc.end = Position {line_number_, index_ - line_start_ - 1 };
                 auto comment = new Comment {
                         false,
                         source_.mid(start + offset, index_ - start - offset),
@@ -81,7 +81,7 @@ namespace jetpack {
 
         }
 
-        loc.end_ = Position { line_number_, index_ - line_start_ };
+        loc.end = Position {line_number_, index_ - line_start_ };
         auto comment = new Comment {
                 false,
                 source_.mid(start + offset, index_ - start - offset),
@@ -99,11 +99,11 @@ namespace jetpack {
         SourceLocation loc;
 
         start = index_ - 2;
-        loc.start_ = Position {
+        loc.start = Position {
                 line_number_,
                 index_ - line_start_ - 2,
         };
-        loc.end_ = Position { 0, 0 };
+        loc.end = Position {0, 0 };
 
         while (!IsEnd()) {
             char32_t ch = CodePointAt(index_);
@@ -117,7 +117,7 @@ namespace jetpack {
             } else if (ch == 0x2A) {
                 if (CodePointAt(index_ + 1) == 0x2F) {
                     index_ += 2;
-                    loc.end_ = Position {
+                    loc.end = Position {
                             line_number_,
                             index_ - line_start_,
                     };
@@ -137,7 +137,7 @@ namespace jetpack {
             }
         }
 
-        loc.end_ = Position {
+        loc.end = Position {
                 line_number_,
                 index_ - line_start_,
         };
@@ -487,28 +487,28 @@ namespace jetpack {
         }
 
         if (id.size() == 1) {
-            tok.type_ = JsTokenType::Identifier;
-        } else if ((tok.type_ = ToKeyword(id)) != JsTokenType::Invalid) {
+            tok.type = JsTokenType::Identifier;
+        } else if ((tok.type = ToKeyword(id)) != JsTokenType::Invalid) {
             // nothing
         } else if (id == u"null") {
-            tok.type_ = JsTokenType::NullLiteral;
+            tok.type = JsTokenType::NullLiteral;
         } else if (id == u"true" || id == u"false") {
-            tok.type_ = JsTokenType::BooleanLiteral;
+            tok.type = JsTokenType::BooleanLiteral;
         } else {
-            tok.type_ = JsTokenType::Identifier;
+            tok.type = JsTokenType::Identifier;
         }
 
-        if (tok.type_ != JsTokenType::Identifier && (start + id.size() != index_)) {
+        if (tok.type != JsTokenType::Identifier && (start + id.size() != index_)) {
             auto restore = index_;
             index_ = start;
             TolerateUnexpectedToken(ParseMessages::InvalidEscapedReservedWord);
             index_ = restore;
         }
 
-        tok.value_ = move(id);
-        tok.range_ = make_pair(start, index_);
-        tok.line_number_ = line_number_;
-        tok.line_start_ = line_start_;
+        tok.value = move(id);
+        tok.range = make_pair(start, index_);
+        tok.lineNumber = line_number_;
+        tok.lineStart = line_start_;
 
         return tok;
     }
@@ -807,11 +807,11 @@ namespace jetpack {
             ThrowUnexpectedToken();
         }
 
-        tok.type_ = JsTokenType::NumericLiteral;
-        tok.value_ = UString(u"0x") + num;
-        tok.line_start_ = line_start_;
-        tok.line_number_ = line_number_;
-        tok.range_ = make_pair(start, index_);
+        tok.type = JsTokenType::NumericLiteral;
+        tok.value = UString(u"0x") + num;
+        tok.lineStart = line_start_;
+        tok.lineNumber = line_number_;
+        tok.range = make_pair(start, index_);
 
         return tok;
     }
@@ -1086,12 +1086,12 @@ namespace jetpack {
         }
 
         Token tok;
-        tok.type_ = JsTokenType::StringLiteral;
-        tok.value_ = move(str);
-        tok.octal_ = octal;
-        tok.line_number_ = line_number_;
-        tok.line_start_ = line_start_;
-        tok.range_ = make_pair(start, index_);
+        tok.type = JsTokenType::StringLiteral;
+        tok.value = move(str);
+        tok.octal = octal;
+        tok.lineNumber = line_number_;
+        tok.lineStart = line_start_;
+        tok.range = make_pair(start, index_);
 
         return tok;
     }
@@ -1211,14 +1211,14 @@ namespace jetpack {
         }
 
         Token tok;
-        tok.type_ = JsTokenType::Template;
-        tok.value_ = source_.mid(start + 1, index_ - rawOffset);
-        tok.line_number_ = line_number_;
-        tok.line_start_ = line_start_;
-        tok.range_ = make_pair(start, index_);
-        tok.cooked_ = std::move(cooked);
-        tok.head_ = head;
-        tok.tail_ = tail;
+        tok.type = JsTokenType::Template;
+        tok.value = source_.mid(start + 1, index_ - rawOffset);
+        tok.lineNumber = line_number_;
+        tok.lineStart = line_start_;
+        tok.range = make_pair(start, index_);
+        tok.cooked = std::move(cooked);
+        tok.head = head;
+        tok.tail = tail;
 
         return tok;
     }
@@ -1313,10 +1313,10 @@ namespace jetpack {
         auto flags = ScanRegExpFlags();
 
         Token token;
-        token.type_ = JsTokenType::RegularExpression;
-        token.line_number_ = line_number_;
-        token.line_start_ = line_start_;
-        token.value_ = UString(u"/") + pattern + u"/" + flags;
+        token.type = JsTokenType::RegularExpression;
+        token.lineNumber = line_number_;
+        token.lineStart = line_start_;
+        token.value = UString(u"/") + pattern + u"/" + flags;
 
         return token;
     }
@@ -1324,10 +1324,10 @@ namespace jetpack {
     Token Scanner::Lex() {
         if (IsEnd()) {
             Token tok;
-            tok.type_ = JsTokenType::EOF_;
-            tok.line_number_ = line_number_;
-            tok.line_start_ = line_start_;
-            tok.range_ = make_pair(index_, index_);
+            tok.type = JsTokenType::EOF_;
+            tok.lineNumber = line_number_;
+            tok.lineStart = line_start_;
+            tok.range = make_pair(index_, index_);
             return tok;
         }
 

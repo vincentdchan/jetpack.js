@@ -172,8 +172,8 @@ namespace jetpack {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name.toStdString(),
-                                             err.exist_var->location.start_.line_,
-                                             err.exist_var->location.start_.column_);
+                                             err.exist_var->location.start.line,
+                                             err.exist_var->location.start.column);
                 worker_errors_.push_back({ path, std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
@@ -348,8 +348,8 @@ namespace jetpack {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name.toStdString(),
-                                             err.exist_var->location.start_.line_ + 1,
-                                             err.exist_var->location.start_.column_);
+                                             err.exist_var->location.start.line + 1,
+                                             err.exist_var->location.start.column);
                 worker_errors_.push_back({ new_mf->path, std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);

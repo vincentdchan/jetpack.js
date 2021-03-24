@@ -90,12 +90,12 @@ namespace jetpack::parser {
     public:
         inline bool JSXMatch(JsTokenType jt) {
             auto next = PeekJSXToken();
-            return next.type_ == jt;
+            return next.type == jt;
         }
 
         inline void JSXExpect(JsTokenType t) {
             Token token = NextJSXToken();
-            if (!IsPunctuatorToken(token.type_)) {
+            if (!IsPunctuatorToken(token.type)) {
                 ThrowUnexpectedToken(token);
             }
         }

@@ -34,36 +34,36 @@ namespace jetpack::parser {
         string msg = ParseMessages::UnexpectedToken;
         UString value;
 
-        msg = (token.type_ == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
-              (token.type_ == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
-              (token.type_ == JsTokenType::NumericLiteral) ? ParseMessages::UnexpectedNumber :
-              (token.type_ == JsTokenType::StringLiteral) ? ParseMessages::UnexpectedString :
-              (token.type_ == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
+        msg = (token.type == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
+              (token.type == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
+              (token.type == JsTokenType::NumericLiteral) ? ParseMessages::UnexpectedNumber :
+              (token.type == JsTokenType::StringLiteral) ? ParseMessages::UnexpectedString :
+              (token.type == JsTokenType::Template) ? ParseMessages::UnexpectedTemplate :
               ParseMessages::UnexpectedToken;
 
-        if (IsKeywordToken(token.type_)) {
-            if (Scanner::IsFutureReservedWord(token.type_)) {
+        if (IsKeywordToken(token.type)) {
+            if (Scanner::IsFutureReservedWord(token.type)) {
                 msg = ParseMessages::UnexpectedReserved;
             } else {
                 msg = ParseMessages::UnexpectedToken;
             }
         }
-        value = token.value_;
+        value = token.value;
 
         string final_message = fmt::format(msg, value.toStdString());
         return UnexpectedToken(token, final_message);
     }
 
     ParseError ParserCommon::UnexpectedToken(const Token &token, const std::string& message) {
-        if (token.line_number_ > 0) {
-            uint32_t index = token.range_.first;
-            uint32_t line = token.line_number_;
+        if (token.lineNumber > 0) {
+            uint32_t index = token.range.first;
+            uint32_t line = token.lineNumber;
             uint32_t lastMarkerLineStart = ctx->last_marker_.index - ctx->last_marker_.column;
-            uint32_t column = token.range_.first - lastMarkerLineStart + 1;
+            uint32_t column = token.range.first - lastMarkerLineStart + 1;
             return ctx->error_handler_->CreateError(message, index, line, column);
         } else {
-            uint32_t index = token.range_.first;
-            uint32_t line = token.line_number_;
+            uint32_t index = token.range.first;
+            uint32_t line = token.lineNumber;
             uint32_t column = ctx->last_marker_.column + 1;
             return ctx->error_handler_->CreateError(message, index, line, column);
         }
@@ -89,12 +89,12 @@ namespace jetpack::parser {
     }
 
     void ParserCommon::DecorateToken(Token& token) {
-        token.loc_.start_ = Position {
+        token.loc.start = Position {
             ctx->start_marker_.line,
             ctx->start_marker_.column,
         };
 
-        token.loc_.end_ = Position {
+        token.loc.end = Position {
             ctx->scanner_->LineNumber(),
             ctx->scanner_->Column(),
         };
@@ -122,16 +122,16 @@ namespace jetpack::parser {
 
         Token next = scanner.Lex();
 
-        ctx->has_line_terminator_ = token.line_number_ != next.line_number_;
+        ctx->has_line_terminator_ = token.lineNumber != next.lineNumber;
 
-        if (ctx->strict_ && next.type_ == JsTokenType::Identifier) {
-            if (JsTokenType t = Scanner::IsStrictModeReservedWord(next.value_); t != JsTokenType::Invalid) {
-                next.type_ = t;
+        if (ctx->strict_ && next.type == JsTokenType::Identifier) {
+            if (JsTokenType t = Scanner::IsStrictModeReservedWord(next.value); t != JsTokenType::Invalid) {
+                next.type = t;
             }
         }
         ctx->lookahead_ = next;
 
-        if (ctx->config_.tokens && next.type_ != JsTokenType::EOF_) {
+        if (ctx->config_.tokens && next.type != JsTokenType::EOF_) {
             DecorateToken(next);
             ctx->tokens_.push(next);
         }
@@ -155,14 +155,14 @@ namespace jetpack::parser {
     }
 
     ParserContext::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {
-        auto column = tok.range_.first - tok.line_start_;
-        auto line = tok.line_number_;
+        auto column = tok.range.first - tok.lineStart;
+        auto line = tok.lineNumber;
         if (column < 0) {
             column += last_line_start;
             line--;
         }
         return {
-            static_cast<uint32_t>(tok.range_.first),
+            static_cast<uint32_t>(tok.range.first),
             line,
             column
         };
@@ -171,9 +171,9 @@ namespace jetpack::parser {
     void ParserCommon::ExpectCommaSeparator() {
         if (ctx->config_.tolerant) {
             Token token = ctx->lookahead_;
-            if (token.type_ == JsTokenType::Comma) {
+            if (token.type == JsTokenType::Comma) {
                 NextToken();
-            } else if (token.type_ == JsTokenType::Semicolon) {
+            } else if (token.type == JsTokenType::Semicolon) {
                 NextToken();
                 ThrowUnexpectedToken(token);
             } else {
@@ -185,7 +185,7 @@ namespace jetpack::parser {
     }
 
     bool ParserCommon::MatchAssign() {
-        switch (ctx->lookahead_.type_) {
+        switch (ctx->lookahead_.type) {
             case JsTokenType::Assign:
             case JsTokenType::MulAssign:
             case JsTokenType::PowAssign:
@@ -210,7 +210,7 @@ namespace jetpack::parser {
         if (Match(JsTokenType::Semicolon)) {
             NextToken();
         } else if (!ctx->has_line_terminator_) {
-            if (ctx->lookahead_.type_ != JsTokenType::EOF_ && !Match(JsTokenType::RightBracket)) {
+            if (ctx->lookahead_.type != JsTokenType::EOF_ && !Match(JsTokenType::RightBracket)) {
                 ThrowUnexpectedToken(ctx->lookahead_);
             }
             ctx->last_marker_ = ParserContext::Marker {
@@ -223,7 +223,7 @@ namespace jetpack::parser {
 
     bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
         Token& lookahead = ctx->lookahead_;
-        return lookahead.type_ == JsTokenType::Identifier && lookahead.value_ == keyword;
+        return lookahead.type == JsTokenType::Identifier && lookahead.value == keyword;
     }
 
     void ParserCommon::CollectComments() {
@@ -231,8 +231,8 @@ namespace jetpack::parser {
     }
 
     int ParserCommon::BinaryPrecedence(const Token& token) const {
-        auto op = token.value_;
-        switch (token.type_) {
+        auto op = token.value;
+        switch (token.type) {
             case JsTokenType::RightParen:
             case JsTokenType::Semicolon:
             case JsTokenType::Comma:
@@ -282,8 +282,8 @@ namespace jetpack::parser {
                 return 11;
 
             default:
-                if (IsKeywordToken(token.type_)) {
-                    if (token.type_ == JsTokenType::K_Instanceof|| (ctx->allow_in_ && token.type_ == JsTokenType::K_In)) {
+                if (IsKeywordToken(token.type)) {
+                    if (token.type == JsTokenType::K_Instanceof || (ctx->allow_in_ && token.type == JsTokenType::K_In)) {
                         return 7;
                     } else {
                         return 0;
@@ -295,10 +295,10 @@ namespace jetpack::parser {
     }
 
     bool ParserCommon::IsIdentifierName(Token &token) {
-        return token.type_ == JsTokenType::Identifier ||
-               IsKeywordToken(token.type_) ||
-               token.type_ == JsTokenType::BooleanLiteral ||
-               token.type_ == JsTokenType::NullLiteral;
+        return token.type == JsTokenType::Identifier ||
+               IsKeywordToken(token.type) ||
+               token.type == JsTokenType::BooleanLiteral ||
+               token.type == JsTokenType::NullLiteral;
     }
 
 }

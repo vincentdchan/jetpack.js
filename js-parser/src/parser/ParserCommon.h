@@ -64,7 +64,7 @@ namespace jetpack::parser {
         Token NextRegexToken();
 
         inline UString GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source().mid(token.range_.first, token.range_.second - token.range_.first);
+            return ctx->scanner_->Source().mid(token.range.first, token.range.second - token.range.first);
         }
 
         void TolerateError(const std::string& message);
@@ -96,13 +96,13 @@ namespace jetpack::parser {
         inline void Expect(JsTokenType t) {
             Token token = NextToken();
 
-            if (token.type_ != t) {
+            if (token.type != t) {
                 ThrowUnexpectedToken(token);
             }
         }
 
         inline bool Match(JsTokenType t) {
-            return ctx->lookahead_.type_ == t;
+            return ctx->lookahead_.type == t;
         }
 
         bool MatchContextualKeyword(const UString& keyword);
@@ -158,12 +158,12 @@ namespace jetpack::parser {
         Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
             from->range = std::make_pair(marker.index, LastMarker().index);
 
-            from->location.start_ = Position {
+            from->location.start = Position {
                 marker.line,
                 marker.column,
             };
 
-            from->location.end_ = Position {
+            from->location.end = Position {
                 LastMarker().line,
                 LastMarker().column,
             };

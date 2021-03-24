@@ -221,11 +221,11 @@ namespace jetpack::parser {
         Token next = scanner.Lex();
         scanner.RestoreState(state);
 
-        return (next.type_ == JsTokenType::Identifier) ||
-               (next.type_ == JsTokenType::LeftBrace) ||
-               (next.type_ == JsTokenType::LeftBracket) ||
-               next.type_ == JsTokenType::K_Let ||
-               next.type_ == JsTokenType::K_Yield;
+        return (next.type == JsTokenType::Identifier) ||
+               (next.type == JsTokenType::LeftBrace) ||
+               (next.type == JsTokenType::LeftBracket) ||
+               next.type == JsTokenType::K_Let ||
+               next.type == JsTokenType::K_Yield;
     }
 
     bool Parser::MatchImportCall() {
@@ -238,16 +238,16 @@ namespace jetpack::parser {
             scanner.ScanComments(comments);
             Token next = scanner.Lex();
             scanner.RestoreState(state);
-            match = (next.type_ == JsTokenType::LeftParen);
+            match = (next.type == JsTokenType::LeftParen);
         }
         return match;
     }
 
     bool Parser::IsStartOfExpression() {
-        UString value = ctx->lookahead_.value_;
+        UString value = ctx->lookahead_.value;
 
-        if (IsPunctuatorToken(ctx->lookahead_.type_)) {
-            switch (ctx->lookahead_.type_) {
+        if (IsPunctuatorToken(ctx->lookahead_.type)) {
+            switch (ctx->lookahead_.type) {
                 case JsTokenType::LeftBrace:
                 case JsTokenType::RightParen:
                 case JsTokenType::LeftBracket:
@@ -268,8 +268,8 @@ namespace jetpack::parser {
 
         }
 
-        if (IsKeywordToken(ctx->lookahead_.type_)) {
-            switch (ctx->lookahead_.type_) {
+        if (IsKeywordToken(ctx->lookahead_.type)) {
+            switch (ctx->lookahead_.type) {
                 case JsTokenType::K_Class:
                 case JsTokenType::K_Delete:
                 case JsTokenType::K_Function:
@@ -299,7 +299,7 @@ namespace jetpack::parser {
 
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
-            while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+            while (ctx->lookahead_.type != JsTokenType::EOF_) {
                 ParseFormalParameter(scope, options);
                 if (Match(JsTokenType::RightParen)) {
                     break;
@@ -325,7 +325,7 @@ namespace jetpack::parser {
         }
 
         for (auto& i : params) {
-            ValidateParam(option, i, i.value_);
+            ValidateParam(option, i, i.value);
         }
 
         option.simple &= param->type == SyntaxNodeType::Identifier;
@@ -373,13 +373,13 @@ namespace jetpack::parser {
         auto marker = CreateStartMarker();
         Token token;
 
-        if (IsKeywordToken(ctx->lookahead_.type_)) {
+        if (IsKeywordToken(ctx->lookahead_.type)) {
             if (!ctx->strict_ && ctx->allow_yield_ && Match(JsTokenType::K_Yield)) {
                 return ParseIdentifierName();
             } else if (!ctx->strict_ && Match(JsTokenType::K_Let)) {
                 token = NextToken();
                 auto id = Alloc<Identifier>();
-                id->name = token.value_;
+                id->name = token.value;
                 return Finalize(marker, id);
             } else {
                 ctx->is_assignment_target_ = false;
@@ -401,9 +401,9 @@ namespace jetpack::parser {
             }
         }
 
-        switch (ctx->lookahead_.type_) {
+        switch (ctx->lookahead_.type) {
             case JsTokenType::Identifier: {
-                if ((ctx->is_module_ || ctx->await_) && ctx->lookahead_.value_ == u"await") {
+                if ((ctx->is_module_ || ctx->await_) && ctx->lookahead_.value == u"await") {
                     ThrowUnexpectedToken(ctx->lookahead_);
                 }
                 if (MatchAsyncFunction()) {
@@ -412,7 +412,7 @@ namespace jetpack::parser {
                     // reference to a
                     auto node = Alloc<Identifier>();
                     Token next = NextToken();
-                    node->name = next.value_;
+                    node->name = next.value;
                     scope.AddUnresolvedId(node);
                     return Finalize(marker, node);
                 }
@@ -420,10 +420,10 @@ namespace jetpack::parser {
 
             case JsTokenType::NumericLiteral:
             case JsTokenType::StringLiteral: {
-                Literal::Ty lty = ctx->lookahead_.type_ == JsTokenType::NumericLiteral
+                Literal::Ty lty = ctx->lookahead_.type == JsTokenType::NumericLiteral
                                                            ? Literal::Ty::Double
                                                            : Literal::Ty::String;
-                if (ctx->strict_ && Lookahead().octal_) {
+                if (ctx->strict_ && Lookahead().octal) {
                     ThrowUnexpectedToken(Lookahead());
 //                this.tolerateUnexpectedToken(this.lookahead, Messages.StrictOctalLiteral);
                 }
@@ -432,7 +432,7 @@ namespace jetpack::parser {
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = lty;
-                node->str_ = token.value_;
+                node->str_ = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -443,7 +443,7 @@ namespace jetpack::parser {
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Boolean;
-                if (token.value_ == u"true") {
+                if (token.value == u"true") {
                     node->boolean_ = true;
                 } else {
                     node->boolean_ = false;
@@ -458,7 +458,7 @@ namespace jetpack::parser {
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Null;
-                node->str_ = token.value_;
+                node->str_ = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -469,7 +469,7 @@ namespace jetpack::parser {
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Regex;
-                node->str_ = token.value_;
+                node->str_ = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -500,7 +500,7 @@ namespace jetpack::parser {
                 ctx->scanner_->SetIndex(StartMarker().index);
                 token = NextRegexToken();
                 auto node = Alloc<RegexLiteral>();
-                node->value = token.value_;
+                node->value = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -540,8 +540,8 @@ namespace jetpack::parser {
         optional<Sp<SyntaxNode>> key;
         optional<Sp<SyntaxNode>> value;
 
-        if (token.type_ == JsTokenType::Identifier) {
-            auto id = token.value_;
+        if (token.type == JsTokenType::Identifier) {
+            auto id = token.value;
             NextToken();
             computed = Match(JsTokenType::LeftBrace);
             is_async = !ctx->has_line_terminator_ && (id == u"async") &&
@@ -562,19 +562,19 @@ namespace jetpack::parser {
 
         auto lookahead_prop_key = QualifiedPropertyName(ctx->lookahead_);
 
-        if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"get" && lookahead_prop_key) {
+        if (token.type == JsTokenType::Identifier && !is_async && token.value == u"get" && lookahead_prop_key) {
             kind = VarKind::Get;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey(scope);
             ctx->allow_yield_ = false;
             value = ParseGetterMethod(scope);
-        } else if (token.type_ == JsTokenType::Identifier && !is_async && token.value_ == u"set" && lookahead_prop_key) {
+        } else if (token.type == JsTokenType::Identifier && !is_async && token.value == u"set" && lookahead_prop_key) {
             kind = VarKind::Set;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey(scope);
             ctx->allow_yield_ = false;
             value = ParseSetterMethod(scope);
-        } else if (token.type_ == JsTokenType::Mul && !is_async && lookahead_prop_key) {
+        } else if (token.type == JsTokenType::Mul && !is_async && lookahead_prop_key) {
             kind = VarKind::Init;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey(scope);
@@ -604,9 +604,9 @@ namespace jetpack::parser {
                     value = ParsePropertyMethodFunction(scope);
                 }
                 method = true;
-            } else if (token.type_ == JsTokenType::Identifier) {
+            } else if (token.type == JsTokenType::Identifier) {
                 auto id = Alloc<Identifier>();
-                id->name = token.value_;
+                id->name = token.value;
                 Finalize(marker, id);
                 if (Match(JsTokenType::Assign)) {
                     ctx->first_cover_initialized_name_error_ = {ctx->lookahead_ };
@@ -641,14 +641,14 @@ namespace jetpack::parser {
         auto marker = CreateStartMarker();
         Token token = NextToken();
 
-        if (IsKeywordToken(token.type_)) {
+        if (IsKeywordToken(token.type)) {
             auto node = Alloc<Identifier>();
-            node->name = token.value_;
+            node->name = token.value;
             return Finalize(marker, node);
         }
 
-        if (IsPunctuatorToken(token.type_)) {
-            if (token.type_ == JsTokenType::LeftBrace) {
+        if (IsPunctuatorToken(token.type)) {
+            if (token.type == JsTokenType::LeftBrace) {
                 auto result = IsolateCoverGrammar<Expression>([this, &scope] {
                     return ParseAssignmentExpression(scope);
                 });
@@ -659,25 +659,25 @@ namespace jetpack::parser {
             }
         }
 
-        switch (token.type_) {
+        switch (token.type) {
             case JsTokenType::StringLiteral: {
-                if (ctx->strict_ && token.octal_) {
+                if (ctx->strict_ && token.octal) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictOctalLiteral);
                 }
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::String;
-                node->str_ = token.value_;
+                node->str_ = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
 
             case JsTokenType::NumericLiteral: {
-                if (ctx->strict_ && token.octal_) {
+                if (ctx->strict_ && token.octal) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictOctalLiteral);
                 }
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Double;
-                node->str_ = token.value_;
+                node->str_ = token.value;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -686,7 +686,7 @@ namespace jetpack::parser {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral: {
                 auto node = Alloc<Identifier>();
-                node->name = token.value_;
+                node->name = token.value;
                 return Finalize(marker, node);
             }
 
@@ -757,11 +757,11 @@ namespace jetpack::parser {
             }
 
             if (ctx->strict_) {
-                if (scanner.IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
                 }
             } else {
-                if (scanner.IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value)) {
                     first_restricted = token;
                     message = ParseMessages::StrictFunctionName;
                     // TODO: message
@@ -820,7 +820,7 @@ namespace jetpack::parser {
             ThrowUnexpectedToken(token);
             return nullptr;
         }
-        node->name = token.value_;
+        node->name = token.value;
         return Finalize(marker, node);
     }
 
@@ -835,9 +835,9 @@ namespace jetpack::parser {
         if (Match(JsTokenType::Dot)) {
             NextToken();
             if (
-                ctx->lookahead_.type_ == JsTokenType::Identifier &&
-                ctx->in_function_body_ &&
-                ctx->lookahead_.value_ == u"target"
+                    ctx->lookahead_.type == JsTokenType::Identifier &&
+                    ctx->in_function_body_ &&
+                            ctx->lookahead_.value == u"target"
             ) {
                 auto node = Alloc<MetaProperty>();
                 node->property = ParseIdentifierName();
@@ -928,7 +928,7 @@ namespace jetpack::parser {
         Sp<Expression> expr = ParseExpression(scope);
         UString directive;
         if (expr->type == SyntaxNodeType::Literal) {
-            directive = token.value_.mid(1, token.value_.size() - 1);
+            directive = token.value.mid(1, token.value.size() - 1);
         }
         ConsumeSemicolon();
 
@@ -954,7 +954,7 @@ namespace jetpack::parser {
         if (Match(JsTokenType::Comma)) {
             std::vector<Sp<Expression>> expressions;
             expressions.push_back(expr);
-            while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+            while (ctx->lookahead_.type != JsTokenType::EOF_) {
                 if (!Match(JsTokenType::Comma)) {
                     break;
                 }
@@ -989,7 +989,7 @@ namespace jetpack::parser {
         ctx->in_switch_ = false;
         ctx->in_function_body_ = true;
 
-        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type != JsTokenType::EOF_) {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
@@ -1018,7 +1018,7 @@ namespace jetpack::parser {
         Token token;
         while (true) {
             token = ctx->lookahead_;
-            if (token.type_ != JsTokenType::StringLiteral) {
+            if (token.type != JsTokenType::StringLiteral) {
                 break;
             }
 
@@ -1038,7 +1038,7 @@ namespace jetpack::parser {
                     TolerateUnexpectedToken(token, ParseMessages::IllegalLanguageModeDirective);
                 }
             } else {
-                if (!first_restrict && token.octal_) {
+                if (!first_restrict && token.octal) {
                     first_restrict = token;
                 }
             }
@@ -1069,7 +1069,7 @@ namespace jetpack::parser {
 
         auto node = Alloc<ClassDeclaration>();
         node->scope = move(cls_scope);
-        if (identifier_is_optional && (ctx->lookahead_.type_ != JsTokenType::Identifier)) {
+        if (identifier_is_optional && (ctx->lookahead_.type != JsTokenType::Identifier)) {
             // nothing
         } else {
             node->id = ParseVariableIdentifier(parent_scope, VarKind::Var);
@@ -1106,7 +1106,7 @@ namespace jetpack::parser {
         ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
-        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
+        if (ctx->lookahead_.type == JsTokenType::Identifier) {
             node->id = ParseVariableIdentifier(parent_scope, VarKind::Invalid);
         }
 
@@ -1170,7 +1170,7 @@ namespace jetpack::parser {
                 node->computed = false;
                 expr = Finalize(StartNode(start_token), node);
             } else if (Match(JsTokenType::LeftParen)) {
-                bool async_arrow = maybe_async && (start_token.line_number_ == ctx->lookahead_.line_number_);
+                bool async_arrow = maybe_async && (start_token.lineNumber == ctx->lookahead_.lineNumber);
                 ctx->is_binding_element_ = false;
                 ctx->is_assignment_target_ = false;
                 auto node = Alloc<CallExpression>();
@@ -1205,7 +1205,7 @@ namespace jetpack::parser {
                 Expect(JsTokenType::RightBrace);
                 node->object = expr;
                 expr = Finalize(StartNode(start_token), node);
-            } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
+            } else if (ctx->lookahead_.type == JsTokenType::Template && ctx->lookahead_.head) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral(scope);
                 node->tag = expr;
@@ -1259,7 +1259,7 @@ namespace jetpack::parser {
         auto node = make_shared<Module>();
         node->body = ParseDirectivePrologues(*node->scope.get());
         node->source_type = u"module";
-        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem(*node->scope.get()));
         }
         if (ctx->config_.comment) {
@@ -1276,7 +1276,7 @@ namespace jetpack::parser {
         auto node = Alloc<Script>();
         node->body = ParseDirectivePrologues(*node->scope);
         node->source_type = u"script";
-        while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+        while (ctx->lookahead_.type != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem(*node->scope));
         }
         if (ctx->config_.comment) {
@@ -1345,8 +1345,8 @@ namespace jetpack::parser {
 
     Sp<Statement> Parser::ParseStatement(Scope& scope) {
 
-        if (IsPunctuatorToken(ctx->lookahead_.type_)) {
-            switch (ctx->lookahead_.type_) {
+        if (IsPunctuatorToken(ctx->lookahead_.type)) {
+            switch (ctx->lookahead_.type) {
                 case JsTokenType::LeftBracket:
                     return ParseBlock(scope, true);
 
@@ -1362,7 +1362,7 @@ namespace jetpack::parser {
             }
         }
 
-        switch (ctx->lookahead_.type_) {
+        switch (ctx->lookahead_.type) {
             case JsTokenType::BooleanLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
@@ -1422,7 +1422,7 @@ namespace jetpack::parser {
                 return ParseWithStatement(scope);
 
             default:
-                if (IsKeywordToken(ctx->lookahead_.type_)) {
+                if (IsKeywordToken(ctx->lookahead_.type)) {
                     return ParseExpressionStatement(scope);
                 }
                 ThrowUnexpectedToken(ctx->lookahead_);
@@ -1505,11 +1505,11 @@ namespace jetpack::parser {
             Token token = ctx->lookahead_;
             id = ParseVariableIdentifier(parent_scope, VarKind::Var);
             if (ctx->strict_) {
-                if (scanner.IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value)) {
                     TolerateUnexpectedToken(token, ParseMessages::StrictFunctionName);
                 }
             } else {
-                if (scanner.IsRestrictedWord(token.value_)) {
+                if (scanner.IsRestrictedWord(token.value)) {
                     first_restricted = token;
                     message = ParseMessages::StrictFunctionName;
                 } else {
@@ -1623,7 +1623,7 @@ namespace jetpack::parser {
         Expect(JsTokenType::K_Break);
 
         std::optional<Sp<Identifier>> label;
-        if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
+        if (ctx->lookahead_.type == JsTokenType::Identifier && !ctx->has_line_terminator_) {
             Scope scope;
             Sp<Identifier> id = ParseVariableIdentifier(scope, VarKind::Invalid);
 
@@ -1651,7 +1651,7 @@ namespace jetpack::parser {
         Expect(JsTokenType::K_Continue);
         auto node = Alloc<ContinueStatement>();
 
-        if (ctx->lookahead_.type_ == JsTokenType::Identifier && !ctx->has_line_terminator_) {
+        if (ctx->lookahead_.type == JsTokenType::Identifier && !ctx->has_line_terminator_) {
             Scope scope;
             auto id = ParseVariableIdentifier(scope, VarKind::Invalid);
             node->label = id;
@@ -1769,15 +1769,15 @@ namespace jetpack::parser {
                 auto marker = CreateStartMarker();
                 Token token = NextToken();
                 VarKind kind;
-                if (token.value_ == u"const") {
+                if (token.value == u"const") {
                     kind = VarKind::Const;
-                } else if (token.value_ == u"let") {
+                } else if (token.value == u"let") {
                     kind = VarKind::Let;
                 }
 
-                if (!ctx->strict_ && ctx->lookahead_.value_ == u"in") {
+                if (!ctx->strict_ && ctx->lookahead_.value == u"in") {
                     auto node = Alloc<Identifier>();
-                    node->name = token.value_;
+                    node->name = token.value;
                     init = Finalize(marker, node);
                     NextToken();
                     left = *init;
@@ -1932,9 +1932,9 @@ namespace jetpack::parser {
         Expect(JsTokenType::K_Return);
 
         bool has_arg = (!Match(JsTokenType::Semicolon) && !Match(JsTokenType::RightBracket) &&
-                        !ctx->has_line_terminator_ && ctx->lookahead_.type_ != JsTokenType::EOF_) ||
-                       ctx->lookahead_.type_ == JsTokenType::StringLiteral ||
-                       ctx->lookahead_.type_ == JsTokenType::Template;
+                        !ctx->has_line_terminator_ && ctx->lookahead_.type != JsTokenType::EOF_) ||
+                       ctx->lookahead_.type == JsTokenType::StringLiteral ||
+                       ctx->lookahead_.type == JsTokenType::Template;
 
         auto node = Alloc<ReturnStatement>();
         if (has_arg) {
@@ -2042,9 +2042,9 @@ namespace jetpack::parser {
 
         std::unordered_set<UString> param_set;
         for (auto& token : params) {
-            UString key = UString(u"$") + token.value_;
+            UString key = UString(u"$") + token.value;
             if (param_set.find(key) != param_set.end()) {
-                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + token.value_.toStdString());
+                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + token.value.toStdString());
             }
             param_set.insert(key);
         }
@@ -2240,13 +2240,13 @@ namespace jetpack::parser {
         ctx->is_assignment_target_ = true;
         ctx->is_binding_element_ = true;
 
-        if (IsKeywordToken(ctx->lookahead_.type_)) {
-            if (ctx->lookahead_.value_ == u"export") {
+        if (IsKeywordToken(ctx->lookahead_.type)) {
+            if (ctx->lookahead_.value == u"export") {
                 if (ctx->is_module_) {
                     TolerateUnexpectedToken(ctx->lookahead_, ParseMessages::IllegalExportDeclaration);
                 }
                 statement = ParseExportDeclaration(scope);
-            } else if (ctx->lookahead_.value_ == u"import") {
+            } else if (ctx->lookahead_.value == u"import") {
                 if (MatchImportCall()) {
                     statement = ParseExpressionStatement(scope);
                 } else {
@@ -2255,14 +2255,14 @@ namespace jetpack::parser {
                     }
                     statement = ParseImportDeclaration(scope);
                 }
-            } else if (ctx->lookahead_.value_ == u"const") {
+            } else if (ctx->lookahead_.value == u"const") {
                 bool in_for = false;
                 statement = ParseLexicalDeclaration(scope, in_for);
-            } else if (ctx->lookahead_.value_ == u"function") {
+            } else if (ctx->lookahead_.value == u"function") {
                 statement = ParseFunctionDeclaration(scope, false);
-            } else if (ctx->lookahead_.value_ == u"class") {
+            } else if (ctx->lookahead_.value == u"class") {
                 statement = ParseClassDeclaration(scope, false);
-            } else if (ctx->lookahead_.value_ == u"let") {
+            } else if (ctx->lookahead_.value == u"let") {
                 if (IsLexicalDeclaration()) {
                     bool in_for = false;
                     statement = ParseLexicalDeclaration(scope, in_for);
@@ -2343,7 +2343,7 @@ namespace jetpack::parser {
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
-                    ThrowError(ParseMessages::UnexpectedToken, ctx->lookahead_.value_.toStdString());
+                    ThrowError(ParseMessages::UnexpectedToken, ctx->lookahead_.value.toStdString());
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
@@ -2366,12 +2366,12 @@ namespace jetpack::parser {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value_.isEmpty()) {
+                if (!ctx->lookahead_.value.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value_.toStdString());
+                ThrowError(message, ctx->lookahead_.value.toStdString());
             }
             NextToken();
             auto node = Alloc<ExportAllDeclaration>();
@@ -2385,16 +2385,16 @@ namespace jetpack::parser {
                     "resolve export failed");
 
             export_decl = Finalize(start_marker, node);
-        } else if (IsKeywordToken(ctx->lookahead_.type_)) {
+        } else if (IsKeywordToken(ctx->lookahead_.type)) {
             auto node = Alloc<ExportNamedDeclaration>();
 
-            if (ctx->lookahead_.value_ == u"let" || ctx->lookahead_.value_ == u"const") {
+            if (ctx->lookahead_.value == u"let" || ctx->lookahead_.value == u"const") {
                 bool in_for = false;
                 node->declaration = ParseLexicalDeclaration(scope, in_for);
             } else if (
-                ctx->lookahead_.value_ == u"var" ||
-                ctx->lookahead_.value_ == u"class" ||
-                ctx->lookahead_.value_ == u"function"
+                    ctx->lookahead_.value == u"var" ||
+                    ctx->lookahead_.value == u"class" ||
+                    ctx->lookahead_.value == u"function"
             ) {
                 node->declaration = ParseStatementListItem(scope);
             } else {
@@ -2435,12 +2435,12 @@ namespace jetpack::parser {
                 ConsumeSemicolon();
             } else if (is_export_from_id) {
                 string message;
-                if (!ctx->lookahead_.value_.isEmpty()) {
+                if (!ctx->lookahead_.value.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value_.toStdString());
+                ThrowError(message, ctx->lookahead_.value.toStdString());
             } else {
                 ConsumeSemicolon();
             }
@@ -2466,11 +2466,11 @@ namespace jetpack::parser {
             expr = ParseConditionalExpression(scope);
 
             if (
-                token.type_ == JsTokenType::Identifier &&
-                (token.line_number_ == ctx->lookahead_.line_number_) &&
-                token.value_ == u"async"
+                    token.type == JsTokenType::Identifier &&
+                    (token.lineNumber == ctx->lookahead_.lineNumber) &&
+                            token.value == u"async"
             ) {
-                if (ctx->lookahead_.type_ == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
+                if (ctx->lookahead_.type == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
                     Sp<SyntaxNode> arg = ParsePrimaryExpression(scope);
                     arg = ReinterpretExpressionAsPattern(arg);
 
@@ -2576,7 +2576,7 @@ namespace jetpack::parser {
                     temp->left = ReinterpretExpressionAsPattern(expr);
 
                     token = NextToken();
-                    auto operator_ = token.value_;
+                    auto operator_ = token.value;
                     temp->right = IsolateCoverGrammar<Expression>([this, &scope] {
                         return ParseAssignmentExpression(scope);
                     });
@@ -2668,7 +2668,7 @@ namespace jetpack::parser {
                 auto binary = Alloc<BinaryExpression>();
                 binary->left = left;
                 binary->right = expr;
-                binary->operator_ = left_tk.value_;
+                binary->operator_ = left_tk.value;
                 if (ctx->config_.constant_folding) {
                     expr = ContantFolding::TryBinaryExpression(binary);
                 } else {
@@ -2678,7 +2678,7 @@ namespace jetpack::parser {
                 return Finalize(marker, ParseBinaryExpression(scope, expr, right_tk));
             } else {  // left_op > right_op
                 auto binary = Alloc<BinaryExpression>();
-                binary->operator_ = left_tk.value_;
+                binary->operator_ = left_tk.value;
                 binary->left = left;
                 binary->right = expr;
 
@@ -2738,7 +2738,7 @@ namespace jetpack::parser {
                 return ParseUnaryExpression(scope);
             });
             auto node = Alloc<UnaryExpression>();
-            node->operator_ = token.value_;
+            node->operator_ = token.value;
             node->argument = expr;
             node->prefix = true;
             expr = Finalize(marker, node);
@@ -2785,7 +2785,7 @@ namespace jetpack::parser {
             }
             auto node = Alloc<UpdateExpression>();
             node->prefix = true;
-            node->operator_ = token.value_;
+            node->operator_ = token.value;
             node->argument = expr;
             expr = Finalize(marker, node);
             ctx->is_assignment_target_ = false;
@@ -2794,7 +2794,7 @@ namespace jetpack::parser {
             expr = InheritCoverGrammar<Expression>([this, &scope] {
                 return ParseLeftHandSideExpressionAllowCall(scope);
             });
-            if (!ctx->has_line_terminator_ && IsPunctuatorToken(ctx->lookahead_.type_)) {
+            if (!ctx->has_line_terminator_ && IsPunctuatorToken(ctx->lookahead_.type)) {
                 if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
                     if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
                         auto id = dynamic_pointer_cast<Identifier>(expr);
@@ -2810,7 +2810,7 @@ namespace jetpack::parser {
                     auto node = Alloc<UpdateExpression>();
                     node->prefix = false;
                     Token token = NextToken();
-                    node->operator_ = token.value_;
+                    node->operator_ = token.value;
                     node->argument = expr;
                     expr = Finalize(start_marker, node);
                 }
@@ -2859,7 +2859,7 @@ namespace jetpack::parser {
                 node->property = ParseIdentifierName();
                 node->object = move(expr);
                 expr = Finalize(start_marker, node);
-            } else if (ctx->lookahead_.type_ == JsTokenType::Template && ctx->lookahead_.head_) {
+            } else if (ctx->lookahead_.type == JsTokenType::Template && ctx->lookahead_.head) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral(scope);
                 node->tag = move(expr);
@@ -2899,7 +2899,7 @@ namespace jetpack::parser {
         Sp<Literal> src;
         std::vector<Sp<SyntaxNode>> specifiers;
 
-        if (ctx->lookahead_.type_ == JsTokenType::StringLiteral) {
+        if (ctx->lookahead_.type == JsTokenType::StringLiteral) {
             src = ParseModuleSpecifier();
         } else {
             if (Match(JsTokenType::LeftBracket)) {
@@ -2928,12 +2928,12 @@ namespace jetpack::parser {
 
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value_.isEmpty()) {
+                if (!ctx->lookahead_.value.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value_.toStdString());
+                ThrowError(message, ctx->lookahead_.value.toStdString());
             }
             NextToken();
             src = ParseModuleSpecifier();
@@ -2978,7 +2978,7 @@ namespace jetpack::parser {
 
         Sp<Identifier> imported;
         Sp<Identifier> local;
-        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
+        if (ctx->lookahead_.type == JsTokenType::Identifier) {
             imported = ParseVariableIdentifier(LeftValueScope::default_, VarKind::Invalid);
             local = std::make_shared<Identifier>();
             (*local) = (*imported);
@@ -3009,14 +3009,14 @@ namespace jetpack::parser {
     Sp<Literal> Parser::ParseModuleSpecifier() {
         auto start_marker = CreateStartMarker();
 
-        if (ctx->lookahead_.type_ != JsTokenType::StringLiteral) {
+        if (ctx->lookahead_.type != JsTokenType::StringLiteral) {
             ThrowError(ParseMessages::InvalidModuleSpecifier);
         }
 
         Token token = NextToken();
         auto node = Alloc<Literal>();
         node->ty = Literal::Ty::String;
-        node->str_ = token.value_;
+        node->str_ = token.value;
         node->raw = GetTokenRaw(token);
         return Finalize(start_marker, node);
     }
@@ -3051,9 +3051,9 @@ namespace jetpack::parser {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<VariableDeclaration>();
         Token next = NextToken();
-        if (next.value_ == u"let") {
+        if (next.value == u"let") {
             node->kind = VarKind::Let;
-        } else if (next.value_ == u"const") {
+        } else if (next.value == u"const") {
             node->kind = VarKind::Const;
         } else {
             ThrowUnexpectedToken(next);
@@ -3076,15 +3076,15 @@ namespace jetpack::parser {
                 ThrowUnexpectedToken(token);
                 return nullptr;
             }
-        } else if (token.type_ != JsTokenType::Identifier) {
+        } else if (token.type != JsTokenType::Identifier) {
             ThrowUnexpectedToken(token);
             return nullptr;
-        } else if ((ctx->is_module_ || ctx->await_) && token.type_ == JsTokenType::Identifier && token.value_ == u"await") {
+        } else if ((ctx->is_module_ || ctx->await_) && token.type == JsTokenType::Identifier && token.value == u"await") {
             TolerateUnexpectedToken(token);
         }
 
         auto node = Alloc<Identifier>();
-        node->name = token.value_;
+        node->name = token.value;
         scope.CreateVariable(node, kind);
         return Finalize(marker, node);
     }
@@ -3174,12 +3174,12 @@ namespace jetpack::parser {
         node->shorthand = false;
         node->method = false;
 
-        if (ctx->lookahead_.type_ == JsTokenType::Identifier) {
+        if (ctx->lookahead_.type == JsTokenType::Identifier) {
             Token keyToken = ctx->lookahead_;
             node->key = ParseVariableIdentifier(LeftValueScope::default_, kind);
 
             auto id_ = Alloc<Identifier>();
-            id_->name = keyToken.value_;
+            id_->name = keyToken.value;
             auto init = Finalize(start_marker, id_);
 
             if (Match(JsTokenType::Assign)) {
@@ -3321,7 +3321,7 @@ namespace jetpack::parser {
 
                     ctx->is_assignment_target_ = false;
                     expressions.push_back(expr);
-                    while (ctx->lookahead_.type_ != JsTokenType::EOF_) {
+                    while (ctx->lookahead_.type != JsTokenType::EOF_) {
                         if (!Match(JsTokenType::Comma)) {
                             break;
                         }
@@ -3424,20 +3424,20 @@ namespace jetpack::parser {
     }
 
     Sp<TemplateElement> Parser::ParseTemplateHead() {
-        Assert(ctx->lookahead_.head_, "Template literal must start with a template head");
+        Assert(ctx->lookahead_.head, "Template literal must start with a template head");
         auto start_marker = CreateStartMarker();
         Token token = NextToken();
 
         auto node = Alloc<TemplateElement>();
-        node->raw = token.value_;
-        node->cooked = token.cooked_;
-        node->tail = token.tail_;
+        node->raw = token.value;
+        node->cooked = token.cooked;
+        node->tail = token.tail;
 
         return Finalize(start_marker, node);
     }
 
     Sp<TemplateElement> Parser::ParseTemplateElement() {
-        if (ctx->lookahead_.type_ != JsTokenType::Template) {
+        if (ctx->lookahead_.type != JsTokenType::Template) {
             ThrowUnexpectedToken(ctx->lookahead_);
         }
 
@@ -3445,9 +3445,9 @@ namespace jetpack::parser {
         Token token = NextToken();
 
         auto node = Alloc<TemplateElement>();
-        node->raw = token.value_;
-        node->cooked = token.cooked_;
-        node->tail = token.tail_;
+        node->raw = token.value;
+        node->cooked = token.cooked;
+        node->tail = token.tail;
 
         return Finalize(start_marker, node);
     }
@@ -3496,15 +3496,15 @@ namespace jetpack::parser {
                 }
             }
             if (
-                (token.type_ == JsTokenType::Identifier) &&
-                !ctx->has_line_terminator_ &&
-                (token.value_ == u"async")
+                    (token.type == JsTokenType::Identifier) &&
+                    !ctx->has_line_terminator_ &&
+                (token.value == u"async")
             ) {
-                if (token.type_ != JsTokenType::Colon && token.type_ != JsTokenType::LeftParen && token.type_ != JsTokenType::Mul) {
+                if (token.type != JsTokenType::Colon && token.type != JsTokenType::LeftParen && token.type != JsTokenType::Mul) {
                     is_async = true;
                     token = ctx->lookahead_;
                     key = ParseObjectPropertyKey(scope);
-                    if (token.type_ == JsTokenType::Identifier && token.value_ == u"constructor") {
+                    if (token.type == JsTokenType::Identifier && token.value == u"constructor") {
                         TolerateUnexpectedToken(token, ParseMessages::ConstructorIsAsync);
                     }
                 }
@@ -3512,20 +3512,20 @@ namespace jetpack::parser {
         }
 
         bool lookahead_prop_key = QualifiedPropertyName(ctx->lookahead_);
-        if (token.type_ == JsTokenType::Identifier) {
-            if (token.value_ == u"get" && lookahead_prop_key) {
+        if (token.type == JsTokenType::Identifier) {
+            if (token.value == u"get" && lookahead_prop_key) {
                 kind = VarKind::Get;
                 computed = Match(JsTokenType::LeftBrace);
                 key = ParseObjectPropertyKey(scope);
                 ctx->allow_yield_ = false;
                 value = ParseGetterMethod(scope);
-            } else if (token.value_ == u"set" && lookahead_prop_key) {
+            } else if (token.value == u"set" && lookahead_prop_key) {
                 kind = VarKind::Set;
                 computed = Match(JsTokenType::LeftBrace);
                 key = ParseObjectPropertyKey(scope);
                 value = ParseSetterMethod(scope);
             }
-        } else if (token.type_ == JsTokenType::Mul && lookahead_prop_key) {
+        } else if (token.type == JsTokenType::Mul && lookahead_prop_key) {
             kind = VarKind::Init;
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey(scope);
@@ -3714,9 +3714,9 @@ namespace jetpack::parser {
     }
 
     bool Parser::QualifiedPropertyName(const Token &token) {
-        if (IsKeywordToken(token.type_)) return true;
+        if (IsKeywordToken(token.type)) return true;
 
-        switch (token.type_) {
+        switch (token.type) {
             case JsTokenType::Identifier:
             case JsTokenType::StringLiteral:
             case JsTokenType::BooleanLiteral:

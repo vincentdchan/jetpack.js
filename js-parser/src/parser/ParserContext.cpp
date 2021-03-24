@@ -26,10 +26,10 @@ namespace jetpack::parser {
         scanner_ = make_unique<Scanner>(source_, error_handler_);
         has_line_terminator_ = false;
 
-        lookahead_.type_ = JsTokenType::EOF_;
-        lookahead_.line_number_ = scanner_->LineNumber();
-        lookahead_.line_start_ = 0;
-        lookahead_.range_ = make_pair(0, 0);
+        lookahead_.type = JsTokenType::EOF_;
+        lookahead_.lineNumber = scanner_->LineNumber();
+        lookahead_.lineStart = 0;
+        lookahead_.range = make_pair(0, 0);
 
         is_module_ = false;
         await_ = false;

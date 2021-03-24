@@ -353,11 +353,11 @@ namespace jetpack::parser {
     Sp<JSXIdentifier> JSXParser::ParseJSXIdentifier() {
         auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
-        if (token.type_ != JsTokenType::Identifier) {
+        if (token.type != JsTokenType::Identifier) {
             ThrowUnexpectedToken(token);
         }
         auto id = Alloc<JSXIdentifier>();
-        id->name = token.value_;
+        id->name = token.value;
         return Finalize(start_marker, id);
     }
 
@@ -406,14 +406,14 @@ namespace jetpack::parser {
     Sp<Literal> JSXParser::ParseJSXStringLiteralAttribute() {
         auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
-        if (token.type_ != JsTokenType::StringLiteral) {
+        if (token.type != JsTokenType::StringLiteral) {
             ThrowUnexpectedToken(token);
         }
 
         auto node = Alloc<Literal>();
         node->raw = GetTokenRaw(token);
         node->ty = Literal::Ty::String;
-        node->str_ = token.value_;
+        node->str_ = token.value;
         return Finalize(start_marker, node);
     }
 
@@ -451,10 +451,10 @@ namespace jetpack::parser {
         while (!ctx->scanner_->IsEnd()) {
             auto start_marker = CreateStartMarker();
             auto token = NextJSXText();
-            if (token.range_.first < token.range_.second) {
+            if (token.range.first < token.range.second) {
                 auto node = Alloc<JSXText>();
                 node->raw = GetTokenRaw(token);
-                node->value = token.value_;
+                node->value = token.value;
                 result.push_back(Finalize(start_marker, node));
             }
             if (ctx->scanner_->CharAt(ctx->scanner_->Index()) == u'{') {
@@ -559,10 +559,10 @@ namespace jetpack::parser {
         });
 
         Token token;
-        token.value_ = move(text);
-        token.line_number_ = scanner.LineNumber();
-        token.line_start_ = scanner.LineStart();
-        token.range_ = {
+        token.value = move(text);
+        token.lineNumber = scanner.LineNumber();
+        token.lineStart = scanner.LineStart();
+        token.range = {
             start,
             scanner.Index(),
         };
@@ -580,50 +580,50 @@ namespace jetpack::parser {
         switch (cp) {
             case u'<': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::LessThan;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::LessThan;
+                token.value.push_back(cp);
                 break;
             }
 
             case u'>': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::GreaterThan;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::GreaterThan;
+                token.value.push_back(cp);
                 break;
             }
 
             case u'/': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::Div;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::Div;
+                token.value.push_back(cp);
                 break;
             }
 
             case u':': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::Colon;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::Colon;
+                token.value.push_back(cp);
                 break;
             }
 
             case u'=': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::Assign;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::Assign;
+                token.value.push_back(cp);
                 break;
             }
 
             case u'{': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::LeftBracket;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::LeftBracket;
+                token.value.push_back(cp);
                 break;
             }
 
             case u'}': {
                 scanner.IncreaseIndex();
-                token.type_ = JsTokenType::RightBracket;
-                token.value_.push_back(cp);
+                token.type = JsTokenType::RightBracket;
+                token.value.push_back(cp);
                 break;
             }
 
@@ -645,11 +645,11 @@ namespace jetpack::parser {
                     }
                 }
 
-                token.type_ = JsTokenType::StringLiteral;
-                token.value_ = move(str);
-                token.line_number_ = scanner.LineNumber();
-                token.line_start_ = scanner.LineStart();
-                token.range_ = {
+                token.type = JsTokenType::StringLiteral;
+                token.value = move(str);
+                token.lineNumber = scanner.LineNumber();
+                token.lineStart = scanner.LineStart();
+                token.range = {
                     start,
                     scanner.Index(),
                 };
@@ -664,18 +664,18 @@ namespace jetpack::parser {
                 UString value;
 
                 if (n1 == u'.' && n2 == u'.') {
-                    token.type_ = JsTokenType::Spread;
+                    token.type = JsTokenType::Spread;
                     value = u"...";
                 } else {
-                    token.type_ = JsTokenType::Dot;
+                    token.type = JsTokenType::Dot;
                     value.push_back(u'.');
                 }
 
                 scanner.SetIndex(index + value.size());
 
-                token.line_number_ = scanner.LineNumber();
-                token.line_start_ = scanner.LineStart();
-                token.range_ = {
+                token.lineNumber = scanner.LineNumber();
+                token.lineStart = scanner.LineStart();
+                token.range = {
                     index,
                     scanner.Index(),
                 };
@@ -684,10 +684,10 @@ namespace jetpack::parser {
             }
 
             case u'`': {
-                token.type_ = JsTokenType::Template;
-                token.line_number_ = scanner.LineNumber();
-                token.line_start_ = scanner.LineStart(),
-                token.range_ = {
+                token.type = JsTokenType::Template;
+                token.lineNumber = scanner.LineNumber();
+                token.lineStart = scanner.LineStart(),
+                token.range = {
                     scanner.Index(),
                     scanner.Index(),
                     // TODO: + 1?
@@ -696,13 +696,13 @@ namespace jetpack::parser {
             }
 
             default:
-                token.type_ = JsTokenType::Invalid;
+                token.type = JsTokenType::Invalid;
         }
 
-        if (token.type_ != JsTokenType::Invalid) {
-            token.line_number_ = scanner.LineNumber();
-            token.line_start_ = scanner.LineStart();
-            token.range_ = {
+        if (token.type != JsTokenType::Invalid) {
+            token.lineNumber = scanner.LineNumber();
+            token.lineStart = scanner.LineStart();
+            token.range = {
                 scanner.Index() - 1,
                 scanner.Index(),
             };
@@ -725,11 +725,11 @@ namespace jetpack::parser {
             }
             UString id = scanner.Source().mid(start, scanner.Index() - start);
 
-            token.type_ = JsTokenType::Identifier;
-            token.value_ = move(id);
-            token.line_start_ = scanner.LineStart();
-            token.line_number_ = scanner.LineNumber();
-            token.range_ = {
+            token.type = JsTokenType::Identifier;
+            token.value = move(id);
+            token.lineStart = scanner.LineStart();
+            token.lineNumber = scanner.LineNumber();
+            token.range = {
                 start,
                 scanner.Index(),
             };

@@ -135,35 +135,35 @@ inline bool IsKeywordToken(JsTokenType t) {
 static const char* TokenTypeToCString(JsTokenType tt);
 
 struct Position {
-    std::uint32_t line_;
-    std::uint32_t column_;
+    uint32_t line;
+    uint32_t column;
 
-    Position(): line_(0u), column_(0u) {}
-    Position(std::uint32_t line, std::uint32_t column):
-        line_(line), column_(column) {}
+    Position(): line(0u), column(0u) {}
+    Position(uint32_t l, uint32_t c):
+            line(l), column(c) {}
 };
 
 struct SourceLocation {
 public:
-    Position start_;
-    Position end_;
+    Position start;
+    Position end;
 
     SourceLocation() = default;
-    SourceLocation(Position start, Position end):
-    start_(start), end_(end) {}
+    SourceLocation(Position s, Position e):
+            start(s), end(e) {}
 };
 
 class Token {
 public:
-    JsTokenType type_ = JsTokenType::Invalid;
-    UString value_;
-    SourceLocation loc_;
-    std::uint32_t line_number_;
-    std::uint32_t line_start_;
-    std::pair<std::int32_t, std::int32_t> range_;
-    bool octal_ = false;
-    bool head_ = false;
-    bool tail_ = false;
-    UString cooked_;
+    JsTokenType type = JsTokenType::Invalid;
+    UString value;
+    SourceLocation loc;
+    uint32_t lineNumber = 0;
+    uint32_t lineStart = 0;
+    std::pair<std::int32_t, std::int32_t> range;
+    bool octal = false;
+    bool head = false;
+    bool tail = false;
+    UString cooked;
 
 };
