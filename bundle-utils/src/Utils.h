@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include "./string/UString.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -19,8 +20,6 @@
 #include <unordered_map>
 #include <Windows.h>
 #endif
-
-typedef std::u16string UString;
 
 #ifndef _WIN32
 template <typename Key>
@@ -76,29 +75,8 @@ namespace jetpack::utils {
         return result;
     }
 
-    inline std::u16string To_UTF16(const std::string &s) {
-#ifndef _WIN32
-        std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> conv;
-        return conv.from_bytes(s);
-#else
-        std::int32_t buffer_size = s.size() + 1;
-        char16_t* buffer = new char16_t[buffer_size];
-        memset(buffer, 0, buffer_size);
-
-        static_assert(sizeof(wchar_t) == sizeof(char16_t));
-
-        int ret = MultiByteToWideChar(
-            CP_UTF8, MB_PRECOMPOSED,
-            s.c_str(), s.size(),
-            reinterpret_cast<wchar_t*>(buffer), buffer_size);
-
-        if (ret == 0) {
-            delete[] buffer;
-            return u"";
-        }
-        delete[] buffer;
-        return std::u16string(buffer, ret);
-#endif
+    inline UString To_UTF16(const std::string &s) {
+        return UString::fromUtf8(s.data(), s.size());
     }
 
     inline std::string To_UTF8(const std::u16string &s) {
@@ -169,7 +147,7 @@ namespace jetpack::utils {
         auto utf8 = To_UTF8(tmp);
         auto utf16 = To_UTF16(utf8);
 
-        target.insert(target.end(), utf16.begin(), utf16.end());
+        target.append(utf16);
     }
 
     inline bool IsLineTerminator(char32_t cp) {
@@ -209,11 +187,11 @@ namespace jetpack::utils {
         return (cp >= 0x30 && cp <= 0x39);      // 0..9
     }
 
-    inline std::int32_t ToSimpleInt(const std::u16string& str) {
+    inline std::int32_t ToSimpleInt(const UString& str) {
         std::int64_t result = 0;
 
         for (std::size_t i = 0; i < str.size(); i++) {
-            auto ch = str[i];
+            char16_t ch = str.at(i);
             if (i == 0 && ch == u'0') {
                 return -1;
             }

@@ -81,7 +81,7 @@ namespace jetpack::parser {
 
         UString ScanXHTMLEntity(char16_t quote);
 
-        static std::unique_ptr<robin_hood::unordered_map<std::u16string, char16_t>> XHTMLEntities;
+        static std::unique_ptr<robin_hood::unordered_map<UString, char16_t>> XHTMLEntities;
 
         void InitXHTMLEntities();
 

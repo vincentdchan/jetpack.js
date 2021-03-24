@@ -56,7 +56,7 @@ namespace jetpack {
 
         OutputStream& Write(const char16_t* str, std::uint32_t size);
 
-        [[nodiscard]] std::u16string ToString() const;
+        [[nodiscard]] UString ToString() const;
 
         [[nodiscard]] std::string ToUTF8() const;
 

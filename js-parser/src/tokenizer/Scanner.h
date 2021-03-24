@@ -15,7 +15,7 @@ namespace jetpack {
 
     class Scanner final {
     public:
-        Scanner(std::shared_ptr<std::u16string> source, std::shared_ptr<parser::ParseErrorHandler> error_handler);
+        Scanner(const UString& source, std::shared_ptr<parser::ParseErrorHandler> error_handler);
         Scanner(const Scanner&) = delete;
         Scanner(Scanner&&) = delete;
 
@@ -29,7 +29,7 @@ namespace jetpack {
         };
 
         inline std::int32_t Length() const {
-            return source_->size();
+            return source_.size();
         }
 
         ScannerState SaveState();
@@ -108,12 +108,12 @@ namespace jetpack {
 
         char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
 
-        inline char16_t CharAt(std::uint32_t index) {
-            if (index >= source_->size()) return u'\0';
-            return (*source_)[index];
+        inline char16_t CharAt(std::uint32_t index) const {
+            if (index >= source_.size()) return u'\0';
+            return source_.at(index);
         }
 
-        [[nodiscard]] std::shared_ptr<std::u16string> Source() const {
+        [[nodiscard]] UString Source() const {
             return source_;
         }
 
@@ -125,7 +125,7 @@ namespace jetpack {
         std::uint32_t line_start_ = 0u;
 
         std::shared_ptr<parser::ParseErrorHandler> error_handler_;
-        std::shared_ptr<std::u16string> source_;
+        UString source_;
         bool is_module_ = false;
 
     };

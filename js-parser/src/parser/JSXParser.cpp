@@ -79,8 +79,8 @@ namespace jetpack::parser {
         bool has_added_lit = false;
         if (jsx->opening_element->name->type == SyntaxNodeType::JSXIdentifier) {
             auto jsx_id = std::dynamic_pointer_cast<JSXIdentifier>(jsx->opening_element->name);
-            if (!jsx_id->name.empty()) {
-                char16_t ch = jsx_id->name[0];
+            if (!jsx_id->name.isEmpty()) {
+                char16_t ch = jsx_id->name.at(0);
                 if (ch >= u'a' && ch <= u'z') {
                     auto new_lit = std::make_shared<Literal>();
                     new_lit->str_ = jsx_id->name;
@@ -330,7 +330,7 @@ namespace jetpack::parser {
                 UString open = GetQualifiedElementName(el->opening_->name);
                 UString close = GetQualifiedElementName(closing->name);
                 if (open != close) {
-                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", utils::To_UTF8(open)));
+                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", open.toStdString()));
                 }
                 if (!el_stack.empty()) {
                     auto node = Alloc<JSXElement>();
@@ -723,8 +723,7 @@ namespace jetpack::parser {
                     break;
                 }
             }
-            UString id = scanner.Source()
-                ->substr(start, scanner.Index() - start);
+            UString id = scanner.Source().mid(start, scanner.Index() - start);
 
             token.type_ = JsTokenType::Identifier;
             token.value_ = move(id);
@@ -787,12 +786,12 @@ namespace jetpack::parser {
             InitXHTMLEntities();
 
             // e.g. '&#x41;' becomes just '#x41'
-            UString str = result.substr(1, result.size() - 2);
+            UString str = result.mid(1, result.size() - 2);
             if (numeric && str.size() > 1) {
-                std::string utf8 = utils::To_UTF8(str.substr(1));
+                std::string utf8 = str.mid(1).toStdString();
                 result.push_back(std::stoi(utf8));
             } else if (hex && str.size() > 2) {
-                std::string utf8 = string("0") + utils::To_UTF8(str.substr(1));
+                std::string utf8 = string("0") + str.mid(1).toStdString();
                 result.push_back(std::stoi(utf8, 0, 16));
             } else if (!numeric&& !hex && XHTMLEntities->find(str) != XHTMLEntities->end()) {
                 result.push_back((*XHTMLEntities)[str]);
@@ -840,7 +839,7 @@ namespace jetpack::parser {
     void JSXParser::InitXHTMLEntities() {
         if (XHTMLEntities) return;
 
-        XHTMLEntities.reset(new robin_hood::unordered_map<std::u16string, char16_t> {
+        XHTMLEntities.reset(new robin_hood::unordered_map<UString, char16_t> {
             {u"quot", 0x0022},
             {u"amp", 0x0026},
             {u"apos", 0x0027},
@@ -1097,6 +1096,6 @@ namespace jetpack::parser {
 
     }
 
-    std::unique_ptr<robin_hood::unordered_map<std::u16string, char16_t>> JSXParser::XHTMLEntities;
+    std::unique_ptr<robin_hood::unordered_map<UString, char16_t>> JSXParser::XHTMLEntities;
 
 }

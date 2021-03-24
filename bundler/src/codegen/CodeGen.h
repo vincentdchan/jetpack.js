@@ -107,7 +107,7 @@ namespace jetpack {
             Write(c_str);
         }
 
-        inline void WriteIndentWith(const std::u16string& str) {
+        inline void WriteIndentWith(const UString& str) {
             WriteIndent();
             Write(str);
         }

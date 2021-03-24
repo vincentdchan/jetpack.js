@@ -19,8 +19,8 @@ namespace jetpack::parser {
         };
     }
 
-    ParserContext::ParserContext(Sp<UString> src, const Config& config):
-        config_(config), source_(std::move(src)) {
+    ParserContext::ParserContext(const UString& src, const Config& config):
+        config_(config), source_(src) {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
         scanner_ = make_unique<Scanner>(source_, error_handler_);

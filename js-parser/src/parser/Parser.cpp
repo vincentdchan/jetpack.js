@@ -928,11 +928,11 @@ namespace jetpack::parser {
         Sp<Expression> expr = ParseExpression(scope);
         UString directive;
         if (expr->type == SyntaxNodeType::Literal) {
-            directive = token.value_.substr(1, token.value_.size() - 1);
+            directive = token.value_.mid(1, token.value_.size() - 1);
         }
         ConsumeSemicolon();
 
-        if (!directive.empty()) {
+        if (!directive.isEmpty()) {
             auto node = Alloc<Directive>();
             node->expression = expr;
             node->directive = directive;
@@ -1582,7 +1582,7 @@ namespace jetpack::parser {
             UString key = UString(u"$") + id->name;
 
             if (ctx->label_set_->find(key) != ctx->label_set_->end()) {
-                ThrowError(ParseMessages::Redeclaration, string("Label: ") + utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::Redeclaration, string("Label: ") + id->name.toStdString());
             }
             ctx->label_set_->insert(key);
 
@@ -1629,7 +1629,7 @@ namespace jetpack::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::UnknownLabel, id->name.toStdString());
             }
             label = id;
         }
@@ -1658,7 +1658,7 @@ namespace jetpack::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, utils::To_UTF8(id->name));
+                ThrowError(ParseMessages::UnknownLabel, id->name.toStdString());
             }
         }
 
@@ -2044,7 +2044,7 @@ namespace jetpack::parser {
         for (auto& token : params) {
             UString key = UString(u"$") + token.value_;
             if (param_set.find(key) != param_set.end()) {
-                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + utils::To_UTF8(token.value_));
+                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + token.value_.toStdString());
             }
             param_set.insert(key);
         }
@@ -2343,7 +2343,7 @@ namespace jetpack::parser {
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
-                    ThrowError(ParseMessages::UnexpectedToken, utils::To_UTF8(ctx->lookahead_.value_));
+                    ThrowError(ParseMessages::UnexpectedToken, ctx->lookahead_.value_.toStdString());
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
@@ -2366,12 +2366,12 @@ namespace jetpack::parser {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, ctx->lookahead_.value_.toStdString());
             }
             NextToken();
             auto node = Alloc<ExportAllDeclaration>();
@@ -2435,12 +2435,12 @@ namespace jetpack::parser {
                 ConsumeSemicolon();
             } else if (is_export_from_id) {
                 string message;
-                if (!ctx->lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, ctx->lookahead_.value_.toStdString());
             } else {
                 ConsumeSemicolon();
             }
@@ -2928,12 +2928,12 @@ namespace jetpack::parser {
 
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value_.empty()) {
+                if (!ctx->lookahead_.value_.isEmpty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, utils::To_UTF8(ctx->lookahead_.value_));
+                ThrowError(message, ctx->lookahead_.value_.toStdString());
             }
             NextToken();
             src = ParseModuleSpecifier();

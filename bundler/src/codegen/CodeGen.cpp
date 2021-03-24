@@ -16,7 +16,7 @@ namespace jetpack {
 #define DEF_OP_PREC(OP_STR, OP_VAL) } else if (op == OP_STR) { \
     return OP_VAL;
 
-    inline int BinaryStrPrecedence(const std::u16string& op) {
+    inline int BinaryStrPrecedence(const UString& op) {
         if (false) {
 
         DEF_OP_PREC(u"||", 1)
@@ -785,7 +785,7 @@ namespace jetpack {
         Write(u"{");
         if (!node->properties.empty()) {
             WriteLineEnd();
-            u16string comma = u"," + utils::To_UTF16(config_.line_end);
+            UString comma = u"," + utils::To_UTF16(config_.line_end);
             std::size_t i = 0;
             while (true) {
                 auto prop = node->properties[i];

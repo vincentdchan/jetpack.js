@@ -41,7 +41,7 @@ namespace jetpack::parser {
             uint32_t column = 0;
         };
 
-        ParserContext(Sp<UString> src, const Config& config);
+        ParserContext(const UString& src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;
 
@@ -53,7 +53,7 @@ namespace jetpack::parser {
         std::unique_ptr<Scanner> scanner_;
 
         Sp<ParseErrorHandler> error_handler_;
-        Sp<UString> source_;
+        UString source_;
         bool has_line_terminator_;
 
         std::stack<Token> tokens_;

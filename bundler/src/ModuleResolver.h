@@ -95,7 +95,7 @@ namespace jetpack {
         /**
          * Temp for parallel codegen
          */
-        std::u16string codegen_result;
+        UString codegen_result;
 
         /**
          * For Postorder traversal
@@ -126,7 +126,7 @@ namespace jetpack {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
-        static std::u16string ReadFileStream(const std::string& filename);
+        static UString ReadFileStream(const std::string& filename);
 
         ModuleResolver() : mod_counter_(0) {
             name_generator = ReadableNameGenerator::Make();

@@ -64,7 +64,7 @@ namespace jetpack::parser {
         Token NextRegexToken();
 
         inline UString GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source()->substr(token.range_.first, token.range_.second - token.range_.first);
+            return ctx->scanner_->Source().mid(token.range_.first, token.range_.second - token.range_.first);
         }
 
         void TolerateError(const std::string& message);

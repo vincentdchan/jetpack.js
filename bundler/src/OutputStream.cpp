@@ -17,7 +17,7 @@ namespace jetpack {
     }
 
     OutputStream& FileOutputStream::operator<<(const UString& str) {
-        ofs << utils::To_UTF8(str);
+        ofs << str.toStdString();
         return *this;
     }
 
@@ -57,7 +57,7 @@ namespace jetpack {
     }
 
     OutputStream& MemoryOutputStream::operator<<(const UString &str) {
-        return Write(str.c_str(), str.size());
+        return Write(str.constData(), str.size());
     }
 
     OutputStream& MemoryOutputStream::operator<<(char ch) {
@@ -66,12 +66,12 @@ namespace jetpack {
         return Write(buffer, 1);
     }
 
-    std::u16string MemoryOutputStream::ToString() const {
-        return std::u16string(data_, size_);
+    UString MemoryOutputStream::ToString() const {
+        return UString(data_, size_);
     }
 
     std::string MemoryOutputStream::ToUTF8() const {
-        return utils::To_UTF8(ToString());
+        return ToString().toStdString();
     }
 
     MemoryOutputStream::~MemoryOutputStream() {

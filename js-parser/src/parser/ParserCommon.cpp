@@ -50,7 +50,7 @@ namespace jetpack::parser {
         }
         value = token.value_;
 
-        string final_message = fmt::format(msg, utils::To_UTF8(value));
+        string final_message = fmt::format(msg, value.toStdString());
         return UnexpectedToken(token, final_message);
     }
 
