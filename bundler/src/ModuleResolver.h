@@ -15,15 +15,11 @@
 #include <functional>
 #include <fstream>
 #include <mutex>
-#include <parser/Parser.hpp>
 
-#include "./UniqueNameGenerator.h"
+#include "ModuleFile.h"
 #include "GlobalImportHandler.h"
-#include "codegen/CodeGen.h"
 
 namespace jetpack {
-
-    class ModuleResolver;
 
     class WorkerError {
     public:
@@ -50,66 +46,6 @@ namespace jetpack {
         WokerErrorCollection(): ModuleResolveException("", "") {}
 
         void PrintToStdErr() override;
-
-    };
-
-    struct RenamerCollection {
-    public:
-        std::vector<Sp<MinifyNameGenerator>> content;
-        std::shared_ptr<UnresolvedNameCollector> idLogger;
-
-        std::mutex mutex_;
-
-    };
-
-    class ModuleFile {
-    public:
-        /**
-         * Unique id in module resolver
-         */
-        std::int32_t id = 0;
-
-        /**
-         * Abosolute path
-         */
-        std::string path;
-
-        UString default_export_name;
-
-        std::weak_ptr<ModuleResolver> module_resolver;
-
-        Sp<Module> ast;
-
-        /**
-         * relative path -> absolute path
-         */
-        HashMap<std::string, std::string> resolved_map;
-
-        /**
-         * Temp for parallel codegen
-         */
-        UString codegen_result;
-
-        /**
-         * For Postorder traversal
-         */
-        bool visited_mark = false;
-
-        /**
-         * For Postorder traversal
-         */
-        std::vector<std::weak_ptr<ModuleFile>> ref_mods;
-
-        void RenameInnerScopes(RenamerCollection& col);
-        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
-
-        void CodeGenFromAst(const CodeGen::Config &config);
-
-        UString GetModuleVarName();
-
-        inline ExportManager& GetExportManager() {
-            return ast->scope->export_manager;
-        }
 
     };
 
