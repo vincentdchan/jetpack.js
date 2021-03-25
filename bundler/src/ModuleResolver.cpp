@@ -50,7 +50,7 @@ namespace jetpack {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::String;
         lit->str_ = str;
-        lit->raw = u"\"" + str + u"\"";
+        lit->raw.append(u'"').append(str).append(u'"');
         return lit;
     }
 

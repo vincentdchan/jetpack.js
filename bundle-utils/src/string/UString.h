@@ -88,6 +88,9 @@ public:
 
     std::int32_t toInt() const;
 
+    inline void clear()
+    { if (!isNull()) *this = UString(); }
+
 private:
     UString(uint32_t size, bool init) noexcept;
     explicit UString(DataPointer &&dd) : d(std::move(dd)) {}
