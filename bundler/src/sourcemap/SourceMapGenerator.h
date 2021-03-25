@@ -33,16 +33,16 @@ namespace jetpack {
 
         std::stringstream ss;
 
-        SourceMapGenerator();
+        SourceMapGenerator() = delete;
 
-        SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver,
+        SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver, // nullable
                            const std::string& filename);
 
         void SetSourceRoot(const std::string& sr);
 
         void AddSource(const std::string& src);
 
-        bool AddLocation(const UString& name, int after_col, int file_index, int before_line, int before_col);
+        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
 
         inline void EndLine() {
             mappings.push_back(';');
@@ -53,10 +53,14 @@ namespace jetpack {
     private:
         std::string mappings;
         json result;
+        int32_t src_counter_ = 0;
 
         int32_t GetIdOfName(const UString& name);
 
+        int32_t GetFilenameIndexByModuleId(int32_t moduleId);
+
         robin_hood::unordered_map<UString, int32_t> names_map_;
+        robin_hood::unordered_map<int32_t, int32_t> module_id_to_index_;
 
         std::shared_ptr<ModuleResolver> module_resolver_;
 

@@ -108,6 +108,11 @@ namespace jetpack {
             return modules_table_.modCount();
         }
 
+        // nullable!
+        inline Sp<ModuleFile> findModuleById(int32_t id) {
+            return modules_table_.findModuleById(id);
+        }
+
         std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
 
         ModulesTable modules_table_;

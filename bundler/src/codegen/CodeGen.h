@@ -12,8 +12,8 @@
 #include "Utils.h"
 #include "NodeTraverser.h"
 #include "string/UString.h"
-#include "../sourcemap/SourceMapGenerator.h"
-#include "../OutputStream.h"
+#include "sourcemap/SourceMapGenerator.h"
+#include "OutputStream.h"
 
 namespace jetpack {
 
@@ -53,7 +53,11 @@ namespace jetpack {
 
         };
 
-        CodeGen(const Config& config, OutputStream& output_stream);
+        CodeGen(
+                const Config& config,
+                const Sp<SourceMapGenerator>& sourceMapGenerator,
+                OutputStream& output_stream
+                );
 
     private:
         inline void Write(char ch) {
@@ -85,8 +89,8 @@ namespace jetpack {
         }
 
         inline void WriteLineEnd() {
-            if (config_.source_map) {
-                sourceMapGenerator_.EndLine();
+            if (sourceMapGenerator_) {
+                sourceMapGenerator_->EndLine();
             }
             if (!config_.minify) {
                 output << config_.line_end;
@@ -190,7 +194,7 @@ namespace jetpack {
             return output;
         }
 
-        inline SourceMapGenerator& SourceMap() {
+        inline Sp<SourceMapGenerator> SourceMap() {
             return sourceMapGenerator_;
         }
 
@@ -211,7 +215,7 @@ namespace jetpack {
 
         State state_;
 
-        SourceMapGenerator sourceMapGenerator_;
+        Sp<SourceMapGenerator> sourceMapGenerator_;
 
         OutputStream& output;
 

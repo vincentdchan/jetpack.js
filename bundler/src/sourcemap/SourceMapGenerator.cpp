@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include "SourceMapGenerator.h"
 #include "ModuleResolver.h"
 
@@ -86,9 +87,9 @@ namespace jetpack {
         return true;
     }
 
-    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator(nullptr, "unknown") {
-
-    }
+//    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator(nullptr, "unknown") {
+//
+//    }
 
     SourceMapGenerator::SourceMapGenerator(
             const std::shared_ptr<ModuleResolver>& resolver,
@@ -121,13 +122,37 @@ namespace jetpack {
         return next_id;
     }
 
-    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int file_index, int before_line, int before_col) {
+    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col) {
         int32_t var_index = GetIdOfName(name);
+        int32_t file_index = GetFilenameIndexByModuleId(fileId);
+        if (unlikely(file_index < 0)) {
+            return false;
+        }
         if (unlikely(!GenerateVLQStr(ss, after_col, file_index, before_line, before_col, var_index))) {
             return false;
         }
         ss << ",";
         return true;
+    }
+
+    int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t moduleId) {
+        auto iter = module_id_to_index_.find(moduleId);
+        if (iter != module_id_to_index_.end()) {
+            // found;
+            return iter->second;
+        }
+        auto mod = module_resolver_->findModuleById(moduleId);
+        if (unlikely(mod == nullptr)) {
+            // error;
+            std::cerr << "sourcemap: get module by id failed: " << moduleId << std::endl;
+            return -1;
+        }
+
+        AddSource(mod->path);
+
+        int32_t index = src_counter_++;
+        module_id_to_index_[mod->id] = index;
+        return index;
     }
 
     void SourceMapGenerator::Finalize() {

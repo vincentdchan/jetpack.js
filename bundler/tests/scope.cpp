@@ -22,7 +22,7 @@ inline Sp<Module> ParseString(const std::string& src) {
 inline std::string GenCode(Sp<Module> mod) {
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     return ss.ToUTF8();
 }
@@ -56,7 +56,7 @@ TEST(Scope, Rename) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), "var new_name = 3;\n");
 }
@@ -76,7 +76,7 @@ TEST(Scope, RenameImportNamespace) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), "import * as new_name from 'main';\n");
 }
@@ -103,7 +103,7 @@ TEST(Scope, RenameFunction1) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -128,7 +128,7 @@ TEST(Scope, RenameFunction2) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -153,7 +153,7 @@ TEST(Scope, RenameFunction3) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -172,7 +172,7 @@ TEST(Scope, RenameObjectPattern) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -191,7 +191,7 @@ TEST(Scope, RenameObjectPattern2) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -210,7 +210,7 @@ TEST(Scope, RenameObjectPattern3) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -239,7 +239,7 @@ TEST(Scope, Cls) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -258,7 +258,7 @@ TEST(Scope, RenameImport) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -301,7 +301,7 @@ TEST(Scope, RenameImportDefault) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -322,7 +322,7 @@ TEST(Scope, RenameImport2) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -343,7 +343,7 @@ TEST(Scope, RenameExport1) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -364,7 +364,7 @@ TEST(Scope, RenameExport2) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }

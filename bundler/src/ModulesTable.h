@@ -30,6 +30,9 @@ namespace jetpack {
 
         Sp<ModuleFile> createNewIfNotExists(const std::string& path, bool& isNew);
 
+        // nullable!
+        Sp<ModuleFile> findModuleById(int32_t id);
+
         inline int32_t modCount() const {
             return mod_counter_.load();
         }

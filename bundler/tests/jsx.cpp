@@ -26,7 +26,7 @@ inline std::string ParseJSXAndCodeGen(UString content) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
     return ss.ToUTF8();
 }

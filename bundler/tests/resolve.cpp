@@ -45,7 +45,7 @@ inline std::string ReplaceDefault(const std::string& src) {
 
     MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod->ast);
 
     return ss.ToUTF8();

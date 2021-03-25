@@ -173,8 +173,8 @@ namespace jetpack {
         }
     }
 
-    void GlobalImportHandler::GenCode(const CodeGen::Config &config, OutputStream& os) {
-        CodeGen codegen(config, os);
+    void GlobalImportHandler::GenCode(const CodeGen::Config &config, const Sp<SourceMapGenerator>& sourceMapGenerator, OutputStream& os) {
+        CodeGen codegen(config, sourceMapGenerator, os);
 
         for (auto& decl : gen_import_decls) {
             codegen.Traverse(decl);

@@ -51,7 +51,13 @@ namespace jetpack {
             memoryOutputStream << u"// " << UString::fromStdString(this->path) << u"\n";
         }
 
-        CodeGen codegen(config, memoryOutputStream);
+        Sp<SourceMapGenerator> sourceMapGenerator;
+        if (config.source_map) {
+            // TODO: filename?
+            sourceMapGenerator = std::make_shared<SourceMapGenerator>(module_resolver.lock(), "");
+        }
+
+        CodeGen codegen(config, sourceMapGenerator, memoryOutputStream);
         codegen.Traverse(ast);
         codegen_result = memoryOutputStream.ToString();
     }

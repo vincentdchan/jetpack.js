@@ -34,6 +34,15 @@ namespace jetpack {
         return newMod;
     }
 
+    Sp<ModuleFile> ModulesTable::findModuleById(int32_t id) {
+        std::lock_guard guard(m);
+        auto iter = idToModule.find(id);
+        if (iter == idToModule.end()) {
+            return nullptr;
+        }
+        return iter->second;
+    }
+
     void ModulesTable::insertWithoutLock(const Sp<ModuleFile> &mf) {
         mf->id = mod_counter_++;
         pathToModule[mf->path] = mf;

@@ -472,14 +472,16 @@ namespace jetpack {
 
         // END every modules gen their own code
 
+        auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), "");
+
         FileOutputStream fileOutputStream(out_path);
-        global_import_handler_.GenCode(config, fileOutputStream);
+        global_import_handler_.GenCode(config, sourcemapGenerator, fileOutputStream);
 
         ClearAllVisitedMark();
         MergeModules(entry_module, fileOutputStream);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, fileOutputStream);
+        CodeGen codegen(config, sourcemapGenerator, fileOutputStream);
         codegen.Traverse(final_export);
 
         fileOutputStream.Close();

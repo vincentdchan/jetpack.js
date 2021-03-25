@@ -55,8 +55,11 @@ namespace jetpack {
         return 0;
     }
 
-    CodeGen::CodeGen(const Config& config, OutputStream& output_stream):
-            config_(config), output(output_stream) {}
+    CodeGen::CodeGen(
+            const Config& config,
+            const Sp<SourceMapGenerator>& sourceMapGenerator,
+            OutputStream& output_stream):
+            config_(config), sourceMapGenerator_(sourceMapGenerator), output(output_stream) {}
 
     int CodeGen::ExpressionPrecedence(const Sp<SyntaxNode>& node) {
         switch (node->type) {
@@ -991,7 +994,9 @@ namespace jetpack {
         } else {
             Write(node->name, node);
         }
-        sourceMapGenerator_.AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
+        if (sourceMapGenerator_) {
+            sourceMapGenerator_->AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
+        }
     }
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
