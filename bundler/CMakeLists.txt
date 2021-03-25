@@ -4,24 +4,26 @@ project(js-bundler)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
-        "src/OutputStream.h"
-        "src/OutputStream.cpp"
-        "src/ModuleFile.h"
-        "src/ModuleFile.cpp"
-        "src/ModuleResolver.h"
-        "src/ModuleResolver.cpp"
-        "src/UniqueNameGenerator.h"
-        "src/UniqueNameGenerator.cpp"
-        "src/GlobalImportHandler.h"
-        "src/GlobalImportHandler.cpp"
-        "src/Error.h"
-        "src/Error.cpp"
-        "src/sourcemap/SourceMapGenerator.h"
-        "src/sourcemap/SourceMapGenerator.cpp"
-        "src/codegen/NodeTraverser.h"
-        "src/codegen/NodeTraverser.cpp"
-        "src/codegen/CodeGen.h"
-        "src/codegen/CodeGen.cpp")
+        src/OutputStream.h
+        src/OutputStream.cpp
+        src/ModuleFile.h
+        src/ModuleFile.cpp
+        src/ModulesTable.h
+        src/ModulesTable.cpp
+        src/ModuleResolver.h
+        src/ModuleResolver.cpp
+        src/UniqueNameGenerator.h
+        src/UniqueNameGenerator.cpp
+        src/GlobalImportHandler.h
+        src/GlobalImportHandler.cpp
+        src/Error.h
+        src/Error.cpp
+        src/sourcemap/SourceMapGenerator.h
+        src/sourcemap/SourceMapGenerator.cpp
+        src/codegen/NodeTraverser.h
+        src/codegen/NodeTraverser.cpp
+        src/codegen/CodeGen.h
+        src/codegen/CodeGen.cpp)
 
 if (UNIX AND NOT EMSCRIPTEN)
 
@@ -48,6 +50,7 @@ endif()
 include_directories(PUBLIC
         "../bundle-utils/src"
         "../esparser/src"
+        "./src"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"

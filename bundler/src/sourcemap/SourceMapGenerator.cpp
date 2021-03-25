@@ -2,9 +2,10 @@
 // Created by Duzhong Chen on 2020/7/13.
 //
 
-#include "./SourceMapGenerator.h"
 #include <cstdlib>
 #include <cstring>
+#include "SourceMapGenerator.h"
+#include "ModuleResolver.h"
 
 #define IntToVLQBufferSize 8
 
@@ -24,19 +25,19 @@ namespace jetpack {
     bool SourceMapGenerator::GenerateVLQStr(stringstream& ss, int transformed_column,
             int file_index, int before_line, int before_column, int var_index) {
 
-        if (!IntToVLQ(ss, transformed_column)) {
+        if (unlikely(!IntToVLQ(ss, transformed_column))) {
             return false;
         }
 
-        if (!IntToVLQ(ss, file_index)) {
+        if (unlikely(!IntToVLQ(ss, file_index))) {
             return false;
         }
 
-        if (!IntToVLQ(ss, before_line)) {
+        if (unlikely(!IntToVLQ(ss, before_line))) {
             return false;
         }
 
-        if (!IntToVLQ(ss, before_column)) {
+        if (unlikely(!IntToVLQ(ss, before_column))) {
             return false;
         }
 
@@ -85,11 +86,14 @@ namespace jetpack {
         return true;
     }
 
-    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator("unknown") {
+    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator(nullptr, "unknown") {
 
     }
 
-    SourceMapGenerator::SourceMapGenerator(const std::string& filename) {
+    SourceMapGenerator::SourceMapGenerator(
+            const std::shared_ptr<ModuleResolver>& resolver,
+            const std::string& filename
+    ): module_resolver_(resolver) {
         result["version"] = 3;
         result["file"] = filename;
         result["sourceRoot"] = "";
@@ -105,11 +109,25 @@ namespace jetpack {
         result["sources"].push_back(src);
     }
 
-    bool SourceMapGenerator::AddLocation(const std::string &name, int after_col, int file_index, int before_line, int before_col) {
-        int var_index = name_counter_++;
-        result["names"].push_back(name);
+    int32_t SourceMapGenerator::GetIdOfName(const UString& name) {
+        auto iter = names_map_.find(name);
+        if (iter != names_map_.end()) {
+            return iter->second;
+        }
 
-        return GenerateVLQStr(ss, after_col, file_index, before_line, before_col, var_index);
+        int32_t next_id = names_map_.size();
+        names_map_[name] = next_id;
+        result["names"].push_back(name.toStdString());
+        return next_id;
+    }
+
+    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int file_index, int before_line, int before_col) {
+        int32_t var_index = GetIdOfName(name);
+        if (unlikely(!GenerateVLQStr(ss, after_col, file_index, before_line, before_col, var_index))) {
+            return false;
+        }
+        ss << ",";
+        return true;
     }
 
     void SourceMapGenerator::Finalize() {

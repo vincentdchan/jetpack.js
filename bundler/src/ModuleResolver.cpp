@@ -144,7 +144,6 @@ namespace jetpack {
                                               const char16_t* value) {
 
         entry_module = std::make_shared<ModuleFile>();
-        entry_module->id = mod_counter_++;
         entry_module->module_resolver = shared_from_this();
         entry_module->path = "memory0";
 
@@ -157,7 +156,7 @@ namespace jetpack {
             global_import_handler_.HandleImport(import_decl);
         });
 
-        modules_map_[entry_module->path] = entry_module;
+        modules_table_.insert(entry_module);
 
         entry_module->ast = parser.ParseModule();
 
@@ -182,16 +181,11 @@ namespace jetpack {
             return;
         }
         entry_module = std::make_shared<ModuleFile>();
-        entry_module->id = mod_counter_++;
         entry_module->module_resolver = shared_from_this();
         entry_module->path = path;
 
-        {
-            std::lock_guard<std::mutex> guard(map_mutex_);
-            if (modules_map_.find(path) != modules_map_.end()) {
-                return;  // exists;
-            }
-            modules_map_[path] = entry_module;
+        if (unlikely(!modules_table_.insertIfNotExists(entry_module))) {
+            return;  // exists;
         }
 
         ParseFile(config, entry_module);
@@ -266,40 +260,33 @@ namespace jetpack {
 
         mf->resolved_map[path] = source_path;
 
-        std::shared_ptr<ModuleFile> new_mf;
-        {
-            std::lock_guard<std::mutex> guard(map_mutex_);
-            auto exist_iter = modules_map_.find(source_path);
-            if (exist_iter != modules_map_.end()) {  // exists
-                mf->ref_mods.push_back(exist_iter->second);
-                return;
-            }
-
-            new_mf = std::make_shared<ModuleFile>();
-            new_mf->id = mod_counter_++;
-            new_mf->module_resolver = shared_from_this();
-            new_mf->path = std::move(source_path);
-            modules_map_[new_mf->path] = new_mf;
+        bool isNew = false;
+        Sp<ModuleFile> childMod = modules_table_.createNewIfNotExists(source_path, isNew);
+        if (!isNew) {
+            mf->ref_mods.push_back(childMod);
+            return;
         }
+        childMod->module_resolver = shared_from_this();
+        childMod->path = std::move(source_path);
 
-        mf->ref_mods.push_back(new_mf);
+        mf->ref_mods.push_back(childMod);
 
-        EnqueueOne([this, &config, new_mf] {
+        EnqueueOne([this, &config, childMod] {
             try {
-                ParseFile(config, new_mf);
+                ParseFile(config, childMod);
             } catch (parser::ParseError& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ new_mf->path, ex.ErrorMessage() });
+                worker_errors_.push_back({ childMod->path, ex.ErrorMessage() });
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name.toStdString(),
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
-                worker_errors_.push_back({ new_mf->path, std::move(message) });
+                worker_errors_.push_back({ childMod->path, std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ new_mf->path, ex.what() });
+                worker_errors_.push_back({ childMod->path, ex.what() });
             }
             FinishOne();
         });
@@ -384,8 +371,8 @@ namespace jetpack {
                 return;
             }
 
-            auto iter = modules_map_.find(resolved_path->second);
-            if (iter == modules_map_.end()) {
+            auto iter = modules_table_.pathToModule.find(resolved_path->second);
+            if (iter == modules_table_.pathToModule.end()) {
                 WorkerError err { mod->path, format("module not found: {}", resolved_path->second) };
                 worker_errors_.emplace_back(std::move(err));
                 return;
@@ -471,7 +458,7 @@ namespace jetpack {
 
         // BEGIN every modules gen their own code
         ClearAllVisitedMark();
-        for (auto& tuple : modules_map_) {
+        for (auto& tuple : modules_table_.pathToModule) {
             EnqueueOne([this, mod = tuple.second, config] {
                 mod->CodeGenFromAst(config);
                 FinishOne();
@@ -503,7 +490,7 @@ namespace jetpack {
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
-        for (auto& tuple : modules_map_) {
+        for (auto& tuple : modules_table_.pathToModule) {
             EnqueueOne([this, mod = tuple.second, &collection] {
                 mod->RenameInnerScopes(collection);
                 FinishOne();
@@ -863,7 +850,7 @@ namespace jetpack {
                     format("can not resolver path: {}", import_decl->source->str_.toStdString()));
         }
 
-        auto target_module = modules_map_[full_path_iter->second];
+        auto target_module = modules_table_.pathToModule[full_path_iter->second];
 
         if (target_module == nullptr) {
             throw ModuleResolveException(mf->path, format("can not find module: {}", full_path_iter->second));
@@ -911,10 +898,11 @@ namespace jetpack {
                 auto& relative_path = import_decl->source->str_;
                 std::string absolute_path = mf->resolved_map[relative_path.toStdString()];
 
-                auto ref_mod = modules_map_[absolute_path];
-                if (ref_mod == nullptr) {
+                auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
+                if (ref_mod_iter == modules_table_.pathToModule.end()) {
                     throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
                 }
+                auto& ref_mod = ref_mod_iter->second;
 
                 auto& export_manager = ref_mod->GetExportManager();
 
@@ -969,10 +957,11 @@ namespace jetpack {
 
                 }
 
-                auto ref_mod = modules_map_[absolute_path];
-                if (ref_mod == nullptr) {
+                auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
+                if (ref_mod_iter == modules_table_.pathToModule.end()) {
                     throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
                 }
+                auto& ref_mod = ref_mod_iter->second;
 
                 std::set<std::int32_t> visited_mods;
                 auto local_export_opt = FindLocalExportByPath(absolute_path, target_export_name, visited_mods);
@@ -1000,10 +989,11 @@ namespace jetpack {
     ModuleResolver::FindLocalExportByPath(const std::string &path,
                                           const UString& export_name,
                                           std::set<std::int32_t>& visited) {
-        auto mod = modules_map_[path];
-        if (mod == nullptr) {
+        auto modIter = modules_table_.pathToModule.find(path);
+        if (modIter == modules_table_.pathToModule.end()) {
             return std::nullopt;
         }
+        auto& mod = modIter->second;
 
         if (visited.find(mod->id) != visited.end()) {
             return std::nullopt;
@@ -1054,7 +1044,7 @@ namespace jetpack {
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {
         auto result = std::make_shared<ExportNamedDeclaration>();
 
-        for (auto& tuple : modules_map_) {
+        for (auto& tuple : modules_table_.pathToModule) {
             tuple.second->visited_mark = false;
         }
 

@@ -17,6 +17,7 @@
 #include <mutex>
 
 #include "ModuleFile.h"
+#include "ModulesTable.h"
 #include "GlobalImportHandler.h"
 
 namespace jetpack {
@@ -57,7 +58,7 @@ namespace jetpack {
     public:
         static UString ReadFileStream(const std::string& filename);
 
-        ModuleResolver() : mod_counter_(0) {
+        ModuleResolver() {
             name_generator = ReadableNameGenerator::Make();
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
         }
@@ -94,7 +95,7 @@ namespace jetpack {
         void MergeModules(const Sp<ModuleFile>& mf, OutputStream& out_path);
 
         inline void ClearAllVisitedMark() {
-            for (auto& tuple : modules_map_) {
+            for (auto& tuple : modules_table_.pathToModule) {
                 tuple.second->visited_mark = false;
             }
         }
@@ -103,13 +104,13 @@ namespace jetpack {
             name_generator = std::move(generator);
         }
 
-        inline std::int32_t ModCount() const {
-            return mod_counter_;
+        inline int32_t ModCount() const {
+            return modules_table_.modCount();
         }
 
         std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
 
-        HashMap<std::string, Sp<ModuleFile>> modules_map_;
+        ModulesTable modules_table_;
 
         json GetImportStat();
         std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
@@ -160,11 +161,9 @@ namespace jetpack {
 
         GlobalImportHandler global_import_handler_;
 
-        std::shared_ptr<UniqueNameGenerator> name_generator;
+        Sp<UniqueNameGenerator> name_generator;
 
-        std::shared_ptr<UnresolvedNameCollector> id_logger_;
-
-        std::mutex map_mutex_;
+        Sp<UnresolvedNameCollector> id_logger_;
 
         Sp<ModuleFile> entry_module;
 
@@ -173,13 +172,11 @@ namespace jetpack {
         std::vector<WorkerError> worker_errors_;
         std::mutex error_mutex_;
 
-        std::int32_t enqueued_files_count_ = 0;
-        std::int32_t finished_files_count_ = 0;
+        int32_t enqueued_files_count_ = 0;
+        int32_t finished_files_count_ = 0;
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;
-
-        std::atomic<std::int32_t> mod_counter_;
 
         bool trace_file = true;
 

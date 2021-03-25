@@ -8,7 +8,10 @@
 #include <vector>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <memory>
+#include <robin_hood.h>
 #include <tsl/ordered_map.h>
+#include "string/UString.h"
 
 namespace jetpack {
 
@@ -20,6 +23,8 @@ namespace jetpack {
 
     using json = nlohmann::basic_json<ordered_map>;
 
+    class ModuleResolver;
+
     class SourceMapGenerator {
     public:
         static bool GenerateVLQStr(std::stringstream& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
@@ -30,13 +35,14 @@ namespace jetpack {
 
         SourceMapGenerator();
 
-        SourceMapGenerator(const std::string& filename);
+        SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver,
+                           const std::string& filename);
 
         void SetSourceRoot(const std::string& sr);
 
         void AddSource(const std::string& src);
 
-        bool AddLocation(const std::string& name, int after_col, int file_index, int before_line, int before_col);
+        bool AddLocation(const UString& name, int after_col, int file_index, int before_line, int before_col);
 
         inline void EndLine() {
             mappings.push_back(';');
@@ -45,11 +51,15 @@ namespace jetpack {
         void Finalize();
 
     private:
-        int name_counter_ = 0;
         std::string mappings;
         json result;
+
+        int32_t GetIdOfName(const UString& name);
+
+        robin_hood::unordered_map<UString, int32_t> names_map_;
+
+        std::shared_ptr<ModuleResolver> module_resolver_;
 
     };
 
 }
-

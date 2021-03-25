@@ -991,6 +991,7 @@ namespace jetpack {
         } else {
             Write(node->name, node);
         }
+        sourceMapGenerator_.AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
     }
 
     void CodeGen::Traverse(const Sp<Literal> &lit) {
