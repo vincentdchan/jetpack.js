@@ -13,6 +13,7 @@
 
 namespace jetpack {
     class ModuleResolver;
+    class ModuleProvider;
 
     struct RenamerCollection {
     public:
@@ -37,7 +38,10 @@ namespace jetpack {
 
         UString default_export_name;
 
-        std::weak_ptr<ModuleResolver> module_resolver;
+        // interface to provide content by contents;
+        Sp<ModuleProvider> provider;
+
+        Weak<ModuleResolver> module_resolver;
 
         Sp<Module> ast;
 
@@ -66,7 +70,9 @@ namespace jetpack {
 
         void CodeGenFromAst(const CodeGen::Config &config);
 
-        UString GetModuleVarName();
+        UString GetModuleVarName() const;
+
+        UString GetSource() const;
 
         inline ExportManager& GetExportManager() {
             return ast->scope->export_manager;

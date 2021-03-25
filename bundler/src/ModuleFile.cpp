@@ -62,9 +62,14 @@ namespace jetpack {
         codegen_result = memoryOutputStream.ToString();
     }
 
-    UString ModuleFile::GetModuleVarName() {
+    UString ModuleFile::GetModuleVarName() const {
         std::string tmp = "mod_" + std::to_string(id);
         return UString::fromStdString(tmp);
+    }
+
+    UString ModuleFile::GetSource() const {
+        assert(provider);
+        return provider->resolve(*this, path);
     }
 
 

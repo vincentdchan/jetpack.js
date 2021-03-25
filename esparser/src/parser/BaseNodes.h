@@ -5,12 +5,10 @@
 
 #include <memory>
 #include "NodeTypes.h"
-#include "../macros.h"
-#include "../tokenizer/Token.h"
-#include "../tokenizer/Comment.h"
-
-template <typename T>
-using Sp = std::shared_ptr<T>;
+#include "Utils.h"
+#include "macros.h"
+#include "tokenizer/Token.h"
+#include "tokenizer/Comment.h"
 
 typedef double JS_Number;
 typedef UString JS_RegExp;

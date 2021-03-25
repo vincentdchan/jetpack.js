@@ -16,18 +16,13 @@
 #include <fstream>
 #include <mutex>
 
+#include "ModuleProvider.h"
 #include "ModuleFile.h"
 #include "ModulesTable.h"
 #include "GlobalImportHandler.h"
+#include "WorkerError.h"
 
 namespace jetpack {
-
-    class WorkerError {
-    public:
-        std::string file_path;
-        std::string error_content;
-
-    };
 
     class ModuleResolveException : std::exception {
     public:
@@ -56,8 +51,6 @@ namespace jetpack {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
-        static UString ReadFileStream(const std::string& filename);
-
         ModuleResolver() {
             name_generator = ReadableNameGenerator::Make();
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
@@ -70,7 +63,8 @@ namespace jetpack {
         void BeginFromEntryString(const parser::ParserContext::Config& config,
                                   const char16_t* str);
 
-        void ParseFileFromPath(const parser::ParserContext::Config& config,
+        void ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
+                               const parser::ParserContext::Config& config,
                                const std::string& path);
 
         void ParseFile(const parser::ParserContext::Config& config,
@@ -118,7 +112,7 @@ namespace jetpack {
         ModulesTable modules_table_;
 
         json GetImportStat();
-        std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
+        Vec<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
 
         void RenameAllRootLevelVariable();
 
@@ -127,6 +121,8 @@ namespace jetpack {
         }
 
     private:
+        void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::ParserContext::Config& config, const std::string& resolvedPath);
+
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&,
@@ -164,6 +160,9 @@ namespace jetpack {
 
         Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
 
+        // return nullable
+        std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
+
         GlobalImportHandler global_import_handler_;
 
         Sp<UniqueNameGenerator> name_generator;
@@ -174,7 +173,9 @@ namespace jetpack {
 
         std::unique_ptr<ThreadPool> thread_pool_;
 
-        std::vector<WorkerError> worker_errors_;
+        Vec<Sp<ModuleProvider>> providers_;
+
+        Vec<WorkerError> worker_errors_;
         std::mutex error_mutex_;
 
         int32_t enqueued_files_count_ = 0;

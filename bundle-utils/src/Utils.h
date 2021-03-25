@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <vector>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -126,3 +127,12 @@ namespace jetpack::utils {
     }
 
 }
+
+template <typename T>
+using Sp = std::shared_ptr<T>;
+
+template <typename T>
+using Weak = std::weak_ptr<T>;
+
+template <typename T>
+using Vec = std::vector<T>;

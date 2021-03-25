@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCE_FILES
         src/OutputStream.h
         src/OutputStream.cpp
+        src/WorkerError.h
+        src/ModuleProvider.h
+        src/ModuleProvider.cpp
         src/ModuleFile.h
         src/ModuleFile.cpp
         src/ModulesTable.h

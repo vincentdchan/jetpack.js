@@ -94,6 +94,10 @@ namespace jetpack {
     void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config,
                                         std::string base_path,
                                         std::string target_path) {
+        // push file provider
+        auto fileProvider = std::make_shared<FileModuleProvider>(base_path);
+        providers_.push_back(fileProvider);
+
         std::string path;
         if (target_path.empty()) {
             return;
@@ -105,84 +109,30 @@ namespace jetpack {
             path = p.ToString();
         }
 
-        auto thread_pool_size = std::thread::hardware_concurrency();
-        thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
-
-        EnqueueOne([this, &config, &path] {
-            try {
-                ParseFileFromPath(config, path);
-            } catch (parser::ParseError& ex) {
-                std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ path, ex.ErrorMessage() });
-            } catch (VariableExistsError& err) {
-                std::lock_guard<std::mutex> guard(error_mutex_);
-                std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                             err.name.toStdString(),
-                                             err.exist_var->location.start.line,
-                                             err.exist_var->location.start.column);
-                worker_errors_.push_back({ path, std::move(message) });
-            } catch (std::exception& ex) {
-                std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ path, ex.what() });
-            }
-            FinishOne();
-        });
-
-        std::unique_lock<std::mutex> lk(main_lock_);
-        main_cv_.wait(lk, [this] {
-            return finished_files_count_ >= enqueued_files_count_;
-        });
-
-        if (!worker_errors_.empty()) {
-            WokerErrorCollection col;
-            col.errors = std::move(worker_errors_);
-            throw std::move(col);
-        }
+        pBeginFromEntry(fileProvider, config, path);
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
                                               const char16_t* value) {
-
-        entry_module = std::make_shared<ModuleFile>();
-        entry_module->module_resolver = shared_from_this();
-        entry_module->path = "memory0";
-
         UString src(value);
-        auto ctx = std::make_shared<ParserContext>(entry_module->id, src, config);
-        Parser parser(ctx);
 
-        parser.import_decl_created_listener.On([this] (const Sp<ImportDeclaration>& import_decl) {
-            std::string u8path = import_decl->source->str_.toStdString();
-            global_import_handler_.HandleImport(import_decl);
-        });
+        std::string m0("memory0");
 
-        modules_table_.insert(entry_module);
+        // push file provider
+        providers_.push_back(std::make_shared<FileModuleProvider>(utils::GetRunningDir()));
+        auto memProvider = std::make_shared<MemoryModuleProvider>(m0, src);
+        providers_.push_back(memProvider);
 
-        entry_module->ast = parser.ParseModule();
-
-        std::vector<Sp<Identifier>> unresolved_ids;
-        entry_module->ast->scope->ResolveAllSymbols(&unresolved_ids);
-
-        id_logger_->InsertByList(unresolved_ids);
+        pBeginFromEntry(memProvider, config, m0);
     }
 
-    void ModuleResolver::ParseFileFromPath(const parser::ParserContext::Config& config,
+    void ModuleResolver::ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
+                                           const parser::ParserContext::Config& config,
                                            const std::string &path) {
-        if (!utils::IsFileExist(path)) {
-            Path exist_path(path);
-            if (!exist_path.EndsWith(".js")) {
-                exist_path.slices[exist_path.slices.size() - 1] += ".js";
-                ParseFileFromPath(config, exist_path.ToString());
-                return;
-            }
-
-            WorkerError err { path, std::string("file doen't exist: ") + path };
-            worker_errors_.emplace_back(std::move(err));
-            return;
-        }
         entry_module = std::make_shared<ModuleFile>();
         entry_module->module_resolver = shared_from_this();
         entry_module->path = path;
+        entry_module->provider = rootProvider;
 
         if (unlikely(!modules_table_.insertIfNotExists(entry_module))) {
             return;  // exists;
@@ -203,7 +153,7 @@ namespace jetpack {
 
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
-        UString src = ReadFileStream(mf->path);
+        UString src = mf->GetSource();
         auto ctx = std::make_shared<ParserContext>(mf->id, src, config);
         Parser parser(ctx);
 
@@ -239,35 +189,35 @@ namespace jetpack {
                                                 const std::string &path) {
         if (!trace_file) return;
 
-        Path module_path(mf->path);
-        module_path.Pop();
-        module_path.Join(path);
-
-        auto source_path = module_path.ToString();
-
-        if (!utils::IsFileExist(source_path)) {
-            if (!module_path.EndsWith(".js")) {
-                module_path.slices[module_path.slices.size() - 1] += ".js";
-                source_path = module_path.ToString();
-            }
-
-            if (!utils::IsFileExist(source_path)) {
-                WorkerError err { source_path, std::string("file doesn't exist: ") + source_path };
+        auto matchResult = FindProviderByPath(mf, path);
+        if (matchResult.first == nullptr) {
+            if (unlikely(providers_.empty())) {
+                WorkerError err { mf->path, std::string("module can't be resolved: ") + path };
                 worker_errors_.emplace_back(std::move(err));
                 return;
             }
+            // not empty
+            auto first = providers_[0];
+            if (likely(first->error.has_value())) {
+                worker_errors_.push_back(*first->error);
+            } else {
+                WorkerError err { mf->path, std::string("<internal> module can't be resolved: ") + path };
+                worker_errors_.emplace_back(std::move(err));
+            }
+            return;
         }
 
-        mf->resolved_map[path] = source_path;
+        mf->provider = matchResult.first;
+        mf->resolved_map[path] = matchResult.second;
 
         bool isNew = false;
-        Sp<ModuleFile> childMod = modules_table_.createNewIfNotExists(source_path, isNew);
+        Sp<ModuleFile> childMod = modules_table_.createNewIfNotExists(matchResult.second, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
             return;
         }
         childMod->module_resolver = shared_from_this();
-        childMod->path = std::move(source_path);
+        childMod->path = matchResult.second;
 
         mf->ref_mods.push_back(childMod);
 
@@ -290,13 +240,6 @@ namespace jetpack {
             }
             FinishOne();
         });
-    }
-
-    UString ModuleResolver::ReadFileStream(const std::string& filename) {
-        std::ifstream t(filename);
-        std::string str((std::istreambuf_iterator<char>(t)),
-                        std::istreambuf_iterator<char>());
-        return UString::fromStdString(str);
     }
 
     void ModuleResolver::PrintStatistic() {
@@ -334,6 +277,44 @@ namespace jetpack {
         TraverseModulePushExportVars(result, entry_module, nullptr);
 
         return result;
+    }
+
+    void ModuleResolver::pBeginFromEntry(const Sp<ModuleProvider>& rootProvider,
+                                         const parser::ParserContext::Config &config,
+                                         const std::string &resolvedPath) {
+        auto thread_pool_size = std::thread::hardware_concurrency();
+        thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
+
+        EnqueueOne([this, &config, &resolvedPath, &rootProvider] {
+            try {
+                ParseFileFromPath(rootProvider, config, resolvedPath);
+            } catch (parser::ParseError& ex) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                worker_errors_.push_back({ resolvedPath, ex.ErrorMessage() });
+            } catch (VariableExistsError& err) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                std::string message = format("variable '{}' has been defined, location: {}:{}",
+                                             err.name.toStdString(),
+                                             err.exist_var->location.start.line,
+                                             err.exist_var->location.start.column);
+                worker_errors_.push_back({ resolvedPath, std::move(message) });
+            } catch (std::exception& ex) {
+                std::lock_guard<std::mutex> guard(error_mutex_);
+                worker_errors_.push_back({ resolvedPath, ex.what() });
+            }
+            FinishOne();
+        });
+
+        std::unique_lock<std::mutex> lk(main_lock_);
+        main_cv_.wait(lk, [this] {
+            return finished_files_count_ >= enqueued_files_count_;
+        });
+
+        if (!worker_errors_.empty()) {
+            WokerErrorCollection col;
+            col.errors = std::move(worker_errors_);
+            throw std::move(col);
+        }
     }
 
     /**
@@ -1072,6 +1053,16 @@ namespace jetpack {
         }
 
         return result;
+    }
+
+    std::pair<Sp<ModuleProvider>, std::string> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
+        for (auto iter = providers_.rbegin(); iter != providers_.rend(); iter++) {
+            auto matchResult = (*iter)->match(*parent, path);
+            if (matchResult.has_value()) {
+                return { *iter, *matchResult };
+            }
+        }
+        return { nullptr, "" };
     }
 
     std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entry_path) {
