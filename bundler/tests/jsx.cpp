@@ -8,9 +8,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "../src/ModuleResolver.h"
-#include "../src/codegen/CodeGen.h"
-#include "../src/OutputStream.h"
+#include "ModuleResolver.h"
+#include "codegen/CodeGen.h"
+#include "OutputStream.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

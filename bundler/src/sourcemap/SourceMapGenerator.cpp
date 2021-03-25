@@ -23,7 +23,7 @@ namespace jetpack {
                                          'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                          '4', '5', '6', '7', '8', '9', '+', '/'};
 
-    bool SourceMapGenerator::GenerateVLQStr(stringstream& ss, int transformed_column,
+    bool SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,
             int file_index, int before_line, int before_column, int var_index) {
 
         if (unlikely(!IntToVLQ(ss, transformed_column))) {
@@ -45,7 +45,7 @@ namespace jetpack {
         return IntToVLQ(ss, var_index);
     }
 
-    bool SourceMapGenerator::IntToVLQ(std::stringstream& ss, int code) {
+    bool SourceMapGenerator::IntToVLQ(std::string& ss, int code) {
         int buffer[IntToVLQBufferSize];
 
         if (code < 0) return false;
@@ -67,14 +67,14 @@ namespace jetpack {
                 if (!IntToBase64(buffer[i], ch)) {
                     return false;
                 }
-                ss << ch;
+                ss.push_back(ch);
             }
         } else {
             char ch = 0;
             if (!IntToBase64(s1, ch)) {
                 return false;
             }
-            ss << buffer[0];
+            ss.push_back(buffer[0]);
         }
         return true;
     }
@@ -128,10 +128,10 @@ namespace jetpack {
         if (unlikely(file_index < 0)) {
             return false;
         }
-        if (unlikely(!GenerateVLQStr(ss, after_col, file_index, before_line, before_col, var_index))) {
+        if (unlikely(!GenerateVLQStr(mappings, after_col, file_index, before_line, before_col, var_index))) {
             return false;
         }
-        ss << ",";
+        mappings.push_back(',');
         return true;
     }
 
@@ -157,6 +157,11 @@ namespace jetpack {
 
     void SourceMapGenerator::Finalize() {
         result["mappings"] = std::move(mappings);
+    }
+
+    std::string SourceMapGenerator::ToPrettyString() {
+        Finalize();
+        return result.dump(2);
     }
 
 }

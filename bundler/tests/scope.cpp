@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
 
-#include "../src/codegen/CodeGen.h"
+#include "codegen/CodeGen.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

@@ -3,13 +3,50 @@
 //
 
 #include <gtest/gtest.h>
-#include "../src/sourcemap/SourceMapGenerator.h"
+#include <parser/Parser.hpp>
+#include <parser/ParserContext.h>
+#include "sourcemap/SourceMapGenerator.h"
+#include "ModuleResolver.h"
+#include "codegen/CodeGen.h"
 
 using namespace jetpack;
+using namespace jetpack::parser;
 
-TEST(SourceMap, Generator) {
-    std::stringstream ss;
-    EXPECT_TRUE(SourceMapGenerator::IntToVLQ(ss, 16));
-    std::string str = ss.str();
+inline std::string ParseAndGenSourceMap(const UString& content) {
+    auto resolver = std::make_shared<ModuleResolver>();
+    auto mod = std::make_shared<ModuleFile>();
+    mod->id = -1;
+    mod->module_resolver = resolver;
+
+    ParserContext::Config config = ParserContext::Config::Default();
+    auto ctx = std::make_shared<ParserContext>(mod->id, content, config);
+    Parser parser(ctx);
+
+    mod->ast = parser.ParseModule();
+    resolver->ReplaceExports(mod);
+
+    auto sourceMapGenerator = std::make_shared<SourceMapGenerator>(resolver, "");
+
+    MemoryOutputStream ss;
+    CodeGen::Config code_gen_config;
+    CodeGen codegen(code_gen_config, sourceMapGenerator, ss);
+    codegen.Traverse(mod->ast);
+
+    return sourceMapGenerator->ToPrettyString();
+}
+
+TEST(SourceMap, VLQEncoding) {
+    std::string str;
+    EXPECT_TRUE(SourceMapGenerator::IntToVLQ(str, 16));
     EXPECT_STREQ(str.c_str(), "gB");
+}
+
+TEST(SourceMap, Simple) {
+    UString src(u""
+                "function main() {\n"
+                "    console.log('hello world');\n"
+                "}\n"
+    );
+    auto result = ParseAndGenSourceMap(src);
+    std::cout << result;
 }

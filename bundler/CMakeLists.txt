@@ -69,6 +69,7 @@ add_executable(jetpack-test ${SOURCE_FILES}
 
 target_include_directories(jetpack-test PUBLIC
         "../third_party/googletest/googletest/include"
+        ./src
         )
 target_link_libraries(jetpack-test gtest_main)
 

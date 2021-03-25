@@ -6,8 +6,8 @@
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
 
-#include "../src/codegen/CodeGen.h"
-#include "../src/OutputStream.h"
+#include "codegen/CodeGen.h"
+#include "OutputStream.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

@@ -7,9 +7,9 @@
 #include <sstream>
 #include <parser/ParserContext.h>
 #include <parser/Parser.hpp>
-#include "../src/codegen/CodeGen.h"
-#include "../src/UniqueNameGenerator.h"
-#include "../src/ModuleResolver.h"
+#include "codegen/CodeGen.h"
+#include "UniqueNameGenerator.h"
+#include "ModuleResolver.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
