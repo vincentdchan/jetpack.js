@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
 #include <parser/ParserContext.h>
-#include "sourcemap/SourceMapGenerator.h"
+#include "SourceMapGenerator.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
 
@@ -23,7 +23,6 @@ inline std::string ParseAndGenSourceMap(const UString& content) {
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
-    resolver->ReplaceExports(mod);
 
     auto sourceMapGenerator = std::make_shared<SourceMapGenerator>(resolver, "");
 

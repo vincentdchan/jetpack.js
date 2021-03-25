@@ -12,7 +12,7 @@
 #include "Utils.h"
 #include "NodeTraverser.h"
 #include "string/UString.h"
-#include "sourcemap/SourceMapGenerator.h"
+#include "SourceMapGenerator.h"
 #include "OutputStream.h"
 
 namespace jetpack {
