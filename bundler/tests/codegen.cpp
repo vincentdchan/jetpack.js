@@ -16,7 +16,7 @@ using namespace jetpack::parser;
 
 inline std::string ParseAndCodeGen(UString content) {
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();

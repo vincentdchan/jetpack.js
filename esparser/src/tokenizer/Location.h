@@ -18,19 +18,20 @@ struct Position {
 
 struct SourceLocation {
 public:
+    int32_t  fileId = -1;
     Position start;
     Position end;
 
     inline SourceLocation() = default;
-    inline SourceLocation(Position s, Position e):
-            start(s), end(e) {}
+    inline SourceLocation(int32_t fId, Position s, Position e):
+            fileId(fId), start(s), end(e) {}
 };
+
+static_assert(sizeof(SourceLocation) == 20, "fixed size");
 
 namespace FileIndex {
 
     uint32_t fileIndexOfFile(const UString& filePath);
     UString fileOfFileIndex(uint32_t);
-
-    static const char* unknownFileName = "unknown";
 
 }

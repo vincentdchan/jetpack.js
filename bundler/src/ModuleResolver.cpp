@@ -197,14 +197,14 @@ namespace jetpack {
     void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
                                               const char16_t* value) {
 
-        UString src(value);
-        auto ctx = std::make_shared<ParserContext>(src, config);
-        Parser parser(ctx);
-
         entry_module = std::make_shared<ModuleFile>();
         entry_module->id = mod_counter_++;
         entry_module->module_resolver = shared_from_this();
         entry_module->path = "memory0";
+
+        UString src(value);
+        auto ctx = std::make_shared<ParserContext>(entry_module->id, src, config);
+        Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this] (const Sp<ImportDeclaration>& import_decl) {
             std::string u8path = import_decl->source->str_.toStdString();
@@ -264,7 +264,7 @@ namespace jetpack {
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
         UString src = ReadFileStream(mf->path);
-        auto ctx = std::make_shared<ParserContext>(src, config);
+        auto ctx = std::make_shared<ParserContext>(mf->id, src, config);
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {

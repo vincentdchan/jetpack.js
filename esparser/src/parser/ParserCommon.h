@@ -158,6 +158,8 @@ namespace jetpack::parser {
         Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
             from->range = std::make_pair(marker.index, LastMarker().index);
 
+            from->location.fileId = ctx->fileIndex;
+
             from->location.start = Position {
                 marker.line,
                 marker.column,
@@ -170,7 +172,6 @@ namespace jetpack::parser {
 
             return from;
         }
-
 
         std::shared_ptr<ParserContext> ctx;
 
