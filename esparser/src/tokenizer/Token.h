@@ -7,6 +7,7 @@
 #include <utility>
 #include <Utils.h>
 #include <string/UString.h>
+#include "Location.h"
 
 #define DEF_TOKEN(D) \
     D(BooleanLiteral) \
@@ -133,25 +134,6 @@ inline bool IsKeywordToken(JsTokenType t) {
 }
 
 static const char* TokenTypeToCString(JsTokenType tt);
-
-struct Position {
-    uint32_t line;
-    uint32_t column;
-
-    Position(): line(0u), column(0u) {}
-    Position(uint32_t l, uint32_t c):
-            line(l), column(c) {}
-};
-
-struct SourceLocation {
-public:
-    Position start;
-    Position end;
-
-    SourceLocation() = default;
-    SourceLocation(Position s, Position e):
-            start(s), end(e) {}
-};
 
 class Token {
 public:
