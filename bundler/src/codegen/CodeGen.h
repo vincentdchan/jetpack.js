@@ -23,9 +23,9 @@ namespace jetpack {
     class CodeGen: public NodeTraverser {
     private:
         struct State {
-            std::int32_t line = 1;
-            std::int32_t column = 0;
-            std::uint32_t indent_level = 0;
+            int32_t  line = 1;
+            int32_t  column = 0;
+            uint32_t indent_level = 0;
         };
 
         class HasCallExpressionTraverser: public AutoNodeTraverser {
@@ -85,9 +85,13 @@ namespace jetpack {
         }
 
         inline void WriteLineEnd() {
-            if (config_.minify) return;
-            output << config_.line_end;
-            state_.line++;
+            if (config_.source_map) {
+                sourceMapGenerator_.EndLine();
+            }
+            if (!config_.minify) {
+                output << config_.line_end;
+                state_.line++;
+            }
 #ifdef DEBUG
             output.flush();
 #endif

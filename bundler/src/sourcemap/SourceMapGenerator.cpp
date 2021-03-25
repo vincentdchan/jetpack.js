@@ -85,11 +85,35 @@ namespace jetpack {
         return true;
     }
 
+    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator("unknown") {
+
+    }
+
+    SourceMapGenerator::SourceMapGenerator(const std::string& filename) {
+        result["version"] = 3;
+        result["file"] = filename;
+        result["sourceRoot"] = "";
+        result["sources"] = json::array();
+        result["names"] = json::array();
+    }
+
+    void SourceMapGenerator::SetSourceRoot(const std::string &sr) {
+        result["sourceRoot"] = sr;
+    }
+
+    void SourceMapGenerator::AddSource(const std::string &src) {
+        result["sources"].push_back(src);
+    }
+
     bool SourceMapGenerator::AddLocation(const std::string &name, int after_col, int file_index, int before_line, int before_col) {
-        int var_index = names.size();
-        names.push_back(name);
+        int var_index = name_counter_++;
+        result["names"].push_back(name);
 
         return GenerateVLQStr(ss, after_col, file_index, before_line, before_col, var_index);
+    }
+
+    void SourceMapGenerator::Finalize() {
+        result["mappings"] = std::move(mappings);
     }
 
 }
