@@ -35,11 +35,11 @@ namespace jetpack {
 
     };
 
-    class WokerErrorCollection : public ModuleResolveException {
+    class WorkerErrorCollection : public ModuleResolveException {
     public:
         std::vector<WorkerError> errors;
 
-        WokerErrorCollection(): ModuleResolveException("", "") {}
+        WorkerErrorCollection(): ModuleResolveException("", "") {}
 
         void PrintToStdErr() override;
 

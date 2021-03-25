@@ -79,7 +79,7 @@ namespace jetpack {
 
     }
 
-    void WokerErrorCollection::PrintToStdErr() {
+    void WorkerErrorCollection::PrintToStdErr() {
         for (auto& err : errors) {
             std::cerr << "File: " << err.file_path << std::endl;
             std::cerr << "Error: " << err.error_content << std::endl;
@@ -311,7 +311,7 @@ namespace jetpack {
         });
 
         if (!worker_errors_.empty()) {
-            WokerErrorCollection col;
+            WorkerErrorCollection col;
             col.errors = std::move(worker_errors_);
             throw std::move(col);
         }
@@ -484,7 +484,7 @@ namespace jetpack {
             return finished_files_count_ >= enqueued_files_count_;
         });
         if (!worker_errors_.empty()) {
-            WokerErrorCollection col;
+            WorkerErrorCollection col;
             col.errors = std::move(worker_errors_);
             throw std::move(col);
         }
