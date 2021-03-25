@@ -28,6 +28,10 @@ inline std::string ParseAndCodeGen(UString content) {
     return ss.ToUTF8();
 }
 
+TEST(CodeGen, UString) {
+    EXPECT_EQ(UString::fromUtf32(U"你好世界").toStdString(), UString(u"你好世界").toStdString());
+}
+
 TEST(CodeGen, Export) {
     EXPECT_EQ(ParseAndCodeGen(u"export const a = 3"), "export const a = 3;\n");
 }

@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Scanner.h"
 #include "Utils.h"
+#include "string/UChar.h"
 #include "parser/ErrorMessage.h"
 
 namespace jetpack {
@@ -1014,13 +1015,13 @@ namespace jetpack {
                                 ++index_;
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                AddU32ToUtf16(str, tmp);
+                                str.append(UString::fromUtf32(&tmp, 1));
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                AddU32ToUtf16(str, unescaped);
+                                str.append(UString::fromUtf32(&unescaped, 1));
                             }
                             break;
 
@@ -1028,7 +1029,7 @@ namespace jetpack {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            AddU32ToUtf16(str, unescaped);
+                            str.append(UString::fromUtf32(&unescaped, 1));
                             break;
 
                         case 'n':
@@ -1060,7 +1061,7 @@ namespace jetpack {
                                 std::uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                AddU32ToUtf16(str, octToDec);
+                                str.append(UString::fromUtf32(&unescaped, 1));
                             } else {
                                 str += ch;
                             }

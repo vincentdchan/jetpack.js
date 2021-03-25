@@ -4,6 +4,7 @@
 
 #include "UString.h"
 #include "../Utils.h"
+#include "UChar.h"
 #include <algorithm>
 #include <string>
 
@@ -496,6 +497,66 @@ UString UString::fromUtf8(const char *utf8, uint32_t size) {
     char16_t *data = const_cast<char16_t *>(result.constData()); // we know we're not shared
     const char16_t *end = convertToUnicode(data, utf8, size);
     result.truncate(end - data);
+    return result;
+}
+
+constexpr auto QChar_fromUcs4(char32_t c) noexcept
+{
+    struct R {
+        char16_t chars[2];
+        [[nodiscard]] constexpr uint32_t size() const noexcept { return chars[1] ? 2 : 1; }
+        [[nodiscard]] constexpr const char16_t *begin() const noexcept { return chars; }
+        [[nodiscard]] constexpr const char16_t *end() const noexcept { return begin() + size(); }
+    };
+    return requiresSurrogates(c) ? R{{highSurrogate(c),
+                                             lowSurrogate(c)}} :
+           R{{char16_t(c), u'\0'}} ;
+}
+
+static char16_t *UTF32_convertToUnicode(char16_t *out, const char* chars, uint32_t len) {
+    enum { Data = 1 };
+    const char *end = chars + len;
+
+    union {
+        unsigned int state_data[4];
+        void *d[2];
+    } g;
+
+    union {
+        uint32_t value;
+        unsigned char tuple[4];
+    } s;
+    s.value = 0;
+
+    int num = 0;
+
+    while (chars < end) {
+        s.tuple[num++] = *chars++;
+        if (num == 4) {
+            unsigned int code = s.value;
+            for (char16_t c : QChar_fromUcs4(code))
+                *out++ = c;
+            num = 0;
+        }
+    }
+
+    if (num) {
+        *out++ = ReplacementCharacter;
+    }
+
+    return out;
+}
+
+UString UString::fromUtf32(const char32_t *u32, int64_t size) {
+    if (size < 0) {
+        size = 0;
+        while (u32[size] != U'\0')
+            ++size;
+    }
+    UString result;
+    result.resize(((size * sizeof(char32_t )) + 7) >> 1); // worst case
+    char16_t *end = UTF32_convertToUnicode(result.data(), reinterpret_cast<const char*>(u32), size * sizeof(char32_t));
+    result.truncate(end - result.constData());
     return result;
 }
 

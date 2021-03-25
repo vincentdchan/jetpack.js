@@ -4,6 +4,7 @@ project(bundle-utils)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(${PROJECT_NAME} STATIC
+        "src/string/UChar.h"
         "src/string/UStringData.h"
         "src/string/UStringData.cpp"
         "src/string/UStringDataPointer.h"

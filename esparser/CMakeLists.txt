@@ -19,8 +19,6 @@ file(GLOB source_files
         "src/*.h"
         "src/*.hpp"
         "src/*.cpp"
-        "../bundle-utils/src/string/*.h"
-        "../bundle-utils/src/string/*.cpp"
         "src/parser/*.h"
         "src/parser/*.cpp"
         "src/scope/*.h"
