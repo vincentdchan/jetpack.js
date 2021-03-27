@@ -10,6 +10,7 @@
 #include "string/UString.h"
 #include "codegen/CodeGen.h"
 #include "UniqueNameGenerator.h"
+#include "ResolveResult.h"
 
 namespace jetpack {
     class ModuleResolver;
@@ -72,7 +73,7 @@ namespace jetpack {
 
         UString GetModuleVarName() const;
 
-        UString GetSource() const;
+        ResolveResult<UString> GetSource() const;
 
         inline ExportManager& GetExportManager() {
             return ast->scope->export_manager;

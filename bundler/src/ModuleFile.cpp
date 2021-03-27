@@ -67,7 +67,7 @@ namespace jetpack {
         return UString::fromStdString(tmp);
     }
 
-    UString ModuleFile::GetSource() const {
+    ResolveResult<UString> ModuleFile::GetSource() const {
         assert(provider);
         return provider->resolve(*this, path);
     }

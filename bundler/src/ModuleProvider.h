@@ -5,6 +5,7 @@
 #pragma once
 
 #include <optional>
+#include "ResolveResult.h"
 #include "ModuleFile.h"
 #include "WorkerError.h"
 
@@ -16,11 +17,9 @@ namespace jetpack {
     public:
         virtual std::optional<std::string> match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual UString resolve(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual ResolveResult<UString> resolve(const ModuleFile &mf, const std::string& resolvedPath) = 0;
 
         ~ModuleProvider() noexcept = default;
-
-        std::optional<WorkerError> error;
 
     };
 
@@ -30,10 +29,15 @@ namespace jetpack {
 
         std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
 
-        UString resolve(const ModuleFile &mf, const std::string& resolvedPath) override;
+        ResolveResult<UString> resolve(const ModuleFile &mf, const std::string& resolvedPath) override;
 
     private:
         std::string base_path_;
+
+        // const version, not allowed to modify members
+        // because this will run in parallel
+        [[nodiscard]]
+        std::optional<std::string> pMatch(const ModuleFile &mf, const std::string &path) const;
 
     };
 
@@ -44,7 +48,7 @@ namespace jetpack {
 
         std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
 
-        UString resolve(const ModuleFile &mf, const std::string &path) override;
+        ResolveResult<UString> resolve(const ModuleFile &mf, const std::string &path) override;
 
     private:
         std::string token_;

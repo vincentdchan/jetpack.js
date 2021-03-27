@@ -153,7 +153,13 @@ namespace jetpack {
 
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
-        UString src = mf->GetSource();
+        auto srcResult = mf->GetSource();
+        if (srcResult.error.has_value()) {
+            worker_errors_.push_back(*srcResult.error);
+            return;
+        }
+
+        const UString src = srcResult.value;  // COW
         auto ctx = std::make_shared<ParserContext>(mf->id, src, config);
         Parser parser(ctx);
 
@@ -191,23 +197,11 @@ namespace jetpack {
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
-            if (unlikely(providers_.empty())) {
-                WorkerError err { mf->path, std::string("module can't be resolved: ") + path };
-                worker_errors_.emplace_back(std::move(err));
-                return;
-            }
-            // not empty
-            auto first = providers_[0];
-            if (likely(first->error.has_value())) {
-                worker_errors_.push_back(*first->error);
-            } else {
-                WorkerError err { mf->path, std::string("<internal> module can't be resolved: ") + path };
-                worker_errors_.emplace_back(std::move(err));
-            }
+            WorkerError err { mf->path, std::string("module can't be resolved: ") + path };
+            worker_errors_.emplace_back(std::move(err));
             return;
         }
 
-        mf->provider = matchResult.first;
         mf->resolved_map[path] = matchResult.second;
 
         bool isNew = false;
@@ -216,6 +210,7 @@ namespace jetpack {
             mf->ref_mods.push_back(childMod);
             return;
         }
+        childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
         childMod->path = matchResult.second;
 

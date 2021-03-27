@@ -29,6 +29,9 @@ namespace jetpack {
 
         auto newMod = std::make_shared<ModuleFile>();
 
+        newMod->path = path;
+        newMod->id = pathToModule.size();
+
         insertWithoutLock(newMod);
         isNew = true;
         return newMod;

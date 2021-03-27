@@ -10,11 +10,15 @@
 namespace jetpack {
 
     std::optional<std::string> FileModuleProvider::match(const ModuleFile &mf, const std::string &path) {
-        std::string source_path = path;
+        return pMatch(mf, path);
+    }
 
+    std::optional<std::string> FileModuleProvider::pMatch(const ModuleFile &mf, const std::string &path) const {
         Path module_path(mf.path);
         module_path.Pop();
         module_path.Join(path);
+
+        std::string source_path = module_path.ToString();
 
         if (!utils::IsFileExist(source_path)) {
             if (!module_path.EndsWith(".js")) {
@@ -23,7 +27,8 @@ namespace jetpack {
             }
 
             if (!utils::IsFileExist(source_path)) {
-                error = { { source_path, std::string("file doesn't exist: ") + source_path } };
+//                ResolveResult<std::string> result;
+//                result.error = { { mf.path, std::string("file doesn't exist: ") + source_path } };
                 return std::nullopt;
             }
         }
@@ -37,8 +42,8 @@ namespace jetpack {
         return UString::fromStdString(str);
     }
 
-    UString FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
-        return readFileStream(resolvedPath);
+    ResolveResult<UString> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
+        return ResolveResult(readFileStream(resolvedPath));
     }
 
     std::optional<std::string> MemoryModuleProvider::match(const ModuleFile &mf, const std::string &path) {
@@ -48,8 +53,8 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    UString MemoryModuleProvider::resolve(const ModuleFile &mf, const std::string &path) {
-        return content_;
+    ResolveResult<UString> MemoryModuleProvider::resolve(const ModuleFile &mf, const std::string &path) {
+        return ResolveResult(content_);
     }
 
 }
