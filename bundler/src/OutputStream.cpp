@@ -2,32 +2,13 @@
 // Created by Duzhong Chen on 2020/7/14.
 //
 
-#include "./OutputStream.h"
+#include "OutputStream.h"
+#include "FileIO.h"
 
 namespace jetpack {
     using std::uint32_t;
 
-    FileOutputStream::FileOutputStream(const std::string &path): ofs(path, std::ios::out) {
-
-    }
-
-    OutputStream& FileOutputStream::operator<<(const char16_t* str) {
-        ofs << utils::To_UTF8(str);
-        return *this;
-    }
-
-    OutputStream& FileOutputStream::operator<<(const UString& str) {
-        ofs << str.toStdString();
-        return *this;
-    }
-
-    OutputStream& FileOutputStream::operator<<(char ch) {
-        ofs << ch;
-        return *this;
-    }
-
     MemoryOutputStream::MemoryOutputStream() {
-        data_ = reinterpret_cast<char16_t*>(malloc(capacity_ * sizeof(char16_t)));
     }
 
     OutputStream& MemoryOutputStream::operator<<(const char16_t *str) {
@@ -39,25 +20,13 @@ namespace jetpack {
     }
 
     OutputStream& MemoryOutputStream::Write(const char16_t *str, std::uint32_t size) {
-        uint32_t expected_size = size_ + size;
-        if (expected_size > capacity_) {
-            uint32_t expected_cap = capacity_;
-            while (expected_cap <= expected_size) {
-                expected_cap *= 2;
-            }
-            data_ = reinterpret_cast<char16_t*>(realloc(data_, expected_cap * sizeof(char16_t )));
-            capacity_ = expected_cap;
-        }
-        // copy buffer
-        for (uint32_t i = 0; i < size; i++) {
-            data_[i + size_] = str[i];
-        }
-        size_ = expected_size;
+        data_.append(str, size);
         return *this;
     }
 
     OutputStream& MemoryOutputStream::operator<<(const UString &str) {
-        return Write(str.constData(), str.size());
+        data_.append(str);
+        return *this;
     }
 
     OutputStream& MemoryOutputStream::operator<<(char ch) {
@@ -67,7 +36,7 @@ namespace jetpack {
     }
 
     UString MemoryOutputStream::ToString() const {
-        return UString(data_, size_);
+        return data_;
     }
 
     std::string MemoryOutputStream::ToUTF8() const {
@@ -75,7 +44,17 @@ namespace jetpack {
     }
 
     MemoryOutputStream::~MemoryOutputStream() {
-        free(data_);
     }
 
+    FileOutputStream::FileOutputStream(const std::string &path): path_(path), MemoryOutputStream() {
+
+    }
+
+    void FileOutputStream::Close() {
+        std::string u8content = ToUTF8();
+        io::IOError err = io::WriteBufferToPath(path_, u8content.c_str(), u8content.size());
+        assert(err == io::IOError::Ok);
+
+        OutputStream::Close();
+    }
 }

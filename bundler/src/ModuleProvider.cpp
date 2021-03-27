@@ -2,10 +2,10 @@
 // Created by Duzhong Chen on 2021/3/25.
 //
 
-#include <fstream>
 #include "ModuleProvider.h"
 #include "Utils.h"
 #include "Path.h"
+#include "FileIO.h"
 
 namespace jetpack {
 
@@ -35,15 +35,17 @@ namespace jetpack {
         return { source_path };
     }
 
-    UString readFileStream(const std::string& filename) {
-        std::ifstream t(filename);
-        std::string str((std::istreambuf_iterator<char>(t)),
-                        std::istreambuf_iterator<char>());
-        return UString::fromStdString(str);
-    }
-
     ResolveResult<UString> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
-        return ResolveResult(readFileStream(resolvedPath));
+        UString result;
+        io::IOError err = io::ReadFileToUString(resolvedPath, result);
+        if (err != io::IOError::Ok) {
+            ResolveResult<UString> errResult;
+            errResult.error = { { resolvedPath, std::string(io::IOErrorToString(err)) } };
+            return errResult;
+        }
+        // TODO: give error?
+        assert(err == io::IOError::Ok);
+        return ResolveResult(result);
     }
 
     std::optional<std::string> MemoryModuleProvider::match(const ModuleFile &mf, const std::string &path) {
