@@ -5,7 +5,7 @@
 #include "ModuleProvider.h"
 #include "Utils.h"
 #include "Path.h"
-#include "FileIO.h"
+#include "io/FileIO.h"
 
 namespace jetpack {
 

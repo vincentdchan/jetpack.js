@@ -14,7 +14,7 @@
 #include "Path.h"
 #include "ModuleResolver.h"
 #include "Error.h"
-#include "FileIO.h"
+#include "io/FileIO.h"
 
 namespace jetpack {
     using fmt::format;

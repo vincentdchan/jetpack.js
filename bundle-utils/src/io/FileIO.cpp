@@ -31,7 +31,7 @@ namespace jetpack::io {
 
         struct stat st;
         int ec = ::fstat(fd, &st);
-        assert(ec == 0);
+        J_ASSERT(ec == 0);
 
         char* mem = (char*)::mmap(nullptr, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
         if (mem == MAP_FAILED) {
@@ -74,7 +74,7 @@ namespace jetpack::io {
         }
 
         int ec = ::ftruncate(fd, size);
-        assert(ec >= 0);
+        J_ASSERT(ec >= 0);
 
         char* mappedData = (char*)::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (mappedData == MAP_FAILED) {

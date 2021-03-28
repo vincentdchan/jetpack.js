@@ -14,6 +14,7 @@
 #include <locale>
 #include <codecvt>
 
+#include "Utils.h"
 #include "UStringData.h"
 #include "UStringDataPointer.h"
 
@@ -36,7 +37,7 @@ public:
     inline bool isEmpty() const { return !size(); }
 
     inline const char16_t at(uint32_t i) const
-    { assert(size_t(i) < size_t(size())); return d.data()[i]; }
+    { J_ASSERT(size_t(i) < size_t(size())); return d.data()[i]; }
 
     void resize(uint32_t size);
     void resize(uint32_t size, char16_t fillChar);
@@ -77,7 +78,7 @@ public:
     inline char16_t *data()
     {
         detach();
-        assert(d.data());
+        J_ASSERT(d.data());
         return reinterpret_cast<char16_t *>(d.data());
     }
     inline const char16_t *constData() const
@@ -86,7 +87,7 @@ public:
     inline void detach()
     { if (d->needsDetach()) reallocData(d.size, UStringData::KeepSize); }
 
-    std::int32_t toInt() const;
+    int32_t toInt() const;
 
     inline void clear()
     { if (!isNull()) *this = UString(); }

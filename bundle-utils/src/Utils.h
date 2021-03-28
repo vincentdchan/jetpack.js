@@ -11,6 +11,7 @@
 #include <cstring>
 #include <limits>
 #include <vector>
+#include <cassert>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -102,3 +103,9 @@ using Weak = std::weak_ptr<T>;
 
 template <typename T>
 using Vec = std::vector<T>;
+
+#if defined(_DEBUG)
+#define J_ASSERT(s) assert(s)
+#else
+#define J_ASSERT(s) void(s)
+#endif

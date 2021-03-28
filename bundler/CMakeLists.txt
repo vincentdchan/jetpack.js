@@ -20,8 +20,6 @@ set(SOURCE_FILES
         src/UniqueNameGenerator.cpp
         src/GlobalImportHandler.h
         src/GlobalImportHandler.cpp
-        src/FileIO.h
-        src/FileIO.cpp
         src/Error.h
         src/Error.cpp
         src/SourceMapGenerator.h

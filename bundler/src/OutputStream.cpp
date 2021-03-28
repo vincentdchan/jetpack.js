@@ -3,7 +3,7 @@
 //
 
 #include "OutputStream.h"
-#include "FileIO.h"
+#include "io/FileIO.h"
 
 namespace jetpack {
     using std::uint32_t;
