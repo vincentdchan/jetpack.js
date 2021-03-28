@@ -15,29 +15,14 @@
 #include <functional>
 #include <fstream>
 #include <mutex>
-#include <parser/Parser.hpp>
 
-#include "./UniqueNameGenerator.h"
+#include "ModuleProvider.h"
+#include "ModuleFile.h"
+#include "ModulesTable.h"
 #include "GlobalImportHandler.h"
-#include "codegen/CodeGen.h"
+#include "WorkerError.h"
 
 namespace jetpack {
-
-    template<class Key, class T, class Ignore, class Allocator,
-        class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
-        class AllocatorPair = typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<Key, T>>,
-        class ValueTypeContainer = std::vector<std::pair<Key, T>, AllocatorPair>>
-    using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, ValueTypeContainer>;
-    using json = nlohmann::basic_json<ordered_map>;
-
-    class ModuleResolver;
-
-    class WorkerError {
-    public:
-        std::string file_path;
-        std::string error_content;
-
-    };
 
     class ModuleResolveException : std::exception {
     public:
@@ -50,73 +35,13 @@ namespace jetpack {
 
     };
 
-    class WokerErrorCollection : public ModuleResolveException {
+    class WorkerErrorCollection : public ModuleResolveException {
     public:
         std::vector<WorkerError> errors;
 
-        WokerErrorCollection(): ModuleResolveException("", "") {}
+        WorkerErrorCollection(): ModuleResolveException("", "") {}
 
         void PrintToStdErr() override;
-
-    };
-
-    struct RenamerCollection {
-    public:
-        std::vector<Sp<MinifyNameGenerator>> content;
-        std::shared_ptr<UnresolvedNameCollector> idLogger;
-
-        std::mutex mutex_;
-
-    };
-
-    class ModuleFile {
-    public:
-        /**
-         * Unique id in module resolver
-         */
-        std::int32_t id = 0;
-
-        /**
-         * Abosolute path
-         */
-        std::string path;
-
-        UString default_export_name;
-
-        std::weak_ptr<ModuleResolver> module_resolver;
-
-        Sp<Module> ast;
-
-        /**
-         * relative path -> absolute path
-         */
-        HashMap<std::string, std::string> resolved_map;
-
-        /**
-         * Temp for parallel codegen
-         */
-        std::string codegen_result;
-
-        /**
-         * For Postorder traversal
-         */
-        bool visited_mark = false;
-
-        /**
-         * For Postorder traversal
-         */
-        std::vector<std::weak_ptr<ModuleFile>> ref_mods;
-
-        void RenameInnerScopes(RenamerCollection& col);
-        Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
-
-        void CodeGenFromAst(const CodeGen::Config &config);
-
-        UString GetModuleVarName();
-
-        inline ExportManager& GetExportManager() {
-            return ast->scope->export_manager;
-        }
 
     };
 
@@ -126,9 +51,7 @@ namespace jetpack {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
-        static std::u16string ReadFileStream(const std::string& filename);
-
-        ModuleResolver() : mod_counter_(0) {
+        ModuleResolver() {
             name_generator = ReadableNameGenerator::Make();
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
         }
@@ -138,9 +61,10 @@ namespace jetpack {
                             std::string origin_path);
 
         void BeginFromEntryString(const parser::ParserContext::Config& config,
-                                  const char16_t* str);
+                                  UString str);
 
-        void ParseFileFromPath(const parser::ParserContext::Config& config,
+        void ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
+                               const parser::ParserContext::Config& config,
                                const std::string& path);
 
         void ParseFile(const parser::ParserContext::Config& config,
@@ -162,10 +86,10 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf, std::ofstream& out_path);
+        void MergeModules(const Sp<ModuleFile>& mf, OutputStream& out_path);
 
         inline void ClearAllVisitedMark() {
-            for (auto& tuple : modules_map_) {
+            for (auto& tuple : modules_table_.pathToModule) {
                 tuple.second->visited_mark = false;
             }
         }
@@ -174,16 +98,21 @@ namespace jetpack {
             name_generator = std::move(generator);
         }
 
-        inline std::int32_t ModCount() const {
-            return mod_counter_;
+        inline int32_t ModCount() const {
+            return modules_table_.modCount();
+        }
+
+        // nullable!
+        inline Sp<ModuleFile> findModuleById(int32_t id) {
+            return modules_table_.findModuleById(id);
         }
 
         std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
 
-        HashMap<std::string, Sp<ModuleFile>> modules_map_;
+        ModulesTable modules_table_;
 
         json GetImportStat();
-        std::vector<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
+        Vec<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
 
         void RenameAllRootLevelVariable();
 
@@ -192,6 +121,8 @@ namespace jetpack {
         }
 
     private:
+        void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::ParserContext::Config& config, const std::string& resolvedPath);
+
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
                 const Sp<ModuleFile>&,
@@ -229,28 +160,29 @@ namespace jetpack {
 
         Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
 
+        // return nullable
+        std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
+
         GlobalImportHandler global_import_handler_;
 
-        std::shared_ptr<UniqueNameGenerator> name_generator;
+        Sp<UniqueNameGenerator> name_generator;
 
-        std::shared_ptr<UnresolvedNameCollector> id_logger_;
-
-        std::mutex map_mutex_;
+        Sp<UnresolvedNameCollector> id_logger_;
 
         Sp<ModuleFile> entry_module;
 
         std::unique_ptr<ThreadPool> thread_pool_;
 
-        std::vector<WorkerError> worker_errors_;
+        Vec<Sp<ModuleProvider>> providers_;
+
+        Vec<WorkerError> worker_errors_;
         std::mutex error_mutex_;
 
-        std::int32_t enqueued_files_count_ = 0;
-        std::int32_t finished_files_count_ = 0;
+        int32_t enqueued_files_count_ = 0;
+        int32_t finished_files_count_ = 0;
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;
-
-        std::atomic<std::int32_t> mod_counter_;
 
         bool trace_file = true;
 

@@ -8,26 +8,28 @@
 #include <iostream>
 #include <sstream>
 
-#include "../src/ModuleResolver.h"
-#include "../src/codegen/CodeGen.h"
+#include "ModuleResolver.h"
+#include "codegen/CodeGen.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
 
 inline std::string ParseAndCodeGen(UString content) {
-    auto src = std::make_shared<UString>();
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(src, config);
-    *src = std::move(content);
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
 
-    std::stringstream ss;
+    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod);
-    return ss.str();
+    return ss.ToUTF8();
+}
+
+TEST(CodeGen, UString) {
+    EXPECT_EQ(UString::fromUtf32(U"你好世界").toStdString(), UString(u"你好世界").toStdString());
 }
 
 TEST(CodeGen, Export) {
@@ -47,7 +49,7 @@ TEST(CodeGen, Function) {
     std::string src = "function main() {\n"
                       "  console.log('hello world');\n"
                       "}\n";
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, Object) {
@@ -55,7 +57,7 @@ TEST(CodeGen, Object) {
                       "  a: 3\n"
                       "};\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, ObjectStringProps) {
@@ -63,7 +65,7 @@ TEST(CodeGen, ObjectStringProps) {
                       "  '1': 3\n"
                       "};\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, ClassExtends) {
@@ -71,25 +73,25 @@ TEST(CodeGen, ClassExtends) {
                       "  constructor() {  }\n"
                       "}\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, Regex) {
     std::string src = "const a = /abc/;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, Pattern) {
     std::string src = "var { _lodPlanes, _sizeLods, _sigmas } = _createPlanes();\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, TemplateLiteral) {
     std::string src = "const a = `abc${dd}k2`;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, ObjectExpression) {
@@ -99,7 +101,7 @@ TEST(CodeGen, ObjectExpression) {
                       "  c\n"
                       "};\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, BinaryExpression) {
@@ -111,7 +113,7 @@ TEST(CodeGen, BinaryExpression) {
         "  currentTonemapping = renderer.toneMapping;\n"
         "}\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, ForIn) {
@@ -122,49 +124,49 @@ TEST(CodeGen, ForIn) {
         "  }\n"
         "}\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, BinaryExpression2) {
     std::string src =
         "1 + 2 + 3 + 4 + 5;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, BinaryExpression3) {
     std::string src =
         "1 * 2 + 3 + 4 + 5;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, BinaryExpression4) {
     std::string src =
         "1 + 2 * (3 + 4) + 5;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, BinaryExpression5) {
     std::string src =
         "1 + 2 * 3 + 4 + 5;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, LogicalExpression1) {
     std::string src =
         "a || b && c || d;\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, LogicalExpression2) {
     std::string src =
         "(a || b) && (c || d);\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, Getter) {
@@ -175,7 +177,7 @@ TEST(CodeGen, Getter) {
             "  }\n"
             "};\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }
 
 TEST(CodeGen, Setter) {
@@ -186,5 +188,5 @@ TEST(CodeGen, Setter) {
             "  }\n"
             "};\n";
 
-    EXPECT_EQ(ParseAndCodeGen(utils::To_UTF16(src)), src);
+    EXPECT_EQ(ParseAndCodeGen(UString::fromStdString(src)), src);
 }

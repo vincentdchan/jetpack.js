@@ -2,7 +2,7 @@
 
 
 #pragma once
-#include "../../../js-parser/src/parser/SyntaxNodes.h"
+#include "parser/SyntaxNodes.h"
 
 namespace jetpack {
 

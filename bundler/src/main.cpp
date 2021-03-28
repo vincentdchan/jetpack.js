@@ -17,6 +17,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
+#include "JetTime.h"
 #include "Path.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
@@ -31,6 +32,7 @@
 #define OPT_NO_TRACE "no-trace"
 #define OPT_MINIFY "minify"
 #define OPT_OUT "out"
+#define OPT_SOURCEMAP "sourcemap"
 
 using namespace jetpack;
 
@@ -45,6 +47,7 @@ static int BundleModule(const std::string& self_path,
                         bool jsx,
                         bool minify,
                         bool library,
+                        bool sourcemap,
                         const std::string& path,
                         const std::string& out_path);
 
@@ -61,6 +64,7 @@ int main(int argc, char** argv) {
                 (OPT_NO_TRACE, "do not trace ref file when analyze module")
                 (OPT_MINIFY, "minify the code")
                 (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
+                (OPT_SOURCEMAP, "generate sourcemaps")
                 ;
 
         options.parse_positional(OPT_ENTRY);
@@ -70,6 +74,7 @@ int main(int argc, char** argv) {
         bool minify = false;
         bool jsx = false;
         bool library = false;
+        bool sourcemap = false;
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -102,7 +107,7 @@ int main(int argc, char** argv) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(argv[0], jsx, minify, library, entry_path, out_path);
+            return BundleModule(argv[0], jsx, minify, library, sourcemap, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;
@@ -144,10 +149,11 @@ static int BundleModule(const std::string& self_path_str,
                         bool jsx,
                         bool minify,
                         bool library,
+                        bool sourcemap,
                         const std::string& path,
                         const std::string& out_path) {
 
-    auto start = utils::GetCurrentMs();
+    auto start = time::GetCurrentMs();
     Path self_path(self_path_str);
     self_path.Pop();
 
@@ -173,7 +179,7 @@ static int BundleModule(const std::string& self_path_str,
         resolver->CodeGenAllModules(codegen_config, out_path);
 
         std::cout << "Finished." << std::endl;
-        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << utils::GetCurrentMs() - start << " ms." << std::endl;
+        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start << " ms." << std::endl;
         return 0;
     } catch (ModuleResolveException& err) {
         err.PrintToStdErr();

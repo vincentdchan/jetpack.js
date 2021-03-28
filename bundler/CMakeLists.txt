@@ -4,18 +4,30 @@ project(js-bundler)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
-        "src/ModuleResolver.h"
-        "src/ModuleResolver.cpp"
-        "src/UniqueNameGenerator.h"
-        "src/UniqueNameGenerator.cpp"
-        "src/GlobalImportHandler.h"
-        "src/GlobalImportHandler.cpp"
-        "src/Error.h"
-        "src/Error.cpp"
-        "src/codegen/NodeTraverser.h"
-        "src/codegen/NodeTraverser.cpp"
-        "src/codegen/CodeGen.h"
-        "src/codegen/CodeGen.cpp")
+        src/OutputStream.h
+        src/OutputStream.cpp
+        src/ResolveResult.h
+        src/WorkerError.h
+        src/ModuleProvider.h
+        src/ModuleProvider.cpp
+        src/ModuleFile.h
+        src/ModuleFile.cpp
+        src/ModulesTable.h
+        src/ModulesTable.cpp
+        src/ModuleResolver.h
+        src/ModuleResolver.cpp
+        src/UniqueNameGenerator.h
+        src/UniqueNameGenerator.cpp
+        src/GlobalImportHandler.h
+        src/GlobalImportHandler.cpp
+        src/Error.h
+        src/Error.cpp
+        src/SourceMapGenerator.h
+        src/SourceMapGenerator.cpp
+        src/codegen/NodeTraverser.h
+        src/codegen/NodeTraverser.cpp
+        src/codegen/CodeGen.h
+        src/codegen/CodeGen.cpp)
 
 if (UNIX AND NOT EMSCRIPTEN)
 
@@ -41,23 +53,32 @@ endif()
 
 include_directories(PUBLIC
         "../bundle-utils/src"
-        "../js-parser/src"
+        "../esparser/src"
+        "./src"
         "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
         "../third_party/robin-hood-hashing/src/include")
-link_libraries(bundle-utils js-parser fmt)
+link_libraries(bundle-utils esparser fmt)
 
 add_executable(jetpack ${SOURCE_FILES} src/main.cpp)
 
 add_executable(jetpack-test ${SOURCE_FILES}
+        tests/sourcemap.cpp
         tests/scope.cpp
         tests/resolve.cpp
         tests/codegen.cpp
         tests/jsx.cpp
         tests/contant_folding.cpp)
 
-target_include_directories(jetpack-test PUBLIC "../third_party/googletest/googletest/include")
+target_include_directories(jetpack-test PUBLIC
+        "../third_party/googletest/googletest/include"
+        ./src
+        )
 target_link_libraries(jetpack-test gtest_main)
+
+target_compile_definitions(jetpack-test PUBLIC
+        JETPACK_SINGLE_THREAD
+)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")

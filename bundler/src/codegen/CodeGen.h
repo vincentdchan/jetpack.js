@@ -11,6 +11,9 @@
 #include <deque>
 #include "Utils.h"
 #include "NodeTraverser.h"
+#include "string/UString.h"
+#include "SourceMapGenerator.h"
+#include "OutputStream.h"
 
 namespace jetpack {
 
@@ -20,9 +23,9 @@ namespace jetpack {
     class CodeGen: public NodeTraverser {
     private:
         struct State {
-            std::int32_t line = 1;
-            std::int32_t column = 0;
-            std::uint32_t indent_level = 0;
+            int32_t  line = 1;
+            int32_t  column = 0;
+            uint32_t indent_level = 0;
         };
 
         class HasCallExpressionTraverser: public AutoNodeTraverser {
@@ -41,17 +44,20 @@ namespace jetpack {
         public:
             Config() = default;
 
-            bool minify = false;
-            std::uint32_t start_indent_level = 0;
-            std::string indent = "  ";
-            std::string line_end = "\n";
-            bool source_map = false;
-            bool comments = true;
+            bool     minify = false;
+            uint32_t start_indent_level = 0;
+            UString  indent = u"  ";
+            UString  line_end = u"\n";
+            bool     source_map = false;
+            bool     comments = true;
 
         };
 
-        CodeGen();
-        CodeGen(const Config& config, std::ostream& output_stream);
+        CodeGen(
+                const Config& config,
+                const Sp<SourceMapGenerator>& sourceMapGenerator,
+                OutputStream& output_stream
+                );
 
     private:
         inline void Write(char ch) {
@@ -61,31 +67,35 @@ namespace jetpack {
 #endif
         }
 
-        inline void Write(const char* c_str) {
+        inline void Write(const char16_t* c_str) {
             output << c_str;
 #ifdef DEBUG
             output.flush();
 #endif
         }
 
-        inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
+//        inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
+//            output << str;
+//#ifdef DEBUG
+//            output.flush();
+//#endif
+//        }
+
+        inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
             output << str;
 #ifdef DEBUG
             output.flush();
 #endif
         }
 
-        inline void Write(const UString& w_str, Sp<SyntaxNode> node = nullptr) {
-            Write(utils::To_UTF8(w_str), node);
-#ifdef DEBUG
-            output.flush();
-#endif
-        }
-
         inline void WriteLineEnd() {
-            if (config_.minify) return;
-            output << config_.line_end;
-            state_.line++;
+            if (sourceMapGenerator_) {
+                sourceMapGenerator_->EndLine();
+            }
+            if (!config_.minify) {
+                output << config_.line_end;
+                state_.line++;
+            }
 #ifdef DEBUG
             output.flush();
 #endif
@@ -101,12 +111,12 @@ namespace jetpack {
 #endif
         }
 
-        inline void WriteIndentWith(const char* c_str) {
+        inline void WriteIndentWith(const char16_t* c_str) {
             WriteIndent();
             Write(c_str);
         }
 
-        inline void WriteIndentWith(const std::string& str) {
+        inline void WriteIndentWith(const UString& str) {
             WriteIndent();
             Write(str);
         }
@@ -180,8 +190,12 @@ namespace jetpack {
         void Traverse(const Sp<UpdateExpression>& node) override;
         void Traverse(const Sp<ObjectPattern>& node) override;
 
-        inline std::ostream& Stream() {
+        inline OutputStream& Stream() {
             return output;
+        }
+
+        inline Sp<SourceMapGenerator> SourceMap() {
+            return sourceMapGenerator_;
         }
 
     private:
@@ -201,7 +215,9 @@ namespace jetpack {
 
         State state_;
 
-        std::ostream& output;
+        Sp<SourceMapGenerator> sourceMapGenerator_;
+
+        OutputStream& output;
 
     };
 

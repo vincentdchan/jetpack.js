@@ -14,7 +14,7 @@ namespace jetpack {
     }
 
     inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(utils::To_UTF16(content));
+        return MakeId(UString::fromUtf8(content.c_str(), content.size()));
     }
 
     inline Sp<Literal> MakeStringLiteral(const UString& str) {
@@ -173,8 +173,8 @@ namespace jetpack {
         }
     }
 
-    void GlobalImportHandler::GenCode(const CodeGen::Config &config, std::ostream &os) {
-        CodeGen codegen(config, os);
+    void GlobalImportHandler::GenCode(const CodeGen::Config &config, const Sp<SourceMapGenerator>& sourceMapGenerator, OutputStream& os) {
+        CodeGen codegen(config, sourceMapGenerator, os);
 
         for (auto& decl : gen_import_decls) {
             codegen.Traverse(decl);

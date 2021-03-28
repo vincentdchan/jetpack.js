@@ -7,9 +7,9 @@
 #include <sstream>
 #include <parser/ParserContext.h>
 #include <parser/Parser.hpp>
-#include "../src/codegen/CodeGen.h"
-#include "../src/UniqueNameGenerator.h"
-#include "../src/ModuleResolver.h"
+#include "codegen/CodeGen.h"
+#include "UniqueNameGenerator.h"
+#include "ModuleResolver.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
@@ -19,7 +19,7 @@ using namespace jetpack::parser;
  */
 TEST(MinifyNameGenerator, Next) {
     auto gen = MinifyNameGenerator::Make();
-    std::unordered_set<std::u16string> gen_set;
+    std::unordered_set<UString> gen_set;
 
     for (int i = 0; i < 10000; i++) {
         auto next_str_opt = gen->Next(u"");
@@ -35,21 +35,20 @@ inline std::string ReplaceDefault(const std::string& src) {
     auto mod = std::make_shared<ModuleFile>();
     mod->module_resolver = resolver;
 
-    auto u16src = std::make_shared<UString>();
+    UString u16src = UString::fromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(u16src, config);
-    *u16src = utils::To_UTF16(src);
+    auto ctx = std::make_shared<ParserContext>(mod->id, u16src, config);
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
     resolver->ReplaceExports(mod);
 
-    std::stringstream ss;
+    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, ss);
+    CodeGen codegen(code_gen_config, nullptr, ss);
     codegen.Traverse(mod->ast);
 
-    return ss.str();
+    return ss.ToUTF8();
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
@@ -113,7 +112,6 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
 }
 
 TEST(ModuleResolver, SingleMemoryFile) {
-    GTEST_SKIP();
     UString buffer =
             u"function hello(world) {\n"
             "  console.log(world);\n"
@@ -140,7 +138,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     }
 
     resolver->SetTraceFile(false);
-    resolver->BeginFromEntryString(parser_config, buffer.c_str());
+    resolver->BeginFromEntryString(parser_config, buffer.constData());
 
     auto final_export_vars = resolver->GetAllExportVars();
     if (minify) {
@@ -151,7 +149,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     auto entry_mod = resolver->GetEntryModule();
     entry_mod->CodeGenFromAst(codegen_config);
 
-    std::cout << entry_mod->codegen_result << std::endl;
+    std::cout << entry_mod->codegen_result.toStdString() << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {

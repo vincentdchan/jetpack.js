@@ -17,9 +17,9 @@ namespace jetpack {
     class UniqueNameGenerator {
     public:
 
-        virtual std::optional<std::u16string> Next(const std::u16string& original_name) = 0;
+        virtual std::optional<UString> Next(const UString& original_name) = 0;
 
-        virtual bool IsNameUsed(const std::u16string& name) { return false; };
+        virtual bool IsNameUsed(const UString& name) { return false; };
 
         virtual ~UniqueNameGenerator() = default;
 
@@ -29,13 +29,13 @@ namespace jetpack {
     protected:
         UniqueNameGeneratorWithUsedName();
 
-        HashSet<std::u16string> used_name;
+        HashSet<UString> used_name;
 
-        bool IsJsKeyword(const std::u16string& name);
+        bool IsJsKeyword(const UString& name);
 
     private:
         static std::once_flag init_once_;
-        static HashSet<std::u16string> long_keywords_set;
+        static HashSet<UString> long_keywords_set;
 
     };
 
@@ -43,9 +43,9 @@ namespace jetpack {
     public:
         static std::shared_ptr<ReadableNameGenerator> Make();
 
-        std::optional<std::u16string> Next(const std::u16string& original_name) override;
+        std::optional<UString> Next(const UString& original_name) override;
 
-        bool IsNameUsed(const std::u16string& name) override;
+        bool IsNameUsed(const UString& name) override;
 
     private:
         ReadableNameGenerator() = default;
@@ -65,13 +65,13 @@ namespace jetpack {
     public:
         UnresolvedNameCollector() = default;
 
-        bool IsNameUsed(const std::u16string& name) override;
+        bool IsNameUsed(const UString& name) override;
 
-        std::optional<std::u16string> Next(const std::u16string& original_name) override {
+        std::optional<UString> Next(const UString& original_name) override {
             return std::nullopt;
         }
 
-        HashSet<std::u16string> used_name;
+        HashSet<UString> used_name;
 
         std::mutex logger_mutex;
 
@@ -94,11 +94,11 @@ namespace jetpack {
         Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec,
               const std::shared_ptr<UniqueNameGenerator>& prev);
 
-        std::optional<std::u16string> Next(const std::u16string& original_name) override;
+        std::optional<UString> Next(const UString& original_name) override;
 
-        bool IsNameUsed(const std::u16string& name) override;
+        bool IsNameUsed(const UString& name) override;
 
-        std::u16string GenAName();
+        UString GenAName();
 
     private:
         MinifyNameGenerator() = default;

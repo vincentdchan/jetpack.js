@@ -35,28 +35,28 @@ namespace jetpack {
     UniqueNameGeneratorWithUsedName::UniqueNameGeneratorWithUsedName() {
         std::call_once(init_once_, [] {
             for (auto& keyword : LongJsKeywords) {
-                long_keywords_set.insert(utils::To_UTF16(keyword));
+                long_keywords_set.insert(UString::fromUtf8(keyword, strlen(keyword)));
             }
         });
     }
 
-    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const std::u16string& name) {
+    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const UString& name) {
         if (name.size() == 1) {
             return false;
         } else if (name.size() == 2) {
-            switch (name[0]) {
+            switch (name.at(0)) {
                 case u'd':
-                    return name[1] == 'o';
+                    return name.at(1) == u'o';
 
                 case u'i':
-                    return name[1] == 'f' || name[1] == 'n';
+                    return name.at(1) == u'f' || name.at(1) == u'n';
 
                 default:
                     return false;
 
             }
         } else if (name.size() == 3) {
-            switch (name[0]) {
+            switch (name.at(0)) {
                 case u't':
                     return name == u"try";
 
@@ -79,7 +79,7 @@ namespace jetpack {
     }
 
     std::once_flag UniqueNameGeneratorWithUsedName::init_once_;
-    HashSet<std::u16string> UniqueNameGeneratorWithUsedName::long_keywords_set;
+    HashSet<UString> UniqueNameGeneratorWithUsedName::long_keywords_set;
 
     std::shared_ptr<ReadableNameGenerator> ReadableNameGenerator::Make() {
         std::shared_ptr<ReadableNameGenerator> result(new ReadableNameGenerator);
@@ -87,19 +87,20 @@ namespace jetpack {
         return result;
     }
 
-    std::optional<std::u16string>
-    ReadableNameGenerator::Next(const std::u16string &original_name) {
+    std::optional<UString>
+    ReadableNameGenerator::Next(const UString &original_name) {
         if (!IsNameUsed(original_name)) {  // not exist
             used_name.insert(original_name);
             return std::nullopt;
         }
 
-        std::u16string new_name = original_name + u"_" + utils::To_UTF16(std::to_string(counter++));
+        std::string tmp = std::to_string(counter++);
+        UString new_name = original_name + u"_" + UString::fromUtf8(tmp.c_str(), tmp.size());
         used_name.insert(new_name);
         return { new_name };
     }
 
-    bool ReadableNameGenerator::IsNameUsed(const std::u16string &name) {
+    bool ReadableNameGenerator::IsNameUsed(const UString &name) {
         if (IsJsKeyword(name)) {
             return true;
         }
@@ -147,9 +148,9 @@ namespace jetpack {
         return result;
     }
 
-    std::optional<std::u16string>
-    MinifyNameGenerator::Next(const std::u16string& original) {
-        std::u16string result;
+    std::optional<UString>
+    MinifyNameGenerator::Next(const UString& original) {
+        UString result;
 
         do {
             result = GenAName();
@@ -158,7 +159,7 @@ namespace jetpack {
         return { result };
     }
 
-    bool MinifyNameGenerator::IsNameUsed(const std::u16string &name) {
+    bool MinifyNameGenerator::IsNameUsed(const UString &name) {
         if (IsJsKeyword(name)) {
             return true;
         }
@@ -170,7 +171,7 @@ namespace jetpack {
         return prev != nullptr && prev->IsNameUsed(name);
     }
 
-    std::u16string MinifyNameGenerator::GenAName() {
+    UString MinifyNameGenerator::GenAName() {
         std::string result;
 
         std::int32_t buffer[BUFFER_SIZE];
@@ -208,7 +209,7 @@ namespace jetpack {
 
         counter++;
 
-        return utils::To_UTF16(result);
+        return UString::fromUtf8(result.c_str(), result.size());
     }
 
     void UnresolvedNameCollector::InsertByList(std::vector<std::shared_ptr<Identifier>> list) {
@@ -218,7 +219,7 @@ namespace jetpack {
         }
     }
 
-    bool UnresolvedNameCollector::IsNameUsed(const std::u16string &name) {
+    bool UnresolvedNameCollector::IsNameUsed(const UString &name) {
         return used_name.find(name) != used_name.end();
     }
 

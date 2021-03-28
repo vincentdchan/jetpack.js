@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "parser/SyntaxNodes.h"
 #include "UniqueNameGenerator.h"
+#include "OutputStream.h"
 #include "codegen/CodeGen.h"
 
 namespace jetpack {
@@ -45,7 +46,10 @@ namespace jetpack {
 
         void GenAst(const std::shared_ptr<UniqueNameGenerator>&);
 
-        void GenCode(const CodeGen::Config &config, std::ostream& os);
+        void GenCode(
+                const CodeGen::Config &config,
+                const Sp<SourceMapGenerator>& sourceMapGenerator,
+                OutputStream& os);
 
         std::vector<Sp<ImportDeclaration>> imports;
 
