@@ -7,14 +7,14 @@
 #include <tsl/ordered_map.h>
 #include <parser/ParserCommon.h>
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <set>
 
 #include "Path.h"
-#include "./ModuleResolver.h"
-#include "./Error.h"
+#include "ModuleResolver.h"
+#include "Error.h"
+#include "FileIO.h"
 
 namespace jetpack {
     using fmt::format;
@@ -1068,7 +1068,7 @@ namespace jetpack {
             _path.slices.push_back(PackageJsonName);
 
             auto full_path = _path.ToString();
-            if (utils::IsFileExist(full_path)) {
+            if (io::IsFileExist(full_path)) {
                 return { full_path };
             }
 

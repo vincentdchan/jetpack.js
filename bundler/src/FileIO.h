@@ -8,6 +8,12 @@
 #include <string>
 #include "string/UString.h"
 
+#if defined(_WIN32)
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace jetpack::io {
 
     enum class IOError {
@@ -21,6 +27,17 @@ namespace jetpack::io {
     IOError ReadFileToUString(const std::string& filename, UString& result);
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size);
+
+    inline bool IsFileExist(const std::string& path) {
+#ifndef _WIN32
+        return access(path.c_str(), F_OK) == 0;
+#else
+        DWORD dwAttrib = GetFileAttributesA(path.c_str());
+
+        return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+            !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+#endif
+    }
 
 }
 

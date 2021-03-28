@@ -20,13 +20,13 @@ namespace jetpack {
 
         std::string source_path = module_path.ToString();
 
-        if (!utils::IsFileExist(source_path)) {
+        if (!io::IsFileExist(source_path)) {
             if (!module_path.EndsWith(".js")) {
                 module_path.slices[module_path.slices.size() - 1] += ".js";
                 source_path = module_path.ToString();
             }
 
-            if (!utils::IsFileExist(source_path)) {
+            if (!io::IsFileExist(source_path)) {
 //                ResolveResult<std::string> result;
 //                result.error = { { mf.path, std::string("file doesn't exist: ") + source_path } };
                 return std::nullopt;
