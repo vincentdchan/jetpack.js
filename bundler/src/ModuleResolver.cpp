@@ -23,28 +23,29 @@ namespace jetpack {
 
     static const char* PackageJsonName = "package.json";
 
-    inline Sp<Identifier> MakeId(const UString& content) {
+    inline Sp<Identifier> MakeId(const SourceLocation& loc, const UString& content) {
         auto id = std::make_shared<Identifier>();
         id->name = content;
+        id->location = loc;
         return id;
     }
 
-    inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(UString::fromStdString(content));
+    inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
+        return MakeId(loc, UString::fromStdString(content));
     }
 
-    inline Sp<SyntaxNode> MakeModuleVar(const UString& var_name) {
-        auto mod_var = std::make_shared<VariableDeclaration>();
-        mod_var->kind = VarKind::Const;
-
-        auto declarator = std::make_shared<VariableDeclarator>();
-        declarator->id = MakeId(var_name);
-
-        declarator->init = { std::make_shared<ObjectExpression>() };
-
-        mod_var->declarations.push_back(std::move(declarator));
-        return mod_var;
-    }
+//    inline Sp<SyntaxNode> MakeModuleVar(const SourceLocation& loc, const UString& var_name) {
+//        auto mod_var = std::make_shared<VariableDeclaration>();
+//        mod_var->kind = VarKind::Const;
+//
+//        auto declarator = std::make_shared<VariableDeclarator>();
+//        declarator->id = MakeId(loc, var_name);
+//
+//        declarator->init = { std::make_shared<ObjectExpression>() };
+//
+//        mod_var->declarations.push_back(std::move(declarator));
+//        return mod_var;
+//    }
 
     inline Sp<Literal> MakeStringLiteral(const UString& str) {
         auto lit = std::make_shared<Literal>();
@@ -63,16 +64,16 @@ namespace jetpack {
         return null_lit;
     }
 
-    inline void AddKeyValueToObject(const std::shared_ptr<ObjectExpression>& expr,
-                                    const UString& key,
-                                    const UString& value) {
-
-        auto prop = std::make_shared<Property>();
-        prop->key = MakeId(key);
-        prop->value = MakeId(value);
-
-        expr->properties.push_back(std::move(prop));
-    }
+//    inline void AddKeyValueToObject(const std::shared_ptr<ObjectExpression>& expr,
+//                                    const UString& key,
+//                                    const UString& value) {
+//
+//        auto prop = std::make_shared<Property>();
+//        prop->key = MakeId(key);
+//        prop->value = MakeId(value);
+//
+//        expr->properties.push_back(std::move(prop));
+//    }
 
     ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
     : file_path(path), error_content(content) {
@@ -127,14 +128,14 @@ namespace jetpack {
     void ModuleResolver::ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
                                            const parser::ParserContext::Config& config,
                                            const std::string &path) {
-        entry_module = std::make_shared<ModuleFile>();
-        entry_module->module_resolver = shared_from_this();
-        entry_module->path = path;
-        entry_module->provider = rootProvider;
-
-        if (unlikely(!modules_table_.insertIfNotExists(entry_module))) {
+        bool isNew = false;
+        entry_module = modules_table_.createNewIfNotExists(path, isNew);
+        if (!isNew) {
             return;  // exists;
         }
+
+        entry_module->provider = rootProvider;
+        entry_module->module_resolver = weak_from_this();
 
         ParseFile(config, entry_module);
     }
@@ -158,7 +159,7 @@ namespace jetpack {
         }
 
         const UString src = srcResult.value;  // COW
-        auto ctx = std::make_shared<ParserContext>(mf->id, src, config);
+        auto ctx = std::make_shared<ParserContext>(mf->id(), src, config);
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
@@ -195,7 +196,7 @@ namespace jetpack {
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
-            WorkerError err { mf->path, std::string("module can't be resolved: ") + path };
+            WorkerError err { mf->path(), std::string("module can't be resolved: ") + path };
             worker_errors_.emplace_back(std::move(err));
             return;
         }
@@ -210,7 +211,6 @@ namespace jetpack {
         }
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
-        childMod->path = matchResult.second;
 
         mf->ref_mods.push_back(childMod);
 
@@ -219,17 +219,17 @@ namespace jetpack {
                 ParseFile(config, childMod);
             } catch (parser::ParseError& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ childMod->path, ex.ErrorMessage() });
+                worker_errors_.push_back({ childMod->path(), ex.ErrorMessage() });
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name.toStdString(),
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
-                worker_errors_.push_back({ childMod->path, std::move(message) });
+                worker_errors_.push_back({ childMod->path(), std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ childMod->path, ex.what() });
+                worker_errors_.push_back({ childMod->path(), ex.what() });
             }
             FinishOne();
         });
@@ -251,7 +251,7 @@ namespace jetpack {
         }
 
         json result = json::object();
-        result["entry"] = entry_module->path;
+        result["entry"] = entry_module->path();
         result["importStat"] = GetImportStat();
         result["totalFiles"] = finished_files_count_;
         result["exports"] = std::move(exports);
@@ -340,14 +340,20 @@ namespace jetpack {
             auto u8relative_path = info.relative_path.toStdString();
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
-                WorkerError err { mod->path, format("resolve path failed: {}", u8relative_path) };
+                WorkerError err {
+                    mod->path(),
+                    format("resolve path failed: {}", u8relative_path)
+                };
                 worker_errors_.emplace_back(std::move(err));
                 return;
             }
 
             auto iter = modules_table_.pathToModule.find(resolved_path->second);
             if (iter == modules_table_.pathToModule.end()) {
-                WorkerError err { mod->path, format("module not found: {}", resolved_path->second) };
+                WorkerError err {
+                    mod->path(),
+                    format("module not found: {}", resolved_path->second)
+                };
                 worker_errors_.emplace_back(std::move(err));
                 return;
             }
@@ -450,31 +456,32 @@ namespace jetpack {
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& out_path) {
-        auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), "");
+    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& outPath) {
+        auto mappingCollector = std::make_shared<MappingCollector>();
 
         MemoryOutputStream memOutputStream;
-        global_import_handler_.GenCode(config, sourcemapGenerator, memOutputStream);
+        global_import_handler_.GenCode(config, mappingCollector, memOutputStream);
 
         ClearAllVisitedMark();
         MergeModules(entry_module, memOutputStream);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, sourcemapGenerator, memOutputStream);
+        CodeGen codegen(config, mappingCollector, memOutputStream);
         codegen.Traverse(final_export);
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
-            srcFut = DumpSourceMap(out_path, sourcemapGenerator);
+            auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+            srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 
         std::string u8content = memOutputStream.ToUTF8();
-        io::IOError err = io::WriteBufferToPath(out_path, u8content.c_str(), u8content.size());
+        io::IOError err = io::WriteBufferToPath(outPath, u8content.c_str(), u8content.size());
         J_ASSERT(err == io::IOError::Ok);
 
         if (config.sourcemap) {
             if (unlikely(!srcFut.get())) {   // wait to finished
-                std::cerr << "dump source map failed: " << out_path << std::endl;
+                std::cerr << "dump source map failed: " << outPath << std::endl;
             }
         }
     }
@@ -612,7 +619,7 @@ namespace jetpack {
 
                         auto var_dector = std::make_shared<VariableDeclarator>();
 
-                        auto new_id = MakeId(new_name);
+                        auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
                         var_dector->id = new_id;
                         var_dector->init = { exist_id };
 
@@ -650,7 +657,7 @@ namespace jetpack {
                             case SyntaxNodeType::FunctionDeclaration: {
                                 auto fun_decl = std::dynamic_pointer_cast<FunctionDeclaration>(export_default_decl->declaration);
 
-                                auto new_id = MakeId(new_name);
+                                auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
                                 mf->ast->scope->CreateVariable(new_id, VarKind::Var);
                                 if (fun_decl->id.has_value()) {
                                     stmt = fun_decl;
@@ -663,7 +670,7 @@ namespace jetpack {
                                     dector->id = new_id;
 
 
-                                    auto right_id = MakeId((*fun_decl->id)->name);
+                                    auto right_id = MakeId(SourceLocation::NoOrigin, (*fun_decl->id)->name);
                                     mf->ast->scope->CreateVariable(right_id, VarKind::Var);
 
                                     dector->init = { right_id };
@@ -673,7 +680,7 @@ namespace jetpack {
                                     new_body.push_back(stmt);
                                     new_body.push_back(var_decl);
                                 } else {
-                                    fun_decl->id = { MakeId(new_name) };
+                                    fun_decl->id = { MakeId(SourceLocation::NoOrigin, new_name) };
 
                                     new_body.push_back(fun_decl);
                                 }
@@ -686,7 +693,7 @@ namespace jetpack {
                             case SyntaxNodeType::ClassDeclaration: {
                                 auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(export_default_decl->declaration);
 
-                                auto new_id = MakeId(new_name);
+                                auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
                                 mf->ast->scope->CreateVariable(new_id, VarKind::Var);
 
                                 if (cls_decl->id.has_value()) {
@@ -849,14 +856,14 @@ namespace jetpack {
         auto full_path_iter = mf->resolved_map.find(import_decl->source->str_.toStdString());
         if (full_path_iter == mf->resolved_map.end()) {
             throw ModuleResolveException(
-                    mf->path,
+                    mf->path(),
                     format("can not resolver path: {}", import_decl->source->str_.toStdString()));
         }
 
         auto target_module = modules_table_.pathToModule[full_path_iter->second];
 
         if (target_module == nullptr) {
-            throw ModuleResolveException(mf->path, format("can not find module: {}", full_path_iter->second));
+            throw ModuleResolveException(mf->path(), format("can not find module: {}", full_path_iter->second));
         }
 
 //        auto target_mode_name = target_module->GetModuleVarName();
@@ -873,7 +880,7 @@ namespace jetpack {
 
             auto declarator = std::make_shared<VariableDeclarator>();
 
-            auto new_id = MakeId(import_ns->local->name);
+            auto new_id = MakeId(import_ns->local->location, import_ns->local->name);
 
             // debug
 //            std::cout << utils::To_UTF8(ast->scope->own_variables[import_ns->local->name].name) << std::endl;
@@ -889,12 +896,12 @@ namespace jetpack {
             auto obj = std::make_shared<ObjectExpression>();
 
             {
-                auto __proto__ = std::make_shared<Property>();
+                auto proto = std::make_shared<Property>();
 
-                __proto__->key = MakeId("__proto__");
-                __proto__->value = MakeNull();
+                proto->key = MakeId(SourceLocation::NoOrigin, "__proto__");
+                proto->value = MakeNull();
 
-                obj->properties.push_back(__proto__);
+                obj->properties.push_back(proto);
             }
 
             {
@@ -903,7 +910,7 @@ namespace jetpack {
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
                 if (ref_mod_iter == modules_table_.pathToModule.end()) {
-                    throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
+                    throw ModuleResolveException(mf->path(), format("can not resolve path: {}", absolute_path));
                 }
                 auto& ref_mod = ref_mod_iter->second;
 
@@ -913,12 +920,12 @@ namespace jetpack {
                     auto prop = std::make_shared<Property>();
 
                     prop->kind = VarKind::Get;
-                    prop->key = MakeId(tuple.first);
+                    prop->key = MakeId(SourceLocation::NoOrigin, tuple.first);
 
                     auto fun = std::make_shared<FunctionExpression>();
                     auto block = std::make_shared<BlockStatement>();
                     auto ret_stmt = std::make_shared<ReturnStatement>();
-                    ret_stmt->argument = { MakeId(tuple.second->local_name) };
+                    ret_stmt->argument = { MakeId(SourceLocation::NoOrigin, tuple.second->local_name) };
 
                     block->body.push_back(std::move(ret_stmt));
                     fun->body = std::move(block);
@@ -956,13 +963,13 @@ namespace jetpack {
                     }
 
                     default:
-                        throw ModuleResolveException(mf->path, "unknown specifier type");
+                        throw ModuleResolveException(mf->path(), "unknown specifier type");
 
                 }
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
                 if (ref_mod_iter == modules_table_.pathToModule.end()) {
-                    throw ModuleResolveException(mf->path, format("can not resolve path: {}", absolute_path));
+                    throw ModuleResolveException(mf->path(), format("can not resolve path: {}", absolute_path));
                 }
                 auto& ref_mod = ref_mod_iter->second;
 
@@ -971,7 +978,7 @@ namespace jetpack {
 
                 if (!local_export_opt.has_value()) {
                     throw ModuleResolveException(
-                        mf->path,
+                        mf->path(),
                         format("can not find export variable '{}' from {}", target_export_name.toStdString(), absolute_path)
                     );
                 }
@@ -980,7 +987,7 @@ namespace jetpack {
                 changeset.emplace_back(import_local_name, (*local_export_opt)->local_name);
                 if (!mf->ast->scope->BatchRenameSymbols(changeset)) {
                     throw ModuleResolveException(
-                        mf->path,
+                        mf->path(),
                         format("rename symbol failed: {}", import_local_name.toStdString())
                     );
                 }
@@ -998,10 +1005,10 @@ namespace jetpack {
         }
         auto& mod = modIter->second;
 
-        if (visited.find(mod->id) != visited.end()) {
+        if (visited.find(mod->id()) != visited.end()) {
             return std::nullopt;
         }
-        visited.insert(mod->id);
+        visited.insert(mod->id());
 
         auto local_iter = mod->GetExportManager().local_exports_name.find(export_name);
         if (local_iter != mod->GetExportManager().local_exports_name.end()) {  // found
@@ -1058,7 +1065,7 @@ namespace jetpack {
             auto iter = mf->GetExportManager().local_exports_name.find(export_name);
             if (iter == mf->GetExportManager().local_exports_name.end()) {
                 WorkerError err {
-                        mf->path,
+                        mf->path(),
                         format("symbol not found failed: {}", export_name.toStdString())
                 };
                 worker_errors_.emplace_back(std::move(err));
@@ -1067,8 +1074,8 @@ namespace jetpack {
             auto info = iter->second;
 
             auto spec = std::make_shared<ExportSpecifier>();
-            spec->local = MakeId(info->local_name);
-            spec->exported = MakeId(export_name);
+            spec->local = MakeId(SourceLocation::NoOrigin, info->local_name);
+            spec->exported = MakeId(SourceLocation::NoOrigin, export_name);
             result->specifiers.push_back(std::move(spec));
         }
 

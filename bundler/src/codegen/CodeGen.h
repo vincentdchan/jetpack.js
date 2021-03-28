@@ -12,7 +12,7 @@
 #include "Utils.h"
 #include "NodeTraverser.h"
 #include "string/UString.h"
-#include "SourceMapGenerator.h"
+#include "sourcemap/MappingCollector.h"
 #include "OutputStream.h"
 
 namespace jetpack {
@@ -55,7 +55,7 @@ namespace jetpack {
 
         CodeGen(
                 const Config& config,
-                const Sp<SourceMapGenerator>& sourceMapGenerator,
+                const Sp<MappingCollector>& sourceMapGenerator,
                 OutputStream& output_stream
                 );
 
@@ -74,13 +74,6 @@ namespace jetpack {
 #endif
         }
 
-//        inline void Write(const std::string& str, Sp<SyntaxNode> node = nullptr) {
-//            output << str;
-//#ifdef DEBUG
-//            output.flush();
-//#endif
-//        }
-
         inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
             output << str;
 #ifdef DEBUG
@@ -88,28 +81,9 @@ namespace jetpack {
 #endif
         }
 
-        inline void WriteLineEnd() {
-            if (sourceMapGenerator_) {
-                sourceMapGenerator_->EndLine();
-            }
-            if (!config_.minify) {
-                output << config_.line_end;
-                state_.line++;
-            }
-#ifdef DEBUG
-            output.flush();
-#endif
-        }
+        void WriteLineEnd();
 
-        inline void WriteIndent() {
-            if (config_.minify) return;
-            for (std::uint32_t i = 0; i < state_.indent_level; i++) {
-                Write(config_.indent);
-            }
-#ifdef DEBUG
-            output.flush();
-#endif
-        }
+        void WriteIndent();
 
         inline void WriteIndentWith(const char16_t* c_str) {
             WriteIndent();
@@ -194,8 +168,9 @@ namespace jetpack {
             return output;
         }
 
-        inline Sp<SourceMapGenerator> SourceMap() {
-            return sourceMapGenerator_;
+        [[nodiscard]]
+        inline Sp<MappingCollector> SourcemapCollector() {
+            return mappingCollector;
         }
 
     private:
@@ -215,7 +190,8 @@ namespace jetpack {
 
         State state_;
 
-        Sp<SourceMapGenerator> sourceMapGenerator_;
+        // nullable
+        Sp<MappingCollector> mappingCollector;
 
         OutputStream& output;
 

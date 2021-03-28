@@ -7,21 +7,11 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <nlohmann/json.hpp>
 #include <memory>
-#include <tsl/ordered_map.h>
 #include "string/UString.h"
+#include "MappingCollector.h"
 
 namespace jetpack {
-
-    template<class Key, class T, class Ignore, class Allocator,
-            class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
-            class AllocatorPair = typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<Key, T>>,
-            class ValueTypeContainer = std::vector<std::pair<Key, T>, AllocatorPair>>
-    using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, ValueTypeContainer>;
-
-    using json = nlohmann::basic_json<ordered_map>;
-
     class ModuleResolver;
 
     class SourceMapGenerator {
@@ -38,8 +28,6 @@ namespace jetpack {
 
         void AddSource(const std::string& src);
 
-        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
-
         inline void EndLine() {
             mappings.push_back(';');
         }
@@ -50,10 +38,18 @@ namespace jetpack {
 
         bool DumpFile(const std::string& path, bool pretty = false);
 
+        inline void AddCollector(const Sp<MappingCollector> collector) {
+            collectors_.push_back(collector);
+        }
+
     private:
         std::string mappings;
         json result;
         int32_t src_counter_ = 0;
+
+        void FinalizeCollector(const MappingCollector& collector);
+
+        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
 
         int32_t GetIdOfName(const UString& name);
 
@@ -63,6 +59,8 @@ namespace jetpack {
         HashMap<int32_t, int32_t> module_id_to_index_;
 
         std::shared_ptr<ModuleResolver> module_resolver_;
+
+        Vec<Sp<MappingCollector>> collectors_;
 
     };
 

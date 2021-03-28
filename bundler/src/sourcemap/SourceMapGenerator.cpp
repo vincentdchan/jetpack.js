@@ -98,18 +98,6 @@ namespace jetpack {
         return next_id;
     }
 
-    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col) {
-        int32_t var_index = GetIdOfName(name);
-        int32_t file_index = GetFilenameIndexByModuleId(fileId);
-        if (unlikely(file_index < 0)) {
-            // TODO: temporary return true, will return false in the future
-            return true;
-        }
-        GenerateVLQStr(mappings, after_col, file_index, before_line, before_col, var_index);
-        mappings.push_back(',');
-        return true;
-    }
-
     int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t moduleId) {
         auto iter = module_id_to_index_.find(moduleId);
         if (iter != module_id_to_index_.end()) {
@@ -123,20 +111,53 @@ namespace jetpack {
             return -1;
         }
 
-        AddSource(mod->path);
+        AddSource(mod->path());
 
         int32_t index = src_counter_++;
-        module_id_to_index_[mod->id] = index;
+        module_id_to_index_[mod->id()] = index;
         return index;
     }
 
     void SourceMapGenerator::Finalize() {
+        for (const auto& collector : collectors_) {
+            FinalizeCollector(*collector);
+        }
+
         result["mappings"] = mappings;
     }
 
+    void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
+        int32_t distLine = 0;
+        for (const auto& item : mappingCollector.items_) {
+            if (unlikely(distLine != item.distLine)) {
+                EndLine();
+                distLine = item.distLine;
+            }
+            bool ec = AddLocation(item.name, item.distColumn,
+                                  item.origin.fileId, item.origin.start.line, item.origin.start.column
+                                  );
+            J_ASSERT(ec);
+        }
+    }
+
+    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col) {
+        if (unlikely(fileId < 0)) {
+            J_ASSERT(fileId != -1);
+            return true;
+        }
+        int32_t var_index = GetIdOfName(name);
+        int32_t filenameIndex = GetFilenameIndexByModuleId(fileId);
+        if (unlikely(filenameIndex < 0)) {
+            return false;
+        }
+        GenerateVLQStr(mappings, after_col, filenameIndex, before_line, before_col, var_index);
+        mappings.push_back(',');
+        return true;
+    }
+
+
     std::string SourceMapGenerator::ToPrettyString() {
         try {
-            Finalize();
             return result.dump(2);
         } catch (std::exception& ex) {
             std::cerr << ex.what() << std::endl;

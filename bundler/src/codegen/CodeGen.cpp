@@ -57,9 +57,32 @@ namespace jetpack {
 
     CodeGen::CodeGen(
             const Config& config,
-            const Sp<SourceMapGenerator>& sourceMapGenerator,
+            const Sp<MappingCollector>& mc,
             OutputStream& output_stream):
-            config_(config), sourceMapGenerator_(sourceMapGenerator), output(output_stream) {}
+            config_(config), mappingCollector(mc), output(output_stream) {}
+
+    void CodeGen::WriteLineEnd() {
+        if (likely(mappingCollector)) {
+            mappingCollector->endLine();
+        }
+        if (!config_.minify) {
+            output << config_.line_end;
+            state_.line++;
+        }
+#ifdef DEBUG
+        output.flush();
+#endif
+    }
+
+    void CodeGen::WriteIndent() {
+        if (config_.minify) return;
+        for (std::uint32_t i = 0; i < state_.indent_level; i++) {
+            Write(config_.indent);
+        }
+#ifdef DEBUG
+        output.flush();
+#endif
+    }
 
     int CodeGen::ExpressionPrecedence(const Sp<SyntaxNode>& node) {
         switch (node->type) {
@@ -994,9 +1017,8 @@ namespace jetpack {
         } else {
             Write(node->name, node);
         }
-        if (sourceMapGenerator_) {
-            bool ec = sourceMapGenerator_->AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
-            J_ASSERT(ec);
+        if (likely(mappingCollector)) {
+            mappingCollector->addMapping(node->name, node->location, state_.column);
         }
     }
 

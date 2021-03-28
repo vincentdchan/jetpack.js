@@ -26,8 +26,6 @@ namespace jetpack {
             insertWithoutLock(mf);
         }
 
-        bool insertIfNotExists(const Sp<ModuleFile>& mf);
-
         Sp<ModuleFile> createNewIfNotExists(const std::string& path, bool& isNew);
 
         // nullable!
@@ -39,7 +37,7 @@ namespace jetpack {
 
     private:
         std::mutex m;
-        std::atomic<int32_t> mod_counter_;
+        std::atomic<int32_t> mod_counter_{};
 
         void insertWithoutLock(const Sp<ModuleFile>& mf);
 

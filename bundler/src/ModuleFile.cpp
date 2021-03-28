@@ -7,6 +7,10 @@
 
 namespace jetpack {
 
+    ModuleFile::ModuleFile(const std::string& path, int32_t id): path_(path), id_(id) {
+        mapping_collector_ = std::make_shared<MappingCollector>();
+    }
+
     void ModuleFile::RenameInnerScopes(RenamerCollection& renamer) {
         std::vector<Sp<MinifyNameGenerator>> result;
         result.reserve(ast->scope->children.size());
@@ -15,10 +19,7 @@ namespace jetpack {
         }
 
         auto final = MinifyNameGenerator::Merge(result);
-        {
-            std::lock_guard<std::mutex> lk(renamer.mutex_);
-            renamer.content.push_back(std::move(final));
-        }
+        renamer.PushGenerator(final);
     }
 
     Sp<MinifyNameGenerator> ModuleFile::RenameInnerScopes(Scope &scope, UnresolvedNameCollector* idLogger) {
@@ -48,28 +49,28 @@ namespace jetpack {
         MemoryOutputStream memoryOutputStream;
 
         if (config.comments) {
-            memoryOutputStream << u"// " << UString::fromStdString(this->path) << u"\n";
+            memoryOutputStream << u"// " << UString::fromStdString(path()) << u"\n";
         }
 
-        Sp<SourceMapGenerator> sourceMapGenerator;
+        Sp<MappingCollector> mappingCollector;
         if (config.sourcemap) {
             // TODO: filename?
-            sourceMapGenerator = std::make_shared<SourceMapGenerator>(module_resolver.lock(), "");
+            mappingCollector = std::make_shared<MappingCollector>();
         }
 
-        CodeGen codegen(config, sourceMapGenerator, memoryOutputStream);
+        CodeGen codegen(config, mappingCollector, memoryOutputStream);
         codegen.Traverse(ast);
         codegen_result = memoryOutputStream.ToString();
     }
 
     UString ModuleFile::GetModuleVarName() const {
-        std::string tmp = "mod_" + std::to_string(id);
+        std::string tmp = "mod_" + std::to_string(id());
         return UString::fromStdString(tmp);
     }
 
     ResolveResult<UString> ModuleFile::GetSource() const {
         assert(provider);
-        return provider->resolve(*this, path);
+        return provider->resolve(*this, path());
     }
 
 

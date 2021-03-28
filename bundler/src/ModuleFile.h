@@ -9,6 +9,7 @@
 #include <parser/Parser.hpp>
 #include "string/UString.h"
 #include "codegen/CodeGen.h"
+#include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"
 #include "ResolveResult.h"
 
@@ -21,21 +22,32 @@ namespace jetpack {
         std::vector<Sp<MinifyNameGenerator>> content;
         std::shared_ptr<UnresolvedNameCollector> idLogger;
 
+        inline void PushGenerator(const Sp<MinifyNameGenerator>& generator) {
+            std::lock_guard<std::mutex> lk(mutex_);
+            content.push_back(generator);
+        }
+
+    private:
         std::mutex mutex_;
 
     };
 
     class ModuleFile {
     public:
+        ModuleFile(const std::string& path, int32_t id_);
         /**
          * Unique id in module resolver
          */
-        int32_t id = 0;
+        inline int32_t id() const {
+            return id_;
+        }
 
         /**
-         * Abosolute path
+         * Absolute path
          */
-        std::string path;
+        inline const std::string& path() const {
+            return path_;
+        }
 
         UString default_export_name;
 
@@ -66,6 +78,8 @@ namespace jetpack {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
+        Sp<MappingCollector> mapping_collector_;
+
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
 
@@ -79,7 +93,10 @@ namespace jetpack {
             return ast->scope->export_manager;
         }
 
-    };
+    private:
+        int32_t id_;
+        std::string path_;
 
+    };
 
 }

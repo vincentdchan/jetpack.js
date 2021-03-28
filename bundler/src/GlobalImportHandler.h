@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <set>
+#include <mutex>
 #include "Utils.h"
 #include "parser/SyntaxNodes.h"
 #include "UniqueNameGenerator.h"
@@ -48,7 +49,7 @@ namespace jetpack {
 
         void GenCode(
                 const CodeGen::Config &config,
-                const Sp<SourceMapGenerator>& sourceMapGenerator,
+                const Sp<MappingCollector>& mc,
                 OutputStream& os);
 
         std::vector<Sp<ImportDeclaration>> imports;
@@ -56,13 +57,16 @@ namespace jetpack {
         /**
          * use set of pointers to mark external imports
          */
-        std::set<std::uintptr_t> external_import_ptrs;
+        std::set<uintptr_t> external_import_ptrs;
 
         HashMap<UString, GlobalImportInfo> import_infos;
 
         std::vector<Sp<ImportDeclaration>> gen_import_decls;
 
-        std::int32_t import_counter = 0;
+        int32_t import_counter = 0;
+
+    private:
+        std::mutex m;
 
     };
 

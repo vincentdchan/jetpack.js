@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
 #include <parser/ParserContext.h>
-#include "SourceMapGenerator.h"
+#include "sourcemap/SourceMapGenerator.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
 
@@ -17,15 +17,18 @@ inline std::string ParseAndGenSourceMap(const UString& content) {
     ParserContext::Config config = ParserContext::Config::Default();
     resolver->BeginFromEntryString(config, content);
 
-    auto sourceMapGenerator = std::make_shared<SourceMapGenerator>(resolver, "");
+    SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
     auto mod =  resolver->GetEntryModule();
     MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, sourceMapGenerator, ss);
+    CodeGen::Config codegenConfig;
+    CodeGen codegen(codegenConfig, mod->mapping_collector_, ss);
     codegen.Traverse(mod->ast);
 
-    return sourceMapGenerator->ToPrettyString();
+    sourceMapGenerator.AddCollector(mod->mapping_collector_);
+    sourceMapGenerator.Finalize();
+
+    return sourceMapGenerator.ToPrettyString();
 }
 
 TEST(SourceMap, VLQEncoding) {

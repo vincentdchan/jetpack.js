@@ -6,18 +6,6 @@
 
 namespace jetpack {
 
-    bool ModulesTable::insertIfNotExists(const Sp<ModuleFile>& mf) {
-        std::lock_guard guard(m);
-
-        if (pathToModule.find(mf->path) != pathToModule.end()) {
-            return false;  // exists;
-        }
-
-        insertWithoutLock(mf);
-
-        return true;
-    }
-
     Sp<ModuleFile> ModulesTable::createNewIfNotExists(const std::string &path, bool& isNew) {
         std::lock_guard guard(m);
 
@@ -27,10 +15,8 @@ namespace jetpack {
             return iter->second;  // exists;
         }
 
-        auto newMod = std::make_shared<ModuleFile>();
-
-        newMod->path = path;
-        newMod->id = pathToModule.size();
+        int32_t newId = pathToModule.size();
+        auto newMod = std::make_shared<ModuleFile>(path, newId);
 
         insertWithoutLock(newMod);
         isNew = true;
@@ -47,9 +33,9 @@ namespace jetpack {
     }
 
     void ModulesTable::insertWithoutLock(const Sp<ModuleFile> &mf) {
-        mf->id = mod_counter_++;
-        pathToModule[mf->path] = mf;
-        idToModule[mf->id] = mf;
+//        mf->id = mod_counter_++;
+        pathToModule[mf->path()] = mf;
+        idToModule[mf->id()] = mf;
     }
 
 }

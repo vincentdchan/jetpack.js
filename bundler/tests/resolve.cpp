@@ -32,12 +32,12 @@ TEST(MinifyNameGenerator, Next) {
 
 inline std::string ReplaceDefault(const std::string& src) {
     auto resolver = std::make_shared<ModuleResolver>();
-    auto mod = std::make_shared<ModuleFile>();
+    auto mod = std::make_shared<ModuleFile>("memory0", -1);
     mod->module_resolver = resolver;
 
     UString u16src = UString::fromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(mod->id, u16src, config);
+    auto ctx = std::make_shared<ParserContext>(mod->id(), u16src, config);
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();

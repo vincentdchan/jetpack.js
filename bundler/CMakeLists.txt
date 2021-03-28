@@ -21,9 +21,10 @@ set(SOURCE_FILES
         src/GlobalImportHandler.h
         src/GlobalImportHandler.cpp
         src/Error.h
-        src/Error.cpp
-        src/SourceMapGenerator.h
-        src/SourceMapGenerator.cpp
+        src/sourcemap/MappingCollector.h
+        src/sourcemap/MappingCollector.cpp
+        src/sourcemap/SourceMapGenerator.h
+        src/sourcemap/SourceMapGenerator.cpp
         src/codegen/NodeTraverser.h
         src/codegen/NodeTraverser.cpp
         src/codegen/CodeGen.h

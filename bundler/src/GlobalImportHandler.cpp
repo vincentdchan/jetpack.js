@@ -9,6 +9,7 @@ namespace jetpack {
 
     inline Sp<Identifier> MakeId(const UString& content) {
         auto id = std::make_shared<Identifier>();
+        id->location.fileId = -2;
         id->name = content;
         return id;
     }
@@ -26,6 +27,8 @@ namespace jetpack {
     }
 
     void GlobalImportHandler::HandleImport(const Sp<ImportDeclaration> &import) {
+        std::lock_guard<std::mutex> guard(m);
+
         imports.push_back(import);
         external_import_ptrs.insert(reinterpret_cast<std::intptr_t>(import.get()));
 
@@ -173,8 +176,8 @@ namespace jetpack {
         }
     }
 
-    void GlobalImportHandler::GenCode(const CodeGen::Config &config, const Sp<SourceMapGenerator>& sourceMapGenerator, OutputStream& os) {
-        CodeGen codegen(config, sourceMapGenerator, os);
+    void GlobalImportHandler::GenCode(const CodeGen::Config &config, const Sp<MappingCollector>& mc, OutputStream& os) {
+        CodeGen codegen(config, mc, os);
 
         for (auto& decl : gen_import_decls) {
             codegen.Traverse(decl);

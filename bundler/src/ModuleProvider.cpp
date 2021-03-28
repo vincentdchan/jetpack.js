@@ -14,7 +14,7 @@ namespace jetpack {
     }
 
     std::optional<std::string> FileModuleProvider::pMatch(const ModuleFile &mf, const std::string &path) const {
-        Path module_path(mf.path);
+        Path module_path(mf.path());
         module_path.Pop();
         module_path.Join(path);
 
@@ -44,7 +44,7 @@ namespace jetpack {
             return errResult;
         }
         // TODO: give error?
-        assert(err == io::IOError::Ok);
+        J_ASSERT(err == io::IOError::Ok);
         return ResolveResult(result);
     }
 

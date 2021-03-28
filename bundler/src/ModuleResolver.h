@@ -21,6 +21,7 @@
 #include "ModulesTable.h"
 #include "GlobalImportHandler.h"
 #include "WorkerError.h"
+#include "sourcemap/SourceMapGenerator.h"
 
 namespace jetpack {
 
@@ -138,7 +139,7 @@ namespace jetpack {
 
         void DumpAllResult(const CodeGen::Config& config,
                            const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars,
-                           const std::string& out_path);
+                           const std::string& outPath);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
 

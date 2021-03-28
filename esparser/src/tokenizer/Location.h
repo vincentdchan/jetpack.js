@@ -11,8 +11,8 @@ struct Position {
     uint32_t line;
     uint32_t column;
 
-    inline Position(): line(0u), column(0u) {}
-    inline Position(uint32_t l, uint32_t c):
+    inline Position() noexcept: line(0u), column(0u) {}
+    inline Position(uint32_t l, uint32_t c) noexcept:
             line(l), column(c) {}
 };
 
@@ -22,16 +22,11 @@ public:
     Position start;
     Position end;
 
-    inline SourceLocation() = default;
-    inline SourceLocation(int32_t fId, Position s, Position e):
+    static SourceLocation NoOrigin;
+
+    inline SourceLocation() noexcept = default;
+    inline SourceLocation(int32_t fId, Position s, Position e) noexcept :
             fileId(fId), start(s), end(e) {}
 };
 
 static_assert(sizeof(SourceLocation) == 20, "fixed size");
-
-namespace FileIndex {
-
-    uint32_t fileIndexOfFile(const UString& filePath);
-    UString fileOfFileIndex(uint32_t);
-
-}
