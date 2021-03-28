@@ -18,10 +18,3 @@ add_library(${PROJECT_NAME} STATIC
         src/Utils.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC src)
-
-IF (CMAKE_BUILD_TYPE STREQUAL Debug)
-    message("debug mode")
-    add_definitions(-D_DEBUG)
-ELSE()
-    message("release mode")
-ENDIF()

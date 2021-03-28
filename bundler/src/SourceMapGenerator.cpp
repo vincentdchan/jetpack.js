@@ -23,35 +23,18 @@ namespace jetpack {
                                          'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                          '4', '5', '6', '7', '8', '9', '+', '/'};
 
-    bool SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,
-            int file_index, int before_line, int before_column, int var_index) {
-
-        if (unlikely(!IntToVLQ(ss, transformed_column))) {
-            return false;
-        }
-
-        if (unlikely(!IntToVLQ(ss, file_index))) {
-            return false;
-        }
-
-        if (unlikely(!IntToVLQ(ss, before_line))) {
-            return false;
-        }
-
-        if (unlikely(!IntToVLQ(ss, before_column))) {
-            return false;
-        }
-
-        return IntToVLQ(ss, var_index);
+    inline char IntToBase64(int code) {
+        J_ASSERT(code >= 0 && code <= 0b111111);
+        return Base64EncodingTable[code];
     }
 
-    bool SourceMapGenerator::IntToVLQ(std::string& ss, int code) {
+    void SourceMapGenerator::IntToVLQ(std::string& ss, int code) {
         int buffer[IntToVLQBufferSize];
 
-        if (code < 0) return false;
+        J_ASSERT(code >= 0);
         int s1 = code << 1;
         int counter = 0;
-        if (s1 > 0b11111) {
+        if (unlikely(s1 > 0b11111)) {
             memset(buffer, 0, IntToVLQBufferSize * sizeof(int));
             while (s1 > 0b11111) {
                 buffer[counter++] = s1 & 0b11111;
@@ -63,33 +46,26 @@ namespace jetpack {
                 if (i != counter - 1) {
                     buffer[i] |= 0b100000;
                 }
-                char ch = 0;
-                if (!IntToBase64(buffer[i], ch)) {
-                    return false;
-                }
+                char ch = IntToBase64(buffer[i]);
                 ss.push_back(ch);
             }
         } else {
-            char ch = 0;
-            if (!IntToBase64(s1, ch)) {
-                return false;
-            }
-            ss.push_back(buffer[0]);
+            char ch = IntToBase64(s1);
+            ss.push_back(ch);
         }
-        return true;
     }
 
-    bool SourceMapGenerator::IntToBase64(int code, char &ch) {
-        if (code < 0 || code > 0b111111) {
-            return false;
-        }
-        ch = Base64EncodingTable[code];
-        return true;
+    void SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,
+                                            int file_index, int before_line, int before_column, int var_index) {
+        IntToVLQ(ss, transformed_column);
+        IntToVLQ(ss, file_index);
+        IntToVLQ(ss, before_line);
+        IntToVLQ(ss, before_column);
+        IntToVLQ(ss, var_index);
     }
 
-//    SourceMapGenerator::SourceMapGenerator(): SourceMapGenerator(nullptr, "unknown") {
+//    static constexpr size_t TableSize = sizeof Base64EncodingTable / sizeof(char);
 //
-//    }
 
     SourceMapGenerator::SourceMapGenerator(
             const std::shared_ptr<ModuleResolver>& resolver,
@@ -128,9 +104,7 @@ namespace jetpack {
         if (unlikely(file_index < 0)) {
             return false;
         }
-        if (unlikely(!GenerateVLQStr(mappings, after_col, file_index, before_line, before_col, var_index))) {
-            return false;
-        }
+        GenerateVLQStr(mappings, after_col, file_index, before_line, before_col, var_index);
         mappings.push_back(',');
         return true;
     }
@@ -156,12 +130,17 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::Finalize() {
-        result["mappings"] = std::move(mappings);
+        result["mappings"] = mappings;
     }
 
     std::string SourceMapGenerator::ToPrettyString() {
-        Finalize();
-        return result.dump(2);
+        try {
+            Finalize();
+            return result.dump(2);
+        } catch (std::exception& ex) {
+            std::cerr << ex.what() << std::endl;
+            return {};
+        }
     }
 
 }

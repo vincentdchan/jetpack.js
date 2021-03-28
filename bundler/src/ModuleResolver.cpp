@@ -113,9 +113,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
-                                              const char16_t* value) {
-        UString src(value);
-
+                                              UString src) {
         std::string m0("memory0");
 
         // push file provider

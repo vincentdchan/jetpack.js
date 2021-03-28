@@ -61,7 +61,7 @@ namespace jetpack {
                             std::string origin_path);
 
         void BeginFromEntryString(const parser::ParserContext::Config& config,
-                                  const char16_t* str);
+                                  UString str);
 
         void ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
                                const parser::ParserContext::Config& config,

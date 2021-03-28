@@ -27,9 +27,8 @@ namespace jetpack {
 
     class SourceMapGenerator {
     public:
-        static bool GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
-        static bool IntToVLQ(std::string& ss, int code);
-        static bool IntToBase64(int, char& ch);
+        static void GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
+        static void IntToVLQ(std::string& ss, int code);
 
         SourceMapGenerator() = delete;
 

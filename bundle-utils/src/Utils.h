@@ -99,5 +99,5 @@ using Vec = std::vector<T>;
 #if defined(_DEBUG)
 #define J_ASSERT(s) assert(s)
 #else
-#define J_ASSERT(s) void(s)
+#define J_ASSERT(s)
 #endif

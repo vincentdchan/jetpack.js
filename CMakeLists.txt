@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
+IF (CMAKE_BUILD_TYPE STREQUAL Debug)
+    message("Debug mode")
+    add_definitions(-D_DEBUG)
+ELSE()
+    message("Release mode")
+    add_definitions(-D_RELEASE)
+ENDIF()
+
 include_directories(./third_party/robin-hood-hashing/src/include)
 
 add_subdirectory(./third_party/nlohmann_json)

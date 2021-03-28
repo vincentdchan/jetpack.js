@@ -995,7 +995,8 @@ namespace jetpack {
             Write(node->name, node);
         }
         if (sourceMapGenerator_) {
-            sourceMapGenerator_->AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
+            bool ec = sourceMapGenerator_->AddLocation(node->name, state_.column, node->location.fileId, node->location.start.line, node->location.start.column);
+            J_ASSERT(ec);
         }
     }
 
