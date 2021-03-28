@@ -48,7 +48,7 @@ namespace jetpack {
             uint32_t start_indent_level = 0;
             UString  indent = u"  ";
             UString  line_end = u"\n";
-            bool     source_map = false;
+            bool     sourcemap = false;
             bool     comments = true;
 
         };

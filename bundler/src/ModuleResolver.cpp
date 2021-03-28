@@ -446,19 +446,46 @@ namespace jetpack {
 
         // END every modules gen their own code
 
+        DumpAllResult(config, final_export_vars, out_path);
+    }
+
+    // final stage
+    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& out_path) {
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), "");
 
-        FileOutputStream fileOutputStream(out_path);
-        global_import_handler_.GenCode(config, sourcemapGenerator, fileOutputStream);
+        MemoryOutputStream memOutputStream;
+        global_import_handler_.GenCode(config, sourcemapGenerator, memOutputStream);
 
         ClearAllVisitedMark();
-        MergeModules(entry_module, fileOutputStream);
+        MergeModules(entry_module, memOutputStream);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, sourcemapGenerator, fileOutputStream);
+        CodeGen codegen(config, sourcemapGenerator, memOutputStream);
         codegen.Traverse(final_export);
 
-        fileOutputStream.Close();
+        std::future<bool> srcFut;
+        if (config.sourcemap) {
+            srcFut = DumpSourceMap(out_path, sourcemapGenerator);
+        }
+
+        std::string u8content = memOutputStream.ToUTF8();
+        io::IOError err = io::WriteBufferToPath(out_path, u8content.c_str(), u8content.size());
+        J_ASSERT(err == io::IOError::Ok);
+
+        if (config.sourcemap) {
+            if (unlikely(!srcFut.get())) {   // wait to finished
+                std::cerr << "dump source map failed: " << out_path << std::endl;
+            }
+        }
+    }
+
+    // dump parallel
+    std::future<bool> ModuleResolver::DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen) {
+        return thread_pool_->enqueue([outPath, gen]() -> bool {
+            std::string pathStr = outPath + ".map";
+
+            return gen->DumpFile(pathStr);
+        });
     }
 
     void ModuleResolver::RenameAllInnerScopes() {

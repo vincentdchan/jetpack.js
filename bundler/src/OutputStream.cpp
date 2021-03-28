@@ -46,15 +46,4 @@ namespace jetpack {
     MemoryOutputStream::~MemoryOutputStream() {
     }
 
-    FileOutputStream::FileOutputStream(const std::string &path): path_(path), MemoryOutputStream() {
-
-    }
-
-    void FileOutputStream::Close() {
-        std::string u8content = ToUTF8();
-        io::IOError err = io::WriteBufferToPath(path_, u8content.c_str(), u8content.size());
-        assert(err == io::IOError::Ok);
-
-        OutputStream::Close();
-    }
 }

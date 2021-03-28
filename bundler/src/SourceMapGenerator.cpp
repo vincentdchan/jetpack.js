@@ -2,9 +2,9 @@
 // Created by Duzhong Chen on 2020/7/13.
 //
 
-#include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include "io/FileIO.h"
 #include "SourceMapGenerator.h"
 #include "ModuleResolver.h"
 
@@ -102,7 +102,8 @@ namespace jetpack {
         int32_t var_index = GetIdOfName(name);
         int32_t file_index = GetFilenameIndexByModuleId(fileId);
         if (unlikely(file_index < 0)) {
-            return false;
+            // TODO: temporary return true, will return false in the future
+            return true;
         }
         GenerateVLQStr(mappings, after_col, file_index, before_line, before_col, var_index);
         mappings.push_back(',');
@@ -141,6 +142,17 @@ namespace jetpack {
             std::cerr << ex.what() << std::endl;
             return {};
         }
+    }
+
+    bool SourceMapGenerator::DumpFile(const std::string &path, bool pretty) {
+        int indent = -1;
+        if (pretty) {
+            indent = 2;
+        }
+        Finalize();
+        std::string finalStr = result.dump(indent);
+        io::IOError err = io::WriteBufferToPath(path, finalStr.c_str(), finalStr.size());
+        return err == io::IOError::Ok;
     }
 
 }

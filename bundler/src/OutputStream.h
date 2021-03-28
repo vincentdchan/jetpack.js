@@ -50,16 +50,4 @@ namespace jetpack {
 
     };
 
-    class FileOutputStream : public MemoryOutputStream {
-    public:
-        FileOutputStream(const std::string& path);
-
-        void Close() override;
-
-    private:
-        std::string path_;
-
-    };
-
-
 }

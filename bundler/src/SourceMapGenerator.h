@@ -48,6 +48,8 @@ namespace jetpack {
 
         std::string ToPrettyString();
 
+        bool DumpFile(const std::string& path, bool pretty = false);
+
     private:
         std::string mappings;
         json result;

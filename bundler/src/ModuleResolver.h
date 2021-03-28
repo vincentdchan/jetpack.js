@@ -136,6 +136,12 @@ namespace jetpack {
                                     bool is_import,
                                     const std::string& path);
 
+        void DumpAllResult(const CodeGen::Config& config,
+                           const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars,
+                           const std::string& out_path);
+
+        std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
+
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
 

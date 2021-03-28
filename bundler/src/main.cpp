@@ -98,6 +98,10 @@ int main(int argc, char** argv) {
             library = true;
         }
 
+        if (result[OPT_SOURCEMAP].count()) {
+            sourcemap = true;
+        }
+
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
             return AnalyzeModule(argv[0], path, jsx, trace_file);
@@ -173,6 +177,8 @@ static int BundleModule(const std::string& self_path_str,
             codegen_config.comments = false;
             resolver->SetNameGenerator(MinifyNameGenerator::Make());
         }
+
+        codegen_config.sourcemap = sourcemap;
 
         resolver->SetTraceFile(true);
         resolver->BeginFromEntry(parser_config, self_path.ToString(), path);

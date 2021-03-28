@@ -52,7 +52,7 @@ namespace jetpack {
         }
 
         Sp<SourceMapGenerator> sourceMapGenerator;
-        if (config.source_map) {
+        if (config.sourcemap) {
             // TODO: filename?
             sourceMapGenerator = std::make_shared<SourceMapGenerator>(module_resolver.lock(), "");
         }
