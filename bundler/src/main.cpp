@@ -17,6 +17,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
+#include "JetTime.h"
 #include "Path.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
@@ -152,7 +153,7 @@ static int BundleModule(const std::string& self_path_str,
                         const std::string& path,
                         const std::string& out_path) {
 
-    auto start = utils::GetCurrentMs();
+    auto start = time::GetCurrentMs();
     Path self_path(self_path_str);
     self_path.Pop();
 
@@ -178,7 +179,7 @@ static int BundleModule(const std::string& self_path_str,
         resolver->CodeGenAllModules(codegen_config, out_path);
 
         std::cout << "Finished." << std::endl;
-        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << utils::GetCurrentMs() - start << " ms." << std::endl;
+        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start << " ms." << std::endl;
         return 0;
     } catch (ModuleResolveException& err) {
         err.PrintToStdErr();

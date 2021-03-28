@@ -85,14 +85,6 @@ namespace jetpack::utils {
 #endif
     }
 
-    inline int64_t GetCurrentMs() {
-        using namespace std::chrono;
-        milliseconds ms = duration_cast< milliseconds >(
-                system_clock::now().time_since_epoch()
-        );
-        return ms.count();
-    }
-
 }
 
 template <typename T>
