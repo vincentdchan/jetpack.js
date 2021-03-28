@@ -25,8 +25,11 @@ namespace jetpack {
         return lit;
     }
 
+// tricks from https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
+#define DUMMY
+
     inline bool IsValieResult(std::int64_t tmp) {
-        return tmp >= std::numeric_limits<std::int32_t>::min() && tmp <= std::numeric_limits<std::int32_t>::max();
+        return tmp >= std::numeric_limits<std::int32_t>::min DUMMY () && tmp <= std::numeric_limits<std::int32_t>::max DUMMY ();
     }
 
     Sp<Expression> ContantFolding::TryBinaryExpression(const Sp<BinaryExpression> &binary) {

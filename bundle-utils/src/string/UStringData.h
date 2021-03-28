@@ -22,7 +22,7 @@ public:
     // always signed
 #  if !defined(__LP64__) && !defined(Q_CLANG_QDOC)
     constexpr inline QFlag(long value) noexcept : i(int(value)) {}
-    constexpr inline QFlag(ulong value) noexcept : i(int(long(value))) {}
+    constexpr inline QFlag(unsigned long value) noexcept : i(int(long(value))) {}
 #  endif
     constexpr inline QFlag(uint32_t value) noexcept : i(int(value)) {}
     constexpr inline QFlag(short value) noexcept : i(int(value)) {}

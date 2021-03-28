@@ -9,7 +9,6 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include <memory>
-#include <robin_hood.h>
 #include <tsl/ordered_map.h>
 #include "string/UString.h"
 
@@ -58,8 +57,8 @@ namespace jetpack {
 
         int32_t GetFilenameIndexByModuleId(int32_t moduleId);
 
-        robin_hood::unordered_map<UString, int32_t> names_map_;
-        robin_hood::unordered_map<int32_t, int32_t> module_id_to_index_;
+        HashMap<UString, int32_t> names_map_;
+        HashMap<int32_t, int32_t> module_id_to_index_;
 
         std::shared_ptr<ModuleResolver> module_resolver_;
 

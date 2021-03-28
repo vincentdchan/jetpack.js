@@ -67,6 +67,36 @@ namespace jetpack::io {
     }
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size) {
+#if defined(_WIN32)
+        HANDLE hFile = ::CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            std::cerr << "open file failed: " << filename << ", " << ::GetLastError() << std::endl;
+            return IOError::OpenFailed;
+        }
+
+        HANDLE hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, size, NULL);
+        if (hMapping == NULL) {
+            ::CloseHandle(hFile);
+            std::cerr << "write file failed: " << filename << ", " << ::GetLastError() << std::endl;
+            return IOError::WriteFailed;
+        }
+
+        void* p = MapViewOfFile(hMapping, FILE_MAP_WRITE, 0, 0, 0);
+        if (p == NULL) {
+            ::CloseHandle(hMapping);
+            ::CloseHandle(hFile);
+            std::cerr << "write file failed: " << filename << ", " << ::GetLastError() << std::endl;
+            return IOError::WriteFailed;
+        }
+
+        ::memcpy(p, buffer, size);
+
+        ::UnmapViewOfFile(p);
+        ::CloseHandle(hMapping);
+        ::CloseHandle(hFile);
+
+        return IOError::Ok;
+#else
         int fd = ::open(filename.c_str(), O_RDWR | O_CREAT, 0644);
         if (fd < 0) {
             std::cerr << "open file failed: " << strerror(errno) << std::endl;
@@ -89,6 +119,7 @@ namespace jetpack::io {
         ::close(fd);
 
         return IOError::Ok;
+#endif
     }
 
 }

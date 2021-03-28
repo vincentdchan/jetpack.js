@@ -858,6 +858,10 @@ static uint64_t siphash(const uint8_t *in, uint64_t inlen, const uint64_t seed)
     return b;
 }
 
+#if defined(_WIN32)
+#define __SIZEOF_POINTER__ sizeof(uintptr_t)
+#endif
+
 size_t qHashBits(const void *p, size_t size, size_t seed) noexcept
 {
     if (size <= __SIZEOF_POINTER__)
