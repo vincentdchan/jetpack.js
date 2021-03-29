@@ -23,6 +23,10 @@ namespace jetpack {
                                          'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                          '4', '5', '6', '7', '8', '9', '+', '/'};
 
+    static std::once_flag back_encoding_init_;
+
+    static int Base64BackEncodingTable[127];
+
     inline char IntToBase64(int code) {
         J_ASSERT(code >= 0 && code <= 0b111111);
         return Base64EncodingTable[code];
@@ -34,7 +38,7 @@ namespace jetpack {
         J_ASSERT(code >= 0);
         int s1 = code << 1;
         int counter = 0;
-        if (unlikely(s1 > 0b11111)) {
+        if (s1 > 0b11111) {
             memset(buffer, 0, IntToVLQBufferSize * sizeof(int));
             while (s1 > 0b11111) {
                 buffer[counter++] = s1 & 0b11111;
@@ -53,6 +57,36 @@ namespace jetpack {
             char ch = IntToBase64(s1);
             ss.push_back(ch);
         }
+    }
+
+    int SourceMapGenerator::VLQToInt(const std::string &str) {
+        std::call_once(back_encoding_init_, [] {
+            memset(Base64BackEncodingTable, 0, sizeof(Base64BackEncodingTable));
+            static constexpr size_t tableSize = sizeof(Base64EncodingTable) / sizeof(char);
+
+            for (int i = 0; i < tableSize; i++) {
+                char ch = Base64EncodingTable[i];
+                Base64BackEncodingTable[ch] = i;
+            }
+        });
+
+        int result = 0;
+
+        std::vector<int> buffer;
+        buffer.resize(str.size(), 0);
+
+        for (uint32_t i = 0; i < str.size(); i++) {
+            char ch = str.at(i);
+            J_ASSERT(ch < 127);
+            int intValue = Base64BackEncodingTable[ch];
+            buffer[i] = intValue & 0b11111;
+        }
+
+        for (int32_t i = buffer.size() - 1; i >= 0; i--) {
+            result = result << 5 | buffer[i];
+        }
+
+        return result >> 1;
     }
 
     void SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,

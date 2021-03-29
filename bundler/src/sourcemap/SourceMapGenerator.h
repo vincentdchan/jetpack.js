@@ -18,6 +18,7 @@ namespace jetpack {
     public:
         static void GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
         static void IntToVLQ(std::string& ss, int code);
+        static int VLQToInt(const std::string& str);
 
         SourceMapGenerator() = delete;
 

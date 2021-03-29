@@ -34,6 +34,18 @@ TEST(SourceMap, VLQEncoding) {
     std::string str;
     SourceMapGenerator::IntToVLQ(str, 16);
     EXPECT_STREQ(str.c_str(), "gB");
+
+    EXPECT_EQ(SourceMapGenerator::VLQToInt("gB"), 16);
+
+    std::vector<int> testCases { 10, 1000, 1234, 100000 };
+    for (auto i : testCases) {
+        std::string vlq;
+        SourceMapGenerator::IntToVLQ(vlq, i);
+
+        EXPECT_TRUE(!vlq.empty());
+        int back = SourceMapGenerator::VLQToInt(vlq);
+        EXPECT_EQ(back, i);
+    }
 }
 
 TEST(SourceMap, Simple) {
@@ -43,5 +55,11 @@ TEST(SourceMap, Simple) {
                 "}\n"
     );
     auto result = ParseAndGenSourceMap(src);
-    std::cout << result;
+
+    std::cout << result << std::endl;
+    auto resultJson = nlohmann::json::parse(result);
+    EXPECT_EQ(resultJson["version"].get<int>(), 3);
+    EXPECT_STREQ(resultJson["file"].get<std::string>().c_str(), "memory0");
+    EXPECT_TRUE(resultJson["sources"].is_array());
+    EXPECT_TRUE(resultJson["names"].is_array());
 }
