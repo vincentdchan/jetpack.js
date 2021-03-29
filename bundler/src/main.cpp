@@ -38,13 +38,11 @@ using namespace jetpack;
 
 #ifndef __EMSCRIPTEN__
 
-static int AnalyzeModule(const std::string& self_path,
-                         const std::string& path,
+static int AnalyzeModule(const std::string& path,
                          bool jsx,
                          bool trace_file);
 
-static int BundleModule(const std::string& self_path,
-                        bool jsx,
+static int BundleModule(bool jsx,
                         bool minify,
                         bool library,
                         bool sourcemap,
@@ -104,14 +102,14 @@ int main(int argc, char** argv) {
 
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
-            return AnalyzeModule(argv[0], path, jsx, trace_file);
+            return AnalyzeModule(path, jsx, trace_file);
         }
 
         if (result[OPT_OUT].count()) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(argv[0], jsx, minify, library, sourcemap, entry_path, out_path);
+            return BundleModule(jsx, minify, library, sourcemap, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;
@@ -122,13 +120,9 @@ int main(int argc, char** argv) {
     }
 }
 
-static int AnalyzeModule(const std::string& self_path_str,
-                         const std::string& path,
+static int AnalyzeModule(const std::string& path,
                          bool jsx,
                          bool trace_file) {
-    Path self_path(self_path_str);
-    self_path.Pop();
-
     parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
     if (jsx) {
         parser_config.jsx = true;
@@ -140,7 +134,7 @@ static int AnalyzeModule(const std::string& self_path_str,
 
     try {
         resolver->SetTraceFile(trace_file);
-        resolver->BeginFromEntry(parser_config, self_path.ToString(), path);
+        resolver->BeginFromEntry(parser_config, path);
         resolver->PrintStatistic();
         return 0;
     } catch (ModuleResolveException& err) {
@@ -149,8 +143,7 @@ static int AnalyzeModule(const std::string& self_path_str,
     }
 }
 
-static int BundleModule(const std::string& self_path_str,
-                        bool jsx,
+static int BundleModule(bool jsx,
                         bool minify,
                         bool library,
                         bool sourcemap,
@@ -158,8 +151,6 @@ static int BundleModule(const std::string& self_path_str,
                         const std::string& out_path) {
 
     auto start = time::GetCurrentMs();
-    Path self_path(self_path_str);
-    self_path.Pop();
 
     try {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
@@ -181,7 +172,7 @@ static int BundleModule(const std::string& self_path_str,
         codegen_config.sourcemap = sourcemap;
 
         resolver->SetTraceFile(true);
-        resolver->BeginFromEntry(parser_config, self_path.ToString(), path);
+        resolver->BeginFromEntry(parser_config, path);
         resolver->CodeGenAllModules(codegen_config, out_path);
 
         std::cout << "Finished." << std::endl;

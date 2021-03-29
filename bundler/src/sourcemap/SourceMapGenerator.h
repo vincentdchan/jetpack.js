@@ -36,6 +36,9 @@ namespace jetpack {
             mappings.push_back(';');
         }
 
+        /**
+         * Unify all collectors together
+         */
         void Finalize();
 
         std::string ToPrettyString();

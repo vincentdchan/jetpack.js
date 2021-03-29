@@ -92,25 +92,28 @@ namespace jetpack {
         std::cerr << "Error: " << error_content << std::endl;
     }
 
-    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config,
-                                        std::string base_path,
-                                        std::string target_path) {
-        // push file provider
-        auto fileProvider = std::make_shared<FileModuleProvider>(base_path);
-        providers_.push_back(fileProvider);
-
-        std::string path;
-        if (target_path.empty()) {
+    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config, const std::string& targetPath) {
+        std::string absolutePath;
+        if (targetPath.empty()) {
             return;
-        } else if (target_path[0] == Path::PATH_DIV) {
-            path = target_path;
+        } else if (targetPath[0] == Path::PATH_DIV) {
+            absolutePath = targetPath;
         } else {
             Path p(utils::GetRunningDir());
-            p.Join(target_path);
-            path = p.ToString();
+            p.Join(targetPath);
+            absolutePath = p.ToString();
         }
 
-        pBeginFromEntry(fileProvider, config, path);
+        auto basePath = FindPathOfPackageJson(absolutePath);
+        if (unlikely(!basePath.has_value())) {
+            throw ModuleResolveException(absolutePath, "can not find package.json");
+        }
+
+        // push file provider
+        auto fileProvider = std::make_shared<FileModuleProvider>(*basePath);
+        providers_.push_back(fileProvider);
+
+        pBeginFromEntry(fileProvider, config, absolutePath.substr(basePath->size() + 1));
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
@@ -192,7 +195,7 @@ namespace jetpack {
     void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
                                                 const Sp<jetpack::ModuleFile> &mf, bool is_import,
                                                 const std::string &path) {
-        if (!trace_file) return;
+        if (unlikely(!trace_file)) return;
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
@@ -1096,20 +1099,21 @@ namespace jetpack {
         return { nullptr, "" };
     }
 
-    std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entry_path) {
-        Path _path(entry_path);
-        _path.slices.pop_back();
+    std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entryPath) {
+        Path path(entryPath);
+        path.slices.pop_back();
 
-        while (_path.slices.empty()) {
-            _path.slices.push_back(PackageJsonName);
+        while (likely(!path.slices.empty())) {
+            path.slices.emplace_back(PackageJsonName);
 
-            auto full_path = _path.ToString();
-            if (io::IsFileExist(full_path)) {
-                return { full_path };
+            auto full_path = path.ToString();
+            if (likely(io::IsFileExist(full_path))) {
+                path.slices.pop_back();
+                return { path.ToString() };
             }
 
-            _path.slices.pop_back();
-            _path.slices.pop_back();
+            path.slices.pop_back();
+            path.slices.pop_back();
         }
 
         return std::nullopt;

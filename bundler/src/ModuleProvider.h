@@ -39,6 +39,9 @@ namespace jetpack {
         [[nodiscard]]
         std::optional<std::string> pMatch(const ModuleFile &mf, const std::string &path) const;
 
+        [[nodiscard]]
+        std::optional<std::string> TryWithSuffix(const ModuleFile &mf, const std::string &path, const std::string& suffix) const;
+
     };
 
     class MemoryModuleProvider : public ModuleProvider {

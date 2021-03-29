@@ -13,31 +13,60 @@ namespace jetpack {
     }
 
     std::optional<std::string> FileModuleProvider::pMatch(const ModuleFile &mf, const std::string &path) const {
-        Path module_path(mf.path());
+        Path module_path(base_path_);
+        module_path.Join(mf.path());
         module_path.Pop();
         module_path.Join(path);
 
-        std::string source_path = module_path.ToString();
+        std::string sourcePath = module_path.ToString();
 
-        if (!io::IsFileExist(source_path)) {
-            if (!module_path.EndsWith(".js")) {
-                module_path.slices[module_path.slices.size() - 1] += ".js";
-                source_path = module_path.ToString();
-            }
-
-            if (!io::IsFileExist(source_path)) {
-                return std::nullopt;
-            }
+        if (unlikely(sourcePath.rfind(base_path_, 0) != 0)) {  // is not under working dir
+            std::cerr << "path: " << sourcePath << " is not under working dir: " << base_path_ << std::endl;
+            return std::nullopt;
         }
-        return { source_path };
+
+        if (!io::IsFileExist(sourcePath)) {
+            if (!module_path.EndsWith(".js")) {
+                auto tryResult = TryWithSuffix(mf, sourcePath, ".js");
+                if (tryResult.has_value()) {
+                    return tryResult;
+                }
+            }
+
+            if (!module_path.EndsWith(".jsx")) {
+                auto tryResult = TryWithSuffix(mf, sourcePath, ".jsx");
+                if (tryResult.has_value()) {
+                    return tryResult;
+                }
+            }
+
+            return std::nullopt;
+        }
+        return { sourcePath.substr(base_path_.size() + 1) };
+    }
+
+    std::optional<std::string> FileModuleProvider::TryWithSuffix(const ModuleFile &mf, const std::string &path, const std::string& suffix) const {
+        std::string jsPath = path + suffix;
+        if (!io::IsFileExist(jsPath)) {
+            return std::nullopt;
+        }
+        return { jsPath.substr(base_path_.size() + 1) };
     }
 
     ResolveResult<UString> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
         UString result;
-        io::IOError err = io::ReadFileToUString(resolvedPath, result);
+
+        // resolvedPath should not be a absolute path
+        J_ASSERT(resolvedPath.at(0) != Path::PATH_DIV);
+
+        Path absolutePath(base_path_);
+        absolutePath.Join(resolvedPath);
+        auto absPathStr = absolutePath.ToString();
+
+        io::IOError err = io::ReadFileToUString(absPathStr, result);
         if (err != io::IOError::Ok) {
             ResolveResult<UString> errResult;
-            errResult.error = { { resolvedPath, std::string(io::IOErrorToString(err)) } };
+            errResult.error = { { absPathStr, std::string(io::IOErrorToString(err)) } };
             return errResult;
         }
         return ResolveResult(result);
