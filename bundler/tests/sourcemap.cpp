@@ -3,7 +3,6 @@
 //
 
 #include <gtest/gtest.h>
-#include <parser/Parser.hpp>
 #include <parser/ParserContext.h>
 #include "sourcemap/SourceMapGenerator.h"
 #include "ModuleResolver.h"

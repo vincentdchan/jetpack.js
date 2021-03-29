@@ -3,7 +3,6 @@
 //
 
 #include "ModuleProvider.h"
-#include "Utils.h"
 #include "Path.h"
 #include "io/FileIO.h"
 
@@ -27,8 +26,6 @@ namespace jetpack {
             }
 
             if (!io::IsFileExist(source_path)) {
-//                ResolveResult<std::string> result;
-//                result.error = { { mf.path, std::string("file doesn't exist: ") + source_path } };
                 return std::nullopt;
             }
         }
@@ -43,8 +40,6 @@ namespace jetpack {
             errResult.error = { { resolvedPath, std::string(io::IOErrorToString(err)) } };
             return errResult;
         }
-        // TODO: give error?
-        J_ASSERT(err == io::IOError::Ok);
         return ResolveResult(result);
     }
 

@@ -155,7 +155,6 @@ namespace jetpack {
         return true;
     }
 
-
     std::string SourceMapGenerator::ToPrettyString() {
         try {
             return result.dump(2);
