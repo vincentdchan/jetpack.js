@@ -87,7 +87,9 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf, OutputStream& out_path);
+        void MergeModules(const Sp<ModuleFile>& mf,
+                          SourceMapGenerator& sourceMapGenerator,
+                          OutputStream& out_path);
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {

@@ -14,6 +14,9 @@
 namespace jetpack {
     class ModuleResolver;
 
+    /**
+     * unify all mappings from different modules
+     */
     class SourceMapGenerator {
     public:
         static void GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
@@ -39,7 +42,7 @@ namespace jetpack {
 
         bool DumpFile(const std::string& path, bool pretty = false);
 
-        inline void AddCollector(const Sp<MappingCollector> collector) {
+        inline void AddCollector(const Sp<MappingCollector>& collector) {
             collectors_.push_back(collector);
         }
 

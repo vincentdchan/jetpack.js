@@ -462,8 +462,10 @@ namespace jetpack {
         MemoryOutputStream memOutputStream;
         global_import_handler_.GenCode(config, mappingCollector, memOutputStream);
 
+        auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+
         ClearAllVisitedMark();
-        MergeModules(entry_module, memOutputStream);
+        MergeModules(entry_module, *sourcemapGenerator, memOutputStream);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
         CodeGen codegen(config, mappingCollector, memOutputStream);
@@ -471,7 +473,6 @@ namespace jetpack {
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
-            auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 
@@ -491,6 +492,7 @@ namespace jetpack {
         return thread_pool_->enqueue([outPath, gen]() -> bool {
             std::string pathStr = outPath + ".map";
 
+            gen->Finalize();
             return gen->DumpFile(pathStr);
         });
     }
@@ -1037,15 +1039,17 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, OutputStream &out) {
+    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, SourceMapGenerator& sourceMapGenerator, OutputStream &out) {
         if (mf->visited_mark) {
             return;
         }
         mf->visited_mark = true;
 
+        sourceMapGenerator.AddCollector(mf->mapping_collector_);
+
         for (auto& ref : mf->ref_mods) {
             auto new_mf = ref.lock();
-            MergeModules(new_mf, out);
+            MergeModules(new_mf, sourceMapGenerator, out);
         }
 
         out << mf->codegen_result << u"\n";

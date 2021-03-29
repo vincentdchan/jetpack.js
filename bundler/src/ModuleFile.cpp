@@ -52,13 +52,7 @@ namespace jetpack {
             memoryOutputStream << u"// " << UString::fromStdString(path()) << u"\n";
         }
 
-        Sp<MappingCollector> mappingCollector;
-        if (config.sourcemap) {
-            // TODO: filename?
-            mappingCollector = std::make_shared<MappingCollector>();
-        }
-
-        CodeGen codegen(config, mappingCollector, memoryOutputStream);
+        CodeGen codegen(config, mapping_collector_, memoryOutputStream);
         codegen.Traverse(ast);
         codegen_result = memoryOutputStream.ToString();
     }

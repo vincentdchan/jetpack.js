@@ -157,7 +157,7 @@ namespace jetpack {
             FinalizeCollector(*collector);
         }
 
-        result["mappings"] = mappings;
+        result["mappings"] = std::move(mappings);
     }
 
     void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
@@ -203,7 +203,6 @@ namespace jetpack {
         if (pretty) {
             indent = 2;
         }
-        Finalize();
         std::string finalStr = result.dump(indent);
         io::IOError err = io::WriteBufferToPath(path, finalStr.c_str(), finalStr.size());
         return err == io::IOError::Ok;

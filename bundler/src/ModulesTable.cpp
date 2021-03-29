@@ -33,7 +33,6 @@ namespace jetpack {
     }
 
     void ModulesTable::insertWithoutLock(const Sp<ModuleFile> &mf) {
-//        mf->id = mod_counter_++;
         pathToModule[mf->path()] = mf;
         idToModule[mf->id()] = mf;
     }
