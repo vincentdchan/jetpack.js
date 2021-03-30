@@ -59,7 +59,7 @@ namespace jetpack {
         }
     }
 
-    int SourceMapGenerator::VLQToInt(const std::string &str) {
+    int SourceMapGenerator::VLQToInt(const char* str, const char*& next) {
         std::call_once(back_encoding_init_, [] {
             memset(Base64BackEncodingTable, 0, sizeof(Base64BackEncodingTable));
             static constexpr size_t tableSize = sizeof(Base64EncodingTable) / sizeof(char);
@@ -70,21 +70,27 @@ namespace jetpack {
             }
         });
 
+        uint32_t len = 0;
         int result = 0;
 
         std::vector<int> buffer;
-        buffer.resize(str.size(), 0);
 
-        for (uint32_t i = 0; i < str.size(); i++) {
-            char ch = str.at(i);
+        while (str[len] != '\0') {
+            char ch = str[len++];
             J_ASSERT(ch < 127);
             int intValue = Base64BackEncodingTable[ch];
-            buffer[i] = intValue & 0b11111;
+            if ((intValue & 0b100000) == 0) {  // has no next
+                buffer.push_back(intValue & 0b11111);
+                break;
+            }
+            buffer.push_back(intValue & 0b11111);
         }
 
         for (int32_t i = buffer.size() - 1; i >= 0; i--) {
             result = result << 5 | buffer[i];
         }
+
+        next = str + len;
 
         return result >> 1;
     }
@@ -113,10 +119,6 @@ namespace jetpack {
         result["sources"] = json::array();
         result["names"] = json::array();
         result["sourcesContent"] = json::array();
-    }
-
-    void SourceMapGenerator::SetSourceRoot(const std::string &sr) {
-        result["sourceRoot"] = sr;
     }
 
     void SourceMapGenerator::AddSource(const ModuleFile& moduleFile) {

@@ -22,14 +22,12 @@ namespace jetpack {
     public:
         static void GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
         static void IntToVLQ(std::string& ss, int code);
-        static int VLQToInt(const std::string& str);
+        static int VLQToInt(const char* str, const char*& next);
 
         SourceMapGenerator() = delete;
 
         SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver, // nullable
                            const std::string& filename);
-
-        void SetSourceRoot(const std::string& sr);
 
         void AddSource(const ModuleFile& src);
 

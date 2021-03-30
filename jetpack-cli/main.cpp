@@ -87,14 +87,14 @@ int main(int argc, char** argv) {
 
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
-            return AnalyzeModule(path, jsx, trace_file);
+            return simple_api::AnalyzeModule(path, jsx, trace_file);
         }
 
         if (result[OPT_OUT].count()) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return BundleModule(jsx, minify, library, sourcemap, entry_path, out_path);
+            return simple_api::BundleModule(jsx, minify, library, sourcemap, entry_path, out_path);
         }
 
         std::cout << options.help() << std::endl;

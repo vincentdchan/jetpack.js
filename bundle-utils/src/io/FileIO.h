@@ -24,6 +24,7 @@ namespace jetpack::io {
     };
 
     const char* IOErrorToString(IOError);
+    IOError ReadFileToStdString(const std::string& filename, std::string& result);
     IOError ReadFileToUString(const std::string& filename, UString& result);
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size);

@@ -5,9 +5,13 @@
 #include <gtest/gtest.h>
 #include <parser/ParserContext.h>
 #include "sourcemap/SourceMapGenerator.h"
+#include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
 #include "ModuleResolver.h"
 #include "ModuleCompositor.h"
+#include "SimpleAPI.h"
+#include "Path.h"
+#include "io/FileIO.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
@@ -36,7 +40,8 @@ TEST(SourceMap, VLQEncoding) {
     SourceMapGenerator::IntToVLQ(str, 16);
     EXPECT_STREQ(str.c_str(), "gB");
 
-    EXPECT_EQ(SourceMapGenerator::VLQToInt("gB"), 16);
+    const char* next;
+    EXPECT_EQ(SourceMapGenerator::VLQToInt("gB", next), 16);
 
     std::vector<int> testCases { 10, 1000, 1234, 100000 };
     for (auto i : testCases) {
@@ -44,7 +49,7 @@ TEST(SourceMap, VLQEncoding) {
         SourceMapGenerator::IntToVLQ(vlq, i);
 
         EXPECT_TRUE(!vlq.empty());
-        int back = SourceMapGenerator::VLQToInt(vlq);
+        int back = SourceMapGenerator::VLQToInt(vlq.c_str(), next);
         EXPECT_EQ(back, i);
     }
 }
@@ -66,6 +71,36 @@ TEST(SourceMap, Simple) {
 }
 
 TEST(SourceMap, Complex) {
-    std::string runningDir(JETPACK_TEST_RUNNING_DIR);
-    std::cout << "dir: " << runningDir << std::endl;
+    Path path(JETPACK_TEST_RUNNING_DIR);
+    path.Join("tests/fixtures/sourcemap/index.js");
+
+    auto entryPath = path.ToString();
+    std::cout << "dir: " << entryPath << std::endl;
+
+    EXPECT_TRUE(io::IsFileExist(entryPath));
+
+    Path outputPath(JETPACK_BUILD_DIR);
+    outputPath.Join("sourcemap_bundle_test.js");
+
+    std::cout << "output dir: " << outputPath.ToString() << std::endl;
+
+    EXPECT_EQ(simple_api::BundleModule(true, false, false, true, entryPath, outputPath.ToString()), 0);
+
+    std::string sourcemapContent;
+    EXPECT_EQ(io::ReadFileToStdString(outputPath.ToString() + ".map", sourcemapContent), io::IOError::Ok);
+
+    auto sourcemapJson = nlohmann::json::parse(sourcemapContent);
+    std::string mapping = sourcemapJson["mappings"];
+    std::cout << "mapping: " << mapping << std::endl;
+
+    SourceMapDecoder decoder(sourcemapJson);
+    auto result = decoder.Decode();
+
+    for (const auto& item : sourcemapJson["sources"]) {
+        std::cout << "source: " << item.get<std::string>() << std::endl;
+    }
+
+    for (const auto& map : result.content) {
+        std::cout << map.ToString() << std::endl;
+    }
 }

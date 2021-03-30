@@ -6,7 +6,7 @@
 #include "JetTime.h"
 #include "ModuleResolver.h"
 
-namespace jetpack {
+namespace jetpack::simple_api {
 
     int AnalyzeModule(const std::string& path,
                              bool jsx,

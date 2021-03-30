@@ -6,17 +6,17 @@
 
 #include <string>
 
-namespace jetpack {
+namespace jetpack::simple_api {
 
     int AnalyzeModule(const std::string& path,
                       bool jsx,
                       bool trace_file);
 
     int BundleModule(bool jsx,
-                    bool minify,
-                    bool library,
-                    bool sourcemap,
-                    const std::string& path,
-                    const std::string& out_path);
+                     bool minify,
+                     bool library,
+                     bool sourcemap,
+                     const std::string& path,
+                     const std::string& out_path);
 
 }
