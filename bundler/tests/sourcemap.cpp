@@ -5,8 +5,9 @@
 #include <gtest/gtest.h>
 #include <parser/ParserContext.h>
 #include "sourcemap/SourceMapGenerator.h"
-#include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
+#include "ModuleResolver.h"
+#include "ModuleCompositor.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
@@ -23,8 +24,9 @@ inline std::string ParseAndGenSourceMap(const UString& content) {
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
 
-    sourceMapGenerator.AddCollector(mod->mapping_collector_);
-    sourceMapGenerator.Finalize();
+    ModuleCompositor compositor(sourceMapGenerator);
+    compositor.append(mod->codegen_result.content, mod->mapping_collector_);
+    void(compositor.Finalize());  // ignore result
 
     return sourceMapGenerator.ToPrettyString();
 }

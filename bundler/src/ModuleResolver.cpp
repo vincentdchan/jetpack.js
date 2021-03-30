@@ -462,20 +462,21 @@ namespace jetpack {
     void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
-        UString finalResult;
-
-        finalResult.append(global_import_handler_.GenCode(config, mappingCollector).content);
-
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+        ModuleCompositor moduleCompositor(*sourcemapGenerator);
+
+        moduleCompositor.append(global_import_handler_.GenCode(config, mappingCollector).content, nullptr);
 
         ClearAllVisitedMark();
-        MergeModules(entry_module, *sourcemapGenerator, finalResult);
+
+        MergeModules(entry_module, moduleCompositor);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
         CodeGen codegen(config, mappingCollector);
         codegen.Traverse(final_export);
 
-        finalResult.append(codegen.GetResult().content);
+        moduleCompositor.append(codegen.GetResult().content, nullptr);
+        const UString finalResult = moduleCompositor.Finalize();
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
@@ -497,8 +498,6 @@ namespace jetpack {
     std::future<bool> ModuleResolver::DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen) {
         return thread_pool_->enqueue([outPath, gen]() -> bool {
             std::string pathStr = outPath + ".map";
-
-            gen->Finalize();
             return gen->DumpFile(pathStr);
         });
     }
@@ -1045,20 +1044,19 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, SourceMapGenerator& sourceMapGenerator, UString &out) {
+    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, ModuleCompositor& moduleCompositor) {
         if (mf->visited_mark) {
             return;
         }
         mf->visited_mark = true;
 
-        sourceMapGenerator.AddCollector(mf->mapping_collector_);
+        moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
+        moduleCompositor.append(u"\n", nullptr);
 
         for (auto& ref : mf->ref_mods) {
             auto new_mf = ref.lock();
-            MergeModules(new_mf, sourceMapGenerator, out);
+            MergeModules(new_mf, moduleCompositor);
         }
-
-        out.append(mf->codegen_result.content).append(u'\n');
     }
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {

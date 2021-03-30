@@ -20,6 +20,7 @@ namespace jetpack {
     using json = nlohmann::basic_json<ordered_map>;
 
     class SourceMapGenerator;
+    class ModuleCompositor;
 
     struct MappingItem {
     public:
@@ -53,9 +54,10 @@ namespace jetpack {
         void AddMapping(const UString& name, const SourceLocation& origin, int32_t column);
 
         friend class SourceMapGenerator;
+        friend class ModuleCompositor;
 
     private:
-        int32_t          dist_line_ = 0;
+        int32_t          dist_line_ = 1;
         Vec<MappingItem> items_;
 
     };

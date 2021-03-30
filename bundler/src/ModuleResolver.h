@@ -19,6 +19,7 @@
 #include "ModuleProvider.h"
 #include "ModuleFile.h"
 #include "ModulesTable.h"
+#include "ModuleCompositor.h"
 #include "GlobalImportHandler.h"
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"
@@ -86,9 +87,7 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf,
-                          SourceMapGenerator& sourceMapGenerator,
-                          UString& out_path);
+        void MergeModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {
