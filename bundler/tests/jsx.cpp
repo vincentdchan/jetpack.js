@@ -6,11 +6,9 @@
 #include <parser/Parser.hpp>
 #include <parser/ParserContext.h>
 #include <iostream>
-#include <sstream>
 
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
-#include "OutputStream.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

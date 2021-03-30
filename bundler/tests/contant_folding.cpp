@@ -7,7 +7,6 @@
 #include <parser/Parser.hpp>
 
 #include "codegen/CodeGen.h"
-#include "OutputStream.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

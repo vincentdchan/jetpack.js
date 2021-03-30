@@ -10,7 +10,6 @@
 #include "Utils.h"
 #include "parser/SyntaxNodes.h"
 #include "UniqueNameGenerator.h"
-#include "OutputStream.h"
 #include "codegen/CodeGen.h"
 
 namespace jetpack {

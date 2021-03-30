@@ -13,7 +13,6 @@
 #include "NodeTraverser.h"
 #include "string/UString.h"
 #include "sourcemap/MappingCollector.h"
-#include "OutputStream.h"
 
 namespace jetpack {
 
@@ -70,24 +69,24 @@ namespace jetpack {
             return {
                     state_.line,
                     state_.column,
-                    output.ToString(),
+                    output,
             };
         }
 
     private:
         inline void Write(char ch) {
-            output << ch;
+            output += ch;
             state_.column += 1;
         }
 
         inline void Write(const char16_t* c_str) {
             UString str(c_str);
-            output << str;
+            output += str;
             state_.column += str.length();
         }
 
         inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
-            output << str;
+            output += str;
             state_.column += str.length();
         }
 
@@ -174,10 +173,6 @@ namespace jetpack {
         void Traverse(const Sp<UpdateExpression>& node) override;
         void Traverse(const Sp<ObjectPattern>& node) override;
 
-        inline OutputStream& Stream() {
-            return output;
-        }
-
         [[nodiscard]]
         inline Sp<MappingCollector> SourcemapCollector() {
             return mappingCollector;
@@ -203,7 +198,7 @@ namespace jetpack {
         // nullable
         Sp<MappingCollector> mappingCollector;
 
-        MemoryOutputStream output;
+        UString output;
 
     };
 

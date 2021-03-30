@@ -65,7 +65,7 @@ namespace jetpack {
             mappingCollector->EndLine();
         }
         if (!config_.minify) {
-            output << config_.line_end;
+            output += config_.line_end;
             state_.line++;
             state_.column = 0;
         }
@@ -267,9 +267,9 @@ namespace jetpack {
                 TraverseNode(*elem);
             }
             if (count++ < node->elements.size() - 1) {
-                output << S_COMMA;
+                output += S_COMMA;
             } else if (!elem.has_value()) {
-                output << S_COMMA;
+                output += S_COMMA;
             }
         }
         Write(u"]");
