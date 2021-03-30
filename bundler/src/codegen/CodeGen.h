@@ -17,6 +17,14 @@
 
 namespace jetpack {
 
+    struct CodeGenResult {
+    public:
+        int32_t lines_count;
+        int32_t last_line_column;
+        UString content;
+
+    };
+
     /**
      * Reference: https://github.com/davidbonnet/astring/blob/master/src/astring.js
      */
@@ -55,30 +63,32 @@ namespace jetpack {
 
         CodeGen(
                 const Config& config,
-                const Sp<MappingCollector>& sourceMapGenerator,
-                OutputStream& output_stream
-                );
+                const Sp<MappingCollector>& sourceMapGenerator);
+
+        [[nodiscard]]
+        inline CodeGenResult GetResult() const {
+            return {
+                    state_.line,
+                    state_.column,
+                    output.ToString(),
+            };
+        }
 
     private:
         inline void Write(char ch) {
             output << ch;
-#ifdef DEBUG
-            output.flush();
-#endif
+            state_.column += 1;
         }
 
         inline void Write(const char16_t* c_str) {
-            output << c_str;
-#ifdef DEBUG
-            output.flush();
-#endif
+            UString str(c_str);
+            output << str;
+            state_.column += str.length();
         }
 
         inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
             output << str;
-#ifdef DEBUG
-            output.flush();
-#endif
+            state_.column += str.length();
         }
 
         void WriteLineEnd();
@@ -193,7 +203,7 @@ namespace jetpack {
         // nullable
         Sp<MappingCollector> mappingCollector;
 
-        OutputStream& output;
+        MemoryOutputStream output;
 
     };
 

@@ -46,15 +46,13 @@ namespace jetpack {
     }
 
     void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
-        MemoryOutputStream memoryOutputStream;
+//        if (config.comments) {
+//            memoryOutputStream << u"// " << UString::fromStdString(Path()) << u"\n";
+//        }
 
-        if (config.comments) {
-            memoryOutputStream << u"// " << UString::fromStdString(path()) << u"\n";
-        }
-
-        CodeGen codegen(config, mapping_collector_, memoryOutputStream);
+        CodeGen codegen(config, mapping_collector_);
         codegen.Traverse(ast);
-        codegen_result = memoryOutputStream.ToString();
+        codegen_result = codegen.GetResult();
     }
 
     UString ModuleFile::GetModuleVarName() const {
@@ -62,9 +60,13 @@ namespace jetpack {
         return UString::fromStdString(tmp);
     }
 
-    ResolveResult<UString> ModuleFile::GetSource() const {
-        assert(provider);
-        return provider->resolve(*this, path());
+    ResolveResult<UString> ModuleFile::GetSource() {
+        J_ASSERT(provider);
+        auto result =  provider->resolve(*this, Path());
+        if (likely(!result.HasError())) {
+            src_content = result.value;
+        }
+        return result;
     }
 
 

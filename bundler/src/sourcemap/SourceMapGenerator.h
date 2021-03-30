@@ -10,6 +10,7 @@
 #include <memory>
 #include "string/UString.h"
 #include "MappingCollector.h"
+#include "ModuleFile.h"
 
 namespace jetpack {
     class ModuleResolver;
@@ -30,7 +31,7 @@ namespace jetpack {
 
         void SetSourceRoot(const std::string& sr);
 
-        void AddSource(const std::string& src);
+        void AddSource(const ModuleFile& src);
 
         inline void EndLine() {
             mappings.push_back(';');

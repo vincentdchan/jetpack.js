@@ -43,12 +43,11 @@ inline std::string ReplaceDefault(const std::string& src) {
     mod->ast = parser.ParseModule();
     resolver->ReplaceExports(mod);
 
-    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
+    CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod->ast);
 
-    return ss.ToUTF8();
+    return codegen.GetResult().content.toStdString();
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
@@ -149,7 +148,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     auto entry_mod = resolver->GetEntryModule();
     entry_mod->CodeGenFromAst(codegen_config);
 
-    std::cout << entry_mod->codegen_result.toStdString() << std::endl;
+    std::cout << entry_mod->codegen_result.content.toStdString() << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {

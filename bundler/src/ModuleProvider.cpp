@@ -14,7 +14,7 @@ namespace jetpack {
 
     std::optional<std::string> FileModuleProvider::pMatch(const ModuleFile &mf, const std::string &path) const {
         Path module_path(base_path_);
-        module_path.Join(mf.path());
+        module_path.Join(mf.Path());
         module_path.Pop();
         module_path.Join(path);
 

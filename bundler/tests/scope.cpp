@@ -19,12 +19,11 @@ inline Sp<Module> ParseString(const std::string& src) {
     return parser.ParseModule();
 }
 
-inline std::string GenCode(Sp<Module> mod) {
-    MemoryOutputStream ss;
+inline std::string GenCode(Sp<Module>& mod) {
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
+    CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return ss.ToUTF8();
+    return codegen.GetResult().content.toStdString();
 }
 
 TEST(Scope, Collect) {
@@ -54,10 +53,6 @@ TEST(Scope, Rename) {
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), "var new_name = 3;\n");
 }
 
@@ -74,10 +69,6 @@ TEST(Scope, RenameImportNamespace) {
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), "import * as new_name from 'main';\n");
 }
 
@@ -101,10 +92,6 @@ TEST(Scope, RenameFunction1) {
 
     EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -126,10 +113,6 @@ TEST(Scope, RenameFunction2) {
     changeset.emplace_back(u"ok", u"ok1");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -151,10 +134,6 @@ TEST(Scope, RenameFunction3) {
     changeset.emplace_back(u"name", u"rename");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -170,10 +149,6 @@ TEST(Scope, RenameObjectPattern) {
     changeset.emplace_back(u"other", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -189,10 +164,6 @@ TEST(Scope, RenameObjectPattern2) {
     changeset.emplace_back(u"name", u"ok1");
     EXPECT_FALSE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -208,10 +179,6 @@ TEST(Scope, RenameObjectPattern3) {
     changeset.emplace_back(u"name", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -237,10 +204,6 @@ TEST(Scope, Cls) {
     changeset.emplace_back(u"print", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -256,10 +219,6 @@ TEST(Scope, RenameImport) {
     changeset.emplace_back(u"name", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -299,10 +258,6 @@ TEST(Scope, RenameImportDefault) {
     changeset.emplace_back(u"React", u"Angular");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -320,10 +275,6 @@ TEST(Scope, RenameImport2) {
     changeset.emplace_back(u"name", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -341,10 +292,6 @@ TEST(Scope, RenameExport1) {
     changeset.emplace_back(u"name", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }
 
@@ -362,9 +309,5 @@ TEST(Scope, RenameExport2) {
     changeset.emplace_back(u"name", u"renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    MemoryOutputStream ss;
-    CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
-    codegen.Traverse(mod);
     EXPECT_EQ(GenCode(mod), expected);
 }

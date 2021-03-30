@@ -199,7 +199,7 @@ namespace jetpack {
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
-            WorkerError err { mf->path(), std::string("module can't be resolved: ") + path };
+            WorkerError err {mf->Path(), std::string("module can't be resolved: ") + path };
             worker_errors_.emplace_back(std::move(err));
             return;
         }
@@ -222,17 +222,17 @@ namespace jetpack {
                 ParseFile(config, childMod);
             } catch (parser::ParseError& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ childMod->path(), ex.ErrorMessage() });
+                worker_errors_.push_back({childMod->Path(), ex.ErrorMessage() });
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name.toStdString(),
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
-                worker_errors_.push_back({ childMod->path(), std::move(message) });
+                worker_errors_.push_back({childMod->Path(), std::move(message) });
             } catch (std::exception& ex) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
-                worker_errors_.push_back({ childMod->path(), ex.what() });
+                worker_errors_.push_back({childMod->Path(), ex.what() });
             }
             FinishOne();
         });
@@ -254,7 +254,7 @@ namespace jetpack {
         }
 
         json result = json::object();
-        result["entry"] = entry_module->path();
+        result["entry"] = entry_module->Path();
         result["importStat"] = GetImportStat();
         result["totalFiles"] = finished_files_count_;
         result["exports"] = std::move(exports);
@@ -344,7 +344,7 @@ namespace jetpack {
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
                 WorkerError err {
-                    mod->path(),
+                        mod->Path(),
                     format("resolve path failed: {}", u8relative_path)
                 };
                 worker_errors_.emplace_back(std::move(err));
@@ -354,7 +354,7 @@ namespace jetpack {
             auto iter = modules_table_.pathToModule.find(resolved_path->second);
             if (iter == modules_table_.pathToModule.end()) {
                 WorkerError err {
-                    mod->path(),
+                        mod->Path(),
                     format("module not found: {}", resolved_path->second)
                 };
                 worker_errors_.emplace_back(std::move(err));
@@ -462,24 +462,27 @@ namespace jetpack {
     void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
-        MemoryOutputStream memOutputStream;
-        global_import_handler_.GenCode(config, mappingCollector, memOutputStream);
+        UString finalResult;
+
+        finalResult.append(global_import_handler_.GenCode(config, mappingCollector).content);
 
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
 
         ClearAllVisitedMark();
-        MergeModules(entry_module, *sourcemapGenerator, memOutputStream);
+        MergeModules(entry_module, *sourcemapGenerator, finalResult);
 
         auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, mappingCollector, memOutputStream);
+        CodeGen codegen(config, mappingCollector);
         codegen.Traverse(final_export);
+
+        finalResult.append(codegen.GetResult().content);
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 
-        std::string u8content = memOutputStream.ToUTF8();
+        std::string u8content = finalResult.toStdString();
         io::IOError err = io::WriteBufferToPath(outPath, u8content.c_str(), u8content.size());
         J_ASSERT(err == io::IOError::Ok);
 
@@ -861,14 +864,14 @@ namespace jetpack {
         auto full_path_iter = mf->resolved_map.find(import_decl->source->str_.toStdString());
         if (full_path_iter == mf->resolved_map.end()) {
             throw ModuleResolveException(
-                    mf->path(),
+                    mf->Path(),
                     format("can not resolver path: {}", import_decl->source->str_.toStdString()));
         }
 
         auto target_module = modules_table_.pathToModule[full_path_iter->second];
 
         if (target_module == nullptr) {
-            throw ModuleResolveException(mf->path(), format("can not find module: {}", full_path_iter->second));
+            throw ModuleResolveException(mf->Path(), format("can not find module: {}", full_path_iter->second));
         }
 
 //        auto target_mode_name = target_module->GetModuleVarName();
@@ -915,7 +918,7 @@ namespace jetpack {
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
                 if (ref_mod_iter == modules_table_.pathToModule.end()) {
-                    throw ModuleResolveException(mf->path(), format("can not resolve path: {}", absolute_path));
+                    throw ModuleResolveException(mf->Path(), format("can not resolve path: {}", absolute_path));
                 }
                 auto& ref_mod = ref_mod_iter->second;
 
@@ -968,13 +971,13 @@ namespace jetpack {
                     }
 
                     default:
-                        throw ModuleResolveException(mf->path(), "unknown specifier type");
+                        throw ModuleResolveException(mf->Path(), "unknown specifier type");
 
                 }
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
                 if (ref_mod_iter == modules_table_.pathToModule.end()) {
-                    throw ModuleResolveException(mf->path(), format("can not resolve path: {}", absolute_path));
+                    throw ModuleResolveException(mf->Path(), format("can not resolve path: {}", absolute_path));
                 }
                 auto& ref_mod = ref_mod_iter->second;
 
@@ -983,7 +986,7 @@ namespace jetpack {
 
                 if (!local_export_opt.has_value()) {
                     throw ModuleResolveException(
-                        mf->path(),
+                            mf->Path(),
                         format("can not find export variable '{}' from {}", target_export_name.toStdString(), absolute_path)
                     );
                 }
@@ -992,7 +995,7 @@ namespace jetpack {
                 changeset.emplace_back(import_local_name, (*local_export_opt)->local_name);
                 if (!mf->ast->scope->BatchRenameSymbols(changeset)) {
                     throw ModuleResolveException(
-                        mf->path(),
+                            mf->Path(),
                         format("rename symbol failed: {}", import_local_name.toStdString())
                     );
                 }
@@ -1042,7 +1045,7 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, SourceMapGenerator& sourceMapGenerator, OutputStream &out) {
+    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, SourceMapGenerator& sourceMapGenerator, UString &out) {
         if (mf->visited_mark) {
             return;
         }
@@ -1055,7 +1058,7 @@ namespace jetpack {
             MergeModules(new_mf, sourceMapGenerator, out);
         }
 
-        out << mf->codegen_result << u"\n";
+        out.append(mf->codegen_result.content).append(u'\n');
     }
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {
@@ -1072,7 +1075,7 @@ namespace jetpack {
             auto iter = mf->GetExportManager().local_exports_name.find(export_name);
             if (iter == mf->GetExportManager().local_exports_name.end()) {
                 WorkerError err {
-                        mf->path(),
+                        mf->Path(),
                         format("symbol not found failed: {}", export_name.toStdString())
                 };
                 worker_errors_.emplace_back(std::move(err));

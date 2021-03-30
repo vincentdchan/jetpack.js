@@ -19,9 +19,8 @@ inline std::string ParseAndGenSourceMap(const UString& content) {
     SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
     auto mod =  resolver->GetEntryModule();
-    MemoryOutputStream ss;
     CodeGen::Config codegenConfig;
-    CodeGen codegen(codegenConfig, mod->mapping_collector_, ss);
+    CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
 
     sourceMapGenerator.AddCollector(mod->mapping_collector_);

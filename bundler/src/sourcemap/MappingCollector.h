@@ -27,14 +27,14 @@ namespace jetpack {
                            const SourceLocation& loc,
                            int32_t dL,
                            int32_t dC) noexcept:
-                           name(n), origin(loc),
-                           distLine(dL),
-                           distColumn(dC) {}
+                name(n), origin(loc),
+                dist_line(dL),
+                dist_column(dC) {}
 
         UString        name;
         SourceLocation origin;
-        int32_t        distLine   = -1;
-        int32_t        distColumn = -1;
+        int32_t        dist_line   = -1;
+        int32_t        dist_column = -1;
 
     };
 
@@ -46,11 +46,11 @@ namespace jetpack {
             items_.push_back(item);
         }
 
-        inline void endLine() {
+        inline void EndLine() {
             dist_line_++;
         }
 
-        void addMapping(const UString& name, const SourceLocation& origin, int32_t column);
+        void AddMapping(const UString& name, const SourceLocation& origin, int32_t column);
 
         friend class SourceMapGenerator;
 

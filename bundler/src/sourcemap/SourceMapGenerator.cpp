@@ -95,7 +95,9 @@ namespace jetpack {
         IntToVLQ(ss, file_index);
         IntToVLQ(ss, before_line);
         IntToVLQ(ss, before_column);
-        IntToVLQ(ss, var_index);
+        if (var_index >= 0) {
+            IntToVLQ(ss, var_index);
+        }
     }
 
 //    static constexpr size_t TableSize = sizeof Base64EncodingTable / sizeof(char);
@@ -110,14 +112,16 @@ namespace jetpack {
         result["sourceRoot"] = "";
         result["sources"] = json::array();
         result["names"] = json::array();
+        result["sourcesContent"] = json::array();
     }
 
     void SourceMapGenerator::SetSourceRoot(const std::string &sr) {
         result["sourceRoot"] = sr;
     }
 
-    void SourceMapGenerator::AddSource(const std::string &src) {
-        result["sources"].push_back(src);
+    void SourceMapGenerator::AddSource(const ModuleFile& moduleFile) {
+        result["sources"].push_back(moduleFile.Path());
+        result["sourcesContent"].push_back(moduleFile.src_content.toStdString());
     }
 
     int32_t SourceMapGenerator::GetIdOfName(const UString& name) {
@@ -145,7 +149,7 @@ namespace jetpack {
             return -1;
         }
 
-        AddSource(mod->path());
+        AddSource(*mod);
 
         int32_t index = src_counter_++;
         module_id_to_index_[mod->id()] = index;
@@ -163,11 +167,11 @@ namespace jetpack {
     void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
         int32_t distLine = 0;
         for (const auto& item : mappingCollector.items_) {
-            if (unlikely(distLine != item.distLine)) {
+            if (unlikely(distLine != item.dist_line)) {
                 EndLine();
-                distLine = item.distLine;
+                distLine = item.dist_line;
             }
-            bool ec = AddLocation(item.name, item.distColumn,
+            bool ec = AddLocation(item.name, item.dist_column,
                                   item.origin.fileId, item.origin.start.line, item.origin.start.column
                                   );
             J_ASSERT(ec);
@@ -179,12 +183,12 @@ namespace jetpack {
             J_ASSERT(fileId != -1);
             return true;
         }
-        int32_t var_index = GetIdOfName(name);
+//        int32_t var_index = GetIdOfName(name);
         int32_t filenameIndex = GetFilenameIndexByModuleId(fileId);
         if (unlikely(filenameIndex < 0)) {
             return false;
         }
-        GenerateVLQStr(mappings, after_col, filenameIndex, before_line, before_col, var_index);
+        GenerateVLQStr(mappings, after_col, filenameIndex, before_line, before_col, -1);
         mappings.push_back(',');
         return true;
     }

@@ -88,7 +88,7 @@ namespace jetpack {
 
         void MergeModules(const Sp<ModuleFile>& mf,
                           SourceMapGenerator& sourceMapGenerator,
-                          OutputStream& out_path);
+                          UString& out_path);
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {

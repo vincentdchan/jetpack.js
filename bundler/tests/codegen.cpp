@@ -6,7 +6,6 @@
 #include <parser/Parser.hpp>
 #include <parser/ParserContext.h>
 #include <iostream>
-#include <sstream>
 
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
@@ -21,11 +20,10 @@ inline std::string ParseAndCodeGen(UString content) {
 
     auto mod = parser.ParseModule();
 
-    MemoryOutputStream ss;
     CodeGen::Config code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr, ss);
+    CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return ss.ToUTF8();
+    return codegen.GetResult().content.toStdString();
 }
 
 TEST(CodeGen, UString) {

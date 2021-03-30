@@ -45,7 +45,7 @@ namespace jetpack {
         /**
          * Absolute path
          */
-        inline const std::string& path() const {
+        inline const std::string& Path() const {
             return path_;
         }
 
@@ -66,7 +66,9 @@ namespace jetpack {
         /**
          * Temp for parallel codegen
          */
-        UString codegen_result;
+        CodeGenResult codegen_result;
+
+        UString src_content;
 
         /**
          * For Postorder traversal
@@ -87,7 +89,7 @@ namespace jetpack {
 
         UString GetModuleVarName() const;
 
-        ResolveResult<UString> GetSource() const;
+        ResolveResult<UString> GetSource();
 
         inline ExportManager& GetExportManager() {
             return ast->scope->export_manager;
