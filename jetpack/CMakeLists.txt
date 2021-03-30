@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(js-bundler)
+project(jetpack)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -21,6 +21,8 @@ set(SOURCE_FILES
         src/GlobalImportHandler.h
         src/GlobalImportHandler.cpp
         src/Error.h
+        src/SimpleAPI.h
+        src/SimpleAPI.cpp
         src/sourcemap/MappingCollector.h
         src/sourcemap/MappingCollector.cpp
         src/sourcemap/SourceMapGenerator.h
@@ -61,15 +63,14 @@ include_directories(PUBLIC
         "../bundle-utils/src"
         "../esparser/src"
         "./src"
-        "../third_party/cxxopts/include"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
         "../third_party/robin-hood-hashing/src/include")
 link_libraries(bundle-utils esparser fmt)
 
-add_executable(jetpack ${SOURCE_FILES} src/main.cpp)
+add_library(jetpack ${SOURCE_FILES})
 
-add_executable(jetpack-test ${SOURCE_FILES}
+add_executable(jetpack-test
         tests/sourcemap.cpp
         tests/scope.cpp
         tests/resolve.cpp
@@ -81,7 +82,7 @@ target_include_directories(jetpack-test PUBLIC
         "../third_party/googletest/googletest/include"
         ./src
         )
-target_link_libraries(jetpack-test gtest_main)
+target_link_libraries(jetpack-test gtest_main jetpack)
 
 set(TEST_RUNNING_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message("test running dir: ${TEST_RUNNING_DIR}")

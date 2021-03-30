@@ -17,11 +17,7 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
-#include "JetTime.h"
-#include "Path.h"
-#include "ModuleResolver.h"
-#include "codegen/CodeGen.h"
-#include "parser/ParserContext.h"
+#include "SimpleAPI.h"
 
 #define OPT_HELP "help"
 #define OPT_ENTRY "entry"
@@ -37,17 +33,6 @@
 using namespace jetpack;
 
 #ifndef __EMSCRIPTEN__
-
-static int AnalyzeModule(const std::string& path,
-                         bool jsx,
-                         bool trace_file);
-
-static int BundleModule(bool jsx,
-                        bool minify,
-                        bool library,
-                        bool sourcemap,
-                        const std::string& path,
-                        const std::string& out_path);
 
 int main(int argc, char** argv) {
     try {
@@ -119,71 +104,6 @@ int main(int argc, char** argv) {
         return 3;
     }
 }
-
-static int AnalyzeModule(const std::string& path,
-                         bool jsx,
-                         bool trace_file) {
-    parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
-    if (jsx) {
-        parser_config.jsx = true;
-    }
-
-    // do not release memory
-    // it will save your time
-    auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-
-    try {
-        resolver->SetTraceFile(trace_file);
-        resolver->BeginFromEntry(parser_config, path);
-        resolver->PrintStatistic();
-        return 0;
-    } catch (ModuleResolveException& err) {
-        err.PrintToStdErr();
-        return 3;
-    }
-}
-
-static int BundleModule(bool jsx,
-                        bool minify,
-                        bool library,
-                        bool sourcemap,
-                        const std::string& path,
-                        const std::string& out_path) {
-
-    auto start = time::GetCurrentMs();
-
-    try {
-        auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-        CodeGen::Config codegen_config;
-        parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
-
-        if (jsx) {
-            parser_config.jsx = true;
-            parser_config.transpile_jsx = true;
-        }
-
-        if (minify) {
-            parser_config.constant_folding = true;
-            codegen_config.minify = true;
-            codegen_config.comments = false;
-            resolver->SetNameGenerator(MinifyNameGenerator::Make());
-        }
-
-        codegen_config.sourcemap = sourcemap;
-
-        resolver->SetTraceFile(true);
-        resolver->BeginFromEntry(parser_config, path);
-        resolver->CodeGenAllModules(codegen_config, out_path);
-
-        std::cout << "Finished." << std::endl;
-        std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start << " ms." << std::endl;
-        return 0;
-    } catch (ModuleResolveException& err) {
-        err.PrintToStdErr();
-        return 3;
-    }
-}
-
 
 /**
  * for WASM
