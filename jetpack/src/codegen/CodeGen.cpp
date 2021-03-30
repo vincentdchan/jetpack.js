@@ -1007,13 +1007,13 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<Identifier> &node) {
+        if (likely(mappingCollector)) {
+            mappingCollector->AddMapping(node->name, node->location, state_.column);
+        }
         if (config_.minify && node->name == u"undefined") {
             Write(u"void 0");
         } else {
             Write(node->name, node);
-        }
-        if (likely(mappingCollector)) {
-            mappingCollector->AddMapping(node->name, node->location, state_.column);
         }
     }
 

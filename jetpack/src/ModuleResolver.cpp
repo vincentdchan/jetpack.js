@@ -471,11 +471,13 @@ namespace jetpack {
 
         MergeModules(entry_module, moduleCompositor);
 
-        auto final_export = GenFinalExportDecl(final_export_vars);
-        CodeGen codegen(config, mappingCollector);
-        codegen.Traverse(final_export);
+        if (!final_export_vars.empty()) {
+            auto final_export = GenFinalExportDecl(final_export_vars);
+            CodeGen codegen(config, mappingCollector);
+            codegen.Traverse(final_export);
+            moduleCompositor.append(codegen.GetResult().content, nullptr);
+        }
 
-        moduleCompositor.append(codegen.GetResult().content, nullptr);
         const UString finalResult = moduleCompositor.Finalize();
 
         std::future<bool> srcFut;
