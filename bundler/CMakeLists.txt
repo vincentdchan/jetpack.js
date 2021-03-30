@@ -83,8 +83,12 @@ target_include_directories(jetpack-test PUBLIC
         )
 target_link_libraries(jetpack-test gtest_main)
 
+set(TEST_RUNNING_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+message("test running dir: ${TEST_RUNNING_DIR}")
+
 target_compile_definitions(jetpack-test PUBLIC
         JETPACK_SINGLE_THREAD
+        -DJETPACK_TEST_RUNNING_DIR="${TEST_RUNNING_DIR}"
 )
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")

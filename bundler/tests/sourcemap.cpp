@@ -64,3 +64,8 @@ TEST(SourceMap, Simple) {
     EXPECT_TRUE(resultJson["sources"].is_array());
     EXPECT_TRUE(resultJson["names"].is_array());
 }
+
+TEST(SourceMap, Complex) {
+    std::string runningDir(JETPACK_TEST_RUNNING_DIR);
+    std::cout << "dir: " << runningDir << std::endl;
+}
