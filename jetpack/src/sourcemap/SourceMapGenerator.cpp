@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include "io/FileIO.h"
+#include "Benchmark.h"
 #include "SourceMapGenerator.h"
 #include "ModuleResolver.h"
 
@@ -212,8 +213,13 @@ namespace jetpack {
         if (pretty) {
             indent = 2;
         }
+        benchmark::BenchMarker sm(benchmark::BENCH_DUMP_SOURCEMAP);
         std::string finalStr = result.dump(indent);
+        sm.Submit();
+
+        benchmark::BenchMarker writeMark(benchmark::BENCH_WRITING_IO);
         io::IOError err = io::WriteBufferToPath(path, finalStr.c_str(), finalStr.size());
+        writeMark.Submit();
         return err == io::IOError::Ok;
     }
 

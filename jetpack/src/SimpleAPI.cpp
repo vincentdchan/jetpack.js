@@ -5,6 +5,7 @@
 #include "SimpleAPI.h"
 #include "JetTime.h"
 #include "ModuleResolver.h"
+#include "Benchmark.h"
 
 namespace jetpack::simple_api {
 
@@ -65,6 +66,8 @@ namespace jetpack::simple_api {
 
             std::cout << "Finished." << std::endl;
             std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start << " ms." << std::endl;
+
+            benchmark::PrintReport();
             return 0;
         } catch (ModuleResolveException& err) {
             err.PrintToStdErr();
