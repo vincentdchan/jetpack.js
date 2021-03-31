@@ -35,7 +35,12 @@ if (UNIX AND NOT EMSCRIPTEN)
 
     if (APPLE)
 
-        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/libjemalloc.a)
+        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            message("arch: ${CMAKE_OSX_ARCHITECTURES}")
+            link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.a)
+        else()
+            link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.a)
+        endif()
 
     else()
 

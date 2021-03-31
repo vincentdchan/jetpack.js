@@ -110,6 +110,6 @@ The code are well commented, please read the code.
 
 `jetpack.js` supports all popular system including:
 
-- macOS
+- macOS x64/arm64
 - Windows 64bit
 - Linux 64bit
