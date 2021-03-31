@@ -1,10 +1,10 @@
 {
-  "name": "jetpackpp",
-  "version": "0.0.2",
+  "name": "jetpp",
+  "version": "0.0.1",
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
   "bin": {
-    "jetpackpp": "./index.js"
+    "jetpp": "./index.js"
   }
 }
