@@ -75,7 +75,6 @@ namespace jetpack {
         if (config_.minify) return;
         for (std::uint32_t i = 0; i < state_.indent_level; i++) {
             Write(config_.indent);
-            state_.line += config_.indent.size();
         }
     }
 

@@ -16,7 +16,7 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndGenSourceMap(const UString& content) {
+inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
     auto resolver = std::make_shared<ModuleResolver>();
     ParserContext::Config config = ParserContext::Config::Default();
     resolver->BeginFromEntryString(config, content);
@@ -27,10 +27,15 @@ inline std::string ParseAndGenSourceMap(const UString& content) {
     CodeGen::Config codegenConfig;
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
+    mod->codegen_result = codegen.GetResult();
 
     ModuleCompositor compositor(sourceMapGenerator);
     compositor.append(mod->codegen_result.content, mod->mapping_collector_);
-    void(compositor.Finalize());  // ignore result
+    auto composition = compositor.Finalize();
+
+    if (print) {
+        std::cout << "gen: " << std::endl << composition.toStdString() << std::endl;
+    }
 
     return sourceMapGenerator.ToPrettyString();
 }
@@ -60,7 +65,7 @@ TEST(SourceMap, Simple) {
                 "    console.log('hello world');\n"
                 "}\n"
     );
-    auto result = ParseAndGenSourceMap(src);
+    auto result = ParseAndGenSourceMap(src, true);
 
     std::cout << result << std::endl;
     auto resultJson = nlohmann::json::parse(result);
@@ -68,6 +73,17 @@ TEST(SourceMap, Simple) {
     EXPECT_STREQ(resultJson["file"].get<std::string>().c_str(), "memory0");
     EXPECT_TRUE(resultJson["sources"].is_array());
     EXPECT_TRUE(resultJson["names"].is_array());
+
+    SourceMapDecoder decoder(resultJson);
+    auto decodeResult = decoder.Decode();
+
+    for (const auto& item : resultJson["sources"]) {
+        std::cout << "source: " << item.get<std::string>() << std::endl;
+    }
+
+    for (const auto& map : decodeResult.content) {
+        std::cout << map.ToString() << std::endl;
+    }
 }
 
 TEST(SourceMap, Complex) {
