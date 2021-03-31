@@ -167,16 +167,19 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
-        int32_t distLine = 0;
         for (const auto& item : mappingCollector.items_) {
-            if (unlikely(distLine != item.dist_line)) {
-                EndLine();
-                distLine = item.dist_line;
-            }
+            AddEnoughLines(item.dist_line);
             bool ec = AddLocation(item.name, item.dist_column,
                                   item.origin.fileId, item.origin.start.line, item.origin.start.column
                                   );
             J_ASSERT(ec);
+        }
+    }
+
+    void SourceMapGenerator::AddEnoughLines(int32_t target_line) {
+        while (line_counter_ < target_line) {
+            line_counter_++;
+            EndLine();
         }
     }
 

@@ -52,6 +52,9 @@ namespace jetpack {
         std::string mappings;
         json result;
         int32_t src_counter_ = 0;
+        int32_t line_counter_ = 1;
+
+        void AddEnoughLines(int32_t target_line);
 
         void FinalizeCollector(const MappingCollector& collector);
 

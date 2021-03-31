@@ -121,9 +121,9 @@ TEST(SourceMap, Complex) {
     }
 
     std::vector<SourceMapDecoder::ResultMapping> expect_mappings {
-            { 0, 3, 0, 2, 0 },
-            { 1, 3, 4, 3, 2 },
-            { 1, 3, 12, 3, 10},
+            { 0, 3, 0, 1, 0 },
+            { 1, 3, 4, 4, 2 },
+            { 1, 3, 12, 4, 10},
     };
 
     EXPECT_EQ(expect_mappings.size(), result.content.size());
