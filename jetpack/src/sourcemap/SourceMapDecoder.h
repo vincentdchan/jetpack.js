@@ -41,4 +41,8 @@ namespace jetpack {
 
     };
 
+    inline bool operator==(const SourceMapDecoder::ResultMapping& lhs, const SourceMapDecoder::ResultMapping& rhs) {
+        return ::memcmp(&lhs, &rhs, sizeof(SourceMapDecoder::ResultMapping)) == 0;
+    }
+
 }

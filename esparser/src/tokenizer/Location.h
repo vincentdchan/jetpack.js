@@ -11,7 +11,7 @@ struct Position {
     uint32_t line;
     uint32_t column;
 
-    inline Position() noexcept: line(0u), column(0u) {}
+    inline Position() noexcept: line(1u), column(0u) {}
     inline Position(uint32_t l, uint32_t c) noexcept:
             line(l), column(c) {}
 };
