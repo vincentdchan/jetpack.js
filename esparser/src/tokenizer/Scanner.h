@@ -121,7 +121,7 @@ namespace jetpack {
         std::stack<UString> curly_stack_;
 
         std::uint32_t index_ = 0u;
-        std::uint32_t line_number_ = 0u;
+        std::uint32_t line_number_ = 1u;
         std::uint32_t line_start_ = 0u;
 
         std::shared_ptr<parser::ParseErrorHandler> error_handler_;

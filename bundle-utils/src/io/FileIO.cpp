@@ -16,6 +16,69 @@
 
 namespace jetpack::io {
 
+    struct MappedFileReader {
+    public:
+        MappedFileReader() = default;
+
+        inline IOError Open(const std::string& filename) {
+            fd = ::open(filename.c_str(), O_RDONLY);
+            if (fd < 0) {
+                return IOError::OpenFailed;
+            }
+
+            struct stat st;
+            int ec = ::fstat(fd, &st);
+            J_ASSERT(ec == 0);
+
+            size = st.st_size;
+
+            mapped_mem = (intptr_t)::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
+            if (reinterpret_cast<void*>(mapped_mem) == MAP_FAILED) {
+                std::cerr << "map file failed: " << strerror(errno) << std::endl;
+                return IOError::ReadFailed;
+            }
+
+            return IOError::Ok;
+        }
+
+        inline int64_t FileSize() const {
+            return size;
+        }
+
+        inline const char* Data() const {
+            return reinterpret_cast<char*>(mapped_mem);
+        }
+
+        ~MappedFileReader() noexcept {
+            if (likely(mapped_mem != -1)) {
+                ::munmap(reinterpret_cast<void*>(mapped_mem), size);
+                mapped_mem = -1;
+            }
+            if (likely(fd >= 0)) {
+                ::close(fd);
+                fd = -1;
+            }
+        }
+
+    private:
+        int64_t  size = -1;
+        intptr_t mapped_mem = -1;
+        int      fd = -1;
+
+    };
+
+    IOError ReadFileToStdString(const std::string& filename, std::string& result) {
+        MappedFileReader reader;
+        IOError error = reader.Open(filename);
+        if (error != IOError::Ok) {
+            return error;
+        }
+
+        result = std::string(reader.Data(), reader.FileSize());
+
+        return IOError::Ok;
+    }
+
     IOError ReadFileToUString(const std::string& filename, UString& result) {
 #if defined(_WIN32)
         std::ifstream t(filename);
@@ -24,26 +87,13 @@ namespace jetpack::io {
         result = UString::fromStdString(str);
         return IOError::Ok;
 #else
-        int fd = ::open(filename.c_str(), O_RDONLY);
-        if (fd < 0) {
-            return IOError::OpenFailed;
+        MappedFileReader reader;
+        IOError error = reader.Open(filename);
+        if (error != IOError::Ok) {
+            return error;
         }
 
-        struct stat st;
-        int ec = ::fstat(fd, &st);
-        J_ASSERT(ec == 0);
-
-        char* mem = (char*)::mmap(nullptr, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-        if (mem == MAP_FAILED) {
-            ::close(fd);
-            std::cerr << "map file failed: " << strerror(errno) << std::endl;
-            return IOError::ReadFailed;
-        }
-
-        result = UString::fromUtf8(mem, st.st_size);
-
-        ::munmap(mem, st.st_size);
-        ::close(fd);
+        result = UString::fromUtf8(reader.Data(), reader.FileSize());
 
         return IOError::Ok;
 #endif

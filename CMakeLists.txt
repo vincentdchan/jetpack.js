@@ -22,4 +22,5 @@ add_subdirectory(./third_party/googletest)
 
 add_subdirectory(./bundle-utils)
 add_subdirectory(./esparser)
-add_subdirectory(bundler)
+add_subdirectory(./jetpack)
+add_subdirectory(./jetpack-cli)

@@ -1,11 +1,12 @@
-# Jetpack++
+# Jetpack.js
+
+[中文版](./README_CN.md)
 
 `jetpack.js` is an extremely fast js bundler and minifier.
 
 `jetpack.js` a well designed tool. It's modulize into parser and bundler.
 The parser can be used as a library independently.
 
-- [Why](#why)
 - [Features](#Features)
   - [Parser](#parser)
   - [Bundler](#bundler)
@@ -16,10 +17,6 @@ The parser can be used as a library independently.
 - [Performance](#performance)
 - [Architecture](#architecture)
 - [Platform](#platform)
-
-# Why
-
-Several months ago, I wrote a js parser in C++. Many parsers embedded in other js engine have a lot of dependencies on their runtime. It's very hard to separate them. So I decided to write my own parser. After I finished, I found my parser is almost 10x faster than the common parsers running on Node.js (without heating). But I didn't move on after that. This year(2020), Evan Wallace's project [esbuild](https://github.com/evanw/esbuild/) inspires me. So I decided to write a bundler in C++.
 
 # Features
 
@@ -38,8 +35,9 @@ Several months ago, I wrote a js parser in C++. Many parsers embedded in other j
 - Module resolution.
 - Bundle a ES project into a single file.
 - Scope hoisting.
-- Contant folding.
+- Constant folding.
 - Minify the code.
+- Sourcemap generation
 
 # Installation
 
@@ -65,17 +63,19 @@ Help command:
 ```shell script
 $ jetpackpp --help
 
-$ Jetpack++ command line
+Jetpack command line
 Usage:
-  Jetpack++ [OPTION...] positional parameters
+  Jetpack [OPTION...] positional parameters
 
       --tolerant            tolerant parsing error
       --jsx                 support jsx syntax
+      --library             bundle as library, do not bundle node_modules
       --help                produce help message
       --analyze-module arg  analyze a module and print result
       --no-trace            do not trace ref file when analyze module
       --minify              minify the code
       --out arg             output filename of bundle
+      --sourcemap           generate sourcemaps
 ```
 
 # Use the parser as a standalone library
@@ -84,9 +84,9 @@ jetpack.js is built with CMake, so it can be
 easily integrated to your project.
 
 ```cmake
-add_subdirectory(js-parser)
-target_include_directories(${PROJECT_NAME} ./js-parser/src)
-target_link_libraries(${PROJECT_NAME} PUBLIC js-parser)
+add_subdirectory(esparser)
+target_include_directories(${PROJECT_NAME} ./esparser/src)
+target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
 ```
 
 # Performance
