@@ -1,5 +1,7 @@
 # Jetpack.js
 
+[![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
+
 [中文版](./README_CN.md)
 
 `jetpack.js` is an extremely fast js bundler and minifier.

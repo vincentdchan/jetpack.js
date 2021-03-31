@@ -1,5 +1,7 @@
 # Jetpack.js
 
+[![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
+
 [English Version](./README.md)
 
 `jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具。

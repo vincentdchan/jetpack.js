@@ -78,7 +78,8 @@ add_executable(jetpack-test
         tests/resolve.cpp
         tests/codegen.cpp
         tests/jsx.cpp
-        tests/contant_folding.cpp)
+        tests/simple_api.cpp
+        tests/constant_folding.cpp)
 
 target_include_directories(jetpack-test PUBLIC
         "../third_party/googletest/googletest/include"

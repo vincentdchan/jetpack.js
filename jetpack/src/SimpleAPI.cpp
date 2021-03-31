@@ -32,11 +32,11 @@ namespace jetpack::simple_api {
     }
 
     int BundleModule(bool jsx,
-                            bool minify,
-                            bool library,
-                            bool sourcemap,
-                            const std::string& path,
-                            const std::string& out_path) {
+                     bool minify,
+                     bool library,
+                     bool sourcemap,
+                     const std::string& path,
+                     const std::string& out_path) {
 
         auto start = time::GetCurrentMs();
 
