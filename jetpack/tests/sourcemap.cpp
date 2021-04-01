@@ -100,7 +100,11 @@ TEST(SourceMap, Complex) {
 
     std::cout << "output dir: " << outputPath.ToString() << std::endl;
 
-    EXPECT_EQ(simple_api::BundleModule(true, false, false, true, entryPath, outputPath.ToString()), 0);
+    simple_api::Flags flags;
+    flags.setJsx(true);
+    flags.setMinify(false);
+    flags.setSourcemap(false);
+    EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 
     std::string sourcemapContent;
     EXPECT_EQ(io::ReadFileToStdString(outputPath.ToString() + ".map", sourcemapContent), io::IOError::Ok);

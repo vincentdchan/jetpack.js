@@ -6,5 +6,6 @@
 #include "SimpleAPI.h"
 
 TEST(SimpleAPI, FileNotExist) {
-    EXPECT_NE(jetpack::simple_api::BundleModule(true, true, true, true, "wonderful", "ok"), 0);
+    jetpack::simple_api::Flags flags;
+    EXPECT_NE(jetpack::simple_api::BundleModule("wonderful", "ok", flags), 0);
 }
