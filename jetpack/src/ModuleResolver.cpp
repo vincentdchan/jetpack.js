@@ -13,6 +13,7 @@
 
 #include "Path.h"
 #include "ModuleResolver.h"
+#include "Benchmark.h"
 #include "Error.h"
 #include "io/FileIO.h"
 
@@ -184,7 +185,10 @@ namespace jetpack {
             HandleNewLocationAdded(config, mf, false, u8path);
         });
 
+
+        benchmark::BenchMarker bench(benchmark::BENCH_PARSING);
         mf->ast = parser.ParseModule();
+        bench.Submit();
 
         std::vector<Sp<Identifier>> unresolved_ids;
         mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
@@ -429,7 +433,9 @@ namespace jetpack {
 
         // distribute root level var name
         if (config.minify) {
+            benchmark::BenchMarker benchMinify(benchmark::BENCH_MINIFY);
             RenameAllInnerScopes();
+            benchMinify.Submit();
         }
 
         global_import_handler_.GenAst(name_generator);  // global import
@@ -462,6 +468,7 @@ namespace jetpack {
     void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
+        benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
         ModuleCompositor moduleCompositor(*sourcemapGenerator);
 
@@ -469,7 +476,9 @@ namespace jetpack {
 
         ClearAllVisitedMark();
 
+        benchmark::BenchMarker comBench(benchmark::BENCH_MODULE_COMPOSITION);
         MergeModules(entry_module, moduleCompositor);
+        comBench.Submit();
 
         if (!final_export_vars.empty()) {
             auto final_export = GenFinalExportDecl(final_export_vars);
@@ -479,15 +488,18 @@ namespace jetpack {
         }
 
         const UString finalResult = moduleCompositor.Finalize();
+        codegenMarker.Submit();
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 
+        benchmark::BenchMarker writeMarker(benchmark::BENCH_WRITING_IO);
         std::string u8content = finalResult.toStdString();
         io::IOError err = io::WriteBufferToPath(outPath, u8content.c_str(), u8content.size());
         J_ASSERT(err == io::IOError::Ok);
+        writeMarker.Submit();
 
         if (config.sourcemap) {
             if (unlikely(!srcFut.get())) {   // wait to finished

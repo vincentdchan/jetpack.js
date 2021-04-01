@@ -32,6 +32,10 @@ namespace jetpack {
         return iter->second;
     }
 
+    int32_t ModulesTable::ModCount() const {
+        return pathToModule.size();
+    }
+
     void ModulesTable::insertWithoutLock(const Sp<ModuleFile> &mf) {
         pathToModule[mf->Path()] = mf;
         idToModule[mf->id()] = mf;

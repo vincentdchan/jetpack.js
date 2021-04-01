@@ -4,6 +4,8 @@ project(jetpack)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
+        src/Benchmark.h
+        src/Benchmark.cpp
         src/ResolveResult.h
         src/WorkerError.h
         src/ModuleProvider.h

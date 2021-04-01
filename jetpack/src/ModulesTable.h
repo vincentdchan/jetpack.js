@@ -31,13 +31,10 @@ namespace jetpack {
         // nullable!
         Sp<ModuleFile> findModuleById(int32_t id);
 
-        inline int32_t modCount() const {
-            return mod_counter_.load();
-        }
+        int32_t ModCount() const;
 
     private:
         std::mutex m;
-        std::atomic<int32_t> mod_counter_{};
 
         void insertWithoutLock(const Sp<ModuleFile>& mf);
 

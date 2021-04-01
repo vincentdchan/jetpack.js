@@ -4,6 +4,7 @@
 
 #include "ModuleFile.h"
 #include "ModuleResolver.h"
+#include "Benchmark.h"
 
 namespace jetpack {
 
@@ -62,10 +63,12 @@ namespace jetpack {
 
     ResolveResult<UString> ModuleFile::GetSource() {
         J_ASSERT(provider);
+        benchmark::BenchMarker marker(benchmark::BENCH_READING_IO);
         auto result =  provider->resolve(*this, Path());
         if (likely(!result.HasError())) {
             src_content = result.value;
         }
+        marker.Submit();
         return result;
     }
 

@@ -29,7 +29,7 @@ namespace jetpack {
         SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver, // nullable
                            const std::string& filename);
 
-        void AddSource(const ModuleFile& src);
+        void AddSource(const Sp<ModuleFile>& src);
 
         inline void EndLine() {
             mappings.push_back(';');
@@ -49,8 +49,8 @@ namespace jetpack {
         }
 
     private:
+        std::stringstream ss;
         std::string mappings;
-        json result;
         int32_t src_counter_ = 0;
         int32_t line_counter_ = 1;
 
@@ -58,14 +58,16 @@ namespace jetpack {
 
         void FinalizeCollector(const MappingCollector& collector);
 
-        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
+        void FinalizeSources();
 
-        int32_t GetIdOfName(const UString& name);
+        void FinalizeSourcesContent();
+
+        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
 
         int32_t GetFilenameIndexByModuleId(int32_t moduleId);
 
-        HashMap<UString, int32_t> names_map_;
-        HashMap<int32_t, int32_t> module_id_to_index_;
+        HashMap<int32_t, int32_t>   module_id_to_index_;
+        std::vector<Sp<ModuleFile>> sources_;
 
         std::shared_ptr<ModuleResolver> module_resolver_;
 

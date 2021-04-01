@@ -29,6 +29,7 @@
 #define OPT_MINIFY "minify"
 #define OPT_OUT "out"
 #define OPT_SOURCEMAP "sourcemap"
+#define OPT_PROFILE "profile"
 
 using namespace jetpack;
 
@@ -48,16 +49,14 @@ int main(int argc, char** argv) {
                 (OPT_MINIFY, "minify the code")
                 (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
                 (OPT_SOURCEMAP, "generate sourcemaps")
+                (OPT_PROFILE, "print profile information")
                 ;
 
         options.parse_positional(OPT_ENTRY);
 
+        simple_api::Flags flags;
         auto result = options.parse(argc, argv);
-        bool trace_file = true;
-        bool minify = false;
-        bool jsx = false;
-        bool library = false;
-        bool sourcemap = false;
+        flags.setTraceFile(true);
 
         // print help message
         if (result[OPT_HELP].count()) {
@@ -66,35 +65,39 @@ int main(int argc, char** argv) {
         }
 
         if (result[OPT_NO_TRACE].count()) {
-            trace_file = false;
+            flags.setTraceFile(false);
         }
 
         if (result[OPT_MINIFY].count()) {
-            minify = true;
+            flags.setMinify(true);
         }
 
         if (result[OPT_JSX].count()) {
-            jsx = true;
+            flags.setJsx(true);
         }
 
         if (result[OPT_LIBRARY].count()) {
-            library = true;
+            flags.setLibrary(true);
         }
 
         if (result[OPT_SOURCEMAP].count()) {
-            sourcemap = true;
+            flags.setSourcemap(true);
+        }
+
+        if (result[OPT_PROFILE].count()) {
+            flags.setProfile(true);
         }
 
         if (result[OPT_ANALYZE_MODULE].count()) {
             std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
-            return simple_api::AnalyzeModule(path, jsx, trace_file);
+            return simple_api::AnalyzeModule(path, flags);
         }
 
         if (result[OPT_OUT].count()) {
             std::string entry_path = result[OPT_ENTRY].as<std::string>();
             std::string out_path = result[OPT_OUT].as<std::string>();
 
-            return simple_api::BundleModule(jsx, minify, library, sourcemap, entry_path, out_path);
+            return simple_api::BundleModule(entry_path, out_path, flags);
         }
 
         std::cout << options.help() << std::endl;

@@ -100,7 +100,7 @@ namespace jetpack {
         }
 
         inline int32_t ModCount() const {
-            return modules_table_.modCount();
+            return modules_table_.ModCount();
         }
 
         // nullable!
