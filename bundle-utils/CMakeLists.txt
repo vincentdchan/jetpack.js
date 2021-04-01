@@ -13,6 +13,9 @@ add_library(${PROJECT_NAME} STATIC
         src/string/UString.cpp
         src/io/FileIO.h
         src/io/FileIO.cpp
+        src/JetTime.h
+        src/JetJSON.h
+        src/JetJSON.cpp
         src/Path.h
         src/Utils.h
         src/Utils.cpp)
