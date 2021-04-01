@@ -9,11 +9,9 @@
 
 namespace jetpack::simple_api {
 
-    int AnalyzeModule(const std::string& path,
-                             bool jsx,
-                             bool trace_file) {
+    int AnalyzeModule(const std::string& path, Flags flags) {
         parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
-        if (jsx) {
+        if (flags.isJsx()) {
             parser_config.jsx = true;
         }
 
@@ -22,7 +20,7 @@ namespace jetpack::simple_api {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
 
         try {
-            resolver->SetTraceFile(trace_file);
+            resolver->SetTraceFile(flags.isTraceFile());
             resolver->BeginFromEntry(parser_config, path);
             resolver->PrintStatistic();
             return 0;
@@ -32,12 +30,7 @@ namespace jetpack::simple_api {
         }
     }
 
-    int BundleModule(bool jsx,
-                     bool minify,
-                     bool library,
-                     bool sourcemap,
-                     const std::string& path,
-                     const std::string& out_path) {
+    int BundleModule(const std::string& path, const std::string& out_path, Flags flags) {
 
         auto start = time::GetCurrentMs();
 
@@ -46,19 +39,19 @@ namespace jetpack::simple_api {
             CodeGen::Config codegen_config;
             parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
 
-            if (jsx) {
+            if (flags.isJsx()) {
                 parser_config.jsx = true;
                 parser_config.transpile_jsx = true;
             }
 
-            if (minify) {
+            if (flags.isMinify()) {
                 parser_config.constant_folding = true;
                 codegen_config.minify = true;
                 codegen_config.comments = false;
                 resolver->SetNameGenerator(MinifyNameGenerator::Make());
             }
 
-            codegen_config.sourcemap = sourcemap;
+            codegen_config.sourcemap = flags.isSourcemap();
 
             resolver->SetTraceFile(true);
             resolver->BeginFromEntry(parser_config, path);
@@ -67,7 +60,9 @@ namespace jetpack::simple_api {
             std::cout << "Finished." << std::endl;
             std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start << " ms." << std::endl;
 
-            benchmark::PrintReport();
+            if (flags.isProfile()) {
+                benchmark::PrintReport();
+            }
             return 0;
         } catch (ModuleResolveException& err) {
             err.PrintToStdErr();
