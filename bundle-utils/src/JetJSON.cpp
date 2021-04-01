@@ -21,9 +21,11 @@ namespace jetpack {
         for (size_t i = 0; i < str.size(); ++i) {
             const char ch = str[i];
             switch (ch) {
+                case '/':
+                    m << ch;
+                    break;
                 case '\\':
                 case '"':
-                case '/':
                     m << '\\' << ch;
                     break;
                 case '\b':

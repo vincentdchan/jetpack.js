@@ -103,7 +103,7 @@ TEST(SourceMap, Complex) {
     simple_api::Flags flags;
     flags.setJsx(true);
     flags.setMinify(false);
-    flags.setSourcemap(false);
+    flags.setSourcemap(true);
     EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 
     std::string sourcemapContent;

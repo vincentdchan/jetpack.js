@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <iostream>
+#include "JetJSON.h"
 #include "io/FileIO.h"
 #include "Benchmark.h"
 #include "SourceMapGenerator.h"
@@ -114,29 +115,17 @@ namespace jetpack {
             const std::shared_ptr<ModuleResolver>& resolver,
             const std::string& filename
     ): module_resolver_(resolver) {
-        result["version"] = 3;
-        result["file"] = filename;
-        result["sourceRoot"] = "";
-        result["sources"] = json::array();
-        result["names"] = json::array();
-        result["sourcesContent"] = json::array();
+        ss << "{" << std::endl;
+        ss << R"(  "version": 3,)" << std::endl;
+        ss << R"(  "file": ")" << EscapeJSONString(filename) << "\"," << std::endl;
+        ss << R"(  "sourceRoot": "",)" << std::endl;
+        ss << R"(  "names": [],)" << std::endl;
     }
 
-    void SourceMapGenerator::AddSource(const ModuleFile& moduleFile) {
-        result["sources"].push_back(moduleFile.Path());
-        result["sourcesContent"].push_back(moduleFile.src_content.toStdString());
-    }
-
-    int32_t SourceMapGenerator::GetIdOfName(const UString& name) {
-        auto iter = names_map_.find(name);
-        if (iter != names_map_.end()) {
-            return iter->second;
-        }
-
-        int32_t next_id = names_map_.size();
-        names_map_[name] = next_id;
-        result["names"].push_back(name.toStdString());
-        return next_id;
+    void SourceMapGenerator::AddSource(const Sp<ModuleFile>& moduleFile) {
+        sources_.push_back(moduleFile);
+//        result["sources"].push_back(moduleFile.Path());
+//        result["sourcesContent"].push_back(moduleFile.src_content.toStdString());
     }
 
     int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t moduleId) {
@@ -152,7 +141,7 @@ namespace jetpack {
             return -1;
         }
 
-        AddSource(*mod);
+        AddSource(mod);
 
         int32_t index = src_counter_++;
         module_id_to_index_[mod->id()] = index;
@@ -164,7 +153,47 @@ namespace jetpack {
             FinalizeCollector(*collector);
         }
 
-        result["mappings"] = std::move(mappings);
+        FinalizeSources();
+        FinalizeSourcesContent();
+
+        ss << R"(  "mappings": ")" << EscapeJSONString(mappings) << "\"" << std::endl;
+        ss << "}";
+    }
+
+    void SourceMapGenerator::FinalizeSources() {
+        if (sources_.empty()) {
+            ss << R"(  "sources": [],)" << std::endl;
+            return;
+        }
+        ss << R"(  "sources": [)" << std::endl;
+        uint32_t counter = 0;
+        for (const auto& module : sources_) {
+            ss << "    \"" << EscapeJSONString(module->Path()) << "\"";
+            if (counter++ < sources_.size() - 1) {
+                ss << ",";
+            }
+            ss << std::endl;
+        }
+        ss << "  ]," << std::endl;
+    }
+
+    void SourceMapGenerator::FinalizeSourcesContent() {
+        if (sources_.empty()) {
+            ss << R"(  "sourcesContent": [],)" << std::endl;
+            return;
+        }
+        ss << R"(  "sourcesContent": [)" << std::endl;
+
+        uint32_t counter = 0;
+        for (const auto& module : sources_) {
+            ss << "    \"" << EscapeJSONString(module->src_content.toStdString()) << "\"";
+            if (counter++ < sources_.size() - 1) {
+                ss << ",";
+            }
+            ss << std::endl;
+        }
+
+        ss << "  ]," << std::endl;
     }
 
     void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
@@ -200,21 +229,12 @@ namespace jetpack {
     }
 
     std::string SourceMapGenerator::ToPrettyString() {
-        try {
-            return result.dump(2);
-        } catch (std::exception& ex) {
-            std::cerr << ex.what() << std::endl;
-            return {};
-        }
+        return ss.str();
     }
 
     bool SourceMapGenerator::DumpFile(const std::string &path, bool pretty) {
-        int indent = -1;
-        if (pretty) {
-            indent = 2;
-        }
         benchmark::BenchMarker sm(benchmark::BENCH_DUMP_SOURCEMAP);
-        std::string finalStr = result.dump(indent);
+        std::string finalStr = ToPrettyString();
         sm.Submit();
 
         benchmark::BenchMarker writeMark(benchmark::BENCH_WRITING_IO);
