@@ -69,6 +69,7 @@ include_directories(PUBLIC
         "./src"
         "../third_party/ThreadPool/"
         "../third_party/js-parser/src"
+        "../third_party/cxxopts/include"
         "../third_party/robin-hood-hashing/src/include")
 link_libraries(bundle-utils esparser fmt)
 

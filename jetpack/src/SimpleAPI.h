@@ -79,4 +79,6 @@ namespace jetpack::simple_api {
     int BundleModule(const std::string& path,
                      const std::string& out_path, Flags flags);
 
+    int HandleCommandLine(int argc, char** argv);
+
 }
