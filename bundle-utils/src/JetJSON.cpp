@@ -16,44 +16,47 @@ namespace jetpack {
     }
 
     std::string EscapeJSONString(const std::string& str) {
-        std::stringstream m;
+        std::string m;
+        m.reserve(str.size() * 2);
 
         for (size_t i = 0; i < str.size(); ++i) {
             const char ch = str[i];
             switch (ch) {
                 case '/':
-                    m << ch;
+                    m += ch;
                     break;
                 case '\\':
                 case '"':
-                    m << '\\' << ch;
+                    m += '\\';
+                    m += ch;
                     break;
                 case '\b':
-                    m << "\\b";
+                    m += "\\b";
                     break;
                 case '\t':
-                    m << "\\t";
+                    m += "\\t";
                     break;
                 case '\n':
-                    m << "\\n";
+                    m += "\\n";
                     break;
                 case '\f':
-                    m << "\\f";
+                    m += "\\f";
                     break;
                 case '\r':
-                    m << "\\r";
+                    m += "\\r";
                     break;
                 default:
                     if (ch < ' ') {
-                        m << "\\u00" << FormatByte(static_cast<unsigned char>(ch));
+                        m += "\\u00";
+                        m += FormatByte(static_cast<unsigned char>(ch));
                     } else {
-                        m << ch;
+                        m += ch;
                     }
                     break;
             }
         }
 
-        return m.str();
+        return m;
     }
 
 }

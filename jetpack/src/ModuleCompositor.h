@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cinttypes>
+#include <ThreadPool.h>
 #include "string/UString.h"
 #include "sourcemap/MappingCollector.h"
 #include "sourcemap/SourceMapGenerator.h"
@@ -24,8 +25,8 @@ namespace jetpack {
                 );
 
         [[nodiscard]]
-        inline UString Finalize() const {
-            sourceMapGenerator.Finalize();
+        inline UString Finalize(ThreadPool& threadPool) const {
+            sourceMapGenerator.Finalize(threadPool);
             return result;
         }
 

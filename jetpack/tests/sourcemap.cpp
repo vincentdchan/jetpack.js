@@ -31,7 +31,7 @@ inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
 
     ModuleCompositor compositor(sourceMapGenerator);
     compositor.append(mod->codegen_result.content, mod->mapping_collector_);
-    auto composition = compositor.Finalize();
+    auto composition = compositor.Finalize(resolver->InternalThreadPool());
 
     if (print) {
         std::cout << "gen: " << std::endl << composition.toStdString() << std::endl;

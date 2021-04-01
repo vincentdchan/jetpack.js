@@ -121,6 +121,10 @@ namespace jetpack {
             return entry_module;
         }
 
+        inline ThreadPool& InternalThreadPool() {
+            return *thread_pool_;
+        }
+
     private:
         void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::ParserContext::Config& config, const std::string& resolvedPath);
 

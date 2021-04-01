@@ -487,7 +487,7 @@ namespace jetpack {
             moduleCompositor.append(codegen.GetResult().content, nullptr);
         }
 
-        const UString finalResult = moduleCompositor.Finalize();
+        const UString finalResult = moduleCompositor.Finalize(*thread_pool_);
         codegenMarker.Submit();
 
         std::future<bool> srcFut;

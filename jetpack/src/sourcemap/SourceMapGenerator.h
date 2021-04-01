@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <ThreadPool.h>
 #include "string/UString.h"
 #include "MappingCollector.h"
 #include "ModuleFile.h"
@@ -38,7 +39,7 @@ namespace jetpack {
         /**
          * Unify all collectors together
          */
-        void Finalize();
+        void Finalize(ThreadPool& threadPool);
 
         std::string ToPrettyString();
 
@@ -58,9 +59,9 @@ namespace jetpack {
 
         void FinalizeCollector(const MappingCollector& collector);
 
-        void FinalizeSources();
+        void FinalizeSources(ThreadPool& threadPool);
 
-        void FinalizeSourcesContent();
+        void FinalizeSourcesContent(ThreadPool& threadPool);
 
         bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
 
