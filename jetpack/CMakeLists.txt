@@ -36,28 +36,6 @@ set(SOURCE_FILES
         src/codegen/CodeGen.h
         src/codegen/CodeGen.cpp)
 
-if (UNIX AND NOT EMSCRIPTEN)
-
-    include_directories("../third_party/jemalloc/include")
-
-    if (APPLE)
-
-        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-            message("arch: ${CMAKE_OSX_ARCHITECTURES}")
-            link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.a)
-        else()
-            link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.a)
-        endif()
-
-    else()
-
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
-
-    endif()
-
-endif()
-
 if (EMSCRIPTEN)
 add_definitions(-DJETPACK_SINGLE_THREAD)
 set(CMAKE_CXX_FLAGS "-s \"EXTRA_EXPORTED_RUNTIME_METHODS=['UTF8ToString', 'lengthBytesUTF8', 'stringToUTF8', 'stringToUTF16']\"")
@@ -74,6 +52,37 @@ include_directories(PUBLIC
 link_libraries(bundle-utils esparser fmt)
 
 add_library(jetpack ${SOURCE_FILES})
+add_library(jetpackd SHARED ${SOURCE_FILES})
+
+if (APPLE)
+    set(DYLIB_SUFFIX "dylib")
+else()
+    set(DYLIB_SUFFIX "so")
+endif()
+
+if (UNIX AND NOT EMSCRIPTEN)
+    add_definitions(-DJETPACK_HAS_JEMALLOC)
+    include_directories("../third_party/jemalloc/include")
+
+    if (APPLE)
+
+        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            message("arch: ${CMAKE_OSX_ARCHITECTURES}")
+            target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.a)
+            target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.${DYLIB_SUFFIX})
+        else()
+            target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.a)
+            target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.${DYLIB_SUFFIX})
+        endif()
+
+    else()
+
+        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
+        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
+
+    endif()
+
+endif()
 
 add_executable(jetpack-test
         tests/sourcemap.cpp

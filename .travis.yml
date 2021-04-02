@@ -7,9 +7,10 @@ os:
 osx_image: xcode12
 
 script:
-- mkdir build
-- cd build && cmake ..
+- mkdir cmake-build-release
+- cd cmake-build-release && cmake ..
 - cmake --build . --target jetpack-test --config Release
+- cmake --build . --target jetpackd --config Release
 - ./jetpack/jetpack-test
 
 addons:

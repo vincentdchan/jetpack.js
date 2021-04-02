@@ -2,8 +2,11 @@
 // Created by Duzhong Chen on 2021/3/30.
 //
 
-#include <cxxopts.hpp>
+#ifdef JETPACK_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
+#endif
+
+#include <cxxopts.hpp>
 #include "SimpleAPI.h"
 #include "JetTime.h"
 #include "ModuleResolver.h"
@@ -76,7 +79,9 @@ namespace jetpack::simple_api {
 
             if (flags.isProfile()) {
                 benchmark::PrintReport();
+#ifdef JETPACK_HAS_JEMALLOC
                 malloc_stats_print(NULL, NULL, NULL);
+#endif
             }
             return 0;
         } catch (ModuleResolveException& err) {

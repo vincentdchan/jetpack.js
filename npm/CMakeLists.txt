@@ -18,7 +18,4 @@ link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/jetpack/")
 target_link_libraries(
   ${PROJECT_NAME}
   ${CMAKE_JS_LIB}
-  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/third_party/fmt/libfmt.a"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/bundle-utils/libbundle-utils.a"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/esparser/libesparser.a"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/jetpack/libjetpack.a")
+  "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/jetpack/libjetpackd.dylib")
