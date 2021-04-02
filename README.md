@@ -115,3 +115,11 @@ The code are well commented, please read the code.
 - macOS x64/arm64
 - Windows 64bit
 - Linux 64bit
+
+# Build Dependencies
+
+- jemalloc 5.2.1
+- cxxopts
+- fmt
+- nlohmann_json
+- robin-hood-hashing

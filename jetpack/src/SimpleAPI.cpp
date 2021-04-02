@@ -3,6 +3,7 @@
 //
 
 #include <cxxopts.hpp>
+#include <jemalloc/jemalloc.h>
 #include "SimpleAPI.h"
 #include "JetTime.h"
 #include "ModuleResolver.h"
@@ -75,6 +76,7 @@ namespace jetpack::simple_api {
 
             if (flags.isProfile()) {
                 benchmark::PrintReport();
+                malloc_stats_print(NULL, NULL, NULL);
             }
             return 0;
         } catch (ModuleResolveException& err) {
