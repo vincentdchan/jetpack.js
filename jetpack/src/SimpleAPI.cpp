@@ -23,6 +23,7 @@
 #define OPT_OUT "out"
 #define OPT_SOURCEMAP "sourcemap"
 #define OPT_PROFILE "profile"
+#define OPT_PROFILE_MALLOC "profile-malloc"
 
 namespace jetpack::simple_api {
 
@@ -79,10 +80,15 @@ namespace jetpack::simple_api {
 
             if (flags.isProfile()) {
                 benchmark::PrintReport();
-#ifdef JETPACK_HAS_JEMALLOC
-                malloc_stats_print(NULL, NULL, NULL);
-#endif
             }
+
+#ifdef JETPACK_HAS_JEMALLOC
+            if (flags.isProfileMalloc()) {
+                malloc_stats_print(NULL, NULL, NULL);
+
+            }
+#endif
+
             return 0;
         } catch (ModuleResolveException& err) {
             err.PrintToStdErr();
@@ -105,6 +111,7 @@ namespace jetpack::simple_api {
                     (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
                     (OPT_SOURCEMAP, "generate sourcemaps")
                     (OPT_PROFILE, "print profile information")
+                    (OPT_PROFILE_MALLOC, "print profile of malloc")
                     ;
 
             options.parse_positional(OPT_ENTRY);
@@ -141,6 +148,10 @@ namespace jetpack::simple_api {
 
             if (result[OPT_PROFILE].count()) {
                 flags.setProfile(true);
+            }
+
+            if (result[OPT_PROFILE_MALLOC].count()) {
+                flags.setProfileMalloc(true);
             }
 
             if (result[OPT_ANALYZE_MODULE].count()) {

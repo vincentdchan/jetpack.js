@@ -65,13 +65,22 @@ namespace jetpack::simple_api {
             Flags::profile = profile;
         }
 
+        bool isProfileMalloc() const {
+            return profile_malloc;
+        }
+
+        void setProfileMalloc(bool profileMalloc) {
+            profile_malloc = profileMalloc;
+        }
+
     private:
-        bool trace_file : 1;
-        bool minify     : 1;
-        bool jsx        : 1;
-        bool library    : 1;
-        bool sourcemap  : 1;
-        bool profile    : 1;
+        bool trace_file     : 1;
+        bool minify         : 1;
+        bool jsx            : 1;
+        bool library        : 1;
+        bool sourcemap      : 1;
+        bool profile        : 1;
+        bool profile_malloc : 1;
     };
 
     int AnalyzeModule(const std::string& path, Flags flags);

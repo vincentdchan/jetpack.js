@@ -5,6 +5,7 @@
 #include "Benchmark.h"
 #include <mutex>
 #include <iostream>
+#include <fmt/format.h>
 
 namespace jetpack::benchmark {
 
@@ -14,31 +15,31 @@ namespace jetpack::benchmark {
     const char* BenchTypeToCStr(BenchType t) {
         switch (t) {
             case BENCH_PARSING:
-                return "parsing";
+                return "Parsing";
 
             case BENCH_READING_IO:
-                return "reading io";
+                return "Reading IO";
 
             case BENCH_WRITING_IO:
-                return "writing io";
+                return "Writing IO";
 
             case BENCH_MINIFY:
-                return "minify";
+                return "Minify";
 
             case BENCH_CODEGEN:
-                return "codegen";
+                return "Codegen";
 
             case BENCH_DUMP_SOURCEMAP:
-                return "dump sourcemap";
+                return "Dump sourcemap";
 
             case BENCH_MODULE_COMPOSITION:
-                return "module composition";
+                return "Module composition";
 
             case BENCH_FINALIZE_SOURCEMAP:
-                return "finalize sourcemap";
+                return "Finalize sourcemap";
 
             default:
-                return "unknown";
+                return "Unknown";
 
         }
     }
@@ -46,7 +47,7 @@ namespace jetpack::benchmark {
     void PrintReport() {
         std::lock_guard<std::mutex> guard(mutex_);
         for (int i = 0; i < BENCH_END; i++) {
-            std::cout << BenchTypeToCStr(static_cast<BenchType>(i)) << ":\t" << BENCH_STAT[i] << "ms" << std::endl;
+            std::cerr << fmt::format("{:<24} {}ms\n", BenchTypeToCStr(static_cast<BenchType>(i)), BENCH_STAT[i]);
         }
     }
 
