@@ -1,5 +1,7 @@
 
 /build
 
+/bin
+
 /*.node
 /*.dylib

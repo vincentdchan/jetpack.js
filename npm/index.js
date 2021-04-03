@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
-const bin = require('./build/Release/jetpp.node');
+let bin;
+if (process.env['JETPACK_LOCAL']) {
+  bin = require('./build/Release/jetpp.node');
+} else {
+  bin = require('./jetpp.node');
+}
 
 const retValue = bin.handleCli(process.argv.slice(1));
 
