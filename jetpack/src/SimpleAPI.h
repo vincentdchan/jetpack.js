@@ -6,6 +6,7 @@
 
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
 namespace jetpack::simple_api {
 

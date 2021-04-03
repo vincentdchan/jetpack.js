@@ -12,6 +12,7 @@
 #include <limits>
 #include <vector>
 #include <cassert>
+#include <memory>
 
 #ifndef _WIN32
 #include <unistd.h>

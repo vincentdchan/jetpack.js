@@ -7,6 +7,8 @@
 
 #include "UStringData.h"
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 
 #define QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_MOVE_AND_SWAP(Class) \
