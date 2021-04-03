@@ -7,6 +7,7 @@
 #include <utility>
 #include <Utils.h>
 #include <string/UString.h>
+#include <string/UStringView.h>
 #include "Location.h"
 
 #define DEF_TOKEN(D) \

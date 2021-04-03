@@ -17,6 +17,9 @@ namespace jetpack::benchmark {
             case BENCH_PARSING:
                 return "Parsing";
 
+            case BENCH_PARSING_STAGE:
+                return "Parsing Stage";
+
             case BENCH_READING_IO:
                 return "Reading IO";
 

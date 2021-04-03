@@ -121,7 +121,7 @@ inline const UString operator+(const UString &s1, char16_t s2)
 inline const UString operator+(char16_t s1, const UString &s2)
 { UString t(s1); t += s2; return t; }
 
-size_t qHashBits(const void *p, size_t size, size_t seed = 0) noexcept;
+size_t UStringHashBits(const void *p, size_t size, size_t seed = 0) noexcept;
 
 namespace std {
 
@@ -130,11 +130,7 @@ namespace std {
     {
         std::size_t operator()(const UString& k) const
         {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-
-            return qHashBits(k.constData(), k.size() * sizeof(char16_t));
+            return UStringHashBits(k.constData(), k.size() * sizeof(char16_t));
         }
     };
 
