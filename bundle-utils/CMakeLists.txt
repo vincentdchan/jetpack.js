@@ -20,4 +20,10 @@ add_library(${PROJECT_NAME} STATIC
         src/Utils.h
         src/Utils.cpp)
 
+target_link_libraries(${PROJECT_NAME} PRIVATE xxHash::xxhash)
+
 target_include_directories(${PROJECT_NAME} PUBLIC src)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ../third_party/xxHash
+        )

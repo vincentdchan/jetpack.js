@@ -19,6 +19,8 @@ add_subdirectory(./third_party/nlohmann_json)
 add_subdirectory(./third_party/ordered-map)
 add_subdirectory(./third_party/fmt)
 add_subdirectory(./third_party/googletest)
+option(BUILD_SHARED_LIBS "Build shared libs" OFF)
+add_subdirectory(./third_party/xxHash/cmake_unofficial)
 
 add_subdirectory(./bundle-utils)
 add_subdirectory(./esparser)
