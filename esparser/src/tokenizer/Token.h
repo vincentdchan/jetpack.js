@@ -143,7 +143,7 @@ public:
     SourceLocation loc;
     uint32_t lineNumber = 0;
     uint32_t lineStart = 0;
-    std::pair<std::int32_t, std::int32_t> range;
+    std::pair<int32_t, int32_t> range;
     bool octal = false;
     bool head = false;
     bool tail = false;

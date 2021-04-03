@@ -23,12 +23,12 @@ namespace jetpack {
         Scanner& operator=(Scanner&&) = delete;
 
         struct ScannerState {
-            std::uint32_t index_ = 0;
-            std::uint32_t line_number_ = 0;
-            std::uint32_t line_start_ = 0;
+            uint32_t index_ = 0;
+            uint32_t line_number_ = 0;
+            uint32_t line_start_ = 0;
         };
 
-        inline std::int32_t Length() const {
+        inline int32_t Length() const {
             return source_.size();
         }
 
@@ -45,19 +45,19 @@ namespace jetpack {
             return index_ >= Length();
         }
 
-        inline std::uint32_t LineNumber() const {
+        inline uint32_t LineNumber() const {
             return line_number_;
         }
 
-        inline void SetLineNumber(std::uint32_t ln) {
+        inline void SetLineNumber(uint32_t ln) {
             line_number_ = ln;
         }
 
-        inline std::uint32_t Index() const {
+        inline uint32_t Index() const {
             return index_;
         }
 
-        inline void SetIndex(std::uint32_t index) {
+        inline void SetIndex(uint32_t index) {
             index_ = index;
         }
 
@@ -65,19 +65,19 @@ namespace jetpack {
             index_++;
         }
 
-        inline std::uint32_t Column() const {
+        inline uint32_t Column() const {
             return index_ - line_start_;
         }
 
-        inline std::uint32_t LineStart() const {
+        inline uint32_t LineStart() const {
             return line_start_;
         }
 
-        inline void SetLineStart(std::uint32_t ls) {
+        inline void SetLineStart(uint32_t ls) {
             line_start_ = ls;
         }
 
-        std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(std::uint32_t offset);
+        std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);
         std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
         void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
@@ -88,13 +88,13 @@ namespace jetpack {
         char32_t ScanUnicodeCodePointEscape();
         UString GetIdentifier();
         UString GetComplexIdentifier();
-        bool OctalToDecimal(char16_t ch, std::uint32_t& result);
+        bool OctalToDecimal(char16_t ch, uint32_t& result);
 
         Token ScanIdentifier();
         Token ScanPunctuator();
-        Token ScanHexLiteral(std::uint32_t index);
-        Token ScanBinaryLiteral(std::uint32_t index);
-        Token ScanOctalLiteral(char16_t prefix, std::uint32_t index);
+        Token ScanHexLiteral(uint32_t index);
+        Token ScanBinaryLiteral(uint32_t index);
+        Token ScanOctalLiteral(char16_t prefix, uint32_t index);
         bool IsImplicitOctalLiteral();
         Token ScanNumericLiteral();
         Token ScanStringLiteral();
@@ -106,9 +106,9 @@ namespace jetpack {
         Token ScanRegExp();
         Token Lex();
 
-        char32_t CodePointAt(std::uint32_t index, std::uint32_t* size_ = nullptr) const;
+        char32_t CodePointAt(uint32_t index, uint32_t* size_ = nullptr) const;
 
-        inline char16_t CharAt(std::uint32_t index) const {
+        inline char16_t CharAt(uint32_t index) const {
             if (unlikely(index >= source_.size())) return u'\0';
             return source_.at(index);
         }
@@ -120,9 +120,9 @@ namespace jetpack {
     private:
         std::stack<UString> curly_stack_;
 
-        std::uint32_t index_ = 0u;
-        std::uint32_t line_number_ = 1u;
-        std::uint32_t line_start_ = 0u;
+        uint32_t index_ = 0u;
+        uint32_t line_number_ = 1u;
+        uint32_t line_start_ = 0u;
 
         std::shared_ptr<parser::ParseErrorHandler> error_handler_;
         UString source_;
