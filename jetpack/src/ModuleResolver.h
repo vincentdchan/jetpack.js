@@ -141,6 +141,8 @@ namespace jetpack {
                                     bool is_import,
                                     const std::string& path);
 
+        void EscapeAllContent();
+
         void DumpAllResult(const CodeGen::Config& config,
                            const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars,
                            const std::string& outPath);

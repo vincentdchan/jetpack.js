@@ -34,6 +34,9 @@ namespace jetpack::benchmark {
             case BENCH_MODULE_COMPOSITION:
                 return "module composition";
 
+            case BENCH_FINALIZE_SOURCEMAP:
+                return "finalize sourcemap";
+
             default:
                 return "unknown";
 
