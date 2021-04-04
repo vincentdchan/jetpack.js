@@ -241,22 +241,22 @@ namespace jetpack {
                t == JsTokenType::K_Super;
     }
 
-    JsTokenType Scanner::IsStrictModeReservedWord(const UString &str_) {
-        if (str_ == u"implements") return JsTokenType::KS_Implements;
-        if (str_ == u"interface") return JsTokenType::KS_Interface;
-        if (str_ == u"package") return JsTokenType::KS_Package;
-        if (str_ == u"private") return JsTokenType::KS_Private;
-        if (str_ == u"protected") return JsTokenType::KS_Protected;
-        if (str_ == u"public") return JsTokenType::KS_Public;
-        if (str_ == u"static") return JsTokenType::KS_Static;
-        if (str_ == u"yield") return JsTokenType::K_Yield;
-        if (str_ == u"let") return JsTokenType::K_Let;
+    JsTokenType Scanner::IsStrictModeReservedWord(UStringView str_) {
+        if (str_ == UStr("implements")) return JsTokenType::KS_Implements;
+        if (str_ == UStr("interface")) return JsTokenType::KS_Interface;
+        if (str_ == UStr("package")) return JsTokenType::KS_Package;
+        if (str_ == UStr("private")) return JsTokenType::KS_Private;
+        if (str_ == UStr("protected")) return JsTokenType::KS_Protected;
+        if (str_ == UStr("public")) return JsTokenType::KS_Public;
+        if (str_ == UStr("static")) return JsTokenType::KS_Static;
+        if (str_ == UStr("yield")) return JsTokenType::K_Yield;
+        if (str_ == UStr("let")) return JsTokenType::K_Let;
         return JsTokenType::Invalid;
     }
 
-    bool Scanner::IsRestrictedWord(const UString &str_) {
-        MAYBE_WORD(u"eval")
-        MAYBE_WORD(u"arguments")
+    bool Scanner::IsRestrictedWord(UStringView str_) {
+        MAYBE_WORD(UStr("eval"))
+        MAYBE_WORD(UStr("arguments"))
         return false;
     }
 
@@ -991,8 +991,9 @@ namespace jetpack {
         char16_t quote = CharAt(start);
 
         if (!(quote == '\'' || quote == '"')) {
-            auto err = error_handler_->CreateError("String literal must starts with a quote", index_, line_number_, index_ - line_start_);
-            throw err;
+            throw error_handler_->CreateError(
+                    "String literal must starts with a quote",
+                    index_, line_number_, index_ - line_start_);
         }
 
         ++index_;

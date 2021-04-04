@@ -15,6 +15,7 @@
 #include <codecvt>
 
 #include "Utils.h"
+#include "UStringView.h"
 #include "UStringData.h"
 #include "UStringDataPointer.h"
 
@@ -51,10 +52,15 @@ public:
     UString &append(char16_t c);
     UString &append(const char16_t *uc, int64_t len = -1);
     UString &append(const UString &s);
+    inline UString &append(UStringView view) {
+        return append(view.utf16(), static_cast<int64_t>(view.size()));
+    }
 
     inline UString &operator+=(char16_t c) { return append(c); }
 
     inline UString &operator+=(const UString &s) { return append(s); }
+
+    inline UString &operator+=(UStringView view) { return append(view); }
 
     UString &operator=(const UString &) noexcept;
 

@@ -6,7 +6,8 @@
 #include <memory>
 #include <vector>
 #include <stack>
-#include "../parser/ParseErrorHandler.h"
+#include <string/UStringView.h>
+#include "parser/ParseErrorHandler.h"
 #include "Utils.h"
 #include "Token.h"
 #include "Comment.h"
@@ -77,12 +78,16 @@ namespace jetpack {
             line_start_ = ls;
         }
 
+        inline UStringView View(uint32_t start, uint32_t end) {
+            return UStringView(source_).mid(start, end - start);
+        }
+
         std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);
         std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
         void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
-        static JsTokenType IsStrictModeReservedWord(const UString& str_);
-        static bool IsRestrictedWord(const UString& str_);
+        static JsTokenType IsStrictModeReservedWord(UStringView str);
+        static bool IsRestrictedWord(UStringView str_);
         static JsTokenType ToKeyword(const UString& str_);
         bool ScanHexEscape(char16_t ch, char32_t& result);
         char32_t ScanUnicodeCodePointEscape();
@@ -117,6 +122,10 @@ namespace jetpack {
             return source_;
         }
 
+        inline UString ValueBuffer() const {
+            return value_buffer_;
+        }
+
     private:
         std::stack<UString> curly_stack_;
 
@@ -126,6 +135,7 @@ namespace jetpack {
 
         std::shared_ptr<parser::ParseErrorHandler> error_handler_;
         UString source_;
+        UString value_buffer_;
         bool is_module_ = false;
 
     };

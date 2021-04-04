@@ -69,6 +69,10 @@ private:
 
 };
 
+#define UNICODE_LITERAL(str) u"" str
+#define UStr(content) \
+    UStringView(UNICODE_LITERAL(content), sizeof(UNICODE_LITERAL(content)) / 2 - 1)
+
 bool operator==(UStringView lhs, UStringView rhs) noexcept;
 
 static_assert(sizeof(std::string::size_type) == sizeof(std::size_t), "32 bit?");
