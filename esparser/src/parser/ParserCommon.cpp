@@ -297,7 +297,8 @@ namespace jetpack::parser {
     bool ParserCommon::IsIdentifierName(Token &token) {
         return token.type == JsTokenType::Identifier ||
                IsKeywordToken(token.type) ||
-               token.type == JsTokenType::BooleanLiteral ||
+               token.type == JsTokenType::TrueLiteral ||
+               token.type == JsTokenType::FalseLiteral ||
                token.type == JsTokenType::NullLiteral;
     }
 

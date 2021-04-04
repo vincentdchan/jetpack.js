@@ -11,7 +11,8 @@
 #include "Location.h"
 
 #define DEF_TOKEN(D) \
-    D(BooleanLiteral) \
+    D(TrueLiteral) \
+    D(FalseLiteral) \
     D(EOF_) \
     D(Identifier) \
     D(NullLiteral) \

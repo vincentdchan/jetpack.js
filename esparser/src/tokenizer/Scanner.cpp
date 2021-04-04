@@ -493,8 +493,10 @@ namespace jetpack {
             // nothing
         } else if (id == u"null") {
             tok.type = JsTokenType::NullLiteral;
-        } else if (id == u"true" || id == u"false") {
-            tok.type = JsTokenType::BooleanLiteral;
+        } else if (id == u"true") {
+            tok.type = JsTokenType::TrueLiteral;
+        } else if (id == u"false") {
+            tok.type = JsTokenType::FalseLiteral;
         } else {
             tok.type = JsTokenType::Identifier;
         }

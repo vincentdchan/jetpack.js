@@ -437,17 +437,14 @@ namespace jetpack::parser {
                 return Finalize(marker, node);
             }
 
-            case JsTokenType::BooleanLiteral: {
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral: {
                 ctx->is_assignment_target_ = false;
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Boolean;
-                if (token.value == u"true") {
-                    node->boolean_ = true;
-                } else {
-                    node->boolean_ = false;
-                }
+                node->boolean_ = ctx->lookahead_.type == JsTokenType::TrueLiteral;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -683,7 +680,8 @@ namespace jetpack::parser {
             }
 
             case JsTokenType::Identifier:
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral: {
                 auto node = Alloc<Identifier>();
                 node->name = token.value;
@@ -1363,7 +1361,8 @@ namespace jetpack::parser {
         }
 
         switch (ctx->lookahead_.type) {
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
             case JsTokenType::StringLiteral:
@@ -3719,7 +3718,8 @@ namespace jetpack::parser {
         switch (token.type) {
             case JsTokenType::Identifier:
             case JsTokenType::StringLiteral:
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
             case JsTokenType::LeftBrace:
