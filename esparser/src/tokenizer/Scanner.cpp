@@ -263,62 +263,62 @@ namespace jetpack {
     JsTokenType Scanner::ToKeyword(const UString &str_) {
         switch (str_.size()) {
             case 2:
-                if (str_ == u"if") return JsTokenType::K_If;
-                if (str_ == u"in") return JsTokenType::K_In;
-                if (str_ == u"do") return JsTokenType::K_Do;
+                if (str_ == UStr("if")) return JsTokenType::K_If;
+                if (str_ == UStr("in")) return JsTokenType::K_In;
+                if (str_ == UStr("do")) return JsTokenType::K_Do;
                 return JsTokenType::Invalid;
 
             case 3:
-                if (str_ == u"var") return JsTokenType::K_Var;
-                if (str_ == u"for") return JsTokenType::K_For;
-                if (str_ == u"new") return JsTokenType::K_New;
-                if (str_ == u"try") return JsTokenType::K_Try;
-                if (str_ == u"let") return JsTokenType::K_Let;
+                if (str_ == UStr("var")) return JsTokenType::K_Var;
+                if (str_ == UStr("for")) return JsTokenType::K_For;
+                if (str_ == UStr("new")) return JsTokenType::K_New;
+                if (str_ == UStr("try")) return JsTokenType::K_Try;
+                if (str_ == UStr("let")) return JsTokenType::K_Let;
                 return JsTokenType::Invalid;
 
             case 4:
-                if (str_ == u"this") return JsTokenType::K_This;
-                if (str_ == u"else") return JsTokenType::K_Else;
-                if (str_ == u"case") return JsTokenType::K_Case;
-                if (str_ == u"void") return JsTokenType::K_Void;
-                if (str_ == u"with") return JsTokenType::K_With;
-                if (str_ == u"enum") return JsTokenType::K_Enum;
+                if (str_ == UStr("this")) return JsTokenType::K_This;
+                if (str_ == UStr("else")) return JsTokenType::K_Else;
+                if (str_ == UStr("case")) return JsTokenType::K_Case;
+                if (str_ == UStr("void")) return JsTokenType::K_Void;
+                if (str_ == UStr("with")) return JsTokenType::K_With;
+                if (str_ == UStr("enum")) return JsTokenType::K_Enum;
                 return JsTokenType::Invalid;
 
             case 5:
-                if (str_ == u"while") return JsTokenType::K_While;
-                if (str_ == u"break") return JsTokenType::K_Break;
-                if (str_ == u"catch") return JsTokenType::K_Catch;
-                if (str_ == u"throw") return JsTokenType::K_Throw;
-                if (str_ == u"const") return JsTokenType::K_Const;
-                if (str_ == u"yield") return JsTokenType::K_Yield;
-                if (str_ == u"class") return JsTokenType::K_Class;
-                if (str_ == u"super") return JsTokenType::K_Super;
+                if (str_ == UStr("while")) return JsTokenType::K_While;
+                if (str_ == UStr("break")) return JsTokenType::K_Break;
+                if (str_ == UStr("catch")) return JsTokenType::K_Catch;
+                if (str_ == UStr("throw")) return JsTokenType::K_Throw;
+                if (str_ == UStr("const")) return JsTokenType::K_Const;
+                if (str_ == UStr("yield")) return JsTokenType::K_Yield;
+                if (str_ == UStr("class")) return JsTokenType::K_Class;
+                if (str_ == UStr("super")) return JsTokenType::K_Super;
                 return JsTokenType::Invalid;
 
             case 6:
-                if (str_ == u"return") return JsTokenType::K_Return;
-                if (str_ == u"typeof") return JsTokenType::K_Typeof;
-                if (str_ == u"delete") return JsTokenType::K_Delete;
-                if (str_ == u"switch") return JsTokenType::K_Switch;
-                if (str_ == u"export") return JsTokenType::K_Export;
-                if (str_ == u"import") return JsTokenType::K_Import;
+                if (str_ == UStr("return")) return JsTokenType::K_Return;
+                if (str_ == UStr("typeof")) return JsTokenType::K_Typeof;
+                if (str_ == UStr("delete")) return JsTokenType::K_Delete;
+                if (str_ == UStr("switch")) return JsTokenType::K_Switch;
+                if (str_ == UStr("export")) return JsTokenType::K_Export;
+                if (str_ == UStr("import")) return JsTokenType::K_Import;
                 return JsTokenType::Invalid;
 
             case 7:
-                if (str_ == u"default") return JsTokenType::K_Default;
-                if (str_ == u"finally") return JsTokenType::K_Finally;
-                if (str_ == u"extends") return JsTokenType::K_Extends;
+                if (str_ == UStr("default")) return JsTokenType::K_Default;
+                if (str_ == UStr("finally")) return JsTokenType::K_Finally;
+                if (str_ == UStr("extends")) return JsTokenType::K_Extends;
                 return JsTokenType::Invalid;
 
             case 8:
-                if (str_ == u"function") return JsTokenType::K_Function;
-                if (str_ == u"continue") return JsTokenType::K_Continue;
-                if (str_ == u"debugger") return JsTokenType::K_Debugger;
+                if (str_ == UStr("function")) return JsTokenType::K_Function;
+                if (str_ == UStr("continue")) return JsTokenType::K_Continue;
+                if (str_ == UStr("debugger")) return JsTokenType::K_Debugger;
                 return JsTokenType::Invalid;
 
             case 10:
-                if (str_ == u"instanceof") return JsTokenType::K_Instanceof;
+                if (str_ == UStr("instanceof")) return JsTokenType::K_Instanceof;
                 return JsTokenType::Invalid;
 
             default:

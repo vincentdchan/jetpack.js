@@ -2740,7 +2740,8 @@ namespace jetpack::parser {
                 return ParseUnaryExpression(scope);
             });
             auto node = Alloc<UnaryExpression>();
-            node->operator_ = token.value;
+            UStringView tokenView = TokenTypeToLiteral(token.type);
+            node->operator_ = UString(tokenView.utf16(), tokenView.size());
             node->argument = expr;
             node->prefix = true;
             expr = Finalize(marker, node);
