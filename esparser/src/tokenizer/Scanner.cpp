@@ -525,17 +525,12 @@ namespace jetpack {
         switch (ch) {
             case u'(':
                 t = JsTokenType::LeftParen;
-                if (ch == '{') {
-                    curly_stack_.push(u"{");
-                }
                 ++index_;
                 break;
 
             case u'{':
                 t = JsTokenType::LeftBracket;
-                if (ch == '{') {
-                    curly_stack_.push(u"{");
-                }
+                curly_stack_.push(u"{");
                 ++index_;
                 break;
 
