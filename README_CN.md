@@ -1,6 +1,7 @@
 # Jetpack.js
 
 [![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
+[![npm version](https://img.shields.io/npm/v/jetpp.svg)](https://www.npmjs.com/package/jetpp)
 
 [English Version](./README.md)
 

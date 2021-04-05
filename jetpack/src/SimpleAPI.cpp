@@ -2,10 +2,28 @@
 // Created by Duzhong Chen on 2021/3/30.
 //
 
+#ifdef JETPACK_HAS_JEMALLOC
+#include <jemalloc/jemalloc.h>
+#endif
+
+#include <cxxopts.hpp>
 #include "SimpleAPI.h"
 #include "JetTime.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
+
+#define OPT_HELP "help"
+#define OPT_ENTRY "entry"
+#define OPT_TOLERANT "tolerant"
+#define OPT_JSX "jsx"
+#define OPT_LIBRARY "library"
+#define OPT_ANALYZE_MODULE "analyze-module"
+#define OPT_NO_TRACE "no-trace"
+#define OPT_MINIFY "minify"
+#define OPT_OUT "out"
+#define OPT_SOURCEMAP "sourcemap"
+#define OPT_PROFILE "profile"
+#define OPT_PROFILE_MALLOC "profile-malloc"
 
 namespace jetpack::simple_api {
 
@@ -63,9 +81,95 @@ namespace jetpack::simple_api {
             if (flags.isProfile()) {
                 benchmark::PrintReport();
             }
+
+#ifdef JETPACK_HAS_JEMALLOC
+            if (flags.isProfileMalloc()) {
+                malloc_stats_print(NULL, NULL, NULL);
+
+            }
+#endif
+
             return 0;
         } catch (ModuleResolveException& err) {
             err.PrintToStdErr();
+            return 3;
+        }
+    }
+
+    int HandleCommandLine(int argc, char** argv) {
+        try {
+            cxxopts::Options options("Jetpack++", "Jetpack++ command line");
+            options.add_options()
+                    (OPT_ENTRY, "entry file to parse", cxxopts::value<std::string>())
+                    (OPT_TOLERANT, "tolerant parsing error")
+                    (OPT_JSX, "support jsx syntax")
+                    (OPT_LIBRARY, "bundle as library, do not bundle node_modules")
+                    (OPT_HELP, "produce help message")
+                    (OPT_ANALYZE_MODULE, "analyze a module and print result", cxxopts::value<std::string>())
+                    (OPT_NO_TRACE, "do not trace ref file when analyze module")
+                    (OPT_MINIFY, "minify the code")
+                    (OPT_OUT, "output filename of bundle", cxxopts::value<std::string>())
+                    (OPT_SOURCEMAP, "generate sourcemaps")
+                    (OPT_PROFILE, "print profile information")
+                    (OPT_PROFILE_MALLOC, "print profile of malloc")
+                    ;
+
+            options.parse_positional(OPT_ENTRY);
+
+            simple_api::Flags flags;
+            auto result = options.parse(argc, argv);
+            flags.setTraceFile(true);
+
+            // print help message
+            if (result[OPT_HELP].count()) {
+                std::cout << options.help() << std::endl;
+                return !result[OPT_HELP].count();
+            }
+
+            if (result[OPT_NO_TRACE].count()) {
+                flags.setTraceFile(false);
+            }
+
+            if (result[OPT_MINIFY].count()) {
+                flags.setMinify(true);
+            }
+
+            if (result[OPT_JSX].count()) {
+                flags.setJsx(true);
+            }
+
+            if (result[OPT_LIBRARY].count()) {
+                flags.setLibrary(true);
+            }
+
+            if (result[OPT_SOURCEMAP].count()) {
+                flags.setSourcemap(true);
+            }
+
+            if (result[OPT_PROFILE].count()) {
+                flags.setProfile(true);
+            }
+
+            if (result[OPT_PROFILE_MALLOC].count()) {
+                flags.setProfileMalloc(true);
+            }
+
+            if (result[OPT_ANALYZE_MODULE].count()) {
+                std::string path = result[OPT_ANALYZE_MODULE].as<std::string>();
+                return simple_api::AnalyzeModule(path, flags);
+            }
+
+            if (result[OPT_OUT].count()) {
+                std::string entry_path = result[OPT_ENTRY].as<std::string>();
+                std::string out_path = result[OPT_OUT].as<std::string>();
+
+                return simple_api::BundleModule(entry_path, out_path, flags);
+            }
+
+            std::cout << options.help() << std::endl;
+            return 0;
+        } catch (std::exception& ex) {
+            std::cerr << ex.what() << std::endl;
             return 3;
         }
     }

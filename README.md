@@ -1,6 +1,7 @@
 # Jetpack.js
 
 [![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
+[![npm version](https://img.shields.io/npm/v/jetpp.svg)](https://www.npmjs.com/package/jetpp)
 
 [中文版](./README_CN.md)
 
@@ -41,29 +42,34 @@ The parser can be used as a library independently.
 - Minify the code.
 - Sourcemap generation
 
-# Installation
+# Installation & Usage
+
+## Binary Distribution
+
+Download the binary from the [release](https://github.com/vincentdchan/jetpack.js/releases) page.
+
+Usage:
+
+```shell
+jetpack-cli --help
+```
+
+## Node.js User
 
 ```
-npm install -g jetpackpp
+npm install -g jetpp
 ```
 
-Or
-
-```
-yarn global add jetpackpp
-```
-
-# Usage
 
 Use command line to bundle a js module.
 ```shell script
-jetpack main.js --out bundle.js
+jetpp main.js --out bundle.js
 ```
 
 Help command:
 
 ```shell script
-$ jetpackpp --help
+$ jetpp --help
 
 Jetpack command line
 Usage:
@@ -115,3 +121,11 @@ The code are well commented, please read the code.
 - macOS x64/arm64
 - Windows 64bit
 - Linux 64bit
+
+# Build Dependencies
+
+- jemalloc 5.2.1
+- cxxopts
+- fmt
+- nlohmann_json
+- robin-hood-hashing

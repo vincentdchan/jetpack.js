@@ -148,36 +148,32 @@ namespace jetpack {
         return index;
     }
 
-    void SourceMapGenerator::Finalize(ThreadPool& threadPool) {
+    void SourceMapGenerator::Finalize() {
         for (const auto& collector : collectors_) {
             FinalizeCollector(*collector);
         }
 
-        FinalizeSources(threadPool);
-        FinalizeSourcesContent(threadPool);
+        benchmark::BenchMarker b(benchmark::BENCH_FINALIZE_SOURCEMAP);
+
+        FinalizeSources();
+        FinalizeSourcesContent();
+
+        b.Submit();
 
         ss << R"(  "mappings": ")" << EscapeJSONString(mappings) << "\"" << std::endl;
         ss << "}";
     }
 
-    void SourceMapGenerator::FinalizeSources(ThreadPool& threadPool) {
+    void SourceMapGenerator::FinalizeSources() {
         if (sources_.empty()) {
             ss << R"(  "sources": [],)" << std::endl;
             return;
         }
 
-        std::vector<std::future<std::string>> futures;
-        for (const auto& module : sources_) {
-            auto fut = threadPool.enqueue([module]() -> std::string {
-                return EscapeJSONString(module->Path());
-            });
-            futures.push_back(std::move(fut));
-        }
-
         ss << R"(  "sources": [)" << std::endl;
         uint32_t counter = 0;
-        for (auto& fut : futures) {
-            ss << "    \"" << fut.get() << "\"";
+        for (auto& module : sources_) {
+            ss << "    \"" << module->escaped_path.get() << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
@@ -186,24 +182,16 @@ namespace jetpack {
         ss << "  ]," << std::endl;
     }
 
-    void SourceMapGenerator::FinalizeSourcesContent(ThreadPool& threadPool) {
+    void SourceMapGenerator::FinalizeSourcesContent() {
         if (sources_.empty()) {
             ss << R"(  "sourcesContent": [],)" << std::endl;
             return;
         }
         ss << R"(  "sourcesContent": [)" << std::endl;
 
-        std::vector<std::future<std::string>> futures;
-        for (const auto& module : sources_) {
-            auto fut = threadPool.enqueue([module]() -> std::string {
-                return EscapeJSONString(module->src_content.toStdString());
-            });
-            futures.push_back(std::move(fut));
-        }
-
         uint32_t counter = 0;
-        for (auto& fut : futures) {
-            ss << "    \"" << fut.get() << "\"";
+        for (auto& module : sources_) {
+            ss << "    \"" << module->escaped_src_content.get() << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }

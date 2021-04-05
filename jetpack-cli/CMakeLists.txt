@@ -9,6 +9,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         "../esparser/src"
         "../jetpack/src/"
         "../third_party/ThreadPool/"
-        "../third_party/cxxopts/include"
         )
 target_link_libraries(${PROJECT_NAME} PRIVATE jetpack)

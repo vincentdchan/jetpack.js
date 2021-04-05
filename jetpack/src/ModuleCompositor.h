@@ -25,8 +25,8 @@ namespace jetpack {
                 );
 
         [[nodiscard]]
-        inline UString Finalize(ThreadPool& threadPool) const {
-            sourceMapGenerator.Finalize(threadPool);
+        inline UString Finalize() const {
+            sourceMapGenerator.Finalize();
             return result;
         }
 

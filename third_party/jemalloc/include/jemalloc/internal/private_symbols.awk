@@ -1,42 +1,31 @@
 #!/usr/bin/env awk -f
 
 BEGIN {
-  sym_prefix = ""
+  sym_prefix = "_"
   split("\
-        aligned_alloc \
-        calloc \
-        dallocx \
-        free \
-        mallctl \
-        mallctlbymib \
-        mallctlnametomib \
-        malloc \
-        malloc_conf \
-        malloc_message \
-        malloc_stats_print \
-        malloc_usable_size \
-        mallocx \
-        smallocx_ea6b3e973b477b8061e0076bb257dbd7f3faa756 \
-        nallocx \
-        posix_memalign \
-        rallocx \
-        realloc \
-        sallocx \
-        sdallocx \
-        xallocx \
-        memalign \
-        valloc \
-        __libc_calloc \
-        __libc_free \
-        __libc_malloc \
-        __libc_memalign \
-        __libc_realloc \
-        __libc_valloc \
-        pthread_create \
-        __free_hook \
-        __malloc_hook \
-        __realloc_hook \
-        __memalign_hook \
+        _aligned_alloc \
+        _calloc \
+        _dallocx \
+        _free \
+        _mallctl \
+        _mallctlbymib \
+        _mallctlnametomib \
+        _malloc \
+        _malloc_conf \
+        _malloc_message \
+        _malloc_stats_print \
+        _malloc_usable_size \
+        _mallocx \
+        _smallocx_ea6b3e973b477b8061e0076bb257dbd7f3faa756 \
+        _nallocx \
+        _posix_memalign \
+        _rallocx \
+        _realloc \
+        _sallocx \
+        _sdallocx \
+        _xallocx \
+        _valloc \
+        _pthread_create \
         ", exported_symbol_names)
   # Store exported symbol names as keys in exported_symbols.
   for (i in exported_symbol_names) {

@@ -19,5 +19,4 @@ realloc:realloc
 sallocx:sallocx
 sdallocx:sdallocx
 xallocx:xallocx
-memalign:memalign
 valloc:valloc

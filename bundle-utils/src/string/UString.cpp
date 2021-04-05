@@ -7,6 +7,7 @@
 #include "UChar.h"
 #include <algorithm>
 #include <string>
+#include "xxhash.h"
 
 uint32_t ustrlen(const char16_t *str) noexcept
 {
@@ -864,8 +865,8 @@ static uint64_t siphash(const uint8_t *in, uint64_t inlen, const uint64_t seed)
 
 size_t qHashBits(const void *p, size_t size, size_t seed) noexcept
 {
-    if (size <= __SIZEOF_POINTER__)
-        return murmurhash(p, size, seed);
-
-    return siphash(reinterpret_cast<const unsigned char*>(p), size, seed);
+    XXH64_hash_t hash = XXH3_64bits(p, size);
+    return static_cast<size_t>(hash);
 }
+
+static_assert(sizeof(size_t) == sizeof(XXH64_hash_t), "should compile as 64bit program");

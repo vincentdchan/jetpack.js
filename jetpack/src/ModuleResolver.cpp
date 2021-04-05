@@ -11,6 +11,7 @@
 #include <memory>
 #include <set>
 
+#include <JetJSON.h>
 #include "Path.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
@@ -454,6 +455,8 @@ namespace jetpack {
             });
         }
 
+        EscapeAllContent();
+
         std::unique_lock<std::mutex> lk(main_lock_);
         main_cv_.wait(lk, [this] {
             return finished_files_count_ >= enqueued_files_count_;
@@ -462,6 +465,17 @@ namespace jetpack {
         // END every modules gen their own code
 
         DumpAllResult(config, final_export_vars, out_path);
+    }
+
+    void ModuleResolver::EscapeAllContent() {
+        for (auto& tuple : modules_table_.pathToModule) {
+            tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
+                return EscapeJSONString(mod->src_content.toStdString());
+            });
+            tuple.second->escaped_path = thread_pool_->enqueue([mode = tuple.second]() -> std::string {
+                return EscapeJSONString(mode->Path());
+            });
+        }
     }
 
     // final stage
@@ -487,7 +501,7 @@ namespace jetpack {
             moduleCompositor.append(codegen.GetResult().content, nullptr);
         }
 
-        const UString finalResult = moduleCompositor.Finalize(*thread_pool_);
+        const UString finalResult = moduleCompositor.Finalize();
         codegenMarker.Submit();
 
         std::future<bool> srcFut;

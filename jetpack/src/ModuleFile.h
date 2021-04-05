@@ -6,6 +6,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <future>
 #include <parser/Parser.hpp>
 #include "string/UString.h"
 #include "codegen/CodeGen.h"
@@ -69,6 +70,9 @@ namespace jetpack {
         CodeGenResult codegen_result;
 
         UString src_content;
+
+        std::future<std::string> escaped_src_content;
+        std::future<std::string> escaped_path;
 
         /**
          * For Postorder traversal
