@@ -2575,11 +2575,12 @@ namespace jetpack::parser {
                     temp->left = ReinterpretExpressionAsPattern(expr);
 
                     token = NextToken();
-                    auto operator_ = token.value;
+//                    auto operator_ = token.value;
                     temp->right = IsolateCoverGrammar<Expression>([this, &scope] {
                         return ParseAssignmentExpression(scope);
                     });
-                    temp->operator_ = operator_;
+                    UStringView tokenView = TokenTypeToLiteral(token.type);
+                    temp->operator_ = UString(tokenView.utf16(), tokenView.size());
                     expr = Finalize(start_marker, temp);
                     ctx->first_cover_initialized_name_error_.reset();
                 }
@@ -2667,7 +2668,8 @@ namespace jetpack::parser {
                 auto binary = Alloc<BinaryExpression>();
                 binary->left = left;
                 binary->right = expr;
-                binary->operator_ = left_tk.value;
+                UStringView tokenView = TokenTypeToLiteral(left_tk.type);
+                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
                 if (ctx->config_.constant_folding) {
                     expr = ContantFolding::TryBinaryExpression(binary);
                 } else {
@@ -2677,7 +2679,8 @@ namespace jetpack::parser {
                 return Finalize(marker, ParseBinaryExpression(scope, expr, right_tk));
             } else {  // left_op > right_op
                 auto binary = Alloc<BinaryExpression>();
-                binary->operator_ = left_tk.value;
+                UStringView tokenView = TokenTypeToLiteral(left_tk.type);
+                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
                 binary->left = left;
                 binary->right = expr;
 

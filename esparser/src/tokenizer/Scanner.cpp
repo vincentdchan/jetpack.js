@@ -520,7 +520,6 @@ namespace jetpack {
         auto start = index_;
 
         char16_t ch = source_.at(index_);
-        UString str;
 
         JsTokenType t;
         switch (ch) {
@@ -547,7 +546,6 @@ namespace jetpack {
                     // Spread operator: ...
                     t = JsTokenType::Spread;
                     index_ += 2;
-                    str = u"...";
                 }
                 break;
 
@@ -779,11 +777,9 @@ namespace jetpack {
             ThrowUnexpectedToken();
         }
 
-        str = source_.mid(start, index_ - start);
-
         return {
                 t,
-                str,
+                UString(),
                 SourceLocation(),
                 line_number_,
                 line_start_,
