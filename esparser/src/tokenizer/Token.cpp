@@ -189,9 +189,114 @@ namespace jetpack {
             case JsTokenType::Arrow:
                 return UStr("=>");
 
+            case JsTokenType::K_If:
+                return UStr("if");
+
+            case JsTokenType::K_In:
+                return UStr("in");
+
+            case JsTokenType::K_Do:
+                return UStr("do");
+
+            case JsTokenType::K_Var:
+                return UStr("var");
+
+            case JsTokenType::K_For:
+                return UStr("for");
+
+            case JsTokenType::K_New:
+                return UStr("new");
+
+            case JsTokenType::K_Try:
+                return UStr("try");
+
+            case JsTokenType::K_Let:
+                return UStr("let");
+
+            case JsTokenType::K_This:
+                return UStr("this");
+
+            case JsTokenType::K_Else:
+                return UStr("else");
+
+            case JsTokenType::K_Case:
+                return UStr("case");
+
+            case JsTokenType::K_Void:
+                return UStr("void");
+
+            case JsTokenType::K_With:
+                return UStr("with");
+
+            case JsTokenType::K_Enum:
+                return UStr("enum");
+
+            case JsTokenType::K_While:
+                return UStr("while");
+
+            case JsTokenType::K_Break:
+                return UStr("break");
+
+            case JsTokenType::K_Catch:
+                return UStr("catch");
+
+            case JsTokenType::K_Throw:
+                return UStr("throw");
+
+            case JsTokenType::K_Const:
+                return UStr("const");
+
+            case JsTokenType::K_Yield:
+                return UStr("yield");
+
+            case JsTokenType::K_Class:
+                return UStr("class");
+
+            case JsTokenType::K_Super:
+                return UStr("super");
+
+            case JsTokenType::K_Return:
+                return UStr("return");
+
+            case JsTokenType::K_Typeof:
+                return UStr("typeof");
+
+            case JsTokenType::K_Delete:
+                return UStr("delete");
+
+            case JsTokenType::K_Switch:
+                return UStr("switch");
+
+            case JsTokenType::K_Export:
+                return UStr("export");
+
+            case JsTokenType::K_Import:
+                return UStr("import");
+
+            case JsTokenType::K_Default:
+                return UStr("default");
+
+            case JsTokenType::K_Finally:
+                return UStr("finally");
+
+            case JsTokenType::K_Extends:
+                return UStr("extends");
+
+            case JsTokenType::K_Function:
+                return UStr("function");
+
+            case JsTokenType::K_Continue:
+                return UStr("continue");
+
+            case JsTokenType::K_Debugger:
+                return UStr("debugger");
+
+            case JsTokenType::K_Instanceof:
+                return UStr("instanceof");
+
             default:
                 J_ASSERT(false);
-                return UStr("");
+                return UStr("<internal error>");
 
         }
 
