@@ -24,11 +24,13 @@ namespace jetpack {
         Scanner& operator=(Scanner&&) = delete;
 
         struct ScannerState {
+        public:
             uint32_t index_ = 0;
             uint32_t line_number_ = 0;
             uint32_t line_start_ = 0;
         };
 
+        [[nodiscard]]
         inline int32_t Length() const {
             return source_.size();
         }
@@ -118,15 +120,18 @@ namespace jetpack {
 
         char32_t CodePointAt(uint32_t index, uint32_t* size_ = nullptr) const;
 
+        [[nodiscard]]
         inline char16_t CharAt(uint32_t index) const {
             if (unlikely(index >= source_.size())) return u'\0';
             return source_.at(index);
         }
 
-        [[nodiscard]] UString Source() const {
+        [[nodiscard]]
+        UString Source() const {
             return source_;
         }
 
+        [[nodiscard]]
         inline UString ValueBuffer() const {
             return value_buffer_;
         }
