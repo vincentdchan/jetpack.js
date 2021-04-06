@@ -113,3 +113,11 @@ The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
 - macOS
 - Windows 64bit
 - Linux 64bit
+
+# 构建依赖
+- jemalloc 5.2.1
+- cxxopts
+- fmt
+- nlohmann_json
+- robin-hood-hashing 3.11.1
+- xxHash

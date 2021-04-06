@@ -128,4 +128,5 @@ The code are well commented, please read the code.
 - cxxopts
 - fmt
 - nlohmann_json
-- robin-hood-hashing
+- robin-hood-hashing 3.11.1
+- xxHash
