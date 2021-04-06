@@ -21,12 +21,15 @@ target_link_libraries(
   "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/jetpack/libjetpackd.dylib")
 
 IF(APPLE)
+execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+message("ARCH: ${MACHINE_ARCH}")
+
 message("build dir ${CMAKE_CURRENT_BINARY_DIR}")
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND
       cp "${CMAKE_CURRENT_SOURCE_DIR}/../cmake-build-release/jetpack/libjetpackd.dylib" ./
     COMMAND
-      cp "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.2.dylib" ./
+      cp "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.2.dylib" ./
     COMMAND
       install_name_tool -change "/usr/local/lib/libjemalloc.2.dylib" "@rpath/libjemalloc.2.dylib" libjetpackd.dylib
     COMMAND

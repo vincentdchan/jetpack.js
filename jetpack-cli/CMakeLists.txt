@@ -8,6 +8,5 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
         "../esparser/src"
         "../jetpack/src/"
-        "../third_party/ThreadPool/"
         )
 target_link_libraries(${PROJECT_NAME} PRIVATE jetpack)

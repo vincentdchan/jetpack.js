@@ -60,30 +60,6 @@ else()
     set(DYLIB_SUFFIX "so")
 endif()
 
-if (UNIX AND NOT EMSCRIPTEN)
-    add_definitions(-DJETPACK_HAS_JEMALLOC)
-    include_directories("../third_party/jemalloc/include")
-
-    if (APPLE)
-
-        if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-            message("arch: ${CMAKE_OSX_ARCHITECTURES}")
-            target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.a)
-            target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/arm64/libjemalloc.${DYLIB_SUFFIX})
-        else()
-            target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.a)
-            target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/x64/libjemalloc.${DYLIB_SUFFIX})
-        endif()
-
-    else()
-
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
-
-    endif()
-
-endif()
-
 add_executable(jetpack-test
         tests/sourcemap.cpp
         tests/scope.cpp
@@ -111,3 +87,23 @@ target_compile_definitions(jetpack-test PUBLIC
 )
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
+
+if (UNIX AND NOT EMSCRIPTEN)
+    add_definitions(-DJETPACK_HAS_JEMALLOC)
+    include_directories("../third_party/jemalloc/include")
+
+    if (APPLE)
+        execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+        message("ARCH: ${MACHINE_ARCH}")
+
+        target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.a)
+        target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.2.${DYLIB_SUFFIX})
+
+    else()
+
+        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
+        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
+
+    endif()
+
+endif()
