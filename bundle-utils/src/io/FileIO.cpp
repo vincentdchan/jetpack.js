@@ -21,6 +21,34 @@ namespace jetpack::io {
         MappedFileReader() = default;
 
         inline IOError Open(const std::string& filename) {
+#ifdef _WIN32
+            HANDLE hFile = ::CreateFileA(filename.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                std::cerr << "open file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::OpenFailed;
+            }
+
+            DWORD file_size;
+            ::GetFileSize(hFile, &file_size);
+            size = int64_t(file_size);
+
+            hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, file_size, NULL);
+            if (hMapping == NULL) {
+                ::CloseHandle(hFile);
+                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::ReadFailed;
+            }
+
+            void* p = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+            if (p == NULL) {
+                ::CloseHandle(hMapping);
+                ::CloseHandle(hFile);
+                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::ReadFailed;
+            }
+            mapped_mem = reinterpret_cast<intptr_t>(p);
+            return IOError::Ok;
+#else
             fd = ::open(filename.c_str(), O_RDONLY);
             if (fd < 0) {
                 return IOError::OpenFailed;
@@ -39,6 +67,7 @@ namespace jetpack::io {
             }
 
             return IOError::Ok;
+#endif
         }
 
         inline int64_t FileSize() const {
@@ -50,6 +79,11 @@ namespace jetpack::io {
         }
 
         ~MappedFileReader() noexcept {
+#ifdef _WIN32
+            ::CloseHandle(hMapping);
+            ::UnmapViewOfFile(hFile);
+            ::CloseHandle(hFile);
+#else
             if (likely(mapped_mem != -1)) {
                 ::munmap(reinterpret_cast<void*>(mapped_mem), size);
                 mapped_mem = -1;
@@ -58,12 +92,18 @@ namespace jetpack::io {
                 ::close(fd);
                 fd = -1;
             }
+#endif
         }
 
     private:
         int64_t  size = -1;
         intptr_t mapped_mem = -1;
+#ifdef _WIN32
+        HANDLE hMapping = INVALID_HANDLE_VALUE;
+        HANDLE hFile = INVALID_HANDLE_VALUE;
+#else
         int      fd = -1;
+#endif
 
     };
 

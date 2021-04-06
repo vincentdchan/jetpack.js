@@ -16,32 +16,24 @@
 
 #ifndef _WIN32
 #include <unistd.h>
-#include <robin_hood.h>
 #else
 #define NOMINMAX
 #include <unordered_set>
 #include <unordered_map>
 #include <Windows.h>
+#include <BaseTsd.h>
+#include <intrin.h>
 #endif
 
-#ifndef _WIN32
+#include <robin_hood.h>
+
 template <typename Key>
 using HashSet = robin_hood::unordered_set<Key>;
 
 template <typename Key, typename Value>
 using HashMap = robin_hood::unordered_map<Key, Value>;
-#else
-template <typename Key>
-using HashSet = std::unordered_set<Key>;
-
-template <typename Key, typename Value>
-using HashMap = std::unordered_map<Key, Value>;
-#endif
 
 #ifdef _WIN32
-#include <BaseTsd.h>
-#include <intrin.h>
-#include <Windows.h>
 #define ATTR_FORMAT(N, M)
 #define ATTR_UNUSED
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
