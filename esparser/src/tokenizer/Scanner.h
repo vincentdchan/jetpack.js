@@ -42,10 +42,12 @@ namespace jetpack {
         void TolerateUnexpectedToken();
         void TolerateUnexpectedToken(const std::string& message);
 
+        [[nodiscard]]
         inline bool IsEnd() const {
             return index_ >= Length();
         }
 
+        [[nodiscard]]
         inline uint32_t LineNumber() const {
             return line_number_;
         }
@@ -54,6 +56,7 @@ namespace jetpack {
             line_number_ = ln;
         }
 
+        [[nodiscard]]
         inline uint32_t Index() const {
             return index_;
         }
@@ -66,10 +69,12 @@ namespace jetpack {
             index_++;
         }
 
+        [[nodiscard]]
         inline uint32_t Column() const {
             return index_ - line_start_;
         }
 
+        [[nodiscard]]
         inline uint32_t LineStart() const {
             return line_start_;
         }
@@ -133,7 +138,7 @@ namespace jetpack {
         uint32_t line_number_ = 1u;
         uint32_t line_start_ = 0u;
 
-        std::shared_ptr<parser::ParseErrorHandler> error_handler_;
+        Sp<parser::ParseErrorHandler> error_handler_;
         UString source_;
         UString value_buffer_;
         bool is_module_ = false;
