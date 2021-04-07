@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME} STATIC
         src/JetTime.h
         src/JetJSON.h
         src/JetJSON.cpp
+        src/JetNumeric.h
         src/Path.h
         src/Utils.h
         src/Utils.cpp)
