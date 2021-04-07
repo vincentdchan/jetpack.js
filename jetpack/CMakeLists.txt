@@ -101,8 +101,9 @@ if (UNIX AND NOT EMSCRIPTEN)
 
     else()
 
+	message("linux jemalloc")
         SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        link_libraries(${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc.a)
+        target_link_libraries(jetpack-test ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc_pic.a)
 
     endif()
 
