@@ -1,10 +1,13 @@
 {
   "name": "jetpp",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
   "bin": {
     "jetpp": "./index.js"
+  },
+  "scripts": {
+    "install": "node scripts/download_lib.js"
   }
 }

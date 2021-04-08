@@ -725,12 +725,7 @@ template <typename T> Q_ALWAYS_INLINE T qFromUnaligned(const void *src)
 {
     T dest;
     const size_t size = sizeof(T);
-#if __has_builtin(__builtin_memcpy)
-    __builtin_memcpy
-#else
-    memcpy
-#endif
-            (&dest, src, size);
+    ::memcpy(&dest, src, size);
     return dest;
 }
 

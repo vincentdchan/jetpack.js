@@ -14,9 +14,12 @@ const downloadChecksumUrl = name => `${downloadUrl(name)}.SHA256`;
 
 const libsName = [
   'jetpp.node',
-  'libjetpackd.dylib',
-  'libjemalloc.2.dylib',
 ];
+
+if (platform === 'darwin') {
+  libsName.push('libjetpackd.dylib');
+  libsName.push('libjemalloc.2.dylib');
+}
 
 function getDownloadPath(name) {
   const tmpDir = os.tmpdir();
