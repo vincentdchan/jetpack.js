@@ -96,14 +96,14 @@ if (UNIX AND NOT EMSCRIPTEN)
         execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
         message("ARCH: ${MACHINE_ARCH}")
 
-        target_link_libraries(jetpack ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.a)
+        target_link_libraries(jetpack-test ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.a)
         target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.2.${DYLIB_SUFFIX})
 
     else()
 
 	message("linux jemalloc")
         SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        target_link_libraries(jetpack-test ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc_pic.a)
+        target_link_libraries(jetpack-test -ldl ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc_pic.a)
 
     endif()
 
