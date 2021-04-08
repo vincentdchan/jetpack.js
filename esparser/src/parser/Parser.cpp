@@ -437,17 +437,14 @@ namespace jetpack::parser {
                 return Finalize(marker, node);
             }
 
-            case JsTokenType::BooleanLiteral: {
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral: {
                 ctx->is_assignment_target_ = false;
                 ctx->is_binding_element_ = false;
                 token = NextToken();
                 auto node = Alloc<Literal>();
                 node->ty = Literal::Ty::Boolean;
-                if (token.value == u"true") {
-                    node->boolean_ = true;
-                } else {
-                    node->boolean_ = false;
-                }
+                node->boolean_ = ctx->lookahead_.type == JsTokenType::TrueLiteral;
                 node->raw = GetTokenRaw(token);
                 return Finalize(marker, node);
             }
@@ -683,7 +680,8 @@ namespace jetpack::parser {
             }
 
             case JsTokenType::Identifier:
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral: {
                 auto node = Alloc<Identifier>();
                 node->name = token.value;
@@ -1363,7 +1361,8 @@ namespace jetpack::parser {
         }
 
         switch (ctx->lookahead_.type) {
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
             case JsTokenType::StringLiteral:
@@ -2576,11 +2575,12 @@ namespace jetpack::parser {
                     temp->left = ReinterpretExpressionAsPattern(expr);
 
                     token = NextToken();
-                    auto operator_ = token.value;
+//                    auto operator_ = token.value;
                     temp->right = IsolateCoverGrammar<Expression>([this, &scope] {
                         return ParseAssignmentExpression(scope);
                     });
-                    temp->operator_ = operator_;
+                    UStringView tokenView = TokenTypeToLiteral(token.type);
+                    temp->operator_ = UString(tokenView.utf16(), tokenView.size());
                     expr = Finalize(start_marker, temp);
                     ctx->first_cover_initialized_name_error_.reset();
                 }
@@ -2668,7 +2668,8 @@ namespace jetpack::parser {
                 auto binary = Alloc<BinaryExpression>();
                 binary->left = left;
                 binary->right = expr;
-                binary->operator_ = left_tk.value;
+                UStringView tokenView = TokenTypeToLiteral(left_tk.type);
+                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
                 if (ctx->config_.constant_folding) {
                     expr = ContantFolding::TryBinaryExpression(binary);
                 } else {
@@ -2678,7 +2679,8 @@ namespace jetpack::parser {
                 return Finalize(marker, ParseBinaryExpression(scope, expr, right_tk));
             } else {  // left_op > right_op
                 auto binary = Alloc<BinaryExpression>();
-                binary->operator_ = left_tk.value;
+                UStringView tokenView = TokenTypeToLiteral(left_tk.type);
+                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
                 binary->left = left;
                 binary->right = expr;
 
@@ -2738,7 +2740,8 @@ namespace jetpack::parser {
                 return ParseUnaryExpression(scope);
             });
             auto node = Alloc<UnaryExpression>();
-            node->operator_ = token.value;
+            UStringView tokenView = TokenTypeToLiteral(token.type);
+            node->operator_ = UString(tokenView.utf16(), tokenView.size());
             node->argument = expr;
             node->prefix = true;
             expr = Finalize(marker, node);
@@ -3719,7 +3722,8 @@ namespace jetpack::parser {
         switch (token.type) {
             case JsTokenType::Identifier:
             case JsTokenType::StringLiteral:
-            case JsTokenType::BooleanLiteral:
+            case JsTokenType::TrueLiteral:
+            case JsTokenType::FalseLiteral:
             case JsTokenType::NullLiteral:
             case JsTokenType::NumericLiteral:
             case JsTokenType::LeftBrace:

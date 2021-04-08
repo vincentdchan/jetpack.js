@@ -15,6 +15,7 @@
 #include <codecvt>
 
 #include "Utils.h"
+#include "UStringView.h"
 #include "UStringData.h"
 #include "UStringDataPointer.h"
 
@@ -51,10 +52,15 @@ public:
     UString &append(char16_t c);
     UString &append(const char16_t *uc, int64_t len = -1);
     UString &append(const UString &s);
+    inline UString &append(UStringView view) {
+        return append(view.utf16(), static_cast<int64_t>(view.size()));
+    }
 
     inline UString &operator+=(char16_t c) { return append(c); }
 
     inline UString &operator+=(const UString &s) { return append(s); }
+
+    inline UString &operator+=(UStringView view) { return append(view); }
 
     UString &operator=(const UString &) noexcept;
 
@@ -121,7 +127,7 @@ inline const UString operator+(const UString &s1, char16_t s2)
 inline const UString operator+(char16_t s1, const UString &s2)
 { UString t(s1); t += s2; return t; }
 
-size_t qHashBits(const void *p, size_t size, size_t seed = 0) noexcept;
+size_t UStringHashBits(const void *p, size_t size, size_t seed = 0) noexcept;
 
 namespace std {
 
@@ -130,11 +136,7 @@ namespace std {
     {
         std::size_t operator()(const UString& k) const
         {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-
-            return qHashBits(k.constData(), k.size() * sizeof(char16_t));
+            return UStringHashBits(k.constData(), k.size() * sizeof(char16_t));
         }
     };
 

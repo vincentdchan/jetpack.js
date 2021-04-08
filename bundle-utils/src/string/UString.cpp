@@ -3,23 +3,11 @@
 //
 
 #include "UString.h"
+#include "PrivateStringUtils.h"
 #include "../Utils.h"
 #include "UChar.h"
 #include <algorithm>
-#include <string>
 #include "xxhash.h"
-
-uint32_t ustrlen(const char16_t *str) noexcept
-{
-    uint32_t result = 0;
-
-    if (sizeof(wchar_t) == sizeof(char16_t))
-        return wcslen(reinterpret_cast<const wchar_t *>(str));
-
-    while (*str++)
-        ++result;
-    return result;
-}
 
 static inline bool simdDecodeAscii(uint16_t*, const unsigned char*, const unsigned char*, const unsigned char*)
 {
@@ -419,7 +407,7 @@ UString &UString::append(char16_t ch)
 
 UString & UString::append(const char16_t *str, int64_t len) {
     if (len < 0) {
-        len = ustrlen(str);
+        len = PrivateStringUtils::ustrlen(str);
     }
     if (str && len > 0) {
         if (d->needsDetach() || len > d->freeSpaceAtEnd())
@@ -461,33 +449,13 @@ void UString::truncate(uint32_t pos) {
         resize(pos);
 }
 
-constexpr int lencmp(uint32_t lhs, uint32_t rhs) noexcept
-{
-    return lhs == rhs ? 0 :
-           lhs >  rhs ? 1 :
-           /* else */  -1 ;
-}
-
-static int ucstrncmp(const char16_t *a, const char16_t *b, size_t l) {
-    return std::memcmp(a, b, l * sizeof(char16_t ));
-}
-
-static int ucstrcmp(const char16_t *a, size_t alen, const char16_t *b, size_t blen)
-{
-    if (a == b && alen == blen)
-        return 0;
-    const size_t l = std::min(alen, blen);
-    int cmp = ucstrncmp(a, b, l);
-    return cmp ? cmp : lencmp(alen, blen);
-}
-
 bool operator==(const UString &s1, const char16_t *s2) noexcept {
-    auto rSize = ustrlen(s2);
-    return ucstrcmp(s1.constData(), s1.length(), s2, rSize) == 0;
+    auto rSize = PrivateStringUtils::ustrlen(s2);
+    return PrivateStringUtils::ucstrcmp(s1.constData(), s1.length(), s2, rSize) == 0;
 }
 
 bool operator==(const UString &s1, const UString& s2) noexcept {
-    return ucstrcmp(s1.constData(), s1.length(), s2.constData(), s2.length()) == 0;
+    return PrivateStringUtils::ucstrcmp(s1.constData(), s1.length(), s2.constData(), s2.length()) == 0;
 }
 
 UString UString::fromUtf8(const char *utf8, uint32_t size) {
@@ -863,7 +831,7 @@ static uint64_t siphash(const uint8_t *in, uint64_t inlen, const uint64_t seed)
 #define __SIZEOF_POINTER__ sizeof(uintptr_t)
 #endif
 
-size_t qHashBits(const void *p, size_t size, size_t seed) noexcept
+size_t UStringHashBits(const void *p, size_t size, size_t seed) noexcept
 {
     XXH64_hash_t hash = XXH3_64bits(p, size);
     return static_cast<size_t>(hash);

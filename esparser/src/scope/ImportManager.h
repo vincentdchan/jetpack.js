@@ -8,7 +8,7 @@
 #include <robin_hood.h>
 #include "Utils.h"
 #include "string/UString.h"
-#include "../parser/NodeTypes.h"
+#include "parser/NodeTypes.h"
 
 namespace jetpack {
 
@@ -38,7 +38,7 @@ namespace jetpack {
 
         ImportManager& operator=(const ImportManager&) = delete;
 
-        robin_hood::unordered_map<UString, ImportIdentifierInfo> id_map;
+        HashMap<UString, ImportIdentifierInfo> id_map;
 
         EC ResolveImportDecl(const std::shared_ptr<ImportDeclaration>&);
 

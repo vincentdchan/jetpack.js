@@ -19,10 +19,10 @@ namespace jetpack {
         int source_index = SourceMapGenerator::VLQToInt(str, str);
         int before_line = SourceMapGenerator::VLQToInt(str, str);
         int before_column = SourceMapGenerator::VLQToInt(str, str);
-        int names_index = -1;
-        if (str < buffer.c_str() + buffer.size()) {
-            names_index = SourceMapGenerator::VLQToInt(str, str);
-        }
+//        int names_index = -1;
+//        if (str < buffer.c_str() + buffer.size()) {
+//            names_index = SourceMapGenerator::VLQToInt(str, str);
+//        }
 
         SourceMapDecoder::ResultMapping mapping {
             static_cast<uint32_t>(source_index),
@@ -49,8 +49,7 @@ namespace jetpack {
 
         std::string buffer;
 
-        for (uint32_t i = 0; i < mappings.size(); i++) {
-            char ch = mappings.at(i);
+        for (char ch : mappings) {
             switch (ch) {
                 case ',':
                     DumpBufferToResult(line_counter, buffer, result);

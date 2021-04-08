@@ -7,10 +7,12 @@
 #include <utility>
 #include <Utils.h>
 #include <string/UString.h>
+#include <string/UStringView.h>
 #include "Location.h"
 
 #define DEF_TOKEN(D) \
-    D(BooleanLiteral) \
+    D(TrueLiteral) \
+    D(FalseLiteral) \
     D(EOF_) \
     D(Identifier) \
     D(NullLiteral) \
@@ -113,39 +115,45 @@
     D(KS_Public) \
     D(KS_Static) \
 
+namespace jetpack {
+
 
 #define DD(NAME) NAME,
 
-enum class JsTokenType {
-    Invalid,
+    enum class JsTokenType {
+        Invalid,
 
-    DEF_TOKEN(DD)
+        DEF_TOKEN(DD)
 
-};
+    };
 
 #undef DD
 
-inline bool IsPunctuatorToken(JsTokenType t) {
-    return t >= JsTokenType::LeftParen && t <= JsTokenType::Arrow;
+    inline bool IsPunctuatorToken(JsTokenType t) {
+        return t >= JsTokenType::LeftParen && t <= JsTokenType::Arrow;
+    }
+
+    inline bool IsKeywordToken(JsTokenType t) {
+        return t >= JsTokenType::K_If && t <= JsTokenType::KS_Static;
+    }
+
+    const char *TokenTypeToCString(JsTokenType tt);
+
+    UStringView TokenTypeToLiteral(JsTokenType tt);
+
+    struct Token {
+    public:
+        JsTokenType type = JsTokenType::Invalid;
+        UString value;
+        SourceLocation loc;
+        uint32_t lineNumber = 0;
+        uint32_t lineStart = 0;
+        std::pair<int32_t, int32_t> range;
+        bool octal = false;
+        bool head = false;
+        bool tail = false;
+        UString cooked;
+
+    };
+
 }
-
-inline bool IsKeywordToken(JsTokenType t) {
-    return t >= JsTokenType::K_If && t <= JsTokenType::KS_Static;
-}
-
-static const char* TokenTypeToCString(JsTokenType tt);
-
-class Token {
-public:
-    JsTokenType type = JsTokenType::Invalid;
-    UString value;
-    SourceLocation loc;
-    uint32_t lineNumber = 0;
-    uint32_t lineStart = 0;
-    std::pair<std::int32_t, std::int32_t> range;
-    bool octal = false;
-    bool head = false;
-    bool tail = false;
-    UString cooked;
-
-};

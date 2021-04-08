@@ -101,7 +101,7 @@ namespace jetpack::parser {
             }
         }
 
-        inline bool Match(JsTokenType t) {
+        [[nodiscard]] inline bool Match(JsTokenType t) const {
             return ctx->lookahead_.type == t;
         }
 

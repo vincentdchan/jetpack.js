@@ -286,6 +286,7 @@ namespace jetpack {
         auto thread_pool_size = std::thread::hardware_concurrency();
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
 
+        benchmark::BenchMarker ps(benchmark::BENCH_PARSING_STAGE);
         EnqueueOne([this, &config, &resolvedPath, &rootProvider] {
             try {
                 ParseFileFromPath(rootProvider, config, resolvedPath);
@@ -310,6 +311,7 @@ namespace jetpack {
         main_cv_.wait(lk, [this] {
             return finished_files_count_ >= enqueued_files_count_;
         });
+        ps.Submit();
 
         if (!worker_errors_.empty()) {
             WorkerErrorCollection col;
