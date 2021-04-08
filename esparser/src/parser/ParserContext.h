@@ -30,6 +30,8 @@ namespace jetpack::parser {
              */
             bool transpile_jsx;
 
+            bool common_js;
+
         private:
             Config() = delete;
 

@@ -16,6 +16,7 @@ namespace jetpack::parser {
             false,
             false,
             false,
+            true,
         };
     }
 

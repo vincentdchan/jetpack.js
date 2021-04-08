@@ -1190,6 +1190,8 @@ namespace jetpack::parser {
                     placeholder->params = node->arguments;
                     placeholder->async = true;
                     expr = move(placeholder);
+                } else if (ctx->config_.common_js) {
+                    CheckRequireCall(std::dynamic_pointer_cast<CallExpression>(expr));
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
                 ctx->is_binding_element_ = false;
@@ -2452,6 +2454,27 @@ namespace jetpack::parser {
         }
 
         return export_decl;
+    }
+
+    /**
+     * check for require('')
+     */
+    void Parser::CheckRequireCall(const Sp<CallExpression> &call) {
+        if (call->callee->type == SyntaxNodeType::Identifier) {
+            auto id = std::dynamic_pointer_cast<Identifier>(call->callee);
+            if (!(id->name == u"require")) {
+                return;
+            }
+            if (call->arguments.size() == 1 && call->arguments[0]->type == SyntaxNodeType::Literal) {
+                // very likely
+                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+                if (lit->ty != Literal::Ty::String) {
+                    return;
+                }
+
+                std::cout << "require()" << std::endl;
+            }
+        }
     }
 
     Sp<Expression> Parser::ParseAssignmentExpression(Scope& scope) {

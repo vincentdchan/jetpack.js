@@ -67,6 +67,7 @@ add_executable(jetpack-test
         tests/codegen.cpp
         tests/jsx.cpp
         tests/simple_api.cpp
+        tests/common_js.cpp
         tests/constant_folding.cpp)
 
 target_include_directories(jetpack-test PUBLIC
