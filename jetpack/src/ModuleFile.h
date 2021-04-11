@@ -99,9 +99,19 @@ namespace jetpack {
             return ast->scope->export_manager;
         }
 
+        inline void SetIsCommonJS(bool v) {
+            is_common_js_ = v;
+        }
+
+        [[nodiscard]]
+        inline bool IsCommonJS() const {
+            return is_common_js_;
+        }
+
     private:
         int32_t id_;
         std::string path_;
+        bool is_common_js_ = false;
 
     };
 

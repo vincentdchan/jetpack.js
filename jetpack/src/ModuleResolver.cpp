@@ -173,18 +173,30 @@ namespace jetpack {
                 global_import_handler_.HandleImport(import_decl);
                 return;
             }
-            HandleNewLocationAdded(config, mf, true, u8path);
+            HandleNewLocationAdded(config, mf, LocationImported, u8path);
         });
         parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
             if (export_decl->source.has_value()) {
                 std::string u8path = (*export_decl->source)->str_.toStdString();
-                HandleNewLocationAdded(config, mf, false, u8path);
+                HandleNewLocationAdded(config, mf, LocationExported, u8path);
             }
         });
         parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
             std::string u8path = export_decl->source->str_.toStdString();
-            HandleNewLocationAdded(config, mf, false, u8path);
+            HandleNewLocationAdded(config, mf, LocationExported, u8path);
         });
+        if (config.common_js) {
+            parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) {
+                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+                std::string u8path = lit->str_.toStdString();
+                HandleNewLocationAdded(
+                        config,
+                        mf,
+                        LocationAddOptions(LocationImported | LocationIsCommonJS),
+                        u8path
+                        );
+            });
+        }
 
 
         benchmark::BenchMarker bench(benchmark::BENCH_PARSING);
@@ -198,7 +210,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
-                                                const Sp<jetpack::ModuleFile> &mf, bool is_import,
+                                                const Sp<jetpack::ModuleFile> &mf, LocationAddOptions flags,
                                                 const std::string &path) {
         if (unlikely(!trace_file)) return;
 
@@ -219,6 +231,7 @@ namespace jetpack {
         }
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
+        childMod->SetIsCommonJS(!!(flags & LocationAddOption::LocationIsCommonJS));
 
         mf->ref_mods.push_back(childMod);
 

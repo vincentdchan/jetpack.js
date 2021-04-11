@@ -2472,7 +2472,7 @@ namespace jetpack::parser {
                     return;
                 }
 
-                std::cout << "require()" << std::endl;
+                require_call_created_listener.Emit(call);
             }
         }
     }

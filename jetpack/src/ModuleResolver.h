@@ -15,6 +15,7 @@
 #include <functional>
 #include <fstream>
 #include <mutex>
+#include "JetFlags.h"
 
 #include "ModuleProvider.h"
 #include "ModuleFile.h"
@@ -53,6 +54,14 @@ namespace jetpack {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
+        enum LocationAddOption {
+            LocationImported = 0x1,
+            LocationExported = 0x2,
+            LocationIsCommonJS = 0x4,
+        };
+
+        JET_DECLARE_FLAGS(LocationAddOptions, LocationAddOption)
+
         ModuleResolver() {
             name_generator = ReadableNameGenerator::Make();
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
@@ -140,7 +149,7 @@ namespace jetpack {
 
         void HandleNewLocationAdded(const parser::ParserContext::Config& config,
                                     const Sp<ModuleFile>& mf,
-                                    bool is_import,
+                                    LocationAddOptions flags,
                                     const std::string& path);
 
         void DumpAllResult(const CodeGen::Config& config,

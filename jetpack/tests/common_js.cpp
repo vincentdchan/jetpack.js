@@ -28,7 +28,20 @@ inline std::string ParseAndCodeGen(UString content) {
     return codegen.GetResult().content.toStdString();
 }
 
-TEST(CommonJS, Parse) {
-    std::string src = "const result = require('react');\n";
-    ParseAndCodeGen(UString::fromStdString(src));
+TEST(CommonJS, HookParser) {
+    UString content = UString::fromStdString("const result = require('react');\n");
+
+    ParserContext::Config config = ParserContext::Config::Default();
+    config.jsx = true;
+    config.transpile_jsx = true;
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    Parser parser(ctx);
+    bool is_called = false;
+    parser.require_call_created_listener.On([&is_called](const Sp<CallExpression>&) {
+        is_called = true;
+    });
+
+    auto _mod = parser.ParseModule();
+
+    EXPECT_TRUE(is_called);
 }
