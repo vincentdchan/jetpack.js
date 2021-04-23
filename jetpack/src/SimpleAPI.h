@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace jetpack::simple_api {
+namespace jetpack { namespace simple_api {
 
     struct Flags {
     public:
@@ -90,4 +90,4 @@ namespace jetpack::simple_api {
 
     int HandleCommandLine(int argc, char** argv);
 
-}
+}}
