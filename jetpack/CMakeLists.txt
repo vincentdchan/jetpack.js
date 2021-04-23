@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(jetpack)
 
+option(JETPACK_BUILD_TESTS "Build tests" ON)
+
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
@@ -60,31 +62,33 @@ else()
     set(DYLIB_SUFFIX "so")
 endif()
 
-add_executable(jetpack-test
-        tests/sourcemap.cpp
-        tests/scope.cpp
-        tests/resolve.cpp
-        tests/codegen.cpp
-        tests/jsx.cpp
-        tests/simple_api.cpp
-        tests/constant_folding.cpp)
+if(JETPACK_BUILD_TESTS)
+    add_executable(jetpack-test
+            tests/sourcemap.cpp
+            tests/scope.cpp
+            tests/resolve.cpp
+            tests/codegen.cpp
+            tests/jsx.cpp
+            tests/simple_api.cpp
+            tests/constant_folding.cpp)
 
-target_include_directories(jetpack-test PUBLIC
-        "../third_party/googletest/googletest/include"
-        ../bundle-utils/src
-        ./src
-        )
-target_link_libraries(jetpack-test gtest_main jetpack)
+    target_include_directories(jetpack-test PUBLIC
+            "../third_party/googletest/googletest/include"
+            ../bundle-utils/src
+            ./src
+            )
+    target_link_libraries(jetpack-test gtest_main jetpack)
 
-set(TEST_RUNNING_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(TEST_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
-message("test running dir: ${TEST_RUNNING_DIR}")
+    set(TEST_RUNNING_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    set(TEST_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    message("test running dir: ${TEST_RUNNING_DIR}")
 
-target_compile_definitions(jetpack-test PUBLIC
-        JETPACK_SINGLE_THREAD
-        -DJETPACK_TEST_RUNNING_DIR="${TEST_RUNNING_DIR}"
-        -DJETPACK_BUILD_DIR="${TEST_BUILD_DIR}"
-)
+    target_compile_definitions(jetpack-test PUBLIC
+            JETPACK_SINGLE_THREAD
+            -DJETPACK_TEST_RUNNING_DIR="${TEST_RUNNING_DIR}"
+            -DJETPACK_BUILD_DIR="${TEST_BUILD_DIR}"
+    )
+endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
 
