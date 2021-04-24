@@ -59,7 +59,8 @@ namespace jetpack {
         }
 
         void BeginFromEntry(const parser::ParserContext::Config& config,
-                            const std::string& originPath);
+                            const std::string& originPath,
+                            const std::string& basePathOverride="");
 
         void BeginFromEntryString(const parser::ParserContext::Config& config,
                                   UString str);
