@@ -94,7 +94,7 @@ namespace jetpack {
         std::cerr << "Error: " << error_content << std::endl;
     }
 
-    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config, const std::string& targetPath) {
+    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config, const std::string& targetPath, const std::string& basePathOverride) {
         std::string absolutePath;
         if (targetPath.empty()) {
             return;
@@ -106,7 +106,7 @@ namespace jetpack {
             absolutePath = p.ToString();
         }
 
-        auto basePath = FindPathOfPackageJson(absolutePath);
+        auto basePath = basePathOverride.empty() ? FindPathOfPackageJson(absolutePath) : basePathOverride;
         if (unlikely(!basePath.has_value())) {
             throw ModuleResolveException(absolutePath, "can not find package.json");
         }

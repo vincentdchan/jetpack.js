@@ -83,10 +83,14 @@ namespace jetpack::simple_api {
         bool profile_malloc : 1;
     };
 
-    int AnalyzeModule(const std::string& path, Flags flags);
+    int AnalyzeModule(const std::string& path,
+                      Flags flags,
+                      const std::string& base_path="");
 
     int BundleModule(const std::string& path,
-                     const std::string& out_path, Flags flags);
+                     const std::string& out_path,
+                     Flags flags,
+                     const std::string& base_path="");
 
     int HandleCommandLine(int argc, char** argv);
 
