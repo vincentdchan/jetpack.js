@@ -24,11 +24,19 @@ namespace jetpack {
             if (origin.empty()) {
                 return;
             }
+#ifndef WIN32
             if (origin[0] != PATH_DIV) {
-                throw std::runtime_error("first char should be DIV");
+#else
+            if (origin.length() < 2 || origin[1] != ':') {
+#endif
+                throw std::runtime_error("path should be absolute");
             }
 
+#ifndef WIN32
             std::size_t i = 1;
+#else
+            std::size_t i = 0;
+#endif
             std::string buffer;
 
             while (i < origin.size()) {
@@ -97,11 +105,23 @@ namespace jetpack {
         [[nodiscard]] inline std::string ToString() const {
             std::stringstream ss;
 
+#ifdef WIN32
+            auto it = slices.begin();
+            // First element is the drive letter, e.g. C:
+            if (it != slices.end()) {
+                ss << *it;
+
+                while (++it != slices.end()) {
+                    ss << PATH_DIV;
+                    ss << *it;
+                }
+            }
+#else
             for (auto& item : slices) {
                 ss << PATH_DIV;
                 ss << item;
             }
-
+#endif
             return ss.str();
         }
 

@@ -98,8 +98,13 @@ namespace jetpack {
         std::string absolutePath;
         if (targetPath.empty()) {
             return;
+#ifndef WIN32
         } else if (targetPath[0] == Path::PATH_DIV) {
             absolutePath = targetPath;
+#else
+        } else if (targetPath.length() > 1 && targetPath[1] == ':') {
+            absolutePath = targetPath;
+#endif
         } else {
             Path p(utils::GetRunningDir());
             p.Join(targetPath);
