@@ -1191,7 +1191,7 @@ namespace jetpack::parser {
                     placeholder->async = true;
                     expr = move(placeholder);
                 } else if (ctx->config_.common_js) {
-                    CheckRequireCall(std::dynamic_pointer_cast<CallExpression>(expr));
+                    CheckRequireCall(scope, std::dynamic_pointer_cast<CallExpression>(expr));
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
                 ctx->is_binding_element_ = false;
@@ -2459,7 +2459,7 @@ namespace jetpack::parser {
     /**
      * check for require('')
      */
-    void Parser::CheckRequireCall(const Sp<CallExpression> &call) {
+    void Parser::CheckRequireCall(Scope& scope, const Sp<CallExpression> &call) {
         if (call->callee->type == SyntaxNodeType::Identifier) {
             auto id = std::dynamic_pointer_cast<Identifier>(call->callee);
             if (!(id->name == u"require")) {
@@ -2473,6 +2473,9 @@ namespace jetpack::parser {
                 }
 
                 require_call_created_listener.Emit(call);
+
+                Scope* root_scope = scope.GetRoot();
+                root_scope->CastToMoudle()->import_manager.ResolveRequireCallExpr(call);
             }
         }
     }

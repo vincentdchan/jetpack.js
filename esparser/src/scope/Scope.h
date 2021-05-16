@@ -87,6 +87,14 @@ namespace jetpack {
             return parent;
         }
 
+        inline Scope* GetRoot() {
+            Scope* result = this;
+            while (result->GetParent() != nullptr) {
+                result = result->GetParent();
+            }
+            return result;
+        }
+
         /**
          * @param unresolve_collector collect unresolved ids
          */

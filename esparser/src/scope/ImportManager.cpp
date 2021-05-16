@@ -7,6 +7,9 @@
 
 namespace jetpack {
 
+    /**
+     * add import symbol to a map, for scope hoisting in the future
+     */
     ImportManager::EC ImportManager::ResolveImportDecl(const Sp<ImportDeclaration>& importDecl) {
         for (auto& spec : importDecl->specifiers) {
             switch (spec->type) {
@@ -61,6 +64,11 @@ namespace jetpack {
             }
         }
 
+        return EC::Ok;
+    }
+
+    ImportManager::EC ImportManager::ResolveRequireCallExpr(const std::shared_ptr<CallExpression>& expr) {
+        require_calls.push_back(expr);
         return EC::Ok;
     }
 

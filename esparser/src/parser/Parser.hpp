@@ -281,7 +281,7 @@ namespace jetpack::parser {
             return ctx->comments_;
         }
 
-        void CheckRequireCall(const Sp<CallExpression>& call);
+        void CheckRequireCall(Scope& scope, const Sp<CallExpression>& call);
 
         ~Parser() = default;
 
