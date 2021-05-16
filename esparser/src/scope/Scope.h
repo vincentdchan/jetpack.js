@@ -126,7 +126,7 @@ namespace jetpack {
     };
 
     /**
-     * Moudle scope is special
+     * Module scope is special
      */
     class ModuleScope : public Scope {
     public:

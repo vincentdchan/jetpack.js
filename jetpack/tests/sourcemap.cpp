@@ -29,7 +29,7 @@ inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
     codegen.Traverse(mod->ast);
     mod->codegen_result = codegen.GetResult();
 
-    resolver->EscapeAllContent();
+    resolver->EscapeSrcContentsAndPaths();
 
     ModuleCompositor compositor(sourceMapGenerator);
     compositor.append(mod->codegen_result.content, mod->mapping_collector_);

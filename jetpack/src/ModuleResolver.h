@@ -98,7 +98,7 @@ namespace jetpack {
 
         void MergeModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
 
-        void EscapeAllContent();
+        void EscapeSrcContentsAndPaths();
 
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {
@@ -202,6 +202,8 @@ namespace jetpack {
 
         int32_t enqueued_files_count_ = 0;
         int32_t finished_files_count_ = 0;
+
+        std::atomic<bool> has_common_js_{};
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;

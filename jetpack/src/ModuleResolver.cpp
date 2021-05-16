@@ -232,6 +232,7 @@ namespace jetpack {
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
         childMod->SetIsCommonJS(!!(flags & LocationAddOption::LocationIsCommonJS));
+        has_common_js_.store(true);
 
         mf->ref_mods.push_back(childMod);
 
@@ -470,7 +471,7 @@ namespace jetpack {
             });
         }
 
-        EscapeAllContent();
+        EscapeSrcContentsAndPaths();
 
         std::unique_lock<std::mutex> lk(main_lock_);
         main_cv_.wait(lk, [this] {
@@ -482,7 +483,7 @@ namespace jetpack {
         DumpAllResult(config, final_export_vars, out_path);
     }
 
-    void ModuleResolver::EscapeAllContent() {
+    void ModuleResolver::EscapeSrcContentsAndPaths() {
         for (auto& tuple : modules_table_.pathToModule) {
             tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
                 return EscapeJSONString(mod->src_content.toStdString());
@@ -500,6 +501,10 @@ namespace jetpack {
         benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
         ModuleCompositor moduleCompositor(*sourcemapGenerator);
+
+        if (has_common_js_.load()) {
+            moduleCompositor.appendCommonJsCodeSnippet();
+        }
 
         moduleCompositor.append(global_import_handler_.GenCode(config, mappingCollector).content, nullptr);
 

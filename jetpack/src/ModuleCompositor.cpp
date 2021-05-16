@@ -31,4 +31,14 @@ namespace jetpack {
         return *this;
     }
 
+    void ModuleCompositor::appendCommonJsCodeSnippet() {
+        result += u"let __commonJS = (callback, module) => () => {\n"
+                  "  if (!module) {\n"
+                  "    module = {exports: {}};\n"
+                  "    callback(module.exports, module);\n"
+                  "  }\n"
+                  "  return module.exports;\n"
+                  "};";
+    }
+
 }

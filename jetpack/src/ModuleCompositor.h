@@ -24,6 +24,8 @@ namespace jetpack {
                 Sp<MappingCollector> mappingCollector
                 );
 
+        void appendCommonJsCodeSnippet();
+
         [[nodiscard]]
         inline UString Finalize() const {
             sourceMapGenerator.Finalize();
