@@ -5,6 +5,7 @@
 #include "Variable.h"
 #include "Scope.h"
 #include "parser/SyntaxNodes.h"
+#include "parser/NodesMaker.h"
 
 namespace jetpack {
 
@@ -118,6 +119,10 @@ namespace jetpack {
     LeftValueScope LeftValueScope::default_;
 
     ModuleScope::ModuleScope(ModuleType mt) : Scope(ScopeType::Module), module_type_(mt) {
+        if (mt == ModuleType::CommonJs) {
+            auto moduleId = MakeId(u"module");
+            this->CreateVariable(moduleId, VarKind::Var);
+        }
     };
 
     bool ModuleScope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
@@ -148,7 +153,7 @@ namespace jetpack {
         return true;
     }
 
-    ModuleScope * Scope::CastToMoudle() {
+    ModuleScope * Scope::CastToModule() {
         if (type != ScopeType::Module) return nullptr;
         return reinterpret_cast<ModuleScope*>(this);
     }

@@ -4,27 +4,9 @@
 
 #include <algorithm>
 #include "GlobalImportHandler.h"
+#include "parser/NodesMaker.h"
 
 namespace jetpack {
-
-    inline Sp<Identifier> MakeId(const UString& content) {
-        auto id = std::make_shared<Identifier>();
-        id->location.fileId = -2;
-        id->name = content;
-        return id;
-    }
-
-    inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(UString::fromUtf8(content.c_str(), content.size()));
-    }
-
-    inline Sp<Literal> MakeStringLiteral(const UString& str) {
-        auto lit = std::make_shared<Literal>();
-        lit->ty = Literal::Ty::String;
-        lit->str_ = str;
-        lit->raw = u"\"" + str + u"\"";
-        return lit;
-    }
 
     void GlobalImportHandler::HandleImport(const Sp<ImportDeclaration> &import) {
         std::lock_guard<std::mutex> guard(m);

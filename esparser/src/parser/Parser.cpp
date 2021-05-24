@@ -2306,7 +2306,7 @@ namespace jetpack::parser {
     }
 
     Sp<Declaration> Parser::ParseExportDeclaration(Scope& scope) {
-        auto module_scope = scope.CastToMoudle();
+        auto module_scope = scope.CastToModule();
         Assert(module_scope, "scope should be module scope");
 
         if (ctx->in_function_body_) {
@@ -2480,7 +2480,7 @@ namespace jetpack::parser {
                 require_call_created_listener.Emit(call);
 
                 Scope* root_scope = scope.GetRoot();
-                root_scope->CastToMoudle()->import_manager.ResolveRequireCallExpr(call);
+                root_scope->CastToModule()->import_manager.ResolveRequireCallExpr(call);
             }
         }
     }
@@ -2920,7 +2920,7 @@ namespace jetpack::parser {
     }
 
     Sp<ImportDeclaration> Parser::ParseImportDeclaration(Scope& scope) {
-        auto module_scope = scope.CastToMoudle();
+        auto module_scope = scope.CastToModule();
         Assert(module_scope, "import specifier is not in module scope");
 
         if (ctx->in_function_body_) {

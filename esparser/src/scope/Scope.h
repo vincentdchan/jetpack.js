@@ -58,9 +58,9 @@ namespace jetpack {
 
         ScopeType type = ScopeType::Invalid;
 
-        ModuleScope* CastToMoudle();
+        ModuleScope* CastToModule();
 
-        inline bool IsMoudle() const {
+        inline bool IsModule() const {
             return type == ScopeType::Module;
         }
 
