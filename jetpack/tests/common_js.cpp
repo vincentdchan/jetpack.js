@@ -45,3 +45,24 @@ TEST(CommonJS, HookParser) {
 
     EXPECT_TRUE(is_called);
 }
+
+TEST(CommonJS, AddModuleVariable) {
+    UString content = UString::fromStdString("exports.name = function() { console.log('name'); }\n");
+
+    ParserContext::Config config = ParserContext::Config::Default();
+    config.jsx = true;
+    config.transpile_jsx = true;
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    ctx->is_common_js_ = true;
+
+    Parser parser(ctx);
+    auto mod = parser.ParseModule();
+    ModuleScope* module_scope = mod->scope->CastToModule();
+
+    std::vector<Sp<Identifier>> unresolved_ids;
+    module_scope->ResolveAllSymbols(&unresolved_ids);
+    EXPECT_EQ(unresolved_ids.size(), 1);  // has a 'console'
+
+    const auto& var = module_scope->own_variables[u"exports"];
+    EXPECT_EQ(var->identifiers.size(), 2);
+}
