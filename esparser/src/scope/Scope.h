@@ -152,6 +152,11 @@ namespace jetpack {
         ImportManager import_manager;
         ExportManager export_manager;
 
+        [[nodiscard]]
+        inline ModuleType moduleType() const {
+            return module_type_;
+        }
+
     private:
         ModuleType module_type_;
 

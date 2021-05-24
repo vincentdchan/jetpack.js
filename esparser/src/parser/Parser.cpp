@@ -1259,11 +1259,12 @@ namespace jetpack::parser {
         Sp<Module> node;
         if (ctx->is_common_js_) {
             node = make_shared<Module>(ModuleScope::ModuleType::CommonJs);
+            node->source_type = u"commonjs";
         } else {
             node = make_shared<Module>(ModuleScope::ModuleType::EsModule);
+            node->source_type = u"module";
         }
         node->body = ParseDirectivePrologues(*node->scope.get());
-        node->source_type = u"module";
         while (ctx->lookahead_.type != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem(*node->scope.get()));
         }

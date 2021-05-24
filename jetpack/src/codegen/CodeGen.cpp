@@ -246,11 +246,21 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(const Sp<Module> &node) {
+        auto module_scope = node->scope->CastToModule();
+        if (module_scope->moduleType() == ModuleScope::ModuleType::CommonJs) {
+            Write(u"var require_foo = __commonJS((exports) => {");
+            WriteLineEnd();
+        }
         SortComments(node->comments);
 
         for (auto& stmt : node->body) {
             WriteIndent();
             TraverseNode(stmt);
+            WriteLineEnd();
+        }
+
+        if (module_scope->moduleType() == ModuleScope::ModuleType::CommonJs) {
+            Write(u"});");
             WriteLineEnd();
         }
 

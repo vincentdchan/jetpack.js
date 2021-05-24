@@ -120,7 +120,7 @@ namespace jetpack {
 
     ModuleScope::ModuleScope(ModuleType mt) : Scope(ScopeType::Module), module_type_(mt) {
         if (mt == ModuleType::CommonJs) {
-            auto moduleId = MakeId(u"module");
+            auto moduleId = MakeId(u"exports");
             this->CreateVariable(moduleId, VarKind::Var);
         }
     };
