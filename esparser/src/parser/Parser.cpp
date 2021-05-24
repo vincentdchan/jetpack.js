@@ -1256,7 +1256,12 @@ namespace jetpack::parser {
         ctx->strict_ = true;
         ctx->is_module_ = true;
         auto marker = CreateStartMarker();
-        auto node = make_shared<Module>();
+        Sp<Module> node;
+        if (ctx->is_common_js_) {
+            node = make_shared<Module>(ModuleScope::ModuleType::CommonJs);
+        } else {
+            node = make_shared<Module>(ModuleScope::ModuleType::EsModule);
+        }
         node->body = ParseDirectivePrologues(*node->scope.get());
         node->source_type = u"module";
         while (ctx->lookahead_.type != JsTokenType::EOF_) {

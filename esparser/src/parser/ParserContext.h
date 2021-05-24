@@ -66,6 +66,7 @@ namespace jetpack::parser {
 
         // context in esprima
         bool    is_module_              = false;
+        bool    is_common_js_           = false;
         bool    allow_in_               = false;
         bool    allow_strict_directive_ = false;
         bool    allow_yield_            = false;

@@ -117,7 +117,7 @@ namespace jetpack {
 
     LeftValueScope LeftValueScope::default_;
 
-    ModuleScope::ModuleScope() : Scope(ScopeType::Module) {
+    ModuleScope::ModuleScope(ModuleType mt) : Scope(ScopeType::Module), module_type_(mt) {
     };
 
     bool ModuleScope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {

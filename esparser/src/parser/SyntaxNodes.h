@@ -431,7 +431,7 @@ namespace jetpack {
 
     class Module: public SyntaxNode {
     public:
-        Module();
+        Module(ModuleScope::ModuleType mt);
 
         std::vector<Sp<SyntaxNode>> body;
         UString source_type;

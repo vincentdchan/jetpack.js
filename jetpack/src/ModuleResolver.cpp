@@ -165,6 +165,11 @@ namespace jetpack {
 
         const UString src = srcResult.value;  // COW
         auto ctx = std::make_shared<ParserContext>(mf->id(), src, config);
+
+        if (mf->IsCommonJS()) {
+            ctx->is_common_js_ = true;
+        }
+
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {

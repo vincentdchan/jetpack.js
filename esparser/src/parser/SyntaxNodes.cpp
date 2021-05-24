@@ -175,9 +175,9 @@ namespace jetpack {
         type = SyntaxNodeType::MethodDefinition;
     }
 
-    Module::Module(): SyntaxNode() {
+    Module::Module(ModuleScope::ModuleType mt): SyntaxNode() {
         type = SyntaxNodeType::Module;
-        scope = std::make_unique<ModuleScope>();
+        scope = std::make_unique<ModuleScope>(mt);
     }
 
     NewExpression::NewExpression(): Expression() {

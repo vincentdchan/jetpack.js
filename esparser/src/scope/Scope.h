@@ -140,12 +140,20 @@ namespace jetpack {
     public:
         using ChangeSet = std::vector<std::tuple<UString, UString>>;
 
-        ModuleScope();
+        enum class ModuleType {
+            EsModule,
+            CommonJs,
+        };
+
+        ModuleScope(ModuleType mt);
 
         bool BatchRenameSymbols(const ChangeSet& changeset) override;
 
         ImportManager import_manager;
         ExportManager export_manager;
+
+    private:
+        ModuleType module_type_;
 
     };
 
