@@ -6,9 +6,9 @@
 
 #include <vector>
 #include <memory>
-#include "../macros.h"
+#include "macros.h"
 #include "Utils.h"
-#include "../parser/NodeTypes.h"
+#include "parser/NodeTypes.h"
 #include "string/UString.h"
 
 namespace jetpack {
@@ -36,10 +36,8 @@ namespace jetpack {
     class Variable {
     public:
         VarKind kind = VarKind::Invalid;
-//        bool is_exported = false;
-//        bool is_imported = false;
-//        bool is_mutated = false;
-        Scope* scope = nullptr;
+        bool    predefined = false;
+        Scope*  scope = nullptr;
 
         UString name;
 
