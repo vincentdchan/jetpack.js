@@ -5,6 +5,7 @@
 #ifndef ROCKET_BUNDLE_NODESMAKER_H
 #define ROCKET_BUNDLE_NODESMAKER_H
 
+#include "string/UString.h"
 #include "SyntaxNodes.h"
 
 namespace jetpack {
@@ -14,6 +15,8 @@ namespace jetpack {
     Sp<Identifier> MakeId(const std::string& content);
 
     Sp<Literal> MakeStringLiteral(const UString& str);
+
+    void WrapModuleWithCommonJsTemplate(const Sp<Module>& module, const UString& var_name, const UString& cjs_call);
 
 }
 

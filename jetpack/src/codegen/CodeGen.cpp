@@ -247,29 +247,11 @@ namespace jetpack {
 
     void CodeGen::Traverse(const Sp<Module> &node) {
         auto module_scope = node->scope->CastToModule();
-        if (module_scope->moduleType() == ModuleScope::ModuleType::CommonJs) {
-            UString exports_name;
-            for (const auto& item : module_scope->own_variables) {
-                if (item.second->predefined) {
-                    exports_name = item.second->name;
-                    break;
-                }
-            }
-            Write(u"var require_foo = __commonJS((");
-            Write(exports_name);
-            Write(u") => {");
-            WriteLineEnd();
-        }
         SortComments(node->comments);
 
         for (auto& stmt : node->body) {
             WriteIndent();
             TraverseNode(stmt);
-            WriteLineEnd();
-        }
-
-        if (module_scope->moduleType() == ModuleScope::ModuleType::CommonJs) {
-            Write(u"});");
             WriteLineEnd();
         }
 
@@ -753,6 +735,8 @@ namespace jetpack {
             } else {
                 FormatSequence(params);
             }
+        } else {
+            Write(u"()");
         }
         Write(config_.minify ? u"=>" : u" => ");
         if (node->body->type == SyntaxNodeType::ObjectExpression) {

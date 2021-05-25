@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include "parser/Parser.hpp"
 #include "parser/ParserContext.h"
+#include "parser/NodesMaker.h"
 #include "codegen/CodeGen.h"
 
 #include "ModuleResolver.h"
@@ -78,6 +79,8 @@ TEST(CommonJS, CodeGen) {
 
     Parser parser(ctx);
     auto mod = parser.ParseModule();
+    WrapModuleWithCommonJsTemplate(mod, u"require_foo", u"__commonJS");
+
     ModuleScope* module_scope = mod->scope->CastToModule();
 
     std::vector<Sp<Identifier>> unresolved_ids;
@@ -92,9 +95,9 @@ TEST(CommonJS, CodeGen) {
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     std::string output = codegen.GetResult().content.toStdString();
-    EXPECT_EQ(output, "var require_foo = __commonJS((a) => {\n"
-                      "a.name = function() {\n"
-                      "  console.log('name');\n"
-                      "};\n"
+    EXPECT_EQ(output, "let require_foo = __commonJS(a => {\n"
+                      "  a.name = function() {\n"
+                      "    console.log('name');\n"
+                      "  };\n"
                       "});\n");
 }
