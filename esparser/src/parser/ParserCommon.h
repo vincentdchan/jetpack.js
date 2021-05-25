@@ -39,6 +39,24 @@ namespace jetpack::parser {
 
     };
 
+    template <typename RetT, typename T>
+    class NodeCreatedEventEmitterRet {
+    public:
+
+        using Callback = std::function<RetT(const Sp<T>&)>;
+
+        inline RetT Emit(const Sp<T>& obj) {
+            return callback(obj);
+        }
+
+        inline void On(Callback cb) {
+            callback = std::move(cb);
+        }
+
+        Callback callback;
+
+    };
+
     class ParserCommon {
     public:
         struct FormalParameterOptions {

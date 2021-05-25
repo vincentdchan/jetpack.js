@@ -147,7 +147,7 @@ namespace jetpack {
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
                                                  std::int32_t& counter);
 
-        void HandleNewLocationAdded(const parser::ParserContext::Config& config,
+        Sp<ModuleFile> HandleNewLocationAdded(const parser::ParserContext::Config& config,
                                     const Sp<ModuleFile>& mf,
                                     LocationAddOptions flags,
                                     const std::string& path);

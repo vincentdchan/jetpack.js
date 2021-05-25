@@ -51,6 +51,7 @@ namespace jetpack {
         }
 
         UString default_export_name;
+        UString cjs_call_name;
 
         // interface to provide content by contents;
         Sp<ModuleProvider> provider;

@@ -1191,7 +1191,10 @@ namespace jetpack::parser {
                     placeholder->async = true;
                     expr = move(placeholder);
                 } else if (ctx->config_.common_js) {
-                    CheckRequireCall(scope, std::dynamic_pointer_cast<CallExpression>(expr));
+                    auto new_call = CheckRequireCall(scope, std::dynamic_pointer_cast<CallExpression>(expr));
+                    if (new_call.has_value()) {
+                        return std::dynamic_pointer_cast<Expression>(*new_call);
+                    }
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
                 ctx->is_binding_element_ = false;
@@ -2465,25 +2468,27 @@ namespace jetpack::parser {
     /**
      * check for require('')
      */
-    void Parser::CheckRequireCall(Scope& scope, const Sp<CallExpression> &call) {
+    std::optional<Sp<SyntaxNode>> Parser::CheckRequireCall(Scope& scope, const Sp<CallExpression> &call) {
         if (call->callee->type == SyntaxNodeType::Identifier) {
             auto id = std::dynamic_pointer_cast<Identifier>(call->callee);
             if (!(id->name == u"require")) {
-                return;
+                return std::nullopt;
             }
             if (call->arguments.size() == 1 && call->arguments[0]->type == SyntaxNodeType::Literal) {
                 // very likely
                 auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
                 if (lit->ty != Literal::Ty::String) {
-                    return;
+                    return std::nullopt;
                 }
 
-                require_call_created_listener.Emit(call);
+                auto new_call = require_call_created_listener.Emit(call);
 
                 Scope* root_scope = scope.GetRoot();
                 root_scope->CastToModule()->import_manager.ResolveRequireCallExpr(call);
+                return { new_call };
             }
         }
+        return std::nullopt;
     }
 
     Sp<Expression> Parser::ParseAssignmentExpression(Scope& scope) {

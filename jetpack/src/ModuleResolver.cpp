@@ -194,12 +194,15 @@ namespace jetpack {
             parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) {
                 auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
                 std::string u8path = lit->str_.toStdString();
-                HandleNewLocationAdded(
+                auto child_mod = HandleNewLocationAdded(
                         config,
                         mf,
                         LocationAddOptions(LocationImported | LocationIsCommonJS),
                         u8path
                         );
+                auto new_call = std::make_shared<CallExpression>();
+                new_call->callee = MakeId(SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
+                return new_call;
             });
         }
 
@@ -214,16 +217,16 @@ namespace jetpack {
         id_logger_->InsertByList(unresolved_ids);
     }
 
-    void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
+    Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
                                                 const Sp<jetpack::ModuleFile> &mf, LocationAddOptions flags,
                                                 const std::string &path) {
-        if (unlikely(!trace_file)) return;
+        if (unlikely(!trace_file)) return nullptr;
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
             WorkerError err {mf->Path(), std::string("module can't be resolved: ") + path };
             worker_errors_.emplace_back(std::move(err));
-            return;
+            return nullptr;
         }
 
         mf->resolved_map[path] = matchResult.second;
@@ -232,11 +235,20 @@ namespace jetpack {
         Sp<ModuleFile> childMod = modules_table_.createNewIfNotExists(matchResult.second, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
-            return;
+            return childMod;
         }
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
-        childMod->SetIsCommonJS(!!(flags & LocationAddOption::LocationIsCommonJS));
+        if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
+            std::lock_guard<std::mutex> guard(main_lock_);
+            childMod->SetIsCommonJS(true);
+            auto name = name_generator->Next(u"jp_require");
+            if (name.has_value()) {
+                childMod->cjs_call_name = *name;
+            } else {
+                childMod->cjs_call_name = u"jp_require";
+            }
+        }
         has_common_js_.store(true);
 
         mf->ref_mods.push_back(childMod);
@@ -260,6 +272,7 @@ namespace jetpack {
             }
             FinishOne();
         });
+        return childMod;
     }
 
     void ModuleResolver::PrintStatistic() {

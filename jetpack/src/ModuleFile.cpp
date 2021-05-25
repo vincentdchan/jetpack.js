@@ -5,6 +5,7 @@
 #include "ModuleFile.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
+#include "parser/NodesMaker.h"
 
 namespace jetpack {
 
@@ -51,6 +52,9 @@ namespace jetpack {
 //            memoryOutputStream << u"// " << UString::fromStdString(Path()) << u"\n";
 //        }
 
+        if (is_common_js_) {
+            WrapModuleWithCommonJsTemplate(ast, cjs_call_name, u"__commonJS");
+        }
         CodeGen codegen(config, mapping_collector_);
         codegen.Traverse(ast);
         codegen_result = codegen.GetResult();
