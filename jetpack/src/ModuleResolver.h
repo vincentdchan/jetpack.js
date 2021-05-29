@@ -98,6 +98,10 @@ namespace jetpack {
 
         void MergeModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
 
+        void RecursivelyMergeCJSModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
+
+        void RecursivelyMergeEsModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
+
         void EscapeSrcContentsAndPaths();
 
         inline void ClearAllVisitedMark() {

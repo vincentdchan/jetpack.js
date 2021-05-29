@@ -8,6 +8,8 @@
 #include "parser/ParserContext.h"
 #include "parser/NodesMaker.h"
 #include "codegen/CodeGen.h"
+#include "SimpleAPI.h"
+#include "Path.h"
 
 #include "ModuleResolver.h"
 
@@ -101,4 +103,23 @@ TEST(CommonJS, CodeGen) {
                       "    console.log('name');\n"
                       "  };\n"
                       "});\n");
+}
+
+TEST(CommonJS, Comple) {
+    Path path(JETPACK_TEST_RUNNING_DIR);
+    path.Join("tests/fixtures/cjs/index.js");
+
+    auto entryPath = path.ToString();
+    std::cout << "dir: " << entryPath << std::endl;
+
+    Path outputPath(JETPACK_BUILD_DIR);
+    outputPath.Join("cjs_bundle_test.js");
+
+    std::cout << "output dir: " << outputPath.ToString() << std::endl;
+
+    simple_api::Flags flags;
+    flags.setJsx(true);
+    flags.setMinify(false);
+    flags.setSourcemap(true);
+    EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 }

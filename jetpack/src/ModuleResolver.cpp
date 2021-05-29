@@ -1111,31 +1111,46 @@ namespace jetpack {
     }
 
     void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, ModuleCompositor& moduleCompositor) {
+        if (has_common_js_) {
+            RecursivelyMergeCJSModules(mf, moduleCompositor);
+        }
+        RecursivelyMergeEsModules(mf, moduleCompositor);
+    }
+
+    void ModuleResolver::RecursivelyMergeEsModules(const Sp<ModuleFile> &mf, ModuleCompositor &moduleCompositor) {
         if (mf->visited_mark) {
             return;
         }
         mf->visited_mark = true;
 
-        moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
-        moduleCompositor.append(u"\n", nullptr);
-
-        if (has_common_js_.load()) {
-            // common.js MUST be loaded first
-            for (auto& ref : mf->ref_mods) {
-                auto new_mf = ref.lock();
-                if (new_mf->IsCommonJS()) {
-                    MergeModules(new_mf, moduleCompositor);
-                }
-            }
-        }
-
+        // loading all dependencies first
         for (auto& ref : mf->ref_mods) {
             auto new_mf = ref.lock();
-            if (new_mf->IsCommonJS()) {
-                continue;
-            }
-            MergeModules(new_mf, moduleCompositor);
+            RecursivelyMergeEsModules(new_mf, moduleCompositor);
         }
+
+        moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
+        moduleCompositor.append(u"\n", nullptr);
+    }
+
+    void ModuleResolver::RecursivelyMergeCJSModules(const Sp<ModuleFile> &mf, ModuleCompositor &moduleCompositor) {
+        if (mf->visited_mark) {
+            return;
+        }
+
+        // loading all dependencies first
+        for (auto& ref : mf->ref_mods) {
+            auto new_mf = ref.lock();
+            RecursivelyMergeCJSModules(new_mf, moduleCompositor);
+        }
+
+        if (mf->IsCommonJS()) {
+            mf->visited_mark = true;
+
+            moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
+            moduleCompositor.append(u"\n", nullptr);
+        }
+
     }
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {
