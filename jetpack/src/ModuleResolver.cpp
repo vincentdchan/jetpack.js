@@ -1119,8 +1119,21 @@ namespace jetpack {
         moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
         moduleCompositor.append(u"\n", nullptr);
 
+        if (has_common_js_.load()) {
+            // common.js MUST be loaded first
+            for (auto& ref : mf->ref_mods) {
+                auto new_mf = ref.lock();
+                if (new_mf->IsCommonJS()) {
+                    MergeModules(new_mf, moduleCompositor);
+                }
+            }
+        }
+
         for (auto& ref : mf->ref_mods) {
             auto new_mf = ref.lock();
+            if (new_mf->IsCommonJS()) {
+                continue;
+            }
             MergeModules(new_mf, moduleCompositor);
         }
     }

@@ -203,7 +203,7 @@ namespace jetpack {
         int32_t enqueued_files_count_ = 0;
         int32_t finished_files_count_ = 0;
 
-        std::atomic<bool> has_common_js_{};
+        std::atomic<bool> has_common_js_{ false };
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;
