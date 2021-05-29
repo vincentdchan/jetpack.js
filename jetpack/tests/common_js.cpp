@@ -38,8 +38,9 @@ TEST(CommonJS, HookParser) {
     auto ctx = std::make_shared<ParserContext>(-1, content, config);
     Parser parser(ctx);
     bool is_called = false;
-    parser.require_call_created_listener.On([&is_called](const Sp<CallExpression>&) {
+    parser.require_call_created_listener.On([&is_called](const Sp<CallExpression>& expr) {
         is_called = true;
+        return expr;
     });
 
     auto _mod = parser.ParseModule();
