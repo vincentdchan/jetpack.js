@@ -13,9 +13,9 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndCodeGen(UString content) {
+inline std::string ParseAndCodeGen(UString&& content) {
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -40,7 +40,7 @@ TEST(CodeGen, StringLiteral) {
 
 TEST(CodeGen, Import) {
     UString src = u"import { a } from 'three'";
-    EXPECT_EQ(ParseAndCodeGen(src), "import { a } from 'three';\n");
+    EXPECT_EQ(ParseAndCodeGen(std::move(src)), "import { a } from 'three';\n");
 }
 
 TEST(CodeGen, Function) {

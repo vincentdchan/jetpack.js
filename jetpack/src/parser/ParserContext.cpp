@@ -19,8 +19,8 @@ namespace jetpack::parser {
         };
     }
 
-    ParserContext::ParserContext(int32_t fileId, const UString& src, const Config& config):
-        fileIndex(fileId), config_(config), source_(src) {
+    ParserContext::ParserContext(int32_t fileId, UString&& src, const Config& config):
+        fileIndex(fileId), config_(config), source_(std::move(src)) {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
         scanner_ = make_unique<Scanner>(source_, error_handler_);

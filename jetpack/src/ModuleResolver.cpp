@@ -165,8 +165,7 @@ namespace jetpack {
             return;
         }
 
-        const UString src = srcResult.value;  // COW
-        auto ctx = std::make_shared<ParserContext>(mf->id(), src, config);
+        auto ctx = std::make_shared<ParserContext>(mf->id(), std::move(srcResult.value), config);
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {

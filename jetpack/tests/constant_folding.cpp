@@ -12,10 +12,10 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string CF_ParseAndCodeGen(UString content) {
+inline std::string CF_ParseAndCodeGen(UString&& content) {
     ParserContext::Config config = ParserContext::Config::Default();
     config.constant_folding = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();

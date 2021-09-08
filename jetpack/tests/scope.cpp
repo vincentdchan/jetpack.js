@@ -14,7 +14,7 @@ using namespace jetpack::parser;
 inline Sp<Module> ParseString(const std::string& src) {
     auto u16src = UStringFromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, u16src, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(u16src), config);
     Parser parser(ctx);
     return parser.ParseModule();
 }
@@ -30,7 +30,7 @@ TEST(Scope, Collect) {
     UString content(u"var name = 3;");
 
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();

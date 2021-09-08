@@ -37,7 +37,7 @@ inline std::string ReplaceDefault(const std::string& src) {
 
     UString u16src = UStringFromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(mod->id(), u16src, config);
+    auto ctx = std::make_shared<ParserContext>(mod->id(), std::move(u16src), config);
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
