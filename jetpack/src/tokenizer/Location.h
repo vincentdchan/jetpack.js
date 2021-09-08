@@ -5,7 +5,7 @@
 #pragma once
 
 #include <cinttypes>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 
 struct Position {
     uint32_t line;

@@ -4,8 +4,8 @@
 
 #include <iostream>
 #include "Scanner.h"
-#include "Utils.h"
-#include "string/UChar.h"
+#include "utils/Utils.h"
+#include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 
 namespace jetpack {

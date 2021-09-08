@@ -5,7 +5,7 @@
 #include <string>
 #include <boost/lexical_cast.hpp>
 #include "ConstantFolding.h"
-#include "string/UString.h"
+#include "utils/string/UString.h"
 
 namespace jetpack {
 

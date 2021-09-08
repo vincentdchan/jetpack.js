@@ -4,8 +4,8 @@
 
 #include <stack>
 #include <fmt/format.h>
-#include "string/UString.h"
-#include "string/UChar.h"
+#include "utils/string/UString.h"
+#include "utils/string/UChar.h"
 #include "JSXParser.h"
 
 namespace jetpack::parser {

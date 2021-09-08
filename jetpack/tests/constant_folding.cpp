@@ -5,7 +5,7 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 
 #include "codegen/CodeGen.h"
 

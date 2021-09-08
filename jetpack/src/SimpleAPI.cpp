@@ -8,7 +8,7 @@
 
 #include <cxxopts.hpp>
 #include "SimpleAPI.h"
-#include "JetTime.h"
+#include "utils/JetTime.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
 

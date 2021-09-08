@@ -11,12 +11,12 @@
 #include <memory>
 #include <set>
 
-#include <JetJSON.h>
-#include "Path.h"
+#include "utils/JetJSON.h"
+#include "utils/Path.h"
+#include "utils/io/FileIO.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
 #include "Error.h"
-#include "io/FileIO.h"
 
 namespace jetpack {
     using fmt::format;

@@ -10,8 +10,8 @@
 #include "ModuleResolver.h"
 #include "ModuleCompositor.h"
 #include "SimpleAPI.h"
-#include "Path.h"
-#include "io/FileIO.h"
+#include "utils/Path.h"
+#include "utils/io/FileIO.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;

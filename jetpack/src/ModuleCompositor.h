@@ -6,7 +6,7 @@
 
 #include <cinttypes>
 #include <ThreadPool.h>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 #include "sourcemap/MappingCollector.h"
 #include "sourcemap/SourceMapGenerator.h"
 
