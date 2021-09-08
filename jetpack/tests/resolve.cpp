@@ -35,7 +35,7 @@ inline std::string ReplaceDefault(const std::string& src) {
     auto mod = std::make_shared<ModuleFile>("memory0", -1);
     mod->module_resolver = resolver;
 
-    UString u16src = UString::fromUtf8(src.c_str(), src.size());
+    UString u16src = UStringFromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
     auto ctx = std::make_shared<ParserContext>(mod->id(), u16src, config);
     Parser parser(ctx);
@@ -47,7 +47,7 @@ inline std::string ReplaceDefault(const std::string& src) {
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod->ast);
 
-    return codegen.GetResult().content.toStdString();
+    return UStringToUtf8(codegen.GetResult().content);
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
@@ -137,7 +137,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     }
 
     resolver->SetTraceFile(false);
-    resolver->BeginFromEntryString(parser_config, buffer.constData());
+    resolver->BeginFromEntryString(parser_config, buffer);
 
     auto final_export_vars = resolver->GetAllExportVars();
     if (minify) {
@@ -148,7 +148,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     auto entry_mod = resolver->GetEntryModule();
     entry_mod->CodeGenFromAst(codegen_config);
 
-    std::cout << entry_mod->codegen_result.content.toStdString() << std::endl;
+    std::cout << UStringToUtf8(entry_mod->codegen_result.content) << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {

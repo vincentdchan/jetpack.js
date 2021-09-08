@@ -36,7 +36,7 @@ inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
     auto composition = compositor.Finalize();
 
     if (print) {
-        std::cout << "gen: " << std::endl << composition.toStdString() << std::endl;
+        std::cout << "gen: " << std::endl << UStringToUtf8(composition) << std::endl;
     }
 
     return sourceMapGenerator.ToPrettyString();
