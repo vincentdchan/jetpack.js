@@ -5,7 +5,7 @@
 
 #include <memory>
 #include "NodeTypes.h"
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "macros.h"
 #include "tokenizer/Token.h"
 #include "tokenizer/Comment.h"

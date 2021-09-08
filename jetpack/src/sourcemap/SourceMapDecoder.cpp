@@ -4,7 +4,7 @@
 
 #include <fmt/format.h>
 #include "SourceMapDecoder.h"
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "SourceMapGenerator.h"
 
 namespace jetpack {

@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "Scanner.h"
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 

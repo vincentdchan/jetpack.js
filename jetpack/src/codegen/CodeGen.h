@@ -11,7 +11,7 @@
 #include <deque>
 #include "NodeTraverser.h"
 #include "utils/string/UString.h"
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "sourcemap/MappingCollector.h"
 
 namespace jetpack {

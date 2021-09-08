@@ -7,7 +7,7 @@
 #include <vector>
 #include <set>
 #include <mutex>
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "parser/SyntaxNodes.h"
 #include "UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"

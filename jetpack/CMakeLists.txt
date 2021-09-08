@@ -32,8 +32,8 @@ set(SOURCE_FILES
         src/utils/JetJSON.cpp
         src/utils/JetNumeric.h
         src/utils/Path.h
-        src/utils/Utils.h
-        src/utils/Utils.cpp
+        src/utils/Common.h
+        src/utils/Common.cpp
         ${parser_source_files}
         src/macros.h
         src/Benchmark.h

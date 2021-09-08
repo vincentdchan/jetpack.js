@@ -7,7 +7,7 @@
 #include <cinttypes>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
-#include "utils/Utils.h"
+#include "utils/Common.h"
 #include "tokenizer/Location.h"
 
 namespace jetpack {
