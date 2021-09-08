@@ -28,7 +28,6 @@ option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 add_subdirectory(./third_party/xxHash/cmake_unofficial)
 
 add_subdirectory(./bundle-utils)
-add_subdirectory(./esparser)
 add_subdirectory(./jetpack)
 if(JETPACK_BUILD_CLI)
     add_subdirectory(./jetpack-cli)
