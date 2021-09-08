@@ -12,7 +12,7 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline Sp<Module> ParseString(const std::string& src) {
-    auto u16src = UString::fromUtf8(src.c_str(), src.size());
+    auto u16src = UStringFromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
     auto ctx = std::make_shared<ParserContext>(-1, u16src, config);
     Parser parser(ctx);
@@ -23,7 +23,7 @@ inline std::string GenCode(Sp<Module>& mod) {
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return codegen.GetResult().content.toStdString();
+    return UStringToUtf8(codegen.GetResult().content);
 }
 
 TEST(Scope, Collect) {

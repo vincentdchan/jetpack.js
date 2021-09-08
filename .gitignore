@@ -12,3 +12,5 @@
 /.vscode
 
 /npm/bin
+
+/cmake-build-release-wasm

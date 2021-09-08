@@ -5,7 +5,23 @@ option(JETPACK_BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
+file(GLOB parser_source_files
+        "src/*.h"
+        "src/*.hpp"
+        "src/*.cpp"
+        "src/parser/*.h"
+        "src/parser/*.cpp"
+        "src/scope/*.h"
+        "src/scope/*.cpp"
+        "src/dumper/*.h"
+        "src/dumper/*.cpp"
+        "src/tokenizer/*.h"
+        "src/tokenizer/*.cpp"
+        )
+
 set(SOURCE_FILES
+        ${parser_source_files}
+        src/macros.h
         src/Benchmark.h
         src/Benchmark.cpp
         src/ResolveResult.h
@@ -48,10 +64,13 @@ include_directories(PUBLIC
         "../esparser/src"
         "./src"
         "../third_party/ThreadPool/"
+        "../third_party/ordered-map/include"
+        "../third_party/nlohmann_json/include"
+        "../third_party/boost/"
         "../third_party/js-parser/src"
         "../third_party/cxxopts/include"
         "../third_party/robin-hood-hashing/src/include")
-link_libraries(bundle-utils esparser fmt)
+link_libraries(bundle-utils fmt)
 
 add_library(jetpack ${SOURCE_FILES})
 add_library(jetpackd SHARED ${SOURCE_FILES})

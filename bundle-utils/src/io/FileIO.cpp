@@ -133,7 +133,7 @@ namespace jetpack::io {
             return error;
         }
 
-        result = UString::fromUtf8(reader.Data(), reader.FileSize());
+        result = UStringFromUtf8(reader.Data(), reader.FileSize());
 
         return IOError::Ok;
 #endif
