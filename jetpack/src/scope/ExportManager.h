@@ -6,12 +6,12 @@
 
 #include <set>
 #include <vector>
-#include <Utils.h>
 #include <robin_hood.h>
 #include <optional>
 #include <memory>
-#include "string/UString.h"
-#include "../parser/NodeTypes.h"
+#include "utils/Common.h"
+#include "utils/string/UString.h"
+#include "parser/NodeTypes.h"
 
 namespace jetpack {
 

@@ -7,8 +7,8 @@
 #include <cinttypes>
 #include <string>
 #include <future>
-#include <parser/Parser.hpp>
-#include "string/UString.h"
+#include "parser/Parser.hpp"
+#include "utils/string/UString.h"
 #include "codegen/CodeGen.h"
 #include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"

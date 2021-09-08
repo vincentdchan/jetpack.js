@@ -5,10 +5,10 @@
 #pragma once
 
 #include <cinttypes>
-#include "Utils.h"
-#include "tokenizer/Location.h"
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
+#include "utils/Common.h"
+#include "tokenizer/Location.h"
 
 namespace jetpack {
     template<class Key, class T, class Ignore, class Allocator,

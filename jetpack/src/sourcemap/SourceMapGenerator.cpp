@@ -4,8 +4,8 @@
 
 #include <cstring>
 #include <iostream>
-#include "JetJSON.h"
-#include "io/FileIO.h"
+#include "utils/JetJSON.h"
+#include "utils/io/FileIO.h"
 #include "Benchmark.h"
 #include "SourceMapGenerator.h"
 #include "ModuleResolver.h"

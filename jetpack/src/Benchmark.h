@@ -5,7 +5,7 @@
 #ifndef ROCKET_BUNDLE_PROFILE_H
 #define ROCKET_BUNDLE_PROFILE_H
 
-#include "JetTime.h"
+#include "utils/JetTime.h"
 
 namespace jetpack::benchmark {
 

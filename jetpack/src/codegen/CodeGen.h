@@ -9,9 +9,9 @@
 #include <sstream>
 #include <cinttypes>
 #include <deque>
-#include "Utils.h"
 #include "NodeTraverser.h"
-#include "string/UString.h"
+#include "utils/string/UString.h"
+#include "utils/Common.h"
 #include "sourcemap/MappingCollector.h"
 
 namespace jetpack {

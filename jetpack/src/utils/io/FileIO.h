@@ -6,7 +6,7 @@
 #define ROCKET_BUNDLE_FILEIO_H
 
 #include <string>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 
 #if defined(_WIN32)
 #include <Windows.h>

@@ -20,6 +20,20 @@ file(GLOB parser_source_files
         )
 
 set(SOURCE_FILES
+        src/utils/string/UChar.h
+        src/utils/string/PrivateStringUtils.h
+        src/utils/string/PrivateStringUtils.cpp
+        src/utils/string/UString.h
+        src/utils/string/UString.cpp
+        src/utils/io/FileIO.h
+        src/utils/io/FileIO.cpp
+        src/utils/JetTime.h
+        src/utils/JetJSON.h
+        src/utils/JetJSON.cpp
+        src/utils/JetNumeric.h
+        src/utils/Path.h
+        src/utils/Common.h
+        src/utils/Common.cpp
         ${parser_source_files}
         src/macros.h
         src/Benchmark.h
@@ -60,7 +74,6 @@ set(CMAKE_CXX_FLAGS "-s \"EXTRA_EXPORTED_RUNTIME_METHODS=['UTF8ToString', 'lengt
 endif()
 
 include_directories(PUBLIC
-        "../bundle-utils/src"
         "../esparser/src"
         "./src"
         "../third_party/ThreadPool/"
@@ -70,7 +83,7 @@ include_directories(PUBLIC
         "../third_party/js-parser/src"
         "../third_party/cxxopts/include"
         "../third_party/robin-hood-hashing/src/include")
-link_libraries(bundle-utils fmt)
+link_libraries(fmt)
 
 add_library(jetpack ${SOURCE_FILES})
 add_library(jetpackd SHARED ${SOURCE_FILES})

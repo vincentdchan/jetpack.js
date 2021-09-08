@@ -2,10 +2,10 @@
 // Created by Duzhong Chen on 2021/3/30.
 //
 
-#include "SourceMapDecoder.h"
-#include "Utils.h"
-#include "SourceMapGenerator.h"
 #include <fmt/format.h>
+#include "SourceMapDecoder.h"
+#include "utils/Common.h"
+#include "SourceMapGenerator.h"
 
 namespace jetpack {
 

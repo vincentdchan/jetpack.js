@@ -6,10 +6,10 @@
 
 #include <vector>
 #include <memory>
-#include "../macros.h"
-#include "Utils.h"
-#include "../parser/NodeTypes.h"
-#include "string/UString.h"
+#include "macros.h"
+#include "utils/Common.h"
+#include "utils/string/UString.h"
+#include "parser/NodeTypes.h"
 
 namespace jetpack {
 

@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 #include <ThreadPool.h>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 #include "MappingCollector.h"
 #include "ModuleFile.h"
 
