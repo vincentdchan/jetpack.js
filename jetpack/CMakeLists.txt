@@ -57,6 +57,8 @@ set(SOURCE_FILES
         src/Error.h
         src/SimpleAPI.h
         src/SimpleAPI.cpp
+        src/StringWithMapping.h
+        src/StringWithMapping.cpp
         src/sourcemap/MappingCollector.h
         src/sourcemap/MappingCollector.cpp
         src/sourcemap/SourceMapGenerator.h
