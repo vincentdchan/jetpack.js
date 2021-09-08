@@ -4,6 +4,7 @@
 
 #include <stack>
 #include <fmt/format.h>
+#include "string/UString.h"
 #include "string/UChar.h"
 #include "JSXParser.h"
 
@@ -80,7 +81,7 @@ namespace jetpack::parser {
         bool has_added_lit = false;
         if (jsx->opening_element->name->type == SyntaxNodeType::JSXIdentifier) {
             auto jsx_id = std::dynamic_pointer_cast<JSXIdentifier>(jsx->opening_element->name);
-            if (!jsx_id->name.isEmpty()) {
+            if (!jsx_id->name.empty()) {
                 char16_t ch = jsx_id->name.at(0);
                 if (ch >= u'a' && ch <= u'z') {
                     auto new_lit = std::make_shared<Literal>();
@@ -331,7 +332,7 @@ namespace jetpack::parser {
                 UString open = GetQualifiedElementName(el->opening_->name);
                 UString close = GetQualifiedElementName(closing->name);
                 if (open != close) {
-                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", open.toStdString()));
+                    TolerateError(fmt::format("Expected corresponding JSX closing tag for {}", UStringToUtf8(open)));
                 }
                 if (!el_stack.empty()) {
                     auto node = Alloc<JSXElement>();
@@ -724,7 +725,7 @@ namespace jetpack::parser {
                     break;
                 }
             }
-            UString id = scanner.Source().mid(start, scanner.Index() - start);
+            UString id = scanner.Source().substr(start, scanner.Index() - start);
 
             token.type = JsTokenType::Identifier;
             token.value = move(id);
@@ -787,12 +788,12 @@ namespace jetpack::parser {
             InitXHTMLEntities();
 
             // e.g. '&#x41;' becomes just '#x41'
-            UString str = result.mid(1, result.size() - 2);
+            UString str = result.substr(1, result.size() - 2);
             if (numeric && str.size() > 1) {
-                std::string utf8 = str.mid(1).toStdString();
+                std::string utf8 = UStringToUtf8(str.substr(1));
                 result.push_back(std::stoi(utf8));
             } else if (hex && str.size() > 2) {
-                std::string utf8 = string("0") + str.mid(1).toStdString();
+                std::string utf8 = UStringToUtf8(UString(u"0") + str.substr(1));
                 result.push_back(std::stoi(utf8, 0, 16));
             } else if (!numeric&& !hex && XHTMLEntities->find(str) != XHTMLEntities->end()) {
                 result.push_back((*XHTMLEntities)[str]);

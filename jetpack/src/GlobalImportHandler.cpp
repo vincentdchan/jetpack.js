@@ -15,7 +15,7 @@ namespace jetpack {
     }
 
     inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(UString::fromUtf8(content.c_str(), content.size()));
+        return MakeId(UStringFromUtf8(content.c_str(), content.size()));
     }
 
     inline Sp<Literal> MakeStringLiteral(const UString& str) {

@@ -5,6 +5,7 @@
 #include "ParserCommon.h"
 #include "ErrorMessage.h"
 #include <fmt/format.h>
+#include "string/UString.h"
 
 namespace jetpack::parser {
     using namespace std;
@@ -50,7 +51,7 @@ namespace jetpack::parser {
         }
         value = token.value;
 
-        string final_message = fmt::format(msg, value.toStdString());
+        string final_message = fmt::format(msg, UStringToUtf8(value));
         return UnexpectedToken(token, final_message);
     }
 

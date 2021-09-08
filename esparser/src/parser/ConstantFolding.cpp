@@ -3,6 +3,7 @@
 //
 
 #include <string>
+#include <boost/lexical_cast.hpp>
 #include "ConstantFolding.h"
 #include "string/UString.h"
 
@@ -20,7 +21,7 @@ namespace jetpack {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::Double;
         std::string utf8 = std::to_string(tmp);
-        lit->str_ = UString::fromUtf8(utf8.c_str(), utf8.size());
+        lit->str_ = UStringFromUtf8(utf8.c_str(), utf8.size());
         lit->raw = lit->str_;
         return lit;
     }
@@ -43,12 +44,11 @@ namespace jetpack {
                 UString result = left_lit->str_ + right_lit->str_;
                 return MakeStringLiteral(result);
             } else if (left_lit->ty == Literal::Ty::Double && right_lit->ty == Literal::Ty::Double) {
-                int32_t left_int = left_lit->str_.toInt();
-                if (left_int < 0) {
-                    return binary;
-                }
-                int32_t right_int = right_lit->str_.toInt();
-                if (right_int < 0) {
+                int32_t left_int, right_int;
+                try {
+                    left_int = boost::lexical_cast<int32_t>(UStringToUtf8(left_lit->str_));
+                    right_int = boost::lexical_cast<int32_t>(UStringToUtf8(right_lit->str_));
+                } catch (const boost::bad_lexical_cast& ex) {
                     return binary;
                 }
 

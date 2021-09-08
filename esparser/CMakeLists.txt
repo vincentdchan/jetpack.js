@@ -13,6 +13,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 # include(...) for pulling in other CMake projects anyways.
 
 include_directories(../third_party/fmt/include)
+include_directories(../third_party/boost)
 include_directories(../bundle-utils/src)
 
 file(GLOB source_files

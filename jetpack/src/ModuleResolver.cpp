@@ -33,7 +33,7 @@ namespace jetpack {
     }
 
     inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
-        return MakeId(loc, UString::fromStdString(content));
+        return MakeId(loc, UStringFromUtf8(content.c_str(), content.size()));
     }
 
 //    inline Sp<SyntaxNode> MakeModuleVar(const SourceLocation& loc, const UString& var_name) {
@@ -53,7 +53,9 @@ namespace jetpack {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::String;
         lit->str_ = str;
-        lit->raw.append(u'"').append(str).append(u'"');
+        lit->raw += u'"';
+        lit->raw += str;
+        lit->raw += u'"';
         return lit;
     }
 
@@ -168,7 +170,7 @@ namespace jetpack {
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
-            std::string u8path = import_decl->source->str_.toStdString();
+            std::string u8path = UStringToUtf8(import_decl->source->str_);
             if (IsExternalImportModulePath(u8path)) {
                 global_import_handler_.HandleImport(import_decl);
                 return;
@@ -177,12 +179,12 @@ namespace jetpack {
         });
         parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
             if (export_decl->source.has_value()) {
-                std::string u8path = (*export_decl->source)->str_.toStdString();
+                std::string u8path = UStringToUtf8((*export_decl->source)->str_);
                 HandleNewLocationAdded(config, mf, false, u8path);
             }
         });
         parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
-            std::string u8path = export_decl->source->str_.toStdString();
+            std::string u8path = UStringToUtf8(export_decl->source->str_);
             HandleNewLocationAdded(config, mf, false, u8path);
         });
 
@@ -231,7 +233,7 @@ namespace jetpack {
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                             err.name.toStdString(),
+                                             UStringToUtf8(err.name),
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
                 worker_errors_.push_back({childMod->Path(), std::move(message) });
@@ -255,7 +257,7 @@ namespace jetpack {
 
         json exports = json::array();
         for (auto& tuple : GetAllExportVars()) {
-            exports.push_back(std::get<1>(tuple).toStdString());
+            exports.push_back(UStringToUtf8(std::get<1>(tuple)));
         }
 
         json result = json::object();
@@ -296,7 +298,7 @@ namespace jetpack {
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                             err.name.toStdString(),
+                                             UStringToUtf8(err.name),
                                              err.exist_var->location.start.line,
                                              err.exist_var->location.start.column);
                 worker_errors_.push_back({ resolvedPath, std::move(message) });
@@ -347,7 +349,7 @@ namespace jetpack {
         // 2. handle all external exports
         auto external_infos = mod->GetExportManager().CollectExternalInfos();
         for (auto& info : external_infos) {
-            auto u8relative_path = info.relative_path.toStdString();
+            auto u8relative_path = UStringToUtf8(info.relative_path);
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
                 WorkerError err {
@@ -416,7 +418,8 @@ namespace jetpack {
         auto& import_manager = mod_scope->import_manager;
 
         for (auto& tuple : import_manager.id_map) {
-            result[tuple.first.toStdString()] = tuple.second.module_name.toStdString();
+            auto str = UStringToUtf8(tuple.first);
+            result[str] = UStringToUtf8(tuple.second.module_name);
         }
 
         return result;
@@ -472,7 +475,7 @@ namespace jetpack {
     void ModuleResolver::EscapeAllContent() {
         for (auto& tuple : modules_table_.pathToModule) {
             tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
-                return EscapeJSONString(mod->src_content.toStdString());
+                return EscapeJSONString(UStringToUtf8(mod->src_content));
             });
             tuple.second->escaped_path = thread_pool_->enqueue([mode = tuple.second]() -> std::string {
                 return EscapeJSONString(mode->Path());
@@ -512,7 +515,7 @@ namespace jetpack {
         }
 
         benchmark::BenchMarker writeMarker(benchmark::BENCH_WRITING_IO);
-        std::string u8content = finalResult.toStdString();
+        std::string u8content = UStringToUtf8(finalResult);
         io::IOError err = io::WriteBufferToPath(outPath, u8content.c_str(), u8content.size());
         J_ASSERT(err == io::IOError::Ok);
         writeMarker.Submit();
@@ -890,11 +893,11 @@ namespace jetpack {
     void ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
                                                  Sp<jetpack::ImportDeclaration> &import_decl,
                                                  std::vector<Sp<VariableDeclaration>>& result) {
-        auto full_path_iter = mf->resolved_map.find(import_decl->source->str_.toStdString());
+        auto full_path_iter = mf->resolved_map.find(UStringToUtf8(import_decl->source->str_));
         if (full_path_iter == mf->resolved_map.end()) {
             throw ModuleResolveException(
                     mf->Path(),
-                    format("can not resolver path: {}", import_decl->source->str_.toStdString()));
+                    format("can not resolver path: {}", UStringToUtf8(import_decl->source->str_)));
         }
 
         auto target_module = modules_table_.pathToModule[full_path_iter->second];
@@ -942,8 +945,8 @@ namespace jetpack {
             }
 
             {
-                auto& relative_path = import_decl->source->str_;
-                std::string absolute_path = mf->resolved_map[relative_path.toStdString()];
+                auto relative_path = UStringToUtf8(import_decl->source->str_);
+                std::string absolute_path = mf->resolved_map[relative_path];
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
                 if (ref_mod_iter == modules_table_.pathToModule.end()) {
@@ -983,8 +986,8 @@ namespace jetpack {
                 switch (spec->type) {
                     case SyntaxNodeType::ImportDefaultSpecifier: {
                         auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
-                        auto& relative_path = import_decl->source->str_;
-                        absolute_path = mf->resolved_map[relative_path.toStdString()];
+                        auto relative_path = UStringToUtf8(import_decl->source->str_);
+                        absolute_path = mf->resolved_map[relative_path];
                         target_export_name = u"default";
                         import_local_name = default_spec->local->name;
                         break;
@@ -992,8 +995,8 @@ namespace jetpack {
 
                     case SyntaxNodeType::ImportSpecifier: {
                         auto import_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
-                        auto& relative_path = import_decl->source->str_;
-                        absolute_path = mf->resolved_map[relative_path.toStdString()];
+                        auto relative_path = UStringToUtf8(import_decl->source->str_);
+                        absolute_path = mf->resolved_map[relative_path];
                         target_export_name = import_spec->imported->name;
                         import_local_name = import_spec->local->name;
                         break;
@@ -1016,7 +1019,7 @@ namespace jetpack {
                 if (!local_export_opt.has_value()) {
                     throw ModuleResolveException(
                             mf->Path(),
-                        format("can not find export variable '{}' from {}", target_export_name.toStdString(), absolute_path)
+                        format("can not find export variable '{}' from {}", UStringToUtf8(target_export_name), absolute_path)
                     );
                 }
 
@@ -1025,7 +1028,7 @@ namespace jetpack {
                 if (!mf->ast->scope->BatchRenameSymbols(changeset)) {
                     throw ModuleResolveException(
                             mf->Path(),
-                        format("rename symbol failed: {}", import_local_name.toStdString())
+                        format("rename symbol failed: {}", UStringToUtf8(import_local_name))
                     );
                 }
             }
@@ -1054,8 +1057,8 @@ namespace jetpack {
 
         // not in local export
         for (auto& tuple : mod->GetExportManager().external_exports_map) {
-            auto& relative_path = tuple.second.relative_path;
-            auto absolute_path = mod->resolved_map[relative_path.toStdString()];
+            auto relative_path = UStringToUtf8(tuple.second.relative_path);
+            auto absolute_path = mod->resolved_map[relative_path];
 
             if (tuple.second.is_export_all) {
                 auto tmp_result = FindLocalExportByPath(absolute_path, export_name, visited);
@@ -1104,7 +1107,7 @@ namespace jetpack {
             if (iter == mf->GetExportManager().local_exports_name.end()) {
                 WorkerError err {
                         mf->Path(),
-                        format("symbol not found failed: {}", export_name.toStdString())
+                        format("symbol not found failed: {}", UStringToUtf8(export_name))
                 };
                 worker_errors_.emplace_back(std::move(err));
                 break;

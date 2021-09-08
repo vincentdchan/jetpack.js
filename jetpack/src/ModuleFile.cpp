@@ -58,7 +58,7 @@ namespace jetpack {
 
     UString ModuleFile::GetModuleVarName() const {
         std::string tmp = "mod_" + std::to_string(id());
-        return UString::fromStdString(tmp);
+        return UStringFromUtf8(tmp.c_str(), tmp.size());
     }
 
     ResolveResult<UString> ModuleFile::GetSource() {

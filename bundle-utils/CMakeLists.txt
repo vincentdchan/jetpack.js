@@ -7,14 +7,8 @@ add_library(${PROJECT_NAME} STATIC
         src/string/UChar.h
         src/string/PrivateStringUtils.h
         src/string/PrivateStringUtils.cpp
-        src/string/UStringData.h
-        src/string/UStringData.cpp
-        src/string/UStringDataPointer.h
-        src/string/UStringDataPointer.cpp
         src/string/UString.h
         src/string/UString.cpp
-        src/string/UStringView.h
-        src/string/UStringView.cpp
         src/io/FileIO.h
         src/io/FileIO.cpp
         src/JetTime.h
@@ -31,4 +25,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC src)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         ../third_party/xxHash
+        ../third_party/boost
+        ../third_party/fmt/include
         )

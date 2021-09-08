@@ -6,7 +6,6 @@
 #include <memory>
 #include <vector>
 #include <stack>
-#include <string/UStringView.h>
 #include "parser/ParseErrorHandler.h"
 #include "Utils.h"
 #include "Token.h"
@@ -86,7 +85,7 @@ namespace jetpack {
         }
 
         inline UStringView View(uint32_t start, uint32_t end) {
-            return UStringView(source_).mid(start, end - start);
+            return UStringView(source_).substr(start, end - start);
         }
 
         std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);

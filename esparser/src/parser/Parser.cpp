@@ -926,11 +926,11 @@ namespace jetpack::parser {
         Sp<Expression> expr = ParseExpression(scope);
         UString directive;
         if (expr->type == SyntaxNodeType::Literal) {
-            directive = token.value.mid(1, token.value.size() - 1);
+            directive = token.value.substr(1, token.value.size() - 1);
         }
         ConsumeSemicolon();
 
-        if (!directive.isEmpty()) {
+        if (!directive.empty()) {
             auto node = Alloc<Directive>();
             node->expression = expr;
             node->directive = directive;
@@ -1581,7 +1581,7 @@ namespace jetpack::parser {
             UString key = UString(u"$") + id->name;
 
             if (ctx->label_set_->find(key) != ctx->label_set_->end()) {
-                ThrowError(ParseMessages::Redeclaration, string("Label: ") + id->name.toStdString());
+                ThrowError(ParseMessages::Redeclaration, string("Label: ") + UStringToUtf8(id->name));
             }
             ctx->label_set_->insert(key);
 
@@ -1628,7 +1628,7 @@ namespace jetpack::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, id->name.toStdString());
+                ThrowError(ParseMessages::UnknownLabel, UStringToUtf8(id->name));
             }
             label = id;
         }
@@ -1657,7 +1657,7 @@ namespace jetpack::parser {
 
             UString key = UString(u"$") + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
-                ThrowError(ParseMessages::UnknownLabel, id->name.toStdString());
+                ThrowError(ParseMessages::UnknownLabel, UStringToUtf8(id->name));
             }
         }
 
@@ -2043,7 +2043,7 @@ namespace jetpack::parser {
         for (auto& token : params) {
             UString key = UString(u"$") + token.value;
             if (param_set.find(key) != param_set.end()) {
-                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + token.value.toStdString());
+                TolerateError(string(ParseMessages::DuplicateBinding) + ": " + UStringToUtf8(token.value));
             }
             param_set.insert(key);
         }
@@ -2342,7 +2342,7 @@ namespace jetpack::parser {
                 export_decl = Finalize(start_marker, node);
             } else {
                 if (MatchContextualKeyword(u"from")) {
-                    ThrowError(ParseMessages::UnexpectedToken, ctx->lookahead_.value.toStdString());
+                    ThrowError(ParseMessages::UnexpectedToken, UStringToUtf8(ctx->lookahead_.value));
                 }
                 Sp<SyntaxNode> decl;
                 if (Match(JsTokenType::LeftBracket)) {
@@ -2365,12 +2365,12 @@ namespace jetpack::parser {
             NextToken();
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value.isEmpty()) {
+                if (!ctx->lookahead_.value.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value.toStdString());
+                ThrowError(message, UStringToUtf8(ctx->lookahead_.value));
             }
             NextToken();
             auto node = Alloc<ExportAllDeclaration>();
@@ -2434,12 +2434,12 @@ namespace jetpack::parser {
                 ConsumeSemicolon();
             } else if (is_export_from_id) {
                 string message;
-                if (!ctx->lookahead_.value.isEmpty()) {
+                if (!ctx->lookahead_.value.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value.toStdString());
+                ThrowError(message, UStringToUtf8(ctx->lookahead_.value));
             } else {
                 ConsumeSemicolon();
             }
@@ -2580,7 +2580,7 @@ namespace jetpack::parser {
                         return ParseAssignmentExpression(scope);
                     });
                     UStringView tokenView = TokenTypeToLiteral(token.type);
-                    temp->operator_ = UString(tokenView.utf16(), tokenView.size());
+                    temp->operator_ = UString(tokenView.data(), tokenView.size());
                     expr = Finalize(start_marker, temp);
                     ctx->first_cover_initialized_name_error_.reset();
                 }
@@ -2669,7 +2669,7 @@ namespace jetpack::parser {
                 binary->left = left;
                 binary->right = expr;
                 UStringView tokenView = TokenTypeToLiteral(left_tk.type);
-                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
+                binary->operator_ = UString(tokenView.data(), tokenView.size());
                 if (ctx->config_.constant_folding) {
                     expr = ContantFolding::TryBinaryExpression(binary);
                 } else {
@@ -2680,7 +2680,7 @@ namespace jetpack::parser {
             } else {  // left_op > right_op
                 auto binary = Alloc<BinaryExpression>();
                 UStringView tokenView = TokenTypeToLiteral(left_tk.type);
-                binary->operator_ = UString(tokenView.utf16(), tokenView.size());
+                binary->operator_ = UString(tokenView.data(), tokenView.size());
                 binary->left = left;
                 binary->right = expr;
 
@@ -2741,7 +2741,7 @@ namespace jetpack::parser {
             });
             auto node = Alloc<UnaryExpression>();
             UStringView tokenView = TokenTypeToLiteral(token.type);
-            node->operator_ = UString(tokenView.utf16(), tokenView.size());
+            node->operator_ = UString(tokenView.data(), tokenView.size());
             node->argument = expr;
             node->prefix = true;
             expr = Finalize(marker, node);
@@ -2931,12 +2931,12 @@ namespace jetpack::parser {
 
             if (!MatchContextualKeyword(u"from")) {
                 string message;
-                if (!ctx->lookahead_.value.isEmpty()) {
+                if (!ctx->lookahead_.value.empty()) {
                     message = ParseMessages::UnexpectedToken;
                 } else {
                     message = ParseMessages::MissingFromClause;
                 }
-                ThrowError(message, ctx->lookahead_.value.toStdString());
+                ThrowError(message, UStringToUtf8(ctx->lookahead_.value));
             }
             NextToken();
             src = ParseModuleSpecifier();

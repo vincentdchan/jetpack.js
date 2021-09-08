@@ -67,7 +67,7 @@ namespace jetpack {
                 loc.end = Position {line_number_, index_ - line_start_ - 1 };
                 auto comment = new Comment {
                         false,
-                        source_.mid(start + offset, index_ - start - offset),
+                        source_.substr(start + offset, index_ - start - offset),
                         make_pair(start, index_ - 1),
                         loc
                 };
@@ -85,7 +85,7 @@ namespace jetpack {
         loc.end = Position {line_number_, index_ - line_start_ };
         auto comment = new Comment {
                 false,
-                source_.mid(start + offset, index_ - start - offset),
+                source_.substr(start + offset, index_ - start - offset),
                 make_pair(start, index_),
                 loc,
         };
@@ -124,7 +124,7 @@ namespace jetpack {
                     };
                     auto comment = new Comment {
                             true,
-                            source_.mid(start + 2, index_ - start - 4),
+                            source_.substr(start + 2, index_ - start - 4),
                             make_pair(start, index_),
                             loc,
                     };
@@ -144,7 +144,7 @@ namespace jetpack {
         };
         auto comment = new Comment {
                 true,
-                source_.mid(start + 2, index_ - start - 2),
+                source_.substr(start + 2, index_ - start - 2),
                 make_pair(start, index_),
                 loc,
         };
@@ -193,7 +193,7 @@ namespace jetpack {
                         break;
                     }
                 } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
-                    if (source_.mid(index_ + 1, index_ + 4) == u"!--") {
+                    if (source_.substr(index_ + 1, index_ + 4) == u"!--") {
                         index_ += 4; // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
@@ -394,7 +394,7 @@ namespace jetpack {
             }
         }
 
-        result.append(source_.mid(start, index_ - start));
+        result.append(source_.substr(start, index_ - start));
         return result;
     }
 
@@ -429,7 +429,7 @@ namespace jetpack {
                 break;
             }
 
-            UString ch_ = FromCodePoint(cp);
+            UString ch_ = UStringFromCodePoint(cp);
 
             result.append(ch_);
 
@@ -438,7 +438,7 @@ namespace jetpack {
 
             // '\u' (U+005C, U+0075) denotes an escaped character.
             if (cp == 0x5C) {
-                result = result.mid(0, result.size() - 1);
+                result = result.substr(0, result.size() - 1);
                 if (source_.at(index_) != 0x75) {
                     ThrowUnexpectedToken();
                 }
@@ -822,7 +822,7 @@ namespace jetpack {
             num.push_back(source_.at(index_++));
         }
 
-        if (num.isEmpty()) {
+        if (num.empty()) {
             // only 0b or 0B
             ThrowUnexpectedToken();
         }
@@ -1009,13 +1009,13 @@ namespace jetpack {
                                 ++index_;
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                str.append(UString::fromUtf32(&tmp, 1));
+                                str.append(UStringFromUtf32(&tmp, 1));
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                str.append(UString::fromUtf32(&unescaped, 1));
+                                str.append(UStringFromUtf32(&unescaped, 1));
                             }
                             break;
 
@@ -1023,7 +1023,7 @@ namespace jetpack {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            str.append(UString::fromUtf32(&unescaped, 1));
+                            str.append(UStringFromUtf32(&unescaped, 1));
                             break;
 
                         case 'n':
@@ -1055,7 +1055,7 @@ namespace jetpack {
                                 uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                str.append(UString::fromUtf32(&unescaped, 1));
+                                str.append(UStringFromUtf32(&unescaped, 1));
                             } else {
                                 str += ch;
                             }
@@ -1207,7 +1207,7 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_.mid(start + 1, index_ - rawOffset);
+        tok.value = source_.substr(start + 1, index_ - rawOffset);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
         tok.range = make_pair(start, index_);
@@ -1258,7 +1258,7 @@ namespace jetpack {
             ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
         }
 
-        return str.mid(1, str.size() - 2);
+        return str.substr(1, str.size() - 2);
     }
 
     UString Scanner::ScanRegExpFlags() {
