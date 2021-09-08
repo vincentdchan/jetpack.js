@@ -22,281 +22,281 @@ namespace jetpack {
 
 #undef DD
 
-    UStringView TokenTypeToLiteral(JsTokenType tt) {
+    std::string_view TokenTypeToLiteral(JsTokenType tt) {
         switch (tt) {
             case JsTokenType::TrueLiteral:
-                return UStr("true");
+                return "true";
 
             case JsTokenType::FalseLiteral:
-                return UStr("false");
+                return "false";
 
             case JsTokenType::NullLiteral:
-                return UStr("null");
+                return "null";
 
             case JsTokenType::LeftParen:
-                return UStr("(");
+                return "(";
 
             case JsTokenType::RightParen:
-                return UStr(")");
+                return ")";
 
             case JsTokenType::LeftBracket:
-                return UStr("{");
+                return "{";
 
             case JsTokenType::RightBracket:
-                return UStr("}");
+                return "}";
 
             case JsTokenType::LeftBrace:
-                return UStr("[");
+                return "[";
 
             case JsTokenType::RightBrace:
-                return UStr("]");
+                return "]";
 
             case JsTokenType::Dot:
-                return UStr(".");
+                return ".";
 
             case JsTokenType::Spread:
-                return UStr("...");
+                return "...";
 
             case JsTokenType::Semicolon:
-                return UStr(";");
+                return ";";
 
             case JsTokenType::Comma:
-                return UStr(",");
+                return ",";
 
             case JsTokenType::Colon:
-                return UStr(":");
+                return ":";
 
             case JsTokenType::Ask:
-                return UStr("?");
+                return "?";
 
             case JsTokenType::Wave:
-                return UStr("~");
+                return "~";
 
             case JsTokenType::LessThan:
-                return UStr("<");
+                return "<";
 
             case JsTokenType::GreaterThan:
-                return UStr(">");
+                return ">";
 
             case JsTokenType::StrictEqual:
-                return UStr("===");
+                return "===";
 
             case JsTokenType::StrictNotEqual:
-                return UStr("!==");
+                return "!==";
 
             case JsTokenType::Equal:
-                return UStr("==");
+                return "==";
 
             case JsTokenType::NotEqual:
-                return UStr("!=");
+                return "!=";
 
             case JsTokenType::LessEqual:
-                return UStr("<=");
+                return "<=";
 
             case JsTokenType::GreaterEqual:
-                return UStr(">=");
+                return ">=";
 
             case JsTokenType::Mod:
-                return UStr("%");
+                return "%";
 
             case JsTokenType::Xor:
-                return UStr("^");
+                return "^";
 
             case JsTokenType::BitAnd:
-                return UStr("&");
+                return "&";
 
             case JsTokenType::BitOr:
-                return UStr("|");
+                return "|";
 
             case JsTokenType::And:
-                return UStr("&&");
+                return "&&";
 
             case JsTokenType::Or:
-                return UStr("||");
+                return "||";
 
             case JsTokenType::Assign:
-                return UStr("=");
+                return "=";
 
             case JsTokenType::BitAndAssign:
-                return UStr("&=");
+                return "&=";
 
             case JsTokenType::BitOrAssign:
-                return UStr("|=");
+                return "|=";
 
             case JsTokenType::BitXorAssign:
-                return UStr("^=");
+                return "^=";
 
             case JsTokenType::ModAssign:
-                return UStr("%=");
+                return "%=";
 
             case JsTokenType::PlusAssign:
-                return UStr("+=");
+                return "+=";
 
             case JsTokenType::MinusAssign:
-                return UStr("-=");
+                return "-=";
 
             case JsTokenType::MulAssign:
-                return UStr("*=");
+                return "*=";
 
             case JsTokenType::DivAssign:
-                return UStr("/=");
+                return "/=";
 
             case JsTokenType::PowAssign:
-                return UStr("**=");
+                return "**=";
 
             case JsTokenType::LeftShiftAssign:
-                return UStr("<<=");
+                return "<<=";
 
             case JsTokenType::RightShiftAssign:
-                return UStr(">>=");
+                return ">>=";
 
             case JsTokenType::ZeroFillRightShiftAssign:
-                return UStr(">>>=");
+                return ">>>=";
 
             case JsTokenType::Plus:
-                return UStr("+");
+                return "+";
 
             case JsTokenType::Minus:
-                return UStr("-");
+                return "-";
 
             case JsTokenType::Mul:
-                return UStr("*");
+                return "*";
 
             case JsTokenType::Div:
-                return UStr("/");
+                return "/";
 
             case JsTokenType::Pow:
-                return UStr("**");
+                return "**";
 
             case JsTokenType::Increase:
-                return UStr("++");
+                return "++";
 
             case JsTokenType::Decrease:
-                return UStr("--");
+                return "--";
 
             case JsTokenType::LeftShift:
-                return UStr("<<");
+                return "<<";
 
             case JsTokenType::RightShift:
-                return UStr(">>");
+                return ">>";
 
             case JsTokenType::ZeroFillRightShift:
-                return UStr(">>>");
+                return ">>>";
 
             case JsTokenType::Not:
-                return UStr("!");
+                return "!";
 
             case JsTokenType::Arrow:
-                return UStr("=>");
+                return "=>";
 
             case JsTokenType::K_If:
-                return UStr("if");
+                return "if";
 
             case JsTokenType::K_In:
-                return UStr("in");
+                return "in";
 
             case JsTokenType::K_Do:
-                return UStr("do");
+                return "do";
 
             case JsTokenType::K_Var:
-                return UStr("var");
+                return "var";
 
             case JsTokenType::K_For:
-                return UStr("for");
+                return "for";
 
             case JsTokenType::K_New:
-                return UStr("new");
+                return "new";
 
             case JsTokenType::K_Try:
-                return UStr("try");
+                return "try";
 
             case JsTokenType::K_Let:
-                return UStr("let");
+                return "let";
 
             case JsTokenType::K_This:
-                return UStr("this");
+                return "this";
 
             case JsTokenType::K_Else:
-                return UStr("else");
+                return "else";
 
             case JsTokenType::K_Case:
-                return UStr("case");
+                return "case";
 
             case JsTokenType::K_Void:
-                return UStr("void");
+                return "void";
 
             case JsTokenType::K_With:
-                return UStr("with");
+                return "with";
 
             case JsTokenType::K_Enum:
-                return UStr("enum");
+                return "enum";
 
             case JsTokenType::K_While:
-                return UStr("while");
+                return "while";
 
             case JsTokenType::K_Break:
-                return UStr("break");
+                return "break";
 
             case JsTokenType::K_Catch:
-                return UStr("catch");
+                return "catch";
 
             case JsTokenType::K_Throw:
-                return UStr("throw");
+                return "throw";
 
             case JsTokenType::K_Const:
-                return UStr("const");
+                return "const";
 
             case JsTokenType::K_Yield:
-                return UStr("yield");
+                return "yield";
 
             case JsTokenType::K_Class:
-                return UStr("class");
+                return "class";
 
             case JsTokenType::K_Super:
-                return UStr("super");
+                return "super";
 
             case JsTokenType::K_Return:
-                return UStr("return");
+                return "return";
 
             case JsTokenType::K_Typeof:
-                return UStr("typeof");
+                return "typeof";
 
             case JsTokenType::K_Delete:
-                return UStr("delete");
+                return "delete";
 
             case JsTokenType::K_Switch:
-                return UStr("switch");
+                return "switch";
 
             case JsTokenType::K_Export:
-                return UStr("export");
+                return "export";
 
             case JsTokenType::K_Import:
-                return UStr("import");
+                return "import";
 
             case JsTokenType::K_Default:
-                return UStr("default");
+                return "default";
 
             case JsTokenType::K_Finally:
-                return UStr("finally");
+                return "finally";
 
             case JsTokenType::K_Extends:
-                return UStr("extends");
+                return "extends";
 
             case JsTokenType::K_Function:
-                return UStr("function");
+                return "function";
 
             case JsTokenType::K_Continue:
-                return UStr("continue");
+                return "continue";
 
             case JsTokenType::K_Debugger:
-                return UStr("debugger");
+                return "debugger";
 
             case JsTokenType::K_Instanceof:
-                return UStr("instanceof");
+                return "instanceof";
 
             default:
                 J_ASSERT(false);
-                return UStr("<internal error>");
+                return "<internal error>";
 
         }
 

@@ -44,7 +44,7 @@ namespace jetpack::parser {
         struct FormalParameterOptions {
             bool simple = true;
             std::vector<Sp<SyntaxNode>> params;
-            std::unordered_set<UString> param_set;
+            HashSet<std::string> param_set;
             std::optional<Token> stricted;
             std::optional<Token> first_restricted;
             std::string message;
@@ -63,8 +63,8 @@ namespace jetpack::parser {
 
         Token NextRegexToken();
 
-        inline UString GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source().substr
+        inline std::string GetTokenRaw(const Token& token) {
+            return ctx->scanner_->Source()->ConstData().substr
             (token.range.first, token.range.second - token.range.first);
         }
 
@@ -106,7 +106,7 @@ namespace jetpack::parser {
             return ctx->lookahead_.type == t;
         }
 
-        bool MatchContextualKeyword(const UString& keyword);
+        bool MatchContextualKeyword(const std::string& keyword);
         bool MatchAssign();
 
         void ConsumeSemicolon();

@@ -33,7 +33,7 @@ namespace jetpack::parser {
 
     ParseError ParserCommon::UnexpectedToken(const Token &token) {
         string msg = ParseMessages::UnexpectedToken;
-        UString value;
+        std::string value;
 
         msg = (token.type == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
               (token.type == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
@@ -51,7 +51,7 @@ namespace jetpack::parser {
         }
         value = token.value;
 
-        string final_message = fmt::format(msg, UStringToUtf8(value));
+        string final_message = fmt::format(msg, value);
         return UnexpectedToken(token, final_message);
     }
 
@@ -222,7 +222,7 @@ namespace jetpack::parser {
         }
     }
 
-    bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
+    bool ParserCommon::MatchContextualKeyword(const std::string& keyword) {
         Token& lookahead = ctx->lookahead_;
         return lookahead.type == JsTokenType::Identifier && lookahead.value == keyword;
     }

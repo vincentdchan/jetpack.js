@@ -9,13 +9,14 @@
 #include "parser/ParseErrorHandler.h"
 #include "utils/Common.h"
 #include "Token.h"
+#include "StringWithMapping.h"
 #include "Comment.h"
 
 namespace jetpack {
 
     class Scanner final {
     public:
-        Scanner(const UString& source, std::shared_ptr<parser::ParseErrorHandler> error_handler);
+        Scanner(const Sp<StringWithMapping>& source, Sp<parser::ParseErrorHandler> error_handler);
         Scanner(const Scanner&) = delete;
         Scanner(Scanner&&) = delete;
 
@@ -31,7 +32,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline int32_t Length() const {
-            return source_.size();
+            return source_->size();
         }
 
         ScannerState SaveState();
@@ -84,21 +85,21 @@ namespace jetpack {
             line_start_ = ls;
         }
 
-        inline UStringView View(uint32_t start, uint32_t end) {
-            return UStringView(source_).substr(start, end - start);
+        inline std::string_view View(uint32_t start, uint32_t end) {
+            return std::string_view (source_->data_).substr(start, end - start);
         }
 
         std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);
         std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
         void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
-        static JsTokenType IsStrictModeReservedWord(UStringView str);
-        static bool IsRestrictedWord(UStringView str_);
-        static JsTokenType ToKeyword(const UString& str_);
+        static JsTokenType IsStrictModeReservedWord(std::string_view str);
+        static bool IsRestrictedWord(std::string_view str_);
+        static JsTokenType ToKeyword(const std::string& str_);
         bool ScanHexEscape(char16_t ch, char32_t& result);
         char32_t ScanUnicodeCodePointEscape();
-        UString GetIdentifier();
-        UString GetComplexIdentifier();
+        std::string GetIdentifier();
+        std::string GetComplexIdentifier();
         bool OctalToDecimal(char16_t ch, uint32_t& result);
 
         Token ScanIdentifier();
@@ -110,23 +111,22 @@ namespace jetpack {
         Token ScanNumericLiteral();
         Token ScanStringLiteral();
         Token ScanTemplate();
-        UString TestRegExp(const UString& pattern, const UString& flags);
 
-        UString ScanRegExpBody();
-        UString ScanRegExpFlags();
+        std::string ScanRegExpBody();
+        std::string ScanRegExpFlags();
         Token ScanRegExp();
         Token Lex();
 
         char32_t CodePointAt(uint32_t index, uint32_t* size_ = nullptr) const;
 
         [[nodiscard]]
-        inline char16_t CharAt(uint32_t index) const {
-            if (unlikely(index >= source_.size())) return u'\0';
-            return source_.at(index);
+        inline char CharAt(uint32_t index) const {
+            if (unlikely(index >= source_->size())) return u'\0';
+            return source_->data_.at(index);
         }
 
         [[nodiscard]]
-        UString Source() const {
+        Sp<StringWithMapping> Source() const {
             return source_;
         }
 
@@ -143,7 +143,7 @@ namespace jetpack {
         uint32_t line_start_ = 0u;
 
         Sp<parser::ParseErrorHandler> error_handler_;
-        UString source_;
+        Sp<StringWithMapping> source_;
         UString value_buffer_;
         bool is_module_ = false;
 

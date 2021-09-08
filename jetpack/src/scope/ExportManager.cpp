@@ -40,7 +40,7 @@ namespace jetpack {
 
     ExportManager::EC ExportManager::ResolveDefaultDecl(const std::shared_ptr<ExportDefaultDeclaration>& decl) {
         auto info = std::make_shared<LocalExportInfo>();
-        info->export_name = u"default";
+        info->export_name = "default";
         info->default_export_ast = { decl };
 
         AddLocalExport(info);

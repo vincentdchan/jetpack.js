@@ -50,7 +50,7 @@ namespace jetpack {
     public:
         AssignmentExpression();
 
-        UString operator_;
+        std::string operator_;
         Sp<Pattern> left;
         Sp<Expression> right;
 
@@ -77,7 +77,7 @@ namespace jetpack {
     public:
         BinaryExpression();
 
-        UString operator_;
+        std::string operator_;
         Sp<Expression> left;
         Sp<Expression> right;
 
@@ -183,7 +183,7 @@ namespace jetpack {
         Directive();
 
         Sp<Expression> expression;
-        UString directive;
+        std::string directive;
 
     };
 
@@ -321,7 +321,7 @@ namespace jetpack {
     public:
         Identifier();
 
-        UString name;
+        std::string name;
 
     };
 
@@ -402,9 +402,9 @@ namespace jetpack {
 
         bool boolean_ = false;
         double double_ = 0;
-        UString str_;
+        std::string str_;
 
-        UString raw;
+        std::string raw;
 
     };
 
@@ -483,8 +483,8 @@ namespace jetpack {
     public:
         RegexLiteral();
 
-        UString value;
-        UString raw;
+        std::string value;
+        std::string raw;
 
     };
 
@@ -584,8 +584,8 @@ namespace jetpack {
     public:
         TemplateElement();
 
-        UString cooked;
-        UString raw;
+        std::string cooked;
+        std::string raw;
         bool tail = false;
 
     };
@@ -628,7 +628,7 @@ namespace jetpack {
     public:
         UnaryExpression();
 
-        UString operator_;
+        std::string operator_;
         Sp<Expression> argument;
         bool prefix = false;
 
@@ -638,7 +638,7 @@ namespace jetpack {
     public:
         UpdateExpression();
 
-        UString operator_;
+        std::string operator_;
         Sp<Expression> argument;
         bool prefix = false;
 
@@ -739,7 +739,7 @@ namespace jetpack {
     public:
         JSXIdentifier();
 
-        UString name;
+        std::string name;
 
     };
 
@@ -792,8 +792,8 @@ namespace jetpack {
     public:
         JSXText();
 
-        UString value;
-        UString raw;
+        std::string value;
+        std::string raw;
 
     };
 

@@ -9,30 +9,44 @@
 #include <cinttypes>
 #include "utils/Common.h"
 
-class StringWithMapping {
-public:
-    Sp<StringWithMapping> Make(std::string&& content);
+namespace jetpack {
 
-    StringWithMapping(std::string&& content);
+    class Scanner;
 
-    StringWithMapping(const StringWithMapping&) = delete;
-    StringWithMapping(StringWithMapping&&) = delete;
+    class StringWithMapping {
+    public:
+        static Sp<StringWithMapping> Make(std::string&& content);
 
-    StringWithMapping& operator=(const StringWithMapping&) = delete;
-    StringWithMapping& operator=(StringWithMapping&&) = delete;
+        StringWithMapping(std::string&& content);
 
-    [[nodiscard]]
-    inline const std::string& ConstData() const {
-        return data_;
-    }
+        StringWithMapping(const StringWithMapping&) = delete;
+        StringWithMapping(StringWithMapping&&) = delete;
 
-    inline std::string& Data() {
-        return data_;
-    }
+        StringWithMapping& operator=(const StringWithMapping&) = delete;
+        StringWithMapping& operator=(StringWithMapping&&) = delete;
 
-private:
-    std::string data_;
-    // utf8 index -> u16 index
-    std::vector<uint32_t> mapping_;
+        [[nodiscard]]
+        inline const std::string& ConstData() const {
+            return data_;
+        }
 
-};
+        inline std::string& Data() {
+            return data_;
+        }
+
+        [[nodiscard]]
+        inline std::string::size_type size() const {
+            return data_.size();
+        }
+
+        friend class Scanner;
+
+    private:
+        std::string data_;
+        // utf8 index -> u16 index
+        std::vector<uint32_t> mapping_;
+
+    };
+
+}
+

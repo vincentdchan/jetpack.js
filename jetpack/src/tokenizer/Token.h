@@ -138,12 +138,12 @@ namespace jetpack {
 
     const char *TokenTypeToCString(JsTokenType tt);
 
-    UStringView TokenTypeToLiteral(JsTokenType tt);
+    std::string_view TokenTypeToLiteral(JsTokenType tt);
 
     struct Token {
     public:
         JsTokenType type = JsTokenType::Invalid;
-        UString value;
+        std::string value;
         SourceLocation loc;
         uint32_t lineNumber = 0;
         uint32_t lineStart = 0;
@@ -151,7 +151,7 @@ namespace jetpack {
         bool octal = false;
         bool head = false;
         bool tail = false;
-        UString cooked;
+        std::string cooked;
 
     };
 

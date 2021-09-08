@@ -162,7 +162,7 @@ namespace jetpack::parser {
 
         FormalParameterOptions ParseFormalParameters(Scope& scope, std::optional<Token> first_restricted = std::nullopt);
         void ParseFormalParameter(Scope& scope, FormalParameterOptions& option);
-        void ValidateParam(FormalParameterOptions& option, const Token& param, const UString& name);
+        void ValidateParam(FormalParameterOptions& option, const Token& param, const std::string& name);
         bool IsStartOfExpression();
 
         Sp<RestElement> ParseRestElement(Scope& scope, std::vector<Token>& params);
@@ -245,7 +245,7 @@ namespace jetpack::parser {
 
         std::vector<Sp<MethodDefinition>> ParseClassElementList(Scope& scope);
 
-        bool IsPropertyKey(const Sp<SyntaxNode>& key, const UString& name);
+        bool IsPropertyKey(const Sp<SyntaxNode>& key, const std::string& name);
 
         Sp<ClassBody> ParseClassBody(Scope& scope);
 
@@ -290,7 +290,7 @@ namespace jetpack::parser {
     };
 
     inline bool Parser::MatchAsyncFunction() {
-        bool match = MatchContextualKeyword(u"async");
+        bool match = MatchContextualKeyword("async");
         if (match) {
             auto state = ctx->scanner_->SaveState();
             std::vector<Sp<Comment>> comments;
@@ -298,7 +298,7 @@ namespace jetpack::parser {
             Token next = ctx->scanner_->Lex();
             ctx->scanner_->RestoreState(state);
 
-            match = (state.line_number_ == next.lineNumber) && IsKeywordToken(next.type) && (next.value == u"function");
+            match = (state.line_number_ == next.lineNumber) && IsKeywordToken(next.type) && (next.value == "function");
         }
 
         return match;

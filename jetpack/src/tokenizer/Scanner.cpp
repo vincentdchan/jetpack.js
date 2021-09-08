@@ -15,7 +15,7 @@ namespace jetpack {
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-    Scanner::Scanner(const UString& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
+    Scanner::Scanner(const Sp<StringWithMapping>& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
             source_(source), error_handler_(std::move(error_handler)) {
 
     }
@@ -67,7 +67,7 @@ namespace jetpack {
                 loc.end = Position {line_number_, index_ - line_start_ - 1 };
                 auto comment = new Comment {
                         false,
-                        source_.substr(start + offset, index_ - start - offset),
+                        source_->ConstData().substr(start + offset, index_ - start - offset),
                         make_pair(start, index_ - 1),
                         loc
                 };
@@ -85,7 +85,7 @@ namespace jetpack {
         loc.end = Position {line_number_, index_ - line_start_ };
         auto comment = new Comment {
                 false,
-                source_.substr(start + offset, index_ - start - offset),
+                source_->ConstData().substr(start + offset, index_ - start - offset),
                 make_pair(start, index_),
                 loc,
         };
@@ -124,7 +124,7 @@ namespace jetpack {
                     };
                     auto comment = new Comment {
                             true,
-                            source_.substr(start + 2, index_ - start - 4),
+                            source_->ConstData().substr(start + 2, index_ - start - 4),
                             make_pair(start, index_),
                             loc,
                     };
@@ -144,7 +144,7 @@ namespace jetpack {
         };
         auto comment = new Comment {
                 true,
-                source_.substr(start + 2, index_ - start - 2),
+                source_->ConstData().substr(start + 2, index_ - start - 2),
                 make_pair(start, index_),
                 loc,
         };
@@ -193,7 +193,7 @@ namespace jetpack {
                         break;
                     }
                 } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
-                    if (source_.substr(index_ + 1, index_ + 4) == u"!--") {
+                    if (source_->ConstData().substr(index_ + 1, index_ + 4) == "!--") {
                         index_ += 4; // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
@@ -211,10 +211,10 @@ namespace jetpack {
     }
 
     char32_t Scanner::CodePointAt(uint32_t index, uint32_t* size) const {
-        char32_t cp = source_.at(index);
+        char32_t cp = source_->ConstData().at(index);
 
         if (cp >= 0xD800 && cp <= 0xDBFF) {
-            char32_t second = source_.at(index + 1);
+            char32_t second = source_->ConstData().at(index + 1);
             if (second >= 0xDC00 && second <= 0xDFFF) {
                 char32_t first = cp;
                 cp = (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
@@ -241,84 +241,84 @@ namespace jetpack {
                t == JsTokenType::K_Super;
     }
 
-    JsTokenType Scanner::IsStrictModeReservedWord(UStringView str_) {
-        if (str_ == UStr("implements")) return JsTokenType::KS_Implements;
-        if (str_ == UStr("interface")) return JsTokenType::KS_Interface;
-        if (str_ == UStr("package")) return JsTokenType::KS_Package;
-        if (str_ == UStr("private")) return JsTokenType::KS_Private;
-        if (str_ == UStr("protected")) return JsTokenType::KS_Protected;
-        if (str_ == UStr("public")) return JsTokenType::KS_Public;
-        if (str_ == UStr("static")) return JsTokenType::KS_Static;
-        if (str_ == UStr("yield")) return JsTokenType::K_Yield;
-        if (str_ == UStr("let")) return JsTokenType::K_Let;
+    JsTokenType Scanner::IsStrictModeReservedWord(std::string_view str_) {
+        if (str_ == "implements") return JsTokenType::KS_Implements;
+        if (str_ == "interface") return JsTokenType::KS_Interface;
+        if (str_ == "package") return JsTokenType::KS_Package;
+        if (str_ == "private") return JsTokenType::KS_Private;
+        if (str_ == "protected") return JsTokenType::KS_Protected;
+        if (str_ == "public") return JsTokenType::KS_Public;
+        if (str_ == "static") return JsTokenType::KS_Static;
+        if (str_ == "yield") return JsTokenType::K_Yield;
+        if (str_ == "let") return JsTokenType::K_Let;
         return JsTokenType::Invalid;
     }
 
-    bool Scanner::IsRestrictedWord(UStringView str_) {
-        MAYBE_WORD(UStr("eval"))
-        MAYBE_WORD(UStr("arguments"))
+    bool Scanner::IsRestrictedWord(std::string_view str_) {
+        MAYBE_WORD("eval")
+        MAYBE_WORD("arguments")
         return false;
     }
 
-    JsTokenType Scanner::ToKeyword(const UString &str_) {
+    JsTokenType Scanner::ToKeyword(const std::string &str_) {
         switch (str_.size()) {
             case 2:
-                if (str_ == UStr("if")) return JsTokenType::K_If;
-                if (str_ == UStr("in")) return JsTokenType::K_In;
-                if (str_ == UStr("do")) return JsTokenType::K_Do;
+                if (str_ == "if") return JsTokenType::K_If;
+                if (str_ == "in") return JsTokenType::K_In;
+                if (str_ == "do") return JsTokenType::K_Do;
                 return JsTokenType::Invalid;
 
             case 3:
-                if (str_ == UStr("var")) return JsTokenType::K_Var;
-                if (str_ == UStr("for")) return JsTokenType::K_For;
-                if (str_ == UStr("new")) return JsTokenType::K_New;
-                if (str_ == UStr("try")) return JsTokenType::K_Try;
-                if (str_ == UStr("let")) return JsTokenType::K_Let;
+                if (str_ == "var") return JsTokenType::K_Var;
+                if (str_ == "for") return JsTokenType::K_For;
+                if (str_ == "new") return JsTokenType::K_New;
+                if (str_ == "try") return JsTokenType::K_Try;
+                if (str_ == "let") return JsTokenType::K_Let;
                 return JsTokenType::Invalid;
 
             case 4:
-                if (str_ == UStr("this")) return JsTokenType::K_This;
-                if (str_ == UStr("else")) return JsTokenType::K_Else;
-                if (str_ == UStr("case")) return JsTokenType::K_Case;
-                if (str_ == UStr("void")) return JsTokenType::K_Void;
-                if (str_ == UStr("with")) return JsTokenType::K_With;
-                if (str_ == UStr("enum")) return JsTokenType::K_Enum;
+                if (str_ == "this") return JsTokenType::K_This;
+                if (str_ == "else") return JsTokenType::K_Else;
+                if (str_ == "case") return JsTokenType::K_Case;
+                if (str_ == "void") return JsTokenType::K_Void;
+                if (str_ == "with") return JsTokenType::K_With;
+                if (str_ == "enum") return JsTokenType::K_Enum;
                 return JsTokenType::Invalid;
 
             case 5:
-                if (str_ == UStr("while")) return JsTokenType::K_While;
-                if (str_ == UStr("break")) return JsTokenType::K_Break;
-                if (str_ == UStr("catch")) return JsTokenType::K_Catch;
-                if (str_ == UStr("throw")) return JsTokenType::K_Throw;
-                if (str_ == UStr("const")) return JsTokenType::K_Const;
-                if (str_ == UStr("yield")) return JsTokenType::K_Yield;
-                if (str_ == UStr("class")) return JsTokenType::K_Class;
-                if (str_ == UStr("super")) return JsTokenType::K_Super;
+                if (str_ == "while") return JsTokenType::K_While;
+                if (str_ == "break") return JsTokenType::K_Break;
+                if (str_ == "catch") return JsTokenType::K_Catch;
+                if (str_ == "throw") return JsTokenType::K_Throw;
+                if (str_ == "const") return JsTokenType::K_Const;
+                if (str_ == "yield") return JsTokenType::K_Yield;
+                if (str_ == "class") return JsTokenType::K_Class;
+                if (str_ == "super") return JsTokenType::K_Super;
                 return JsTokenType::Invalid;
 
             case 6:
-                if (str_ == UStr("return")) return JsTokenType::K_Return;
-                if (str_ == UStr("typeof")) return JsTokenType::K_Typeof;
-                if (str_ == UStr("delete")) return JsTokenType::K_Delete;
-                if (str_ == UStr("switch")) return JsTokenType::K_Switch;
-                if (str_ == UStr("export")) return JsTokenType::K_Export;
-                if (str_ == UStr("import")) return JsTokenType::K_Import;
+                if (str_ == "return") return JsTokenType::K_Return;
+                if (str_ == "typeof") return JsTokenType::K_Typeof;
+                if (str_ == "delete") return JsTokenType::K_Delete;
+                if (str_ == "switch") return JsTokenType::K_Switch;
+                if (str_ == "export") return JsTokenType::K_Export;
+                if (str_ == "import") return JsTokenType::K_Import;
                 return JsTokenType::Invalid;
 
             case 7:
-                if (str_ == UStr("default")) return JsTokenType::K_Default;
-                if (str_ == UStr("finally")) return JsTokenType::K_Finally;
-                if (str_ == UStr("extends")) return JsTokenType::K_Extends;
+                if (str_ == "default") return JsTokenType::K_Default;
+                if (str_ == "finally") return JsTokenType::K_Finally;
+                if (str_ == "extends") return JsTokenType::K_Extends;
                 return JsTokenType::Invalid;
 
             case 8:
-                if (str_ == UStr("function")) return JsTokenType::K_Function;
-                if (str_ == UStr("continue")) return JsTokenType::K_Continue;
-                if (str_ == UStr("debugger")) return JsTokenType::K_Debugger;
+                if (str_ == "function") return JsTokenType::K_Function;
+                if (str_ == "continue") return JsTokenType::K_Continue;
+                if (str_ == "debugger") return JsTokenType::K_Debugger;
                 return JsTokenType::Invalid;
 
             case 10:
-                if (str_ == UStr("instanceof")) return JsTokenType::K_Instanceof;
+                if (str_ == "instanceof") return JsTokenType::K_Instanceof;
                 return JsTokenType::Invalid;
 
             default:
@@ -350,7 +350,7 @@ namespace jetpack {
     }
 
     char32_t Scanner::ScanUnicodeCodePointEscape() {
-        char16_t ch = source_.at(index_);
+        char16_t ch = source_->ConstData().at(index_);
         char32_t code = 0;
 
         if (ch == '}') {
@@ -358,7 +358,7 @@ namespace jetpack {
         }
 
         while (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = source_->ConstData().at(index_++);
             if (!UChar::IsHexDigit(ch)) {
                 break;
             }
@@ -372,12 +372,12 @@ namespace jetpack {
         return code;
     }
 
-    UString Scanner::GetIdentifier() {
+    std::string Scanner::GetIdentifier() {
         uint32_t start = index_++;
-        UString result;
+        std::string result;
 
         while (!IsEnd()) {
-            auto ch = source_.at(index_);
+            auto ch = source_->ConstData().at(index_);
             if (ch == 0x5C) {
                 // Blackslash (U+005C) marks Unicode escape sequence.
                 index_ = start;
@@ -394,16 +394,16 @@ namespace jetpack {
             }
         }
 
-        result.append(source_.substr(start, index_ - start));
+        result.append(source_->ConstData().substr(start, index_ - start));
         return result;
     }
 
-    UString Scanner::GetComplexIdentifier() {
+    std::string Scanner::GetComplexIdentifier() {
         uint32_t cp_size_;
         auto cp = CodePointAt(index_, &cp_size_);
         index_ += cp_size_;
 
-        UString result;
+        std::string result;
 
         // '\u' (U+005C, U+0075) denotes an escaped character.
         char32_t ch = 0;
@@ -429,7 +429,7 @@ namespace jetpack {
                 break;
             }
 
-            UString ch_ = UStringFromCodePoint(cp);
+            std::string ch_ = StringFromCodePoint(cp);
 
             result.append(ch_);
 
@@ -439,7 +439,7 @@ namespace jetpack {
             // '\u' (U+005C, U+0075) denotes an escaped character.
             if (cp == 0x5C) {
                 result = result.substr(0, result.size() - 1);
-                if (source_.at(index_) != 0x75) {
+                if (source_->ConstData().at(index_) != 0x75) {
                     ThrowUnexpectedToken();
                 }
                 ++index_;
@@ -462,14 +462,14 @@ namespace jetpack {
         bool octal = (ch != '0');
         result = ch - '0';
 
-        if (!IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
+        if (!IsEnd() && UChar::IsOctalDigit(source_->ConstData().at(index_))) {
             octal = true;
-            result = result * 8 + (source_.at(index_) - u'0');
+            result = result * 8 + (source_->ConstData().at(index_) - u'0');
 
             // 3 digits are only allowed when string starts
             // with 0, 1, 2, 3
-            if (ch - u'0' && !IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
-                result = result * 8 + (source_.at(index_) - '0');
+            if (ch - u'0' && !IsEnd() && UChar::IsOctalDigit(source_->ConstData().at(index_))) {
+                result = result * 8 + (source_->ConstData().at(index_) - '0');
             }
         }
 
@@ -480,8 +480,8 @@ namespace jetpack {
         auto start = index_;
         Token tok;
 
-        UString id;
-        if (source_.at(start) == 0x5C) {
+        std::string id;
+        if (source_->ConstData().at(start) == 0x5C) {
             id = GetComplexIdentifier();
         } else {
             id = GetIdentifier();
@@ -491,11 +491,11 @@ namespace jetpack {
             tok.type = JsTokenType::Identifier;
         } else if ((tok.type = ToKeyword(id)) != JsTokenType::Invalid) {
             // nothing
-        } else if (id == u"null") {
+        } else if (id == "null") {
             tok.type = JsTokenType::NullLiteral;
-        } else if (id == u"true") {
+        } else if (id == "true") {
             tok.type = JsTokenType::TrueLiteral;
-        } else if (id == u"false") {
+        } else if (id == "false") {
             tok.type = JsTokenType::FalseLiteral;
         } else {
             tok.type = JsTokenType::Identifier;
@@ -519,7 +519,7 @@ namespace jetpack {
     Token Scanner::ScanPunctuator() {
         auto start = index_;
 
-        char16_t ch = source_.at(index_);
+        char16_t ch = source_->ConstData().at(index_);
 
         JsTokenType t;
         switch (ch) {
@@ -774,7 +774,7 @@ namespace jetpack {
 
         return {
                 t,
-                UString(),
+                string(),
                 SourceLocation(),
                 line_number_,
                 line_start_,
@@ -783,7 +783,7 @@ namespace jetpack {
     }
 
     Token Scanner::ScanHexLiteral(uint32_t start) {
-        UString num;
+        std::string num;
         Token tok;
 
         while (!IsEnd()) {
@@ -802,7 +802,7 @@ namespace jetpack {
         }
 
         tok.type = JsTokenType::NumericLiteral;
-        tok.value = UString(u"0x") + num;
+        tok.value = "0x" + num;
         tok.lineStart = line_start_;
         tok.lineNumber = line_number_;
         tok.range = make_pair(start, index_);
@@ -811,15 +811,15 @@ namespace jetpack {
     }
 
     Token Scanner::ScanBinaryLiteral(uint32_t start) {
-        UString num;
+        std::string num;
         char16_t ch;
 
         while (!IsEnd()) {
-            ch = source_.at(index_);
+            ch = source_->ConstData().at(index_);
             if (ch != '0' && ch != '1') {
                 break;
             }
-            num.push_back(source_.at(index_++));
+            num.push_back(source_->ConstData().at(index_++));
         }
 
         if (num.empty()) {
@@ -828,7 +828,7 @@ namespace jetpack {
         }
 
         if (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = source_->ConstData().at(index_++);
             /* istanbul ignore else */
             if (UChar::IsIdentifierStart(ch) || UChar::IsDecimalDigit(ch)) {
                 ThrowUnexpectedToken();
@@ -846,21 +846,21 @@ namespace jetpack {
     }
 
     Token Scanner::ScanOctalLiteral(char16_t prefix, uint32_t start) {
-        UString num;
+        std::string num;
         bool octal = false;
 
         if (UChar::IsOctalDigit(prefix)) {
             octal = true;
-            num = u'0' + source_.at(index_++);
+            num = "0" + source_->ConstData().at(index_++);
         } else {
             ++index_;
         }
 
         while (!IsEnd()) {
-            if (!UChar::IsOctalDigit(source_.at(index_))) {
+            if (!UChar::IsOctalDigit(source_->ConstData().at(index_))) {
                 break;
             }
-            num.push_back(source_.at(index_++));
+            num.push_back(source_->ConstData().at(index_++));
         }
 
         if (!octal && num.size() == 0) {
@@ -868,7 +868,7 @@ namespace jetpack {
             ThrowUnexpectedToken();
         }
 
-        if (UChar::IsIdentifierStart(source_.at(index_)) || UChar::IsDecimalDigit(source_.at(index_))) {
+        if (UChar::IsIdentifierStart(source_->ConstData().at(index_)) || UChar::IsDecimalDigit(source_->ConstData().at(index_))) {
             ThrowUnexpectedToken();
         }
 
@@ -886,7 +886,7 @@ namespace jetpack {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
         for (uint32_t i = index_ + 1; i < Length(); ++i) {
-            char16_t ch = source_.at(i);
+            char16_t ch = source_->ConstData().at(i);
             if (ch == u'8' || ch == u'9') {
                 return false;
             }
@@ -906,7 +906,7 @@ namespace jetpack {
             throw err;
         }
 
-        UString num;
+        std::string num;
         if (ch != '.') {
             num.push_back(CharAt(index_++));
             ch = CharAt(index_);
@@ -991,7 +991,7 @@ namespace jetpack {
 
         ++index_;
         bool octal = false;
-        UString str;
+        std::string str;
 
         while (!IsEnd()) {
             char16_t ch = CharAt(index_++);
@@ -1009,13 +1009,13 @@ namespace jetpack {
                                 ++index_;
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                str.append(UStringFromUtf32(&tmp, 1));
+                                str.append(StringFromUtf32(&tmp, 1));
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                str.append(UStringFromUtf32(&unescaped, 1));
+                                str.append(StringFromUtf32(&unescaped, 1));
                             }
                             break;
 
@@ -1023,7 +1023,7 @@ namespace jetpack {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            str.append(UStringFromUtf32(&unescaped, 1));
+                            str.append(StringFromUtf32(&unescaped, 1));
                             break;
 
                         case 'n':
@@ -1055,7 +1055,7 @@ namespace jetpack {
                                 uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                str.append(UStringFromUtf32(&unescaped, 1));
+                                str.append(StringFromUtf32(&unescaped, 1));
                             } else {
                                 str += ch;
                             }
@@ -1092,25 +1092,25 @@ namespace jetpack {
     }
 
     Token Scanner::ScanTemplate() {
-        UString cooked;
+        std::string cooked;
         bool terminated = false;
         uint32_t start = index_;
 
-        bool head = (source_.at(start) == '`');
+        bool head = (source_->ConstData().at(start) == '`');
         bool tail = false;
         uint32_t rawOffset = 2;
 
         ++index_;
 
         while (!IsEnd()) {
-            char16_t ch = source_.at(index_++);
+            char16_t ch = source_->ConstData().at(index_++);
             if (ch == '`') {
                 rawOffset = 1;
                 tail = true;
                 terminated = true;
                 break;
             } else if (ch == '$') {
-                if (source_.at(index_)== '{') {
+                if (source_->ConstData().at(index_)== '{') {
                     curly_stack_.push(u"${");
                     ++index_;
                     terminated = true;
@@ -1118,7 +1118,7 @@ namespace jetpack {
                 }
                 cooked.push_back(ch);
             } else if (ch == '\\') {
-                ch = source_.at(index_++);
+                ch = source_->ConstData().at(index_++);
                 if (!UChar::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
@@ -1131,7 +1131,7 @@ namespace jetpack {
                             cooked.push_back('\t');
                             break;
                         case 'u':
-                            if (source_.at(index_) == '{') {
+                            if (source_->ConstData().at(index_) == '{') {
                                 ++index_;
                                 char16_t tmp = ScanUnicodeCodePointEscape();
                                 cooked.push_back(tmp);
@@ -1207,7 +1207,7 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_.substr(start + 1, index_ - rawOffset);
+        tok.value = source_->ConstData().substr(start + 1, index_ - rawOffset);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
         tok.range = make_pair(start, index_);
@@ -1218,19 +1218,19 @@ namespace jetpack {
         return tok;
     }
 
-    UString Scanner::ScanRegExpBody() {
-        char16_t ch = source_.at(index_);
+    std::string Scanner::ScanRegExpBody() {
+        char16_t ch = source_->ConstData().at(index_);
         if (ch != u'/') {
             ThrowUnexpectedToken("Regular expression literal must start with a slash");
         }
 
-        UString str;
-        str.push_back(source_.at(index_++));
+        std::string str;
+        str.push_back(source_->ConstData().at(index_++));
         bool class_marker = false;
         bool terminated = false;
 
         while (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = source_->ConstData().at(index_++);
             str.push_back(ch);
             if (ch == u'\\') {
                 ch = CharAt(index_++);
@@ -1261,11 +1261,11 @@ namespace jetpack {
         return str.substr(1, str.size() - 2);
     }
 
-    UString Scanner::ScanRegExpFlags() {
-        UString str;
-        UString flags;
+    std::string Scanner::ScanRegExpFlags() {
+        std::string str;
+        std::string flags;
         while (!IsEnd()) {
-            char16_t ch = source_.at(index_);
+            char16_t ch = source_->ConstData().at(index_);
             if (!UChar::IsIdentifierPart(ch)) {
                 break;
             }
@@ -1279,17 +1279,17 @@ namespace jetpack {
                     char32_t char_;
                     if (ScanHexEscape(u'u', char_)) {
                         flags.push_back(char_);
-                        for (str += u"\\u"; restore < index_; ++ restore) {
+                        for (str += "\\u"; restore < index_; ++ restore) {
                             str.push_back(CharAt(restore));
                         }
                     } else {
                         index_ = restore;
-                        flags += u"u";
-                        str += u"\\u";
+                        flags += "u";
+                        str += "\\u";
                     }
                     TolerateUnexpectedToken();
                 } else {
-                    str += u"\\";
+                    str += "\\";
                     TolerateUnexpectedToken();
                 }
             } else {
@@ -1311,7 +1311,7 @@ namespace jetpack {
         token.type = JsTokenType::RegularExpression;
         token.lineNumber = line_number_;
         token.lineStart = line_start_;
-        token.value = UString(u"/") + pattern + u"/" + flags;
+        token.value = "/" + pattern + "/" + flags;
 
         return token;
     }
@@ -1326,7 +1326,7 @@ namespace jetpack {
             return tok;
         }
 
-        char16_t cp = source_.at(index_);
+        char16_t cp = source_->ConstData().at(index_);
 
         if (UChar::IsIdentifierStart(cp)) {
             return ScanIdentifier();

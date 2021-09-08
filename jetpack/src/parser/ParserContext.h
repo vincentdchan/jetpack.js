@@ -41,7 +41,7 @@ namespace jetpack::parser {
             uint32_t column = 0;
         };
 
-        ParserContext(int32_t fileId, UString&& src, const Config& config);
+        ParserContext(int32_t fileId, std::string&& src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;
 
@@ -53,7 +53,7 @@ namespace jetpack::parser {
         std::unique_ptr<Scanner> scanner_;
 
         Sp<ParseErrorHandler>    error_handler_;
-        UString                  source_;
+        Sp<StringWithMapping>    source_;
         bool                     has_line_terminator_;
 
         std::stack<Token>        tokens_;
@@ -77,7 +77,7 @@ namespace jetpack::parser {
         int32_t fileIndex;
 
         std::optional<Token> first_cover_initialized_name_error_;
-        std::unique_ptr<std::unordered_set<UString>> label_set_;
+        std::unique_ptr<HashSet<std::string>> label_set_;
 
     };
 

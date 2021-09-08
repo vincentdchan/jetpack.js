@@ -6,8 +6,8 @@
 #include "UString.h"
 
 
-UString UStringFromCodePoint(char32_t cp) {
-    UString result;
+std::string StringFromCodePoint(char32_t cp) {
+    std::string result;
     if (cp < 0x10000) {
         result.push_back(static_cast<char16_t>(cp));
     } else {
@@ -21,8 +21,8 @@ UString UStringFromUtf8(const char* content, std::size_t size) {
     return boost::locale::conv::utf_to_utf<char16_t>(content, content + size);
 }
 
-UString UStringFromUtf32(const char32_t* content, std::size_t size) {
-    return boost::locale::conv::utf_to_utf<char16_t>(content, content + size);
+std::string StringFromUtf32(const char32_t* content, std::size_t size) {
+    return boost::locale::conv::utf_to_utf<char>(content, content + size);
 }
 
 std::string UStringToUtf8(const UString& str) {

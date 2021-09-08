@@ -11,10 +11,9 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline Sp<Module> ParseString(const std::string& src) {
-    auto u16src = UStringFromUtf8(src.c_str(), src.size());
+inline Sp<Module> ParseString(std::string&& src) {
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(u16src), config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(src), config);
     Parser parser(ctx);
     return parser.ParseModule();
 }
@@ -23,11 +22,11 @@ inline std::string GenCode(Sp<Module>& mod) {
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return UStringToUtf8(codegen.GetResult().content);
+    return codegen.GetResult().content;
 }
 
 TEST(Scope, Collect) {
-    UString content(u"var name = 3;");
+    std::string content("var name = 3;");
 
     ParserContext::Config config = ParserContext::Config::Default();
     auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
@@ -37,37 +36,33 @@ TEST(Scope, Collect) {
     mod->scope->ResolveAllSymbols(nullptr);
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") != mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find("name") != mod->scope->own_variables.end());
 }
 
 TEST(Scope, Rename) {
-    std::string src = "var name = 3;\n";
-
-    auto mod = ParseString(src);
+    auto mod = ParseString("var name = 3;\n");
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"new_name");
+    changeset.emplace_back("name", "new_name");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find("name") == mod->scope->own_variables.end());
 
     EXPECT_EQ(GenCode(mod), "var new_name = 3;\n");
 }
 
 TEST(Scope, RenameImportNamespace) {
-    std::string src = "import * as name from 'main';\n";
-
-    auto mod = ParseString(src);
+    auto mod = ParseString("import * as name from 'main';\n");
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"new_name");
+    changeset.emplace_back("name", "new_name");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(mod->scope->own_variables.size(), 1);
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find("name") == mod->scope->own_variables.end());
 
     EXPECT_EQ(GenCode(mod), "import * as new_name from 'main';\n");
 }
@@ -83,14 +78,14 @@ TEST(Scope, RenameFunction1) {
                            "  console.log(new_name);\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"new_name");
+    changeset.emplace_back("name", "new_name");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
-    EXPECT_TRUE(mod->scope->own_variables.find(u"name") == mod->scope->own_variables.end());
+    EXPECT_TRUE(mod->scope->own_variables.find("name") == mod->scope->own_variables.end());
 
     EXPECT_EQ(GenCode(mod), expected);
 }
@@ -106,11 +101,11 @@ TEST(Scope, RenameFunction2) {
                            "  console.log(name);\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"ok", u"ok1");
+    changeset.emplace_back("ok", "ok1");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -127,11 +122,11 @@ TEST(Scope, RenameFunction3) {
                            "  console.log(name);\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"rename");
+    changeset.emplace_back("name", "rename");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -142,11 +137,11 @@ TEST(Scope, RenameObjectPattern) {
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"other", u"renamed");
+    changeset.emplace_back("other", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -157,11 +152,11 @@ TEST(Scope, RenameObjectPattern2) {
 
     std::string expected = "var { name: other } = obj;\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"ok1");
+    changeset.emplace_back("name", "ok1");
     EXPECT_FALSE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -172,11 +167,11 @@ TEST(Scope, RenameObjectPattern3) {
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"renamed");
+    changeset.emplace_back("name", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -197,11 +192,11 @@ TEST(Scope, Cls) {
                            "  }\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"print", u"renamed");
+    changeset.emplace_back("print", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -212,11 +207,11 @@ TEST(Scope, RenameImport) {
 
     std::string expected = "import { name as renamed } from 'main';\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"renamed");
+    changeset.emplace_back("name", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -229,11 +224,11 @@ TEST(Scope, RenameImport3) {
                       "\n"
                       "export default a + 3 + b + fun();";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"a", u"p");
+    changeset.emplace_back("a", "p");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_GT(mod->body.size(), 0);
@@ -243,7 +238,7 @@ TEST(Scope, RenameImport3) {
     auto first_spec = std::dynamic_pointer_cast<ImportSpecifier>(import_decl->specifiers[0]);
     EXPECT_NE(import_decl, nullptr);
 
-    EXPECT_EQ(first_spec->local->name, u"p");
+    EXPECT_EQ(first_spec->local->name, "p");
 }
 
 TEST(Scope, RenameImportDefault) {
@@ -251,11 +246,11 @@ TEST(Scope, RenameImportDefault) {
 
     std::string expected = "import Angular from 'react';\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"React", u"Angular");
+    changeset.emplace_back("React", "Angular");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -268,11 +263,11 @@ TEST(Scope, RenameImport2) {
     std::string expected = "import { cc as renamed } from 'main';\n"
                            "console.log(renamed);\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"renamed");
+    changeset.emplace_back("name", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -285,11 +280,11 @@ TEST(Scope, RenameExport1) {
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as foo };\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"renamed");
+    changeset.emplace_back("name", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);
@@ -302,11 +297,11 @@ TEST(Scope, RenameExport2) {
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as name };\n";
 
-    auto mod = ParseString(src);
+    auto mod = ParseString(std::move(src));
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
-    changeset.emplace_back(u"name", u"renamed");
+    changeset.emplace_back("name", "renamed");
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_EQ(GenCode(mod), expected);

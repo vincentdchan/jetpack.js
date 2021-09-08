@@ -7,22 +7,18 @@
 
 namespace jetpack {
 
-    inline Sp<Identifier> MakeId(const UString& content) {
+    inline Sp<Identifier> MakeId(const std::string& content) {
         auto id = std::make_shared<Identifier>();
         id->location.fileId = -2;
         id->name = content;
         return id;
     }
 
-    inline Sp<Identifier> MakeId(const std::string& content) {
-        return MakeId(UStringFromUtf8(content.c_str(), content.size()));
-    }
-
-    inline Sp<Literal> MakeStringLiteral(const UString& str) {
+    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::String;
         lit->str_ = str;
-        lit->raw = u"\"" + str + u"\"";
+        lit->raw = "\"" + str + "\"";
         return lit;
     }
 
@@ -151,7 +147,7 @@ namespace jetpack {
                     import_decl->specifiers.push_back(std::move(default_spec));
                 }
 
-                HashSet<UString> visited_names;
+                HashSet<std::string> visited_names;
 
                 for (auto& name : import_info->names) {
                     if (visited_names.find(name) != visited_names.end()) {

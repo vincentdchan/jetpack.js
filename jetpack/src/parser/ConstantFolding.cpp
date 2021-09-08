@@ -9,19 +9,18 @@
 
 namespace jetpack {
 
-    inline Sp<Literal> MakeStringLiteral(const UString& str) {
+    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::String;
         lit->str_ = str;
-        lit->raw.append(u"\"").append(str).append(u"\"");
+        lit->raw = "\"" + str + "\"";
         return lit;
     }
 
     inline Sp<Literal> MakeIntLiteral(std::int32_t tmp) {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::Double;
-        std::string utf8 = std::to_string(tmp);
-        lit->str_ = UStringFromUtf8(utf8.c_str(), utf8.size());
+        lit->str_ = std::to_string(tmp);
         lit->raw = lit->str_;
         return lit;
     }
@@ -40,22 +39,22 @@ namespace jetpack {
             auto left_lit = std::dynamic_pointer_cast<Literal>(binary->left);
             auto right_lit = std::dynamic_pointer_cast<Literal>(binary->right);
 
-            if (binary->operator_ == u"+" && left_lit->ty == Literal::Ty::String && right_lit->ty == Literal::Ty::String) {
-                UString result = left_lit->str_ + right_lit->str_;
+            if (binary->operator_ == "+" && left_lit->ty == Literal::Ty::String && right_lit->ty == Literal::Ty::String) {
+                std::string result = left_lit->str_ + right_lit->str_;
                 return MakeStringLiteral(result);
             } else if (left_lit->ty == Literal::Ty::Double && right_lit->ty == Literal::Ty::Double) {
                 int32_t left_int, right_int;
                 try {
-                    left_int = boost::lexical_cast<int32_t>(UStringToUtf8(left_lit->str_));
-                    right_int = boost::lexical_cast<int32_t>(UStringToUtf8(right_lit->str_));
+                    left_int = boost::lexical_cast<int32_t>(left_lit->str_);
+                    right_int = boost::lexical_cast<int32_t>(right_lit->str_);
                 } catch (const boost::bad_lexical_cast& ex) {
                     return binary;
                 }
 
                 int64_t tmp_result = 0;
-                if (binary->operator_ == u"+") {
+                if (binary->operator_ == "+") {
                     tmp_result = left_int + right_int;
-                } else if (binary->operator_ == u"-") {
+                } else if (binary->operator_ == "-") {
                     tmp_result = left_int - right_int;
                 } else {
                     return binary;

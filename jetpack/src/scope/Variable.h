@@ -41,12 +41,12 @@ namespace jetpack {
 //        bool is_mutated = false;
         Scope* scope = nullptr;
 
-        UString name;
+        std::string name;
 
         /**
          * for imported and exported variable
          */
-        UString external_name;
+        std::string external_name;
 
         std::vector<std::shared_ptr<Identifier>> identifiers;
 

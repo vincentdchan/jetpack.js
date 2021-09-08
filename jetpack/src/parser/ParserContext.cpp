@@ -19,10 +19,11 @@ namespace jetpack::parser {
         };
     }
 
-    ParserContext::ParserContext(int32_t fileId, UString&& src, const Config& config):
-        fileIndex(fileId), config_(config), source_(std::move(src)) {
+    ParserContext::ParserContext(int32_t fileId, std::string&& src, const Config& config):
+        fileIndex(fileId), config_(config) {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
+        source_ = StringWithMapping::Make(std::move(src));
         scanner_ = make_unique<Scanner>(source_, error_handler_);
         has_line_terminator_ = false;
 
@@ -43,7 +44,7 @@ namespace jetpack::parser {
         in_switch_ = false;
         strict_ = false;
 
-        label_set_ = std::make_unique<std::unordered_set<UString>>();
+        label_set_ = std::make_unique<HashSet<std::string>>();
     }
 
 }

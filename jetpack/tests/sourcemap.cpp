@@ -16,7 +16,7 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
+inline std::string ParseAndGenSourceMap(const std::string& content, bool print) {
     auto resolver = std::make_shared<ModuleResolver>();
     ParserContext::Config config = ParserContext::Config::Default();
     resolver->BeginFromEntryString(config, content);
@@ -36,7 +36,7 @@ inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
     auto composition = compositor.Finalize();
 
     if (print) {
-        std::cout << "gen: " << std::endl << UStringToUtf8(composition) << std::endl;
+        std::cout << "gen: " << std::endl << composition << std::endl;
     }
 
     return sourceMapGenerator.ToPrettyString();
@@ -62,12 +62,12 @@ TEST(SourceMap, VLQEncoding) {
 }
 
 TEST(SourceMap, Simple) {
-    UString src(u""
+    std::string src(""
                 "function main() {\n"
                 "    console.log('hello world');\n"
                 "}\n"
     );
-    auto result = ParseAndGenSourceMap(src, true);
+    auto result = ParseAndGenSourceMap(std::move(src), true);
 
     std::cout << result << std::endl;
     auto resultJson = nlohmann::json::parse(result);

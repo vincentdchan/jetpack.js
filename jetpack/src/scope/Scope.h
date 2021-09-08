@@ -64,7 +64,7 @@ namespace jetpack {
             return type == ScopeType::Module;
         }
 
-        virtual PVar RecursivelyFindVariable(const UString& var_name);
+        virtual PVar RecursivelyFindVariable(const std::string& var_name);
 
         virtual PVar CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind);
 
@@ -74,7 +74,7 @@ namespace jetpack {
 
         void SetParent(Scope* parent_);
 
-        inline bool RemoveVariable(const UString& name) {
+        inline bool RemoveVariable(const std::string& name) {
             auto iter = own_variables.find(name);
             if (iter == own_variables.end()) {
                 return false;
@@ -92,11 +92,11 @@ namespace jetpack {
          */
         void ResolveAllSymbols(std::vector<std::shared_ptr<Identifier>>* unresolve_collector);
 
-        virtual bool BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset);
+        virtual bool BatchRenameSymbols(const std::vector<std::tuple<std::string, std::string>>& changeset);
 
         virtual ~Scope() = default;
 
-        HashMap<UString, PVar> own_variables;
+        HashMap<std::string, PVar> own_variables;
 
         std::vector<Scope*> children;
 
@@ -106,7 +106,7 @@ namespace jetpack {
         /**
          * log identifier when parsing
          */
-        std::list<std::shared_ptr<Identifier>> unresolved_id;
+        std::list<Sp<Identifier>> unresolved_id;
 
     };
 
@@ -130,7 +130,7 @@ namespace jetpack {
      */
     class ModuleScope : public Scope {
     public:
-        using ChangeSet = std::vector<std::tuple<UString, UString>>;
+        using ChangeSet = std::vector<std::tuple<std::string, std::string>>;
 
         ModuleScope();
 
@@ -144,7 +144,7 @@ namespace jetpack {
     class VariableExistsError : public std::exception {
     public:
         std::shared_ptr<Identifier> exist_var;
-        UString name;
+        std::string name;
 
     };
 

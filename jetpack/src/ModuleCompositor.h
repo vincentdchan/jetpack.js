@@ -20,19 +20,19 @@ namespace jetpack {
         explicit ModuleCompositor(SourceMapGenerator& sg): sourceMapGenerator(sg) {}
 
         ModuleCompositor& append(
-                const UString& content,
+                const std::string& content,
                 Sp<MappingCollector> mappingCollector
                 );
 
         [[nodiscard]]
-        inline UString Finalize() const {
+        inline std::string Finalize() const {
             sourceMapGenerator.Finalize();
             return result;
         }
 
     private:
         SourceMapGenerator& sourceMapGenerator;
-        UString result;
+        std::string result;
         uint32_t line = 0;  // start from 0
         uint32_t column = 0;
 

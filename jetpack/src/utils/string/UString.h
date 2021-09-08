@@ -20,12 +20,12 @@ using UStringView = std::u16string_view;
 
 #define UStr(STR) (UStringView(u"" STR, sizeof(u"" STR) / sizeof(char16_t) - 1))
 
-UString UStringFromCodePoint(char32_t cp);
+std::string StringFromCodePoint(char32_t cp);
 UString UStringFromUtf8(const char* content, std::size_t size);
 inline UString UStringFromStdString(const std::string& str) {
     return UStringFromUtf8(str.c_str(), str.size());
 }
-UString UStringFromUtf32(const char32_t* content, std::size_t size);
+std::string StringFromUtf32(const char32_t* content, std::size_t size);
 std::string UStringToUtf8(const UString& str);
 
 //namespace std {
