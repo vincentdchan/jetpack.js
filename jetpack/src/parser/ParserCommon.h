@@ -86,7 +86,7 @@ namespace jetpack::parser {
 
         inline ParserContext::Marker CreateStartMarker() {
             return {
-                ctx->start_marker_.index,
+                ctx->start_marker_.cursor,
                 ctx->start_marker_.line,
                 ctx->start_marker_.column
             };
@@ -157,7 +157,7 @@ namespace jetpack::parser {
         template<typename T>
         typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
         Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
-            from->range = std::make_pair(marker.index, LastMarker().index);
+            from->range = std::make_pair(marker.cursor.u8, LastMarker().cursor.u8);
 
             from->location.fileId = ctx->fileIndex;
 

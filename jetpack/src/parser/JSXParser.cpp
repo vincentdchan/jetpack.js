@@ -459,7 +459,7 @@ namespace jetpack::parser {
                 node->value = token.value;
                 result.push_back(Finalize(start_marker, node));
             }
-            if (ctx->scanner_->CharAt(ctx->scanner_->Index()) == u'{') {
+            if (ctx->scanner_->CharAt(ctx->scanner_->Index().u8) == u'{') {
                 auto container = ParseJSXExpressionContainer(scope);
                 result.push_back(container);
             } else {
@@ -490,9 +490,9 @@ namespace jetpack::parser {
     }
 
     void JSXParser::StartJSX() {
-        ctx->scanner_->SetIndex(StartMarker().index);
+        ctx->scanner_->SetIndex(StartMarker().cursor);
         ctx->scanner_->SetLineNumber(StartMarker().line);
-        ctx->scanner_->SetLineStart(StartMarker().index - StartMarker().column);
+        ctx->scanner_->SetLineStart(StartMarker().cursor.u16 - StartMarker().column);
     }
 
     void JSXParser::FinishJSX() {
@@ -512,7 +512,7 @@ namespace jetpack::parser {
         SetStartMarker({
             scanner.Index(),
             scanner.LineNumber(),
-            scanner.Index() - scanner.LineStart(),
+            scanner.Index().u16 - scanner.LineStart(),
         });
 
         Token token = LexJSX();
@@ -520,7 +520,7 @@ namespace jetpack::parser {
         SetLastMarker({
             scanner.Index(),
             scanner.LineNumber(),
-            scanner.Index() - scanner.LineStart(),
+            scanner.Index().u16 - scanner.LineStart(),
         });
 
         return token;
@@ -532,14 +532,14 @@ namespace jetpack::parser {
         SetStartMarker({
             scanner.Index(),
             scanner.LineNumber(),
-            scanner.Index() - scanner.LineStart(),
+            scanner.Index().u16 - scanner.LineStart(),
         });
 
         auto start = scanner.Index();
 
         std::string text;
         while (!scanner.IsEnd()) {
-            char16_t ch = scanner.CharAt(scanner.Index());
+            char ch = scanner.CharAt(scanner.Index().u8);
             if (ch == u'{' || ch == u'<') {
                 break;
             }
@@ -547,17 +547,17 @@ namespace jetpack::parser {
             text.push_back(ch);
             if (UChar::IsLineTerminator(ch)) {
                 scanner.SetLineNumber(scanner.LineNumber() + 1);
-                if (ch == u'\r' && scanner.CharAt(scanner.Index()) == u'\n') {
+                if (ch == u'\r' && scanner.CharAt(scanner.Index().u8) == u'\n') {
                     scanner.IncreaseIndex();
                 }
-                scanner.SetLineStart(scanner.Index());
+                scanner.SetLineStart(scanner.Index().u8);
             }
         }
 
         SetLastMarker({
             scanner.Index(),
             scanner.LineNumber(),
-            scanner.Index() - scanner.LineStart(),
+            scanner.Index().u16 - scanner.LineStart(),
         });
 
         Token token;
@@ -565,8 +565,8 @@ namespace jetpack::parser {
         token.lineNumber = scanner.LineNumber();
         token.lineStart = scanner.LineStart();
         token.range = {
-            start,
-            scanner.Index(),
+            start.u8,
+            scanner.Index().u8,
         };
 
         return token;
@@ -575,7 +575,7 @@ namespace jetpack::parser {
     Token JSXParser::LexJSX() {
         auto& scanner = *ctx->scanner_;
 
-        char16_t cp = scanner.CharAt(scanner.Index());
+        char16_t cp = scanner.CharAt(scanner.Index().u8);
 
         Token token;
         // < > / : = { }
@@ -636,7 +636,7 @@ namespace jetpack::parser {
                 scanner.IncreaseIndex();
                 std::string str;
                 while (!scanner.IsEnd()) {
-                    char ch = scanner.CharAt(scanner.Index());
+                    char ch = scanner.CharAt(scanner.Index().u8);
                     scanner.IncreaseIndex();
                     if (ch == quote) {
                         break;
@@ -652,8 +652,8 @@ namespace jetpack::parser {
                 token.lineNumber = scanner.LineNumber();
                 token.lineStart = scanner.LineStart();
                 token.range = {
-                    start,
-                    scanner.Index(),
+                    start.u8,
+                    scanner.Index().u8,
                 };
 
                 return token;
@@ -661,8 +661,8 @@ namespace jetpack::parser {
 
             case u'.': {
                 auto index = scanner.Index();
-                char16_t n1 = scanner.CharAt(index + 1);
-                char16_t n2 = scanner.CharAt(index + 2);
+                char16_t n1 = scanner.CharAt(index.u8 + 1);
+                char16_t n2 = scanner.CharAt(index.u8 + 2);
                 UString value;
 
                 if (n1 == u'.' && n2 == u'.') {
@@ -673,13 +673,16 @@ namespace jetpack::parser {
                     value.push_back(u'.');
                 }
 
-                scanner.SetIndex(index + value.size());
+                auto tmp = index;
+                index.u8 += value.size();
+                index.u16 += value.size();
+                scanner.SetIndex(tmp);
 
                 token.lineNumber = scanner.LineNumber();
                 token.lineStart = scanner.LineStart();
                 token.range = {
-                    index,
-                    scanner.Index(),
+                    index.u8,
+                    scanner.Index().u8,
                 };
 
                 return token;
@@ -690,8 +693,8 @@ namespace jetpack::parser {
                 token.lineNumber = scanner.LineNumber();
                 token.lineStart = scanner.LineStart(),
                 token.range = {
-                    scanner.Index(),
-                    scanner.Index(),
+                    scanner.Index().u8,
+                    scanner.Index().u8,
                     // TODO: + 1?
                 };
                 return token;
@@ -705,8 +708,8 @@ namespace jetpack::parser {
             token.lineNumber = scanner.LineNumber();
             token.lineStart = scanner.LineStart();
             token.range = {
-                scanner.Index() - 1,
-                scanner.Index(),
+                scanner.Index().u8 - 1,
+                scanner.Index().u8,
             };
             return token;
         }
@@ -715,7 +718,7 @@ namespace jetpack::parser {
             auto start = scanner.Index();
             scanner.IncreaseIndex();
             while (!scanner.IsEnd()) {
-                char16_t ch = scanner.CharAt(scanner.Index());
+                char16_t ch = scanner.CharAt(scanner.Index().u8);
                 if (UChar::IsIdentifierPart(ch) && (ch != 92)) {
                     scanner.IncreaseIndex();
                 } else if (ch == 45) {
@@ -725,15 +728,15 @@ namespace jetpack::parser {
                     break;
                 }
             }
-            std::string id = scanner.Source()->ConstData().substr(start, scanner.Index() - start);
+            std::string id = scanner.Source()->ConstData().substr(start.u8, scanner.Index().u8 - start.u8);
 
             token.type = JsTokenType::Identifier;
             token.value = move(id);
             token.lineStart = scanner.LineStart();
             token.lineNumber = scanner.LineNumber();
             token.range = {
-                start,
-                scanner.Index(),
+                start.u8,
+                scanner.Index().u8,
             };
             return token;
         }
@@ -752,7 +755,7 @@ namespace jetpack::parser {
         Scanner& scanner = *ctx->scanner_;
 
         while (!scanner.IsEnd() && valid && !terminated) {
-            char16_t ch = scanner.CharAt(scanner.Index());
+            char ch = scanner.CharAt(scanner.Index().u8);
             if (ch == quote) {
                 break;
             }
@@ -763,13 +766,13 @@ namespace jetpack::parser {
                 switch (result.size()) {
                     case 2:
                         // e.g. '&#123;'
-                        numeric = (ch == u'#');
+                        numeric = (ch == '#');
                         break;
 
                     case 3:
                         if (numeric) {
                             // e.g. '&#x41;'
-                            hex = (ch == u'x');
+                            hex = (ch == 'x');
                             valid = hex || UChar::IsDecimalDigit(ch);
                             numeric &= !hex;
                         }

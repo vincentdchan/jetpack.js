@@ -12,7 +12,7 @@ namespace jetpack {
 
     StringWithMapping::StringWithMapping(std::string &&content):
             data_(std::move(content)) {
-        mapping_.resize(content.size(), 0);
+        mapping_.resize(data_.size(), 0);
     }
 
 }

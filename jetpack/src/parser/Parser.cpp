@@ -29,7 +29,7 @@ namespace jetpack::parser {
         NextToken();
 
         ctx->last_marker_ = ParserContext::Marker {
-            ctx->scanner_->Index(),
+            ctx->scanner_->Index().u8,
             ctx->scanner_->LineNumber(),
             ctx->scanner_->Column(),
         };
@@ -494,7 +494,7 @@ namespace jetpack::parser {
             case JsTokenType::DivAssign: {
                 ctx->is_assignment_target_ = false;
                 ctx->is_binding_element_ = false;
-                ctx->scanner_->SetIndex(StartMarker().index);
+                ctx->scanner_->SetIndex(StartMarker().cursor);
                 token = NextRegexToken();
                 auto node = Alloc<RegexLiteral>();
                 node->value = token.value;

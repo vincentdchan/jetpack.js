@@ -23,9 +23,20 @@ namespace jetpack {
         Scanner& operator=(const Scanner&) = delete;
         Scanner& operator=(Scanner&&) = delete;
 
+        struct Cursor {
+        public:
+            uint32_t u8 = 0;
+            uint32_t u16 = 0;
+
+            bool operator==(const Cursor& that) const {
+                return u8 == that.u8;
+            }
+
+        };
+
         struct ScannerState {
         public:
-            uint32_t index_ = 0;
+            Cursor cursor_;
             uint32_t line_number_ = 0;
             uint32_t line_start_ = 0;
         };
@@ -46,7 +57,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline bool IsEnd() const {
-            return index_ >= Length();
+            return cursor_.u8 >= Length();
         }
 
         [[nodiscard]]
@@ -59,21 +70,21 @@ namespace jetpack {
         }
 
         [[nodiscard]]
-        inline uint32_t Index() const {
-            return index_;
+        inline Cursor Index() const {
+            return cursor_;
         }
 
-        inline void SetIndex(uint32_t index) {
-            index_ = index;
+        inline void SetIndex(Cursor index) {
+            cursor_ = index;
         }
 
         inline void IncreaseIndex() {
-            index_++;
+            NextUtf32();
         }
 
         [[nodiscard]]
         inline uint32_t Column() const {
-            return index_ - line_start_;
+            return cursor_.u16 - line_start_;
         }
 
         [[nodiscard]]
@@ -124,23 +135,36 @@ namespace jetpack {
         }
 
         [[nodiscard]]
+        inline char Peek() const {
+            return CharAt(cursor_.u8);
+        }
+
+        [[nodiscard]]
+        inline char Peek(uint32_t offset) const {
+            return CharAt(cursor_.u8 + offset);
+        }
+
+        [[nodiscard]]
         Sp<StringWithMapping> Source() const {
             return source_;
         }
 
     private:
-        bool ReadCharFromBuffer(char32_t& ch);
-        int32_t PreReadCharFromBuffer(char32_t& ch);
+        char32_t PeekUtf32(uint32_t* len = nullptr);
+        char32_t NextUtf32();
 
         std::stack<std::string_view> curly_stack_;
 
-        uint32_t index_ = 0u;
+        Cursor cursor_;
         uint32_t line_number_ = 1u;
-        uint32_t line_start_ = 0u;
+        uint32_t line_start_ = 0u;  // u16 index
 
         Sp<parser::ParseErrorHandler> error_handler_;
         Sp<StringWithMapping> source_;
         bool is_module_ = false;
+
+        void PlusCursor(uint32_t n);
+        char PlusCursorUnitUnsafe();
 
     };
 

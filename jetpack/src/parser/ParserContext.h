@@ -36,7 +36,7 @@ namespace jetpack::parser {
         };
 
         struct Marker {
-            uint32_t index = 0;
+            Scanner::Cursor cursor;
             uint32_t line = 0;
             uint32_t column = 0;
         };
