@@ -5,16 +5,8 @@
 #include <boost/locale.hpp>
 #include "UString.h"
 
-
 std::string StringFromCodePoint(char32_t cp) {
-    std::string result;
-    if (cp < 0x10000) {
-        result.push_back(static_cast<char16_t>(cp));
-    } else {
-        result.push_back(static_cast<char16_t>(0xD800 + ((cp - 0x10000) >> 10)));
-        result.push_back(static_cast<char16_t>(0xdc00 + ((cp - 0x10000) & 1023)));
-    }
-    return result;
+    return StringFromUtf32(&cp, 1);
 }
 
 UString UStringFromUtf8(const char* content, std::size_t size) {

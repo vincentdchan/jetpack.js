@@ -117,8 +117,6 @@ namespace jetpack {
         Token ScanRegExp();
         Token Lex();
 
-        char32_t CodePointAt(uint32_t index, uint32_t* size_ = nullptr) const;
-
         [[nodiscard]]
         inline char CharAt(uint32_t index) const {
             if (unlikely(index >= source_->size())) return u'\0';
@@ -134,7 +132,7 @@ namespace jetpack {
         bool ReadCharFromBuffer(char32_t& ch);
         int32_t PreReadCharFromBuffer(char32_t& ch);
 
-        std::stack<std::string> curly_stack_;
+        std::stack<std::string_view> curly_stack_;
 
         uint32_t index_ = 0u;
         uint32_t line_number_ = 1u;
