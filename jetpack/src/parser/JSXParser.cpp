@@ -543,12 +543,12 @@ namespace jetpack::parser {
             if (ch == u'{' || ch == u'<') {
                 break;
             }
-            scanner.IncreaseIndex();
+            scanner.NextChar();
             text.push_back(ch);
             if (UChar::IsLineTerminator(ch)) {
                 scanner.SetLineNumber(scanner.LineNumber() + 1);
-                if (ch == u'\r' && scanner.CharAt(scanner.Index().u8) == u'\n') {
-                    scanner.IncreaseIndex();
+                if (ch == '\r' && scanner.Peek() == '\n') {
+                    scanner.NextChar();
                 }
                 scanner.SetLineStart(scanner.Index().u8);
             }
@@ -575,69 +575,69 @@ namespace jetpack::parser {
     Token JSXParser::LexJSX() {
         auto& scanner = *ctx->scanner_;
 
-        char16_t cp = scanner.CharAt(scanner.Index().u8);
+        char cp = scanner.Peek();
 
         Token token;
         // < > / : = { }
         switch (cp) {
-            case u'<': {
-                scanner.IncreaseIndex();
+            case '<': {
+                scanner.NextChar();
                 token.type = JsTokenType::LessThan;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'>': {
-                scanner.IncreaseIndex();
+            case '>': {
+                scanner.NextChar();
                 token.type = JsTokenType::GreaterThan;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'/': {
-                scanner.IncreaseIndex();
+            case '/': {
+                scanner.NextChar();
                 token.type = JsTokenType::Div;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u':': {
-                scanner.IncreaseIndex();
+            case ':': {
+                scanner.NextChar();
                 token.type = JsTokenType::Colon;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'=': {
-                scanner.IncreaseIndex();
+            case '=': {
+                scanner.NextChar();
                 token.type = JsTokenType::Assign;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'{': {
-                scanner.IncreaseIndex();
+            case '{': {
+                scanner.NextChar();
                 token.type = JsTokenType::LeftBracket;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'}': {
-                scanner.IncreaseIndex();
+            case '}': {
+                scanner.NextChar();
                 token.type = JsTokenType::RightBracket;
                 token.value.push_back(cp);
                 break;
             }
 
-            case u'"':
-            case u'\'': {
+            case '"':
+            case '\'': {
                 auto start = scanner.Index();
                 char16_t quote = cp;
-                scanner.IncreaseIndex();
+                scanner.NextChar();
                 std::string str;
                 while (!scanner.IsEnd()) {
                     char ch = scanner.CharAt(scanner.Index().u8);
-                    scanner.IncreaseIndex();
+                    scanner.NextChar();
                     if (ch == quote) {
                         break;
                     } else if (ch == '&') {
@@ -659,27 +659,28 @@ namespace jetpack::parser {
                 return token;
             }
 
-            case u'.': {
+            case '.': {
                 auto index = scanner.Index();
-                char16_t n1 = scanner.CharAt(index.u8 + 1);
-                char16_t n2 = scanner.CharAt(index.u8 + 2);
-                UString value;
+                char n1 = scanner.Peek(1);
+                char n2 = scanner.Peek(2);
+                std::string value;
 
-                if (n1 == u'.' && n2 == u'.') {
+                if (n1 == '.' && n2 == '.') {
                     token.type = JsTokenType::Spread;
-                    value = u"...";
+                    value = "...";
                 } else {
                     token.type = JsTokenType::Dot;
-                    value.push_back(u'.');
+                    value.push_back('.');
                 }
 
                 auto tmp = index;
-                index.u8 += value.size();
-                index.u16 += value.size();
+                tmp.u8 += value.size();
+                tmp.u16 += value.size();
                 scanner.SetIndex(tmp);
 
                 token.lineNumber = scanner.LineNumber();
                 token.lineStart = scanner.LineStart();
+                token.value = std::move(value);
                 token.range = {
                     index.u8,
                     scanner.Index().u8,
@@ -688,7 +689,7 @@ namespace jetpack::parser {
                 return token;
             }
 
-            case u'`': {
+            case '`': {
                 token.type = JsTokenType::Template;
                 token.lineNumber = scanner.LineNumber();
                 token.lineStart = scanner.LineStart(),
@@ -714,16 +715,16 @@ namespace jetpack::parser {
             return token;
         }
 
-        if (UChar::IsIdentifierStart(cp) && cp != 92) {
+        if (UChar::IsIdentifierStart(cp) && cp != '\\') {
             auto start = scanner.Index();
-            scanner.IncreaseIndex();
+            scanner.NextChar();
             while (!scanner.IsEnd()) {
-                char16_t ch = scanner.CharAt(scanner.Index().u8);
-                if (UChar::IsIdentifierPart(ch) && (ch != 92)) {
-                    scanner.IncreaseIndex();
-                } else if (ch == 45) {
+                char ch = scanner.Peek();
+                if (UChar::IsIdentifierPart(ch) && (ch != '\\')) {
+                    scanner.NextChar();
+                } else if (ch == '-') {
                     // Hyphen (char code 45) can be part of an identifier.
-                    scanner.IncreaseIndex();
+                    scanner.NextChar();
                 } else {
                     break;
                 }
@@ -744,7 +745,7 @@ namespace jetpack::parser {
         return scanner.Lex();
     }
 
-    std::string JSXParser::ScanXHTMLEntity(char16_t quote) {
+    std::string JSXParser::ScanXHTMLEntity(char quote) {
         std::string result = "&";
 
         bool valid = true;
@@ -755,13 +756,13 @@ namespace jetpack::parser {
         Scanner& scanner = *ctx->scanner_;
 
         while (!scanner.IsEnd() && valid && !terminated) {
-            char ch = scanner.CharAt(scanner.Index().u8);
+            char ch = scanner.Peek();
             if (ch == quote) {
                 break;
             }
-            terminated = (ch == u';');
+            terminated = (ch == ';');
             result.push_back(ch);
-            scanner.IncreaseIndex();
+            scanner.NextChar();
             if (!terminated) {
                 switch (result.size()) {
                     case 2:

@@ -29,7 +29,7 @@ namespace jetpack::parser {
         NextToken();
 
         ctx->last_marker_ = ParserContext::Marker {
-            ctx->scanner_->Index().u8,
+            ctx->scanner_->Index(),
             ctx->scanner_->LineNumber(),
             ctx->scanner_->Column(),
         };

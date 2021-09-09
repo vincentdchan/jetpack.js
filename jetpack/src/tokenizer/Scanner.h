@@ -78,10 +78,6 @@ namespace jetpack {
             cursor_ = index;
         }
 
-        inline void IncreaseIndex() {
-            NextUtf32();
-        }
-
         [[nodiscard]]
         inline uint32_t Column() const {
             return cursor_.u16 - line_start_;
@@ -107,7 +103,7 @@ namespace jetpack {
         static JsTokenType IsStrictModeReservedWord(std::string_view str);
         static bool IsRestrictedWord(std::string_view str_);
         static JsTokenType ToKeyword(const std::string& str_);
-        bool ScanHexEscape(char ch, char32_t& result);
+        bool ScanHexEscape(char32_t ch, char32_t& result);
         char32_t ScanUnicodeCodePointEscape();
         std::string GetIdentifier(int32_t start_char_len);
         std::string GetComplexIdentifier();
@@ -134,6 +130,12 @@ namespace jetpack {
             return source_->data_.at(index);
         }
 
+
+        [[nodiscard]]
+        Sp<StringWithMapping> Source() const {
+            return source_;
+        }
+
         [[nodiscard]]
         inline char Peek() const {
             return CharAt(cursor_.u8);
@@ -144,14 +146,11 @@ namespace jetpack {
             return CharAt(cursor_.u8 + offset);
         }
 
-        [[nodiscard]]
-        Sp<StringWithMapping> Source() const {
-            return source_;
-        }
-
-    private:
         char32_t PeekUtf32(uint32_t* len = nullptr);
         char32_t NextUtf32();
+
+        char NextChar();
+    private:
 
         std::stack<std::string_view> curly_stack_;
 
@@ -164,7 +163,6 @@ namespace jetpack {
         bool is_module_ = false;
 
         void PlusCursor(uint32_t n);
-        char PlusCursorUnitUnsafe();
 
     };
 

@@ -79,7 +79,7 @@ namespace jetpack::parser {
         Token NextJSXText();
         Token PeekJSXToken();
 
-        std::string ScanXHTMLEntity(char16_t quote);
+        std::string ScanXHTMLEntity(char quote);
 
         static std::unique_ptr<robin_hood::unordered_map<std::string, char16_t>> XHTMLEntities;
 

@@ -115,7 +115,7 @@ namespace jetpack::parser {
 
         if (scanner.Index().u8 != ctx->start_marker_.cursor.u8) {
             ctx->start_marker_ = ParserContext::Marker {
-                scanner.Index().u8,
+                scanner.Index(),
                 scanner.LineNumber(),
                 scanner.Index().u8 - scanner.LineStart(),
             };

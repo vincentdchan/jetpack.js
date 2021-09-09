@@ -8,29 +8,35 @@
 #include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 
-static int read_codepoint_from_utf8(const uint8_t buf[], uint32_t *idx, size_t strlen, uint32_t *cp)
+/*
+ * This lookup table is used to help decode the first byte of
+ * a multi-byte UTF8 character.
+ * copy from SQLite3
+ */
+static const unsigned char Utf8Trans1[] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
+};
+
+static char32_t read_codepoint_from_utf8(const uint8_t buf[], uint32_t *idx, size_t strlen)
 {
-    int remunits;
-    uint8_t nxt, msk;
-    if (*idx >= strlen)
-        return -1;
-    nxt = buf[(*idx)++];
-    if (nxt & 0x80) {
-        msk = 0xe0;
-        for (remunits = 1; (nxt & msk) != (msk << 1); ++remunits)
-            msk = (msk >> 1) | 0x80;
-    } else {
-        remunits = 0;
-        msk = 0;
+    char32_t c = buf[(*idx)++];
+    if( c>=0xc0 ){
+        c = Utf8Trans1[c-0xc0];
+        while (*idx < strlen && (buf[*idx] & 0xc0)==0x80) {
+            c = (c<<6) + (0x3f & buf[(*idx)++]);
+        }
+        if( c<0x80
+            || (c&0xFFFFF800)==0xD800
+            || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
     }
-    *cp = nxt ^ msk;
-    while (remunits-- > 0) {
-        *cp <<= 6;
-        if (*idx >= strlen)
-            return -1;
-        *cp |= buf[(*idx)++] & 0x3f;
-    }
-    return 0;
+    return c;
 }
 
 namespace jetpack {
@@ -91,11 +97,15 @@ namespace jetpack {
         loc.start.line = line_number_;
         loc.start.column = cursor_.u16 - line_start_ - u8_offset;
 
+        int32_t count = 0;
+
         while (!IsEnd()) {
             char32_t ch = NextUtf32();
             if (ch == 0) {
                 break;
             }
+
+            J_ASSERT(count++ < 2000);
 
             if (UChar::IsLineTerminator(ch)) {
                 loc.end = Position {
@@ -152,10 +162,10 @@ namespace jetpack {
             char ch = Peek();
             if (UChar::IsLineTerminator(ch)) {
                 if (ch == '\r' && Peek(1) == '\n') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                 }
                 ++line_number_;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 line_start_ = cursor_.u16;
             } else if (ch == '*') {
                 if (Peek(1) == '/') {
@@ -174,9 +184,9 @@ namespace jetpack {
                     return result;
                 }
 
-                PlusCursorUnitUnsafe();
+                NextChar();
             } else {
-                PlusCursorUnitUnsafe();
+                NextUtf32();
             }
         }
 
@@ -203,12 +213,12 @@ namespace jetpack {
             char ch = Peek();
 
             if (UChar::IsWhiteSpace(ch)) {
-                PlusCursorUnitUnsafe();
+                NextChar();
             } else if (UChar::IsLineTerminator(ch)) {
-                PlusCursorUnitUnsafe();
+                NextChar();
 
                 if (ch == '\r' && Peek() == '\n') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                 }
                 ++line_number_;
                 line_start_ = cursor_.u16;
@@ -258,25 +268,30 @@ namespace jetpack {
                 source_->mapping_[cursor_.u8 + i] = cursor_.u16;
             }
             cursor_.u8 += len;
-            cursor_.u16++;
+            cursor_.u16 += std::max<uint32_t>(len / 2, 1);
         }
         return result;
     }
 
     char32_t Scanner::PeekUtf32(uint32_t* len) {
-        uint32_t code = 0;
         uint32_t pre_saved_index = cursor_.u8;
-        if (read_codepoint_from_utf8(
+        char32_t code = read_codepoint_from_utf8(
                 reinterpret_cast<const uint8_t *>(source_->ConstData().c_str()),
                 &pre_saved_index,
-                source_->ConstData().size(),
-                &code) != 0) {
-            return 0;
-        }
+                source_->ConstData().size());
         if (len != nullptr) {
             *len = pre_saved_index - cursor_.u8;
         }
         return code;
+    }
+
+    char Scanner::NextChar() {
+        char ch = Peek();
+        J_ASSERT((ch & 0x80) == 0);
+        source_->mapping_[cursor_.u8] = cursor_.u16;
+        cursor_.u8++;
+        cursor_.u16++;
+        return ch;
     }
 
 #define MAYBE_WORD(WORD) \
@@ -383,13 +398,13 @@ namespace jetpack {
         return string("0123456789abcdef").find(ch);
     }
 
-    bool Scanner::ScanHexEscape(char ch, char32_t& code) {
+    bool Scanner::ScanHexEscape(char32_t ch, char32_t& code) {
         uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (uint32_t i = 0; i < len; ++i) {
             if (!IsEnd() && UChar::IsHexDigit(Peek())) {
                 code = code * 16 + HexValue(Peek());
-                PlusCursorUnitUnsafe();
+                NextChar();
             } else {
                 return false;
             }
@@ -407,7 +422,7 @@ namespace jetpack {
         }
 
         while (!IsEnd()) {
-            ch = PlusCursorUnitUnsafe();
+            ch = NextChar();
             if (!UChar::IsHexDigit(ch)) {
                 break;
             }
@@ -464,9 +479,9 @@ namespace jetpack {
             if (Peek() != 'u') {
                 ThrowUnexpectedToken();
             }
-            PlusCursorUnitUnsafe();
+            NextChar();
             if (Peek() == '{') {
-                PlusCursorUnitUnsafe();
+                NextChar();
                 ch = ScanUnicodeCodePointEscape();
             } else {
                 if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierStart(ch)) {
@@ -498,9 +513,9 @@ namespace jetpack {
                 if (Peek() != 'u') {
                     ThrowUnexpectedToken();
                 }
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '{') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     ch = ScanUnicodeCodePointEscape();
                 } else {
                     if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierPart(ch)) {
@@ -581,18 +596,18 @@ namespace jetpack {
         switch (ch) {
             case '(':
                 t = JsTokenType::LeftParen;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '{':
                 t = JsTokenType::LeftBracket;
                 curly_stack_.push("{");
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '.':
                 t = JsTokenType::Dot;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '.' && Peek(1) == '.') {
                     // Spread operator: ...
                     t = JsTokenType::Spread;
@@ -602,7 +617,7 @@ namespace jetpack {
 
             case '}':
                 t = JsTokenType::RightBracket;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (!curly_stack_.empty()) {
                     curly_stack_.pop();
                 }
@@ -610,56 +625,56 @@ namespace jetpack {
 
             case ')':
                 t = JsTokenType::RightParen;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case ';':
                 t = JsTokenType::Semicolon;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case ',':
                 t = JsTokenType::Comma;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '[':
                 t = JsTokenType::LeftBrace;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case ']':
                 t = JsTokenType::RightBrace;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case ':':
                 t = JsTokenType::Colon;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '?':
                 t = JsTokenType::Ask;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '~':
                 t = JsTokenType::Wave;
-                PlusCursorUnitUnsafe();
+                NextChar();
                 break;
 
             case '<':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '<') { // <<
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     if (Peek() == '=') { // <<=
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                         t = JsTokenType::LeftShiftAssign;
                     } else {
                         t = JsTokenType::LeftShift;
                     }
                 } else if (Peek() == '=') { // <=
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::LessEqual;
                 } else {
                     t = JsTokenType::LessThan;
@@ -667,13 +682,13 @@ namespace jetpack {
                 break;
 
             case '>':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '>') { // >>
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     if (Peek() == '>') { // >>>
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                         if (Peek() == '=') {
-                            PlusCursorUnitUnsafe();
+                            NextChar();
                             t = JsTokenType::ZeroFillRightShiftAssign;
                         } else {
                             t = JsTokenType::ZeroFillRightShift;
@@ -682,7 +697,7 @@ namespace jetpack {
                         t = JsTokenType::RightShift;
                     }
                 } else if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::GreaterEqual;
                 } else {
                     t = JsTokenType::GreaterThan;
@@ -690,17 +705,17 @@ namespace jetpack {
                 break;
 
             case '=':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     if (Peek() == '=') {
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                         t = JsTokenType::StrictEqual;
                     } else {
                         t = JsTokenType::Equal;
                     }
                 } else if (Peek() == '>') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::Arrow;
                 } else {
                     t = JsTokenType::Assign;
@@ -708,11 +723,11 @@ namespace jetpack {
                 break;
 
             case '!':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     if (Peek() == '=') {
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                         t = JsTokenType::StrictNotEqual;
                     } else {
                         t = JsTokenType::NotEqual;
@@ -723,12 +738,12 @@ namespace jetpack {
                 break;
 
             case '+':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::PlusAssign;
                 } else if (Peek() == '+') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::Increase;
                 } else {
                     t = JsTokenType::Plus;
@@ -736,12 +751,12 @@ namespace jetpack {
                 break;
 
             case '-':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::MinusAssign;
                 } else if (Peek() == '-') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::Decrease;
                 } else {
                     t = JsTokenType::Minus;
@@ -749,14 +764,14 @@ namespace jetpack {
                 break;
 
             case '*':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::MulAssign;
                 } else if (Peek() == '*') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     if (Peek() == '=') {
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                         t = JsTokenType::PowAssign;
                     } else {
                         t = JsTokenType::Pow;
@@ -767,9 +782,9 @@ namespace jetpack {
                 break;
 
             case '%':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::ModAssign;
                 } else {
                     t = JsTokenType::Mod;
@@ -777,9 +792,9 @@ namespace jetpack {
                 break;
 
             case '/':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::DivAssign;
                 } else {
                     t = JsTokenType::Div;
@@ -787,9 +802,9 @@ namespace jetpack {
                 break;
 
             case '^':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::BitXorAssign;
                 } else {
                     t = JsTokenType::Xor;
@@ -797,12 +812,12 @@ namespace jetpack {
                 break;
 
             case '&':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '&') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::And;
                 } else if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::BitAndAssign;
                 } else {
                     t = JsTokenType::BitAnd;
@@ -810,12 +825,12 @@ namespace jetpack {
                 break;
 
             case '|':
-                PlusCursorUnitUnsafe();
+                NextChar();
                 if (Peek() == '|') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::Or;
                 } else if (Peek() == '=') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     t = JsTokenType::BitOrAssign;
                 } else {
                     t = JsTokenType::BitOr;
@@ -847,7 +862,7 @@ namespace jetpack {
                 break;
             }
             num += Peek();
-            PlusCursorUnitUnsafe();
+            NextChar();
         }
 
         if (num.size() == 0) {
@@ -876,7 +891,7 @@ namespace jetpack {
             if (ch != '0' && ch != '1') {
                 break;
             }
-            num.push_back(PlusCursorUnitUnsafe());
+            num.push_back(NextChar());
         }
 
         if (num.empty()) {
@@ -885,7 +900,7 @@ namespace jetpack {
         }
 
         if (!IsEnd()) {
-            ch = PlusCursorUnitUnsafe();
+            ch = NextChar();
             /* istanbul ignore else */
             if (UChar::IsIdentifierStart(ch) || UChar::IsDecimalDigit(ch)) {
                 ThrowUnexpectedToken();
@@ -908,16 +923,16 @@ namespace jetpack {
 
         if (UChar::IsOctalDigit(prefix)) {
             octal = true;
-            num = std::string("0") + PlusCursorUnitUnsafe();
+            num = std::string("0") + NextChar();
         } else {
-            PlusCursorUnitUnsafe();
+            NextChar();
         }
 
         while (!IsEnd()) {
             if (!UChar::IsOctalDigit(Peek())) {
                 break;
             }
-            num.push_back(PlusCursorUnitUnsafe());
+            num.push_back(NextChar());
         }
 
         if (!octal && num.empty()) {
@@ -965,7 +980,7 @@ namespace jetpack {
 
         std::string num;
         if (ch != '.') {
-            num.push_back(PlusCursorUnitUnsafe());
+            num.push_back(NextChar());
             ch = Peek();
 
             // Hex number starts with '0x'.
@@ -974,11 +989,11 @@ namespace jetpack {
             // Binary number in ES6 starts with '0b'.
             if (num.at(0) == '0') {
                 if (ch == 'x' || ch == 'X') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     return ScanHexLiteral(start.u8);
                 }
                 if (ch == 'b' || ch == 'B') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     return ScanBinaryLiteral(start.u8);
                 }
                 if (ch == 'o' || ch == 'O') {
@@ -993,29 +1008,29 @@ namespace jetpack {
             }
 
             while (UChar::IsDecimalDigit(Peek())) {
-                num.push_back(PlusCursorUnitUnsafe());
+                num.push_back(NextChar());
             }
             ch = Peek();
         }
 
         if (ch == '.') {
-            num.push_back(PlusCursorUnitUnsafe());
+            num.push_back(NextChar());
             while (UChar::IsDecimalDigit(Peek())) {
-                num.push_back(PlusCursorUnitUnsafe());
+                num.push_back(NextChar());
             }
             ch = Peek();
         }
 
         if (ch == 'e' || ch == 'E') {
-            num.push_back(PlusCursorUnitUnsafe());
+            num.push_back(NextChar());
 
             ch = Peek();
             if (ch == '+' || ch == '-') {
-                num.push_back(PlusCursorUnitUnsafe());
+                num.push_back(NextChar());
             }
             if (UChar::IsDecimalDigit(Peek())) {
                 while (UChar::IsDecimalDigit(Peek())) {
-                    num.push_back(PlusCursorUnitUnsafe());
+                    num.push_back(NextChar());
                 }
             } else {
                 ThrowUnexpectedToken();
@@ -1046,24 +1061,24 @@ namespace jetpack {
                     cursor_.u8, line_number_, cursor_.u16 - line_start_);
         }
 
-        PlusCursorUnitUnsafe();
+        NextChar();
         bool octal = false;
         std::string str;
 
         while (!IsEnd()) {
-            char ch = PlusCursorUnitUnsafe();
+            char ch = NextChar();
 
             if (ch == quote) {
                 quote = 0;
                 break;
             } else if (ch == '\\') {
-                ch = PlusCursorUnitUnsafe();
+                ch = NextChar();
                 if (!ch || !UChar::IsLineTerminator(ch)) {
                     char32_t unescaped = 0;
                     switch (ch) {
                         case 'u':
                             if (Peek() == '{') {
-                                PlusCursorUnitUnsafe();
+                                NextChar();
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
                                 str.append(StringFromUtf32(&tmp, 1));
@@ -1121,7 +1136,7 @@ namespace jetpack {
                 } else {
                     ++line_number_;
                     if (ch == '\r' && Peek() == '\n') {
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                     }
                     line_start_ = cursor_.u16;
                 }
@@ -1157,10 +1172,10 @@ namespace jetpack {
         bool tail = false;
         uint32_t rawOffset = 2;
 
-        PlusCursorUnitUnsafe();
+        NextChar();
 
         while (!IsEnd()) {
-            char ch = PlusCursorUnitUnsafe();
+            char32_t ch = NextUtf32();
             if (ch == '`') {
                 rawOffset = 1;
                 tail = true;
@@ -1169,13 +1184,13 @@ namespace jetpack {
             } else if (ch == '$') {
                 if (Peek() == '{') {
                     curly_stack_.push("${");
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     terminated = true;
                     break;
                 }
-                cooked.push_back(ch);
+                cooked += StringFromUtf32(&ch, 1);
             } else if (ch == '\\') {
-                ch = PlusCursorUnitUnsafe();
+                ch = NextChar();
                 if (!UChar::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
@@ -1189,17 +1204,17 @@ namespace jetpack {
                             break;
                         case 'u':
                             if (Peek() == '{') {
-                                PlusCursorUnitUnsafe();
-                                char16_t tmp = ScanUnicodeCodePointEscape();
-                                cooked.push_back(tmp);
+                                NextChar();
+                                char32_t tmp = ScanUnicodeCodePointEscape();
+                                cooked += StringFromUtf32(&tmp, 1);
                             } else {
                                 auto restore = cursor_;
-                                char32_t unescapedChar;
+                                char32_t unescapedChar = 0;
                                 if (ScanHexEscape(ch, unescapedChar)) {
-                                    cooked.push_back(unescapedChar);
+                                    cooked += StringFromUtf32(&unescapedChar, 1);
                                 } else {
                                     cursor_= restore;
-                                    cooked.push_back(ch);
+                                    cooked += StringFromUtf32(&ch, 1);
                                 }
                             }
                             break;
@@ -1238,14 +1253,14 @@ namespace jetpack {
                 } else {
                     ++line_number_;
                     if (ch == '\r' && Peek() == '\n') {
-                        PlusCursorUnitUnsafe();
+                        NextChar();
                     }
                     line_start_ = cursor_.u16;
                 }
             } else if (UChar::IsLineTerminator(ch)) {
                 ++line_number_;
                 if (ch == '\r' && Peek() == '\n') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                 }
                 line_start_  = cursor_.u16;
                 cooked.push_back('\n');
@@ -1282,15 +1297,15 @@ namespace jetpack {
         }
 
         std::string str;
-        str.push_back(PlusCursorUnitUnsafe());
+        str.push_back(NextChar());
         bool class_marker = false;
         bool terminated = false;
 
         while (!IsEnd()) {
-            ch = PlusCursorUnitUnsafe();
+            ch = NextChar();
             str.push_back(ch);
             if (ch == '\\') {
-                ch = PlusCursorUnitUnsafe();
+                ch = NextChar();
                 if (UChar::IsLineTerminator(ch)) {
                     ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
                 }
@@ -1327,11 +1342,11 @@ namespace jetpack {
                 break;
             }
 
-            PlusCursorUnitUnsafe();
+            NextChar();
             if (ch == '\\' && !IsEnd()) {
                 ch = Peek();
                 if (ch == 'u') {
-                    PlusCursorUnitUnsafe();
+                    NextChar();
                     auto restore = cursor_;
                     char32_t char_;
                     if (ScanHexEscape('u', char_)) {
@@ -1430,14 +1445,6 @@ namespace jetpack {
         for (uint32_t i = 0; i < n; i++) {
             NextUtf32();
         }
-    }
-
-    char Scanner::PlusCursorUnitUnsafe() {
-        char result = source_->ConstData().at(cursor_.u8);
-        source_->mapping_[cursor_.u8] = cursor_.u16;
-        cursor_.u8++;
-        cursor_.u16++;
-        return result;
     }
 
 }
