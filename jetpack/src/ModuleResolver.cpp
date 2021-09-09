@@ -155,13 +155,13 @@ namespace jetpack {
 
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
-        auto srcResult = mf->GetSource();
-        if (srcResult.error.has_value()) {
-            worker_errors_.push_back(*srcResult.error);
+        WorkerError error;
+        if (!mf->GetSource(error)) {
+            worker_errors_.push_back(error);
             return;
         }
 
-        auto ctx = std::make_shared<ParserContext>(mf->id(), std::move(srcResult.value), config);
+        auto ctx = std::make_shared<ParserContext>(mf->id(), mf->src_content, config);
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
@@ -470,7 +470,7 @@ namespace jetpack {
     void ModuleResolver::EscapeAllContent() {
         for (auto& tuple : modules_table_.pathToModule) {
             tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
-                return EscapeJSONString(mod->src_content);
+                return EscapeJSONString(mod->src_content->ConstData());
             });
             tuple.second->escaped_path = thread_pool_->enqueue([mode = tuple.second]() -> std::string {
                 return EscapeJSONString(mode->Path());

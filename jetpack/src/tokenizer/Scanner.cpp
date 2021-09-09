@@ -8,6 +8,31 @@
 #include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 
+static int read_codepoint_from_utf8(const uint8_t buf[], uint32_t *idx, size_t strlen, uint32_t *cp)
+{
+    int remunits;
+    uint8_t nxt, msk;
+    if (*idx >= strlen)
+        return -1;
+    nxt = buf[(*idx)++];
+    if (nxt & 0x80) {
+        msk = 0xe0;
+        for (remunits = 1; (nxt & msk) != (msk << 1); ++remunits)
+            msk = (msk >> 1) | 0x80;
+    } else {
+        remunits = 0;
+        msk = 0;
+    }
+    *cp = nxt ^ msk;
+    while (remunits-- > 0) {
+        *cp <<= 6;
+        if (*idx >= strlen)
+            return -1;
+        *cp |= buf[(*idx)++] & 0x3f;
+    }
+    return 0;
+}
+
 namespace jetpack {
 
     using namespace std;
@@ -231,6 +256,33 @@ namespace jetpack {
         return cp;
     }
 
+    bool Scanner::ReadCharFromBuffer(char32_t &ch) {
+        uint32_t code;
+        if (read_codepoint_from_utf8(
+                reinterpret_cast<const uint8_t *>(source_->ConstData().c_str()),
+                &index_,
+                source_->ConstData().size(),
+                &code) != 0) {
+            return false;
+        }
+        ch = code;
+        return true;
+    }
+
+    int32_t Scanner::PreReadCharFromBuffer(char32_t &ch) {
+        uint32_t code;
+        uint32_t pre_saved_index = index_;
+        if (read_codepoint_from_utf8(
+                reinterpret_cast<const uint8_t *>(source_->ConstData().c_str()),
+                &pre_saved_index,
+                source_->ConstData().size(),
+                &code) != 0) {
+            return -1;
+        }
+        ch = code;
+        return static_cast<int32_t>(pre_saved_index - index_);
+    }
+
 #define MAYBE_WORD(WORD) \
     if (str_ == WORD) return true;
 
@@ -335,7 +387,7 @@ namespace jetpack {
         return string("0123456789abcdef").find(ch);
     }
 
-    bool Scanner::ScanHexEscape(char16_t ch, char32_t& code) {
+    bool Scanner::ScanHexEscape(char ch, char32_t& code) {
         uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (uint32_t i = 0; i < len; ++i) {
@@ -350,7 +402,7 @@ namespace jetpack {
     }
 
     char32_t Scanner::ScanUnicodeCodePointEscape() {
-        char16_t ch = source_->ConstData().at(index_);
+        char ch = source_->ConstData().at(index_);
         char32_t code = 0;
 
         if (ch == '}') {
@@ -372,14 +424,18 @@ namespace jetpack {
         return code;
     }
 
-    std::string Scanner::GetIdentifier() {
-        uint32_t start = index_++;
+    std::string Scanner::GetIdentifier(int32_t start_char_len) {
+        uint32_t start = index_;
+        index_ += start_char_len;
         std::string result;
 
         while (!IsEnd()) {
-            auto ch = source_->ConstData().at(index_);
-            if (ch == 0x5C) {
-                // Blackslash (U+005C) marks Unicode escape sequence.
+            char32_t ch;
+            int32_t len = PreReadCharFromBuffer(ch);
+            if (len < 0) {
+                break;
+            }
+            if (ch == '\\') {
                 index_ = start;
                 return GetComplexIdentifier();
             } else if (ch >= 0xD800 && ch < 0xDFFF) {
@@ -388,7 +444,7 @@ namespace jetpack {
                 return GetComplexIdentifier();
             }
             if (UChar::IsIdentifierPart(ch)) {
-                ++index_;
+                index_ += len;
             } else {
                 break;
             }
@@ -407,8 +463,8 @@ namespace jetpack {
 
         // '\u' (U+005C, U+0075) denotes an escaped character.
         char32_t ch = 0;
-        if (cp == 0x5C) {
-            if (CharAt(index_) != 0x75) {
+        if (cp == '\\') {
+            if (CharAt(index_) != 'u') {
                 ThrowUnexpectedToken();
             }
             ++index_;
@@ -420,7 +476,7 @@ namespace jetpack {
                     ThrowUnexpectedToken();
                 }
             }
-            result.push_back(ch);
+            result += StringFromUtf32(&ch, 1);
         }
 
         while (!IsEnd()) {
@@ -437,9 +493,9 @@ namespace jetpack {
             index_ += ch_.size();
 
             // '\u' (U+005C, U+0075) denotes an escaped character.
-            if (cp == 0x5C) {
+            if (cp == '\\') {
                 result = result.substr(0, result.size() - 1);
-                if (source_->ConstData().at(index_) != 0x75) {
+                if (source_->ConstData().at(index_) != 'u') {
                     ThrowUnexpectedToken();
                 }
                 ++index_;
@@ -451,7 +507,7 @@ namespace jetpack {
                         ThrowUnexpectedToken();
                     }
                 }
-                result.push_back(ch);
+                result += StringFromUtf32(&ch, 1);
             }
         }
 
@@ -476,7 +532,7 @@ namespace jetpack {
         return octal;
     }
 
-    Token Scanner::ScanIdentifier() {
+    Token Scanner::ScanIdentifier(int32_t start_char_len) {
         auto start = index_;
         Token tok;
 
@@ -484,7 +540,7 @@ namespace jetpack {
         if (source_->ConstData().at(start) == 0x5C) {
             id = GetComplexIdentifier();
         } else {
-            id = GetIdentifier();
+            id = GetIdentifier(start_char_len);
         }
 
         if (id.size() == 1) {
@@ -530,7 +586,7 @@ namespace jetpack {
 
             case u'{':
                 t = JsTokenType::LeftBracket;
-                curly_stack_.push(u"{");
+                curly_stack_.push("{");
                 ++index_;
                 break;
 
@@ -851,7 +907,7 @@ namespace jetpack {
 
         if (UChar::IsOctalDigit(prefix)) {
             octal = true;
-            num = "0" + source_->ConstData().at(index_++);
+            num = std::string("0") + source_->ConstData().at(index_++);
         } else {
             ++index_;
         }
@@ -863,7 +919,7 @@ namespace jetpack {
             num.push_back(source_->ConstData().at(index_++));
         }
 
-        if (!octal && num.size() == 0) {
+        if (!octal && num.empty()) {
             // only 0o or 0O
             ThrowUnexpectedToken();
         }
@@ -981,7 +1037,7 @@ namespace jetpack {
 
     Token Scanner::ScanStringLiteral() {
         auto start = index_;
-        char16_t quote = CharAt(start);
+        char quote = CharAt(start);
 
         if (!(quote == '\'' || quote == '"')) {
             throw error_handler_->CreateError(
@@ -994,7 +1050,7 @@ namespace jetpack {
         std::string str;
 
         while (!IsEnd()) {
-            char16_t ch = CharAt(index_++);
+            char ch = CharAt(index_++);
 
             if (ch == quote) {
                 quote = 0;
@@ -1111,7 +1167,7 @@ namespace jetpack {
                 break;
             } else if (ch == '$') {
                 if (source_->ConstData().at(index_)== '{') {
-                    curly_stack_.push(u"${");
+                    curly_stack_.push("${");
                     ++index_;
                     terminated = true;
                     break;
@@ -1326,24 +1382,31 @@ namespace jetpack {
             return tok;
         }
 
-        char16_t cp = source_->ConstData().at(index_);
+        char32_t cp = 0;
+        int32_t char_len = PreReadCharFromBuffer(cp);
+        if (char_len < 0) {
+            Token tok;
+            tok.type = JsTokenType::EOF_;
+            tok.lineNumber = line_number_;
+            tok.lineStart = line_start_;
+            tok.range = make_pair(index_, index_);
+            return tok;
+        }
 
         if (UChar::IsIdentifierStart(cp)) {
-            return ScanIdentifier();
+            return ScanIdentifier(char_len);
         }
-        // Very common: ( and ) and ;
-        if (cp == 0x28 || cp == 0x29 || cp == 0x3B) {
+        if (cp == '(' || cp == ')' || cp == ';') {
             return ScanPunctuator();
         }
 
-        // String literal starts with single quote (U+0027) or double quote (U+0022).
-        if (cp == 0x27 || cp == 0x22) {
+        if (cp == '\'' || cp == '"') {
             return ScanStringLiteral();
         }
 
         // Dot (.) U+002E can also start a floating-point number, hence the need
         // to check the next character.
-        if (cp == 0x2E) {
+        if (cp == '.') {
             if (UChar::IsDecimalDigit(CharAt(index_ + 1))) {
                 return ScanNumericLiteral();
             }
@@ -1356,14 +1419,14 @@ namespace jetpack {
 
         // Template literals start with ` (U+0060) for template head
         // or } (U+007D) for template middle or template tail.
-        if (cp == 0x60 || (cp == 0x7D && !curly_stack_.empty() && curly_stack_.top() == u"${")) {
+        if (cp == '`' || (cp == '}' && !curly_stack_.empty() && curly_stack_.top() == "${")) {
             return ScanTemplate();
         }
 
         // Possible identifier start in a surrogate pair.
         if (cp >= 0xD800 && cp < 0xDFFF) {
             if (UChar::IsIdentifierStart(CodePointAt(index_))) {
-                return ScanIdentifier();
+                return ScanIdentifier(char_len);
             }
         }
 

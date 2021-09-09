@@ -20,10 +20,14 @@ namespace jetpack::parser {
     }
 
     ParserContext::ParserContext(int32_t fileId, std::string&& src, const Config& config):
-        fileIndex(fileId), config_(config) {
+        ParserContext(fileId, StringWithMapping::Make(std::move(src)), config) {
+    }
+
+    ParserContext::ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config &config):
+        fileIndex(fileId), config_(config){
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
-        source_ = StringWithMapping::Make(std::move(src));
+        source_ = std::move(src);
         scanner_ = make_unique<Scanner>(source_, error_handler_);
         has_line_terminator_ = false;
 

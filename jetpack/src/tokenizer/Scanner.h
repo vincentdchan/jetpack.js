@@ -96,13 +96,13 @@ namespace jetpack {
         static JsTokenType IsStrictModeReservedWord(std::string_view str);
         static bool IsRestrictedWord(std::string_view str_);
         static JsTokenType ToKeyword(const std::string& str_);
-        bool ScanHexEscape(char16_t ch, char32_t& result);
+        bool ScanHexEscape(char ch, char32_t& result);
         char32_t ScanUnicodeCodePointEscape();
-        std::string GetIdentifier();
+        std::string GetIdentifier(int32_t start_char_len);
         std::string GetComplexIdentifier();
         bool OctalToDecimal(char16_t ch, uint32_t& result);
 
-        Token ScanIdentifier();
+        Token ScanIdentifier(int32_t start_char_len);
         Token ScanPunctuator();
         Token ScanHexLiteral(uint32_t index);
         Token ScanBinaryLiteral(uint32_t index);
@@ -130,13 +130,11 @@ namespace jetpack {
             return source_;
         }
 
-        [[nodiscard]]
-        inline UString ValueBuffer() const {
-            return value_buffer_;
-        }
-
     private:
-        std::stack<UString> curly_stack_;
+        bool ReadCharFromBuffer(char32_t& ch);
+        int32_t PreReadCharFromBuffer(char32_t& ch);
+
+        std::stack<std::string> curly_stack_;
 
         uint32_t index_ = 0u;
         uint32_t line_number_ = 1u;
@@ -144,7 +142,6 @@ namespace jetpack {
 
         Sp<parser::ParseErrorHandler> error_handler_;
         Sp<StringWithMapping> source_;
-        UString value_buffer_;
         bool is_module_ = false;
 
     };

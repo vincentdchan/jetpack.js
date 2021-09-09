@@ -42,6 +42,7 @@ namespace jetpack::parser {
         };
 
         ParserContext(int32_t fileId, std::string&& src, const Config& config);
+        ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;
 
