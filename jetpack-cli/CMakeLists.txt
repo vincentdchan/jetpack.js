@@ -8,6 +8,9 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE
         "../esparser/src"
         "../jetpack/src/"
+        "../third_party/nlohmann_json/include"
+        "../third_party/ordered-map/include"
+        "../third_party/ThreadPool"
         )
 
 set(CLI_LIBS "")
