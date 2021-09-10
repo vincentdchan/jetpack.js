@@ -19,7 +19,6 @@
 #include "ModuleProvider.h"
 #include "ModuleFile.h"
 #include "ModulesTable.h"
-#include "ModuleCompositor.h"
 #include "GlobalImportHandler.h"
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"

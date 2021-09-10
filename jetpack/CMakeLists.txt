@@ -6,17 +6,8 @@ option(JETPACK_BUILD_TESTS "Build tests" ON)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB parser_source_files
-        "src/*.h"
-        "src/*.hpp"
-        "src/*.cpp"
         "src/parser/*.h"
         "src/parser/*.cpp"
-        "src/scope/*.h"
-        "src/scope/*.cpp"
-        "src/dumper/*.h"
-        "src/dumper/*.cpp"
-        "src/tokenizer/*.h"
-        "src/tokenizer/*.cpp"
         )
 
 set(SOURCE_FILES
@@ -34,9 +25,26 @@ set(SOURCE_FILES
         src/utils/Path.h
         src/utils/Common.h
         src/utils/Common.cpp
+        src/tokenizer/Token.h
+        src/tokenizer/Token.cpp
+        src/tokenizer/Location.h
+        src/tokenizer/Location.cpp
+        src/tokenizer/Comment.h
+        src/tokenizer/Comment.cpp
+        src/tokenizer/Scanner.h
+        src/tokenizer/Scanner.cpp
         ${parser_source_files}
         src/optimize/ConstantFolding.h
         src/optimize/ConstantFolding.cpp
+        src/scope/ExportManager.h
+        src/scope/ExportManager.cpp
+        src/scope/ImportManager.h
+        src/scope/ImportManager.cpp
+        src/scope/Scope.h
+        src/scope/Scope.cpp
+        src/scope/Variable.h
+        src/scope/Variable.cpp
+        src/dumper/AstToJson.h
         src/macros.h
         src/Benchmark.h
         src/Benchmark.cpp
@@ -50,8 +58,6 @@ set(SOURCE_FILES
         src/ModulesTable.cpp
         src/ModuleResolver.h
         src/ModuleResolver.cpp
-        src/ModuleCompositor.h
-        src/ModuleCompositor.cpp
         src/UniqueNameGenerator.h
         src/UniqueNameGenerator.cpp
         src/GlobalImportHandler.h

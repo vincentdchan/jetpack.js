@@ -8,7 +8,6 @@
 #include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
 #include "ModuleResolver.h"
-#include "ModuleCompositor.h"
 #include "SimpleAPI.h"
 #include "utils/Path.h"
 #include "utils/io/FileIO.h"
@@ -23,17 +22,15 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
 
     SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
-    auto mod =  resolver->GetEntryModule();
+    auto mod = resolver->GetEntryModule();
     CodeGen::Config codegenConfig;
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
 
-    ModuleCompositor compositor(sourceMapGenerator);
-    compositor.append(codegen.GetResult().content, mod->mapping_collector_);
-    auto composition = compositor.Finalize();
+    sourceMapGenerator.Finalize();
 
     if (print) {
-        std::cout << "gen: " << std::endl << composition << std::endl;
+        std::cout << "gen: " << std::endl << sourceMapGenerator.ToPrettyString() << std::endl;
     }
 
     return sourceMapGenerator.ToPrettyString();
