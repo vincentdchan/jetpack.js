@@ -88,8 +88,8 @@ namespace jetpack {
         error_handler_->TolerateError(error);
     }
 
-    std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
-        std::vector<std::shared_ptr<Comment>> result;
+    std::vector<Sp<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
+        std::vector<Sp<Comment>> result;
         uint32_t start = 0;
         SourceLocation loc;
 
@@ -104,8 +104,6 @@ namespace jetpack {
             if (ch == 0) {
                 break;
             }
-
-            J_ASSERT(count++ < 2000);
 
             if (UChar::IsLineTerminator(ch)) {
                 loc.end = Position {
@@ -146,8 +144,8 @@ namespace jetpack {
         return result;
     }
 
-    std::vector<std::shared_ptr<Comment>> Scanner::SkipMultiLineComment() {
-        std::vector<std::shared_ptr<Comment>> result;
+    std::vector<Sp<Comment>> Scanner::SkipMultiLineComment() {
+        std::vector<Sp<Comment>> result;
         uint32_t start = 0;
         SourceLocation loc;
 
@@ -206,7 +204,7 @@ namespace jetpack {
         return result;
     }
 
-    void Scanner::ScanComments(std::vector<std::shared_ptr<Comment>> &result) {
+    void Scanner::ScanComments(std::vector<Sp<Comment>> &result) {
         bool start = cursor_.u8 == 0;
 
         while (!IsEnd()) {

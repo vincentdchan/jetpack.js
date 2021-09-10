@@ -14,7 +14,7 @@
 
 namespace jetpack {
 
-    class Scanner final {
+    class Scanner {
     public:
         Scanner(const Sp<StringWithMapping>& source, Sp<parser::ParseErrorHandler> error_handler);
         Scanner(const Scanner&) = delete;
@@ -48,12 +48,6 @@ namespace jetpack {
 
         ScannerState SaveState();
         void RestoreState(const ScannerState& state);
-
-        void ThrowUnexpectedToken();
-        void ThrowUnexpectedToken(const std::string& message);
-
-        void TolerateUnexpectedToken();
-        void TolerateUnexpectedToken(const std::string& message);
 
         [[nodiscard]]
         inline bool IsEnd() const {
@@ -96,9 +90,9 @@ namespace jetpack {
             return std::string_view (source_->data_).substr(start, end - start);
         }
 
-        std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);
-        std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
-        void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
+        std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
+        std::vector<Sp<Comment>> SkipMultiLineComment();
+        void ScanComments(std::vector<Sp<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
         static JsTokenType IsStrictModeReservedWord(std::string_view str);
         static bool IsRestrictedWord(std::string_view str_);
@@ -130,7 +124,6 @@ namespace jetpack {
             return source_->data_.at(index);
         }
 
-
         [[nodiscard]]
         Sp<StringWithMapping> Source() const {
             return source_;
@@ -151,6 +144,11 @@ namespace jetpack {
 
         char NextChar();
     private:
+        void ThrowUnexpectedToken();
+        void ThrowUnexpectedToken(const std::string& message);
+
+        void TolerateUnexpectedToken();
+        void TolerateUnexpectedToken(const std::string& message);
 
         std::stack<std::string_view> curly_stack_;
 
