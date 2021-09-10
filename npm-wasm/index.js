@@ -20,7 +20,7 @@ export default function() {
           if (errorCode != 0) {
             throw new Error('parse error');
           }
-          return Module.UTF8ToString(result + 4);
+          return myMoudle.UTF8ToString(result + 4);
         } finally {
           myMoudle._free(cSource);
           if (result != 0) {
