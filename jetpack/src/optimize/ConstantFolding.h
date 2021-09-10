@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "SyntaxNodes.h"
+#include "parser/SyntaxNodes.h"
 
 namespace jetpack {
 

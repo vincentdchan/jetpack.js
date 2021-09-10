@@ -5,14 +5,14 @@
 #include "Parser.hpp"
 #include "JSXParser.h"
 #include "TypescriptParser.h"
-#include "ConstantFolding.h"
+#include "optimize/ConstantFolding.h"
 #include "tokenizer/Token.h"
 
 namespace jetpack::parser {
     using namespace std;
 
-    Parser::Parser(std::shared_ptr<ParserContext> state):
-    ParserCommon(state) {
+    Parser::Parser(Sp<ParserContext> state):
+    ParserCommon(std::move(state)) {
 
         ctx->start_marker_ = ParserContext::Marker {
             0,

@@ -4,6 +4,10 @@
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/vincentdchan/jetpack.js"
+  },
+  "keywords": ["parser", "minifier", "node", "bundler"],
   "bin": {
     "jetpp": "./index.js"
   },

@@ -35,6 +35,8 @@ set(SOURCE_FILES
         src/utils/Common.h
         src/utils/Common.cpp
         ${parser_source_files}
+        src/optimize/ConstantFolding.h
+        src/optimize/ConstantFolding.cpp
         src/macros.h
         src/Benchmark.h
         src/Benchmark.cpp
@@ -72,7 +74,6 @@ set(SOURCE_FILES
 
 if (EMSCRIPTEN)
 add_definitions(-DJETPACK_SINGLE_THREAD)
-set(CMAKE_CXX_FLAGS "-s \"EXTRA_EXPORTED_RUNTIME_METHODS=['UTF8ToString', 'lengthBytesUTF8', 'stringToUTF8', 'stringToUTF16']\"")
 endif()
 
 include_directories(PUBLIC
