@@ -46,16 +46,6 @@ namespace jetpack {
         return renamer;
     }
 
-    void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
-//        if (config.comments) {
-//            memoryOutputStream << u"// " << UString::fromStdString(Path()) << u"\n";
-//        }
-
-        CodeGen codegen(config, mapping_collector_);
-        codegen.Traverse(ast);
-        codegen_result = codegen.GetResult();
-    }
-
     UString ModuleFile::GetModuleVarName() const {
         std::string tmp = "mod_" + std::to_string(id());
         return UStringFromUtf8(tmp.c_str(), tmp.size());

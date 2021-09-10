@@ -446,36 +446,7 @@ namespace jetpack {
         ClearAllVisitedMark();
         TraverseRenameAllImports(entry_module);
 
-        // BEGIN every modules gen their own code
-        ClearAllVisitedMark();
-        for (auto& tuple : modules_table_.pathToModule) {
-            EnqueueOne([this, mod = tuple.second, config] {
-                mod->CodeGenFromAst(config);
-                FinishOne();
-            });
-        }
-
-        EscapeAllContent();
-
-        std::unique_lock<std::mutex> lk(main_lock_);
-        main_cv_.wait(lk, [this] {
-            return finished_files_count_ >= enqueued_files_count_;
-        });
-
-        // END every modules gen their own code
-
         DumpAllResult(config, final_export_vars, out_path);
-    }
-
-    void ModuleResolver::EscapeAllContent() {
-        for (auto& tuple : modules_table_.pathToModule) {
-            tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
-                return EscapeJSONString(mod->src_content->ConstData());
-            });
-            tuple.second->escaped_path = thread_pool_->enqueue([mode = tuple.second]() -> std::string {
-                return EscapeJSONString(mode->Path());
-            });
-        }
     }
 
     // final stage
@@ -484,28 +455,33 @@ namespace jetpack {
 
         benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
-        ModuleCompositor moduleCompositor(*sourcemapGenerator);
 
-        moduleCompositor.append(global_import_handler_.GenCode(config, mappingCollector).content, nullptr);
+        // codegen all result begin
+        CodeGen codegen(config, mappingCollector);
+        sourcemapGenerator->AddCollector(mappingCollector);
+
+        for (auto& tuple : modules_table_.pathToModule) {
+            auto& mod = tuple.second;
+            sourcemapGenerator->AddSource(mod);
+            codegen.Traverse(mod->ast);
+        }
+        // codegen all result end
+
+        global_import_handler_.GenCode(codegen);
 
         ClearAllVisitedMark();
 
-        benchmark::BenchMarker comBench(benchmark::BENCH_MODULE_COMPOSITION);
-        MergeModules(entry_module, moduleCompositor);
-        comBench.Submit();
-
         if (!final_export_vars.empty()) {
             auto final_export = GenFinalExportDecl(final_export_vars);
-            CodeGen codegen(config, mappingCollector);
             codegen.Traverse(final_export);
-            moduleCompositor.append(codegen.GetResult().content, nullptr);
         }
 
-        const std::string finalResult = moduleCompositor.Finalize();
+        const std::string finalResult = codegen.GetResult().content;
         codegenMarker.Submit();
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
+            sourcemapGenerator->Finalize();
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 
@@ -1069,21 +1045,6 @@ namespace jetpack {
         }
 
         return std::nullopt;
-    }
-
-    void ModuleResolver::MergeModules(const Sp<ModuleFile> &mf, ModuleCompositor& moduleCompositor) {
-        if (mf->visited_mark) {
-            return;
-        }
-        mf->visited_mark = true;
-
-        moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
-        moduleCompositor.append("\n", nullptr);
-
-        for (auto& ref : mf->ref_mods) {
-            auto new_mf = ref.lock();
-            MergeModules(new_mf, moduleCompositor);
-        }
     }
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>& export_names) {

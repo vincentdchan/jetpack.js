@@ -173,7 +173,7 @@ namespace jetpack {
         ss << R"(  "sources": [)" << std::endl;
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << module->escaped_path.get() << "\"";
+            ss << "    \"" << EscapeJSONString(module->Path()) << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
@@ -191,7 +191,7 @@ namespace jetpack {
 
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << module->escaped_src_content.get() << "\"";
+            ss << "    \"" << EscapeJSONString(module->src_content->ConstData()) << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }

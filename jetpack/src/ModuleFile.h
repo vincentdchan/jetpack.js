@@ -65,15 +65,7 @@ namespace jetpack {
          */
         HashMap<std::string, std::string> resolved_map;
 
-        /**
-         * Temp for parallel codegen
-         */
-        CodeGenResult codegen_result;
-
         Sp<StringWithMapping> src_content;
-
-        std::future<std::string> escaped_src_content;
-        std::future<std::string> escaped_path;
 
         /**
          * For Postorder traversal
@@ -89,8 +81,6 @@ namespace jetpack {
 
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
-
-        void CodeGenFromAst(const CodeGen::Config &config);
 
         UString GetModuleVarName() const;
 

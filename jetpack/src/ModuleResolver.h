@@ -88,10 +88,6 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
-
-        void EscapeAllContent();
-
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {
                 tuple.second->visited_mark = false;

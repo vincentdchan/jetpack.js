@@ -145,9 +145,10 @@ TEST(ModuleResolver, SingleMemoryFile) {
     resolver->RenameAllRootLevelVariable();
 
     auto entry_mod = resolver->GetEntryModule();
-    entry_mod->CodeGenFromAst(codegen_config);
+    CodeGen codegen(codegen_config);
+    codegen.Traverse(entry_mod->ast);
 
-    std::cout << entry_mod->codegen_result.content << std::endl;
+    std::cout << codegen.GetResult().content << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {
