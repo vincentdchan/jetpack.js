@@ -12,6 +12,7 @@
 #include "codegen/CodeGen.h"
 #include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"
+#include "StringWithMapping.h"
 #include "ResolveResult.h"
 
 namespace jetpack {
@@ -50,7 +51,7 @@ namespace jetpack {
             return path_;
         }
 
-        UString default_export_name;
+        std::string default_export_name;
 
         // interface to provide content by contents;
         Sp<ModuleProvider> provider;
@@ -69,7 +70,7 @@ namespace jetpack {
          */
         CodeGenResult codegen_result;
 
-        UString src_content;
+        Sp<StringWithMapping> src_content;
 
         std::future<std::string> escaped_src_content;
         std::future<std::string> escaped_path;
@@ -93,7 +94,7 @@ namespace jetpack {
 
         UString GetModuleVarName() const;
 
-        ResolveResult<UString> GetSource();
+        bool GetSource(WorkerError& error);
 
         inline ExportManager& GetExportManager() {
             return ast->scope->export_manager;

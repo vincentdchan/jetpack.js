@@ -25,15 +25,11 @@ namespace jetpack {
 
     static const char* PackageJsonName = "package.json";
 
-    inline Sp<Identifier> MakeId(const SourceLocation& loc, const UString& content) {
+    inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
         auto id = std::make_shared<Identifier>();
         id->name = content;
         id->location = loc;
         return id;
-    }
-
-    inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
-        return MakeId(loc, UStringFromUtf8(content.c_str(), content.size()));
     }
 
 //    inline Sp<SyntaxNode> MakeModuleVar(const SourceLocation& loc, const UString& var_name) {
@@ -49,21 +45,21 @@ namespace jetpack {
 //        return mod_var;
 //    }
 
-    inline Sp<Literal> MakeStringLiteral(const UString& str) {
+    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
         auto lit = std::make_shared<Literal>();
         lit->ty = Literal::Ty::String;
         lit->str_ = str;
-        lit->raw += u'"';
+        lit->raw += '"';
         lit->raw += str;
-        lit->raw += u'"';
+        lit->raw += '"';
         return lit;
     }
 
     inline Sp<Literal> MakeNull() {
         auto null_lit = std::make_shared<Literal>();
         null_lit->ty = Literal::Ty::Null;
-        null_lit->str_ = u"null";
-        null_lit->raw = u"null";
+        null_lit->str_ = "null";
+        null_lit->raw = "null";
 
         return null_lit;
     }
@@ -121,7 +117,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
-                                              UString src) {
+                                              const std::string& src) {
         std::string m0("memory0");
 
         // push file provider
@@ -159,17 +155,17 @@ namespace jetpack {
 
     void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
                                    Sp<ModuleFile> mf) {
-        auto srcResult = mf->GetSource();
-        if (srcResult.error.has_value()) {
-            worker_errors_.push_back(*srcResult.error);
+        WorkerError error;
+        if (!mf->GetSource(error)) {
+            worker_errors_.push_back(error);
             return;
         }
 
-        auto ctx = std::make_shared<ParserContext>(mf->id(), std::move(srcResult.value), config);
+        auto ctx = std::make_shared<ParserContext>(mf->id(), mf->src_content, config);
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
-            std::string u8path = UStringToUtf8(import_decl->source->str_);
+            const auto& u8path = import_decl->source->str_;
             if (IsExternalImportModulePath(u8path)) {
                 global_import_handler_.HandleImport(import_decl);
                 return;
@@ -178,12 +174,12 @@ namespace jetpack {
         });
         parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
             if (export_decl->source.has_value()) {
-                std::string u8path = UStringToUtf8((*export_decl->source)->str_);
+                const auto& u8path = (*export_decl->source)->str_;
                 HandleNewLocationAdded(config, mf, false, u8path);
             }
         });
         parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
-            std::string u8path = UStringToUtf8(export_decl->source->str_);
+            const auto& u8path = export_decl->source->str_;
             HandleNewLocationAdded(config, mf, false, u8path);
         });
 
@@ -232,7 +228,7 @@ namespace jetpack {
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                             UStringToUtf8(err.name),
+                                             err.name,
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
                 worker_errors_.push_back({childMod->Path(), std::move(message) });
@@ -256,7 +252,7 @@ namespace jetpack {
 
         json exports = json::array();
         for (auto& tuple : GetAllExportVars()) {
-            exports.push_back(UStringToUtf8(std::get<1>(tuple)));
+            exports.push_back(std::get<1>(tuple));
         }
 
         json result = json::object();
@@ -273,8 +269,8 @@ namespace jetpack {
         std::cout << result.dump(2) << std::endl;
     }
 
-    std::vector<std::tuple<Sp<ModuleFile>, UString>> ModuleResolver::GetAllExportVars() {
-        std::vector<std::tuple<Sp<ModuleFile>, UString>> result;
+    std::vector<std::tuple<Sp<ModuleFile>, std::string>> ModuleResolver::GetAllExportVars() {
+        std::vector<std::tuple<Sp<ModuleFile>, std::string>> result;
 
         TraverseModulePushExportVars(result, entry_module, nullptr);
 
@@ -297,7 +293,7 @@ namespace jetpack {
             } catch (VariableExistsError& err) {
                 std::lock_guard<std::mutex> guard(error_mutex_);
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
-                                             UStringToUtf8(err.name),
+                                             err.name,
                                              err.exist_var->location.start.line,
                                              err.exist_var->location.start.column);
                 worker_errors_.push_back({ resolvedPath, std::move(message) });
@@ -328,9 +324,9 @@ namespace jetpack {
      *
      * Then a would be in white list
      */
-    void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
+    void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                                                       const Sp<jetpack::ModuleFile>& mod,
-                                                      HashSet<UString>* white_list) {
+                                                      HashSet<std::string>* white_list) {
 
         if (mod->visited_mark) {
             return;
@@ -348,7 +344,7 @@ namespace jetpack {
         // 2. handle all external exports
         auto external_infos = mod->GetExportManager().CollectExternalInfos();
         for (auto& info : external_infos) {
-            auto u8relative_path = UStringToUtf8(info.relative_path);
+            const auto& u8relative_path = info.relative_path;
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
                 WorkerError err {
@@ -371,7 +367,7 @@ namespace jetpack {
             if (info.is_export_all) {
                 TraverseModulePushExportVars(arr, iter->second, nullptr);
             } else {
-                HashSet<UString> new_white_list;
+                HashSet<std::string> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }
@@ -417,8 +413,8 @@ namespace jetpack {
         auto& import_manager = mod_scope->import_manager;
 
         for (auto& tuple : import_manager.id_map) {
-            auto str = UStringToUtf8(tuple.first);
-            result[str] = UStringToUtf8(tuple.second.module_name);
+            const auto& str = tuple.first;
+            result[str] = tuple.second.module_name;
         }
 
         return result;
@@ -474,7 +470,7 @@ namespace jetpack {
     void ModuleResolver::EscapeAllContent() {
         for (auto& tuple : modules_table_.pathToModule) {
             tuple.second->escaped_src_content = thread_pool_->enqueue([mod = tuple.second]() -> std::string {
-                return EscapeJSONString(UStringToUtf8(mod->src_content));
+                return EscapeJSONString(mod->src_content->ConstData());
             });
             tuple.second->escaped_path = thread_pool_->enqueue([mode = tuple.second]() -> std::string {
                 return EscapeJSONString(mode->Path());
@@ -483,7 +479,7 @@ namespace jetpack {
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars, const std::string& outPath) {
+    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
         benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
@@ -505,7 +501,7 @@ namespace jetpack {
             moduleCompositor.append(codegen.GetResult().content, nullptr);
         }
 
-        const UString finalResult = moduleCompositor.Finalize();
+        const std::string finalResult = moduleCompositor.Finalize();
         codegenMarker.Submit();
 
         std::future<bool> srcFut;
@@ -514,8 +510,7 @@ namespace jetpack {
         }
 
         benchmark::BenchMarker writeMarker(benchmark::BENCH_WRITING_IO);
-        std::string u8content = UStringToUtf8(finalResult);
-        io::IOError err = io::WriteBufferToPath(outPath, u8content.c_str(), u8content.size());
+        io::IOError err = io::WriteBufferToPath(outPath, finalResult.c_str(), finalResult.size());
         J_ASSERT(err == io::IOError::Ok);
         writeMarker.Submit();
 
@@ -588,7 +583,7 @@ namespace jetpack {
         });
 
         // RenameSymbol() will change iterator, call it later
-        std::vector<std::tuple<UString, UString>> rename_vec;
+        std::vector<std::tuple<std::string, std::string>> rename_vec;
 
         // Distribute new name to root level variables
         for (auto& var : variables) {
@@ -642,7 +637,7 @@ namespace jetpack {
                  */
                 case SyntaxNodeType::ExportDefaultDeclaration: {
                     auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
-                    UString new_name = u"_default";
+                    std::string new_name = "_default";
                     auto new_name_opt = name_generator->Next(new_name);
                     if (new_name_opt.has_value()) {
                         new_name = *new_name_opt;
@@ -768,7 +763,7 @@ namespace jetpack {
                         }
                     }
 
-                    auto export_info = mf->GetExportManager().local_exports_name[u"default"];
+                    auto export_info = mf->GetExportManager().local_exports_name["default"];
                     if (export_info) {
                         export_info->local_name = new_name;
                     }
@@ -836,7 +831,7 @@ namespace jetpack {
 
     void ModuleResolver::RenameExternalImports(const Sp<jetpack::ModuleFile> &mf,
                                                const Sp<jetpack::ImportDeclaration> &import_decl) {
-        std::vector<std::tuple<UString, UString>> renames;
+        std::vector<std::tuple<std::string, std::string>> renames;
 
         auto& source_path = import_decl->source->str_;
         auto& info = global_import_handler_.import_infos[source_path];
@@ -892,11 +887,11 @@ namespace jetpack {
     void ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
                                                  Sp<jetpack::ImportDeclaration> &import_decl,
                                                  std::vector<Sp<VariableDeclaration>>& result) {
-        auto full_path_iter = mf->resolved_map.find(UStringToUtf8(import_decl->source->str_));
+        auto full_path_iter = mf->resolved_map.find(import_decl->source->str_);
         if (full_path_iter == mf->resolved_map.end()) {
             throw ModuleResolveException(
                     mf->Path(),
-                    format("can not resolver path: {}", UStringToUtf8(import_decl->source->str_)));
+                    format("can not resolver path: {}", import_decl->source->str_));
         }
 
         auto target_module = modules_table_.pathToModule[full_path_iter->second];
@@ -944,7 +939,7 @@ namespace jetpack {
             }
 
             {
-                auto relative_path = UStringToUtf8(import_decl->source->str_);
+                const auto& relative_path = import_decl->source->str_;
                 std::string absolute_path = mf->resolved_map[relative_path];
 
                 auto ref_mod_iter = modules_table_.pathToModule.find(absolute_path);
@@ -980,21 +975,21 @@ namespace jetpack {
         } else {
             for (auto& spec : import_decl->specifiers) {
                 std::string absolute_path;
-                UString target_export_name;
-                UString import_local_name;
+                std::string target_export_name;
+                std::string import_local_name;
                 switch (spec->type) {
                     case SyntaxNodeType::ImportDefaultSpecifier: {
                         auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
-                        auto relative_path = UStringToUtf8(import_decl->source->str_);
+                        const auto& relative_path = import_decl->source->str_;
                         absolute_path = mf->resolved_map[relative_path];
-                        target_export_name = u"default";
+                        target_export_name = "default";
                         import_local_name = default_spec->local->name;
                         break;
                     }
 
                     case SyntaxNodeType::ImportSpecifier: {
                         auto import_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
-                        auto relative_path = UStringToUtf8(import_decl->source->str_);
+                        const auto& relative_path = import_decl->source->str_;
                         absolute_path = mf->resolved_map[relative_path];
                         target_export_name = import_spec->imported->name;
                         import_local_name = import_spec->local->name;
@@ -1012,22 +1007,22 @@ namespace jetpack {
                 }
                 auto& ref_mod = ref_mod_iter->second;
 
-                std::set<std::int32_t> visited_mods;
+                std::set<int32_t> visited_mods;
                 auto local_export_opt = FindLocalExportByPath(absolute_path, target_export_name, visited_mods);
 
                 if (!local_export_opt.has_value()) {
                     throw ModuleResolveException(
                             mf->Path(),
-                        format("can not find export variable '{}' from {}", UStringToUtf8(target_export_name), absolute_path)
+                        format("can not find export variable '{}' from {}", target_export_name, absolute_path)
                     );
                 }
 
-                std::vector<std::tuple<UString, UString>> changeset;
+                std::vector<std::tuple<std::string, std::string>> changeset;
                 changeset.emplace_back(import_local_name, (*local_export_opt)->local_name);
                 if (!mf->ast->scope->BatchRenameSymbols(changeset)) {
                     throw ModuleResolveException(
                             mf->Path(),
-                        format("rename symbol failed: {}", UStringToUtf8(import_local_name))
+                        format("rename symbol failed: {}", import_local_name)
                     );
                 }
             }
@@ -1036,8 +1031,8 @@ namespace jetpack {
 
     std::optional<Sp<LocalExportInfo>>
     ModuleResolver::FindLocalExportByPath(const std::string &path,
-                                          const UString& export_name,
-                                          std::set<std::int32_t>& visited) {
+                                          const std::string& export_name,
+                                          std::set<int32_t>& visited) {
         auto modIter = modules_table_.pathToModule.find(path);
         if (modIter == modules_table_.pathToModule.end()) {
             return std::nullopt;
@@ -1056,7 +1051,7 @@ namespace jetpack {
 
         // not in local export
         for (auto& tuple : mod->GetExportManager().external_exports_map) {
-            auto relative_path = UStringToUtf8(tuple.second.relative_path);
+            const auto& relative_path = tuple.second.relative_path;
             auto absolute_path = mod->resolved_map[relative_path];
 
             if (tuple.second.is_export_all) {
@@ -1083,7 +1078,7 @@ namespace jetpack {
         mf->visited_mark = true;
 
         moduleCompositor.append(mf->codegen_result.content, mf->mapping_collector_);
-        moduleCompositor.append(u"\n", nullptr);
+        moduleCompositor.append("\n", nullptr);
 
         for (auto& ref : mf->ref_mods) {
             auto new_mf = ref.lock();
@@ -1091,7 +1086,7 @@ namespace jetpack {
         }
     }
 
-    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>& export_names) {
+    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>& export_names) {
         auto result = std::make_shared<ExportNamedDeclaration>();
 
         for (auto& tuple : modules_table_.pathToModule) {
@@ -1099,14 +1094,14 @@ namespace jetpack {
         }
 
         for (auto& tuple : export_names) {
-            const UString& export_name = std::get<1>(tuple);
+            const std::string& export_name = std::get<1>(tuple);
             const Sp<ModuleFile>& mf = std::get<0>(tuple);
 
             auto iter = mf->GetExportManager().local_exports_name.find(export_name);
             if (iter == mf->GetExportManager().local_exports_name.end()) {
                 WorkerError err {
                         mf->Path(),
-                        format("symbol not found failed: {}", UStringToUtf8(export_name))
+                        format("symbol not found failed: {}", export_name)
                 };
                 worker_errors_.emplace_back(std::move(err));
                 break;

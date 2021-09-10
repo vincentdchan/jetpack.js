@@ -9,29 +9,41 @@
 #include "parser/ParseErrorHandler.h"
 #include "utils/Common.h"
 #include "Token.h"
+#include "StringWithMapping.h"
 #include "Comment.h"
 
 namespace jetpack {
 
     class Scanner final {
     public:
-        Scanner(const UString& source, std::shared_ptr<parser::ParseErrorHandler> error_handler);
+        Scanner(const Sp<StringWithMapping>& source, Sp<parser::ParseErrorHandler> error_handler);
         Scanner(const Scanner&) = delete;
         Scanner(Scanner&&) = delete;
 
         Scanner& operator=(const Scanner&) = delete;
         Scanner& operator=(Scanner&&) = delete;
 
+        struct Cursor {
+        public:
+            uint32_t u8 = 0;
+            uint32_t u16 = 0;
+
+            bool operator==(const Cursor& that) const {
+                return u8 == that.u8;
+            }
+
+        };
+
         struct ScannerState {
         public:
-            uint32_t index_ = 0;
+            Cursor cursor_;
             uint32_t line_number_ = 0;
             uint32_t line_start_ = 0;
         };
 
         [[nodiscard]]
         inline int32_t Length() const {
-            return source_.size();
+            return source_->size();
         }
 
         ScannerState SaveState();
@@ -45,7 +57,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline bool IsEnd() const {
-            return index_ >= Length();
+            return cursor_.u8 >= Length();
         }
 
         [[nodiscard]]
@@ -58,21 +70,17 @@ namespace jetpack {
         }
 
         [[nodiscard]]
-        inline uint32_t Index() const {
-            return index_;
+        inline Cursor Index() const {
+            return cursor_;
         }
 
-        inline void SetIndex(uint32_t index) {
-            index_ = index;
-        }
-
-        inline void IncreaseIndex() {
-            index_++;
+        inline void SetIndex(Cursor index) {
+            cursor_ = index;
         }
 
         [[nodiscard]]
         inline uint32_t Column() const {
-            return index_ - line_start_;
+            return cursor_.u16 - line_start_;
         }
 
         [[nodiscard]]
@@ -84,24 +92,24 @@ namespace jetpack {
             line_start_ = ls;
         }
 
-        inline UStringView View(uint32_t start, uint32_t end) {
-            return UStringView(source_).substr(start, end - start);
+        inline std::string_view View(uint32_t start, uint32_t end) {
+            return std::string_view (source_->data_).substr(start, end - start);
         }
 
         std::vector<std::shared_ptr<Comment>> SkipSingleLineComment(uint32_t offset);
         std::vector<std::shared_ptr<Comment>> SkipMultiLineComment();
         void ScanComments(std::vector<std::shared_ptr<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
-        static JsTokenType IsStrictModeReservedWord(UStringView str);
-        static bool IsRestrictedWord(UStringView str_);
-        static JsTokenType ToKeyword(const UString& str_);
-        bool ScanHexEscape(char16_t ch, char32_t& result);
+        static JsTokenType IsStrictModeReservedWord(std::string_view str);
+        static bool IsRestrictedWord(std::string_view str_);
+        static JsTokenType ToKeyword(const std::string& str_);
+        bool ScanHexEscape(char32_t ch, char32_t& result);
         char32_t ScanUnicodeCodePointEscape();
-        UString GetIdentifier();
-        UString GetComplexIdentifier();
+        std::string GetIdentifier(int32_t start_char_len);
+        std::string GetComplexIdentifier();
         bool OctalToDecimal(char16_t ch, uint32_t& result);
 
-        Token ScanIdentifier();
+        Token ScanIdentifier(int32_t start_char_len);
         Token ScanPunctuator();
         Token ScanHexLiteral(uint32_t index);
         Token ScanBinaryLiteral(uint32_t index);
@@ -110,42 +118,51 @@ namespace jetpack {
         Token ScanNumericLiteral();
         Token ScanStringLiteral();
         Token ScanTemplate();
-        UString TestRegExp(const UString& pattern, const UString& flags);
 
-        UString ScanRegExpBody();
-        UString ScanRegExpFlags();
+        std::string ScanRegExpBody();
+        std::string ScanRegExpFlags();
         Token ScanRegExp();
         Token Lex();
 
-        char32_t CodePointAt(uint32_t index, uint32_t* size_ = nullptr) const;
-
         [[nodiscard]]
-        inline char16_t CharAt(uint32_t index) const {
-            if (unlikely(index >= source_.size())) return u'\0';
-            return source_.at(index);
+        inline char CharAt(uint32_t index) const {
+            if (unlikely(index >= source_->size())) return u'\0';
+            return source_->data_.at(index);
         }
 
+
         [[nodiscard]]
-        UString Source() const {
+        Sp<StringWithMapping> Source() const {
             return source_;
         }
 
         [[nodiscard]]
-        inline UString ValueBuffer() const {
-            return value_buffer_;
+        inline char Peek() const {
+            return CharAt(cursor_.u8);
         }
 
-    private:
-        std::stack<UString> curly_stack_;
+        [[nodiscard]]
+        inline char Peek(uint32_t offset) const {
+            return CharAt(cursor_.u8 + offset);
+        }
 
-        uint32_t index_ = 0u;
+        char32_t PeekUtf32(uint32_t* len = nullptr);
+        char32_t NextUtf32();
+
+        char NextChar();
+    private:
+
+        std::stack<std::string_view> curly_stack_;
+
+        Cursor cursor_;
         uint32_t line_number_ = 1u;
-        uint32_t line_start_ = 0u;
+        uint32_t line_start_ = 0u;  // u16 index
 
         Sp<parser::ParseErrorHandler> error_handler_;
-        UString source_;
-        UString value_buffer_;
+        Sp<StringWithMapping> source_;
         bool is_module_ = false;
+
+        void PlusCursor(uint32_t n);
 
     };
 

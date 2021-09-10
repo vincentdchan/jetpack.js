@@ -89,23 +89,6 @@ target_include_directories(${PROJECT_NAME} ./esparser/src)
 target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
 ```
 
-# 性能
-
-我做了和 [esbuild](https://github.com/evanw/esbuild) 相同的测试。
-
-> My main benchmark approximates a large codebase by duplicating the three.js library 10 times and building a single bundle from scratch, without any caches. For this benchmark, esbuild is 10-100x faster than the other JavaScript bundlers I tested (Webpack, Rollup, Parcel, and FuseBox). The benchmark can be run with make bench-three.
-
-![](./images/chart.svg)
-
-The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
-(similar to esbuild).
-
-# 架构
-
-![](./images/Rocket-Bundle-Arch.png)
-
-代码都有注释，可以读读代码。
-
 # 平台
 
 `jetpack.js` 支持常见的平台:
@@ -113,6 +96,7 @@ The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
 - macOS
 - Windows 64bit
 - Linux 64bit
+- Wasm(开发中)
 
 # 构建依赖
 - jemalloc 5.2.1
@@ -121,3 +105,4 @@ The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
 - nlohmann_json
 - robin-hood-hashing 3.11.1
 - xxHash
+- boost(头文件) 1.76

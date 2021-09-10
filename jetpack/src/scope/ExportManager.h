@@ -28,22 +28,22 @@ namespace jetpack {
 
     struct LocalExportInfo {
     public:
-        UString export_name;
-        UString local_name;
+        std::string export_name;
+        std::string local_name;
         std::optional<std::shared_ptr<ExportDefaultDeclaration>> default_export_ast;
 
     };
 
     struct ExternalExportAlias {
     public:
-        UString source_name;
-        UString export_name;
+        std::string source_name;
+        std::string export_name;
 
     };
 
     struct ExternalExportInfo {
     public:
-        UString relative_path;
+        std::string relative_path;
         bool is_export_all = false;
         std::vector<ExternalExportAlias> names;
 
@@ -79,13 +79,13 @@ namespace jetpack {
         void AddLocalExport(const std::shared_ptr<LocalExportInfo>& info);
 
         // key: export name
-        robin_hood::unordered_map<UString, std::shared_ptr<LocalExportInfo>> local_exports_name;
+        HashMap<std::string, Sp<LocalExportInfo>> local_exports_name;
 
         // key: local_name
-        robin_hood::unordered_map<UString, std::shared_ptr<LocalExportInfo>> local_exports_by_local_name;
+        HashMap<std::string, Sp<LocalExportInfo>> local_exports_by_local_name;
 
         // key: absolute path
-        robin_hood::unordered_map<UString, ExternalExportInfo> external_exports_map;
+        HashMap<std::string, ExternalExportInfo> external_exports_map;
 
         std::vector<ExternalExportInfo> CollectExternalInfos();
 

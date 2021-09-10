@@ -63,7 +63,7 @@ namespace jetpack {
 
         void FinalizeSourcesContent();
 
-        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
+        bool AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col);
 
         int32_t GetFilenameIndexByModuleId(int32_t moduleId);
 

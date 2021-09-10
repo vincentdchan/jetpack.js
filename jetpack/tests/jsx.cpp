@@ -13,7 +13,7 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseJSXAndCodeGen(UString&& content) {
+inline std::string ParseJSXAndCodeGen(std::string&& content) {
     ParserContext::Config config = ParserContext::Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
@@ -25,7 +25,7 @@ inline std::string ParseJSXAndCodeGen(UString&& content) {
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return UStringToUtf8(codegen.GetResult().content);
+    return codegen.GetResult().content;
 }
 
 TEST(JSX, TranspileSimple1) {
@@ -35,7 +35,7 @@ TEST(JSX, TranspileSimple1) {
     std::string expected =
         "const result = React.createElement(\"a\");\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileSimple2) {
@@ -45,7 +45,7 @@ TEST(JSX, TranspileSimple2) {
     std::string expected =
         "const result = React.createElement(\"a\");\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileSimple3) {
@@ -57,7 +57,7 @@ TEST(JSX, TranspileSimple3) {
         "  name: \"hello\"\n"
         "});\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileSimple4) {
@@ -69,7 +69,7 @@ TEST(JSX, TranspileSimple4) {
         "  name: 1 + 1\n"
         "});\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileSpread1) {
@@ -82,7 +82,7 @@ TEST(JSX, TranspileSpread1) {
         "  ...props\n"
         "});\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileChildren) {
@@ -92,7 +92,7 @@ TEST(JSX, TranspileChildren) {
     std::string expected =
         "const result = React.createElement(\"a\", null, \"aaa\");\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }
 
 TEST(JSX, TranspileRecursively) {
@@ -102,5 +102,5 @@ TEST(JSX, TranspileRecursively) {
     std::string expected =
         "const result = React.createElement(\"a\", null, React.createElement(\"b\"));\n";
 
-    EXPECT_EQ(ParseJSXAndCodeGen(UStringFromStdString(src)), expected);
+    EXPECT_EQ(ParseJSXAndCodeGen(std::move(src)), expected);
 }

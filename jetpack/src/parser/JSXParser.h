@@ -23,7 +23,7 @@ namespace jetpack::parser {
 
         };
 
-        static UString GetQualifiedElementName(const Sp<SyntaxNode>& node);
+        static std::string GetQualifiedElementName(const Sp<SyntaxNode>& node);
 
         JSXParser(Parser& parent, std::shared_ptr<ParserContext> ctx);
         JSXParser(const JSXParser& parser) = delete;
@@ -79,9 +79,9 @@ namespace jetpack::parser {
         Token NextJSXText();
         Token PeekJSXToken();
 
-        UString ScanXHTMLEntity(char16_t quote);
+        std::string ScanXHTMLEntity(char quote);
 
-        static std::unique_ptr<robin_hood::unordered_map<UString, char16_t>> XHTMLEntities;
+        static std::unique_ptr<robin_hood::unordered_map<std::string, char16_t>> XHTMLEntities;
 
         void InitXHTMLEntities();
 

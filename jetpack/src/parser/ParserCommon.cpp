@@ -17,7 +17,7 @@ namespace jetpack::parser {
     void ParserCommon::TolerateError(const std::string &message) {
         ParseError error;
         error.msg_ = message;
-        error.index_ = ctx->last_marker_.index;
+        error.index_ = ctx->last_marker_.cursor.u8;
         error.line_ = ctx->last_marker_.line ;
         error.col_ = ctx->last_marker_.column + 1;
         ctx->error_handler_->TolerateError(error);
@@ -33,7 +33,7 @@ namespace jetpack::parser {
 
     ParseError ParserCommon::UnexpectedToken(const Token &token) {
         string msg = ParseMessages::UnexpectedToken;
-        UString value;
+        std::string value;
 
         msg = (token.type == JsTokenType::EOF_) ? ParseMessages::UnexpectedEOS :
               (token.type == JsTokenType::Identifier) ? ParseMessages::UnexpectedIdentifier :
@@ -51,7 +51,7 @@ namespace jetpack::parser {
         }
         value = token.value;
 
-        string final_message = fmt::format(msg, UStringToUtf8(value));
+        string final_message = fmt::format(msg, value);
         return UnexpectedToken(token, final_message);
     }
 
@@ -59,7 +59,7 @@ namespace jetpack::parser {
         if (token.lineNumber > 0) {
             uint32_t index = token.range.first;
             uint32_t line = token.lineNumber;
-            uint32_t lastMarkerLineStart = ctx->last_marker_.index - ctx->last_marker_.column;
+            uint32_t lastMarkerLineStart = ctx->last_marker_.cursor.u16 - ctx->last_marker_.column;
             uint32_t column = token.range.first - lastMarkerLineStart + 1;
             return ctx->error_handler_->CreateError(message, index, line, column);
         } else {
@@ -71,7 +71,7 @@ namespace jetpack::parser {
     }
 
     void ParserCommon::ThrowError(const std::string &message) {
-        auto index = ctx->last_marker_.index;
+        auto index = ctx->last_marker_.cursor.u8;
         auto line = ctx->last_marker_.line;
         auto column = ctx->last_marker_.column + 1;
         throw ctx->error_handler_->CreateError(message, index, line, column);
@@ -113,11 +113,11 @@ namespace jetpack::parser {
 
         CollectComments();
 
-        if (scanner.Index() != ctx->start_marker_.index) {
+        if (scanner.Index().u8 != ctx->start_marker_.cursor.u8) {
             ctx->start_marker_ = ParserContext::Marker {
                 scanner.Index(),
                 scanner.LineNumber(),
-                scanner.Index() - scanner.LineStart(),
+                scanner.Index().u8 - scanner.LineStart(),
             };
         }
 
@@ -215,14 +215,14 @@ namespace jetpack::parser {
                 ThrowUnexpectedToken(ctx->lookahead_);
             }
             ctx->last_marker_ = ParserContext::Marker {
-                ctx->start_marker_.index,
+                ctx->start_marker_.cursor,
                 ctx->start_marker_.line,
                 ctx->start_marker_.column,
             };
         }
     }
 
-    bool ParserCommon::MatchContextualKeyword(const UString& keyword) {
+    bool ParserCommon::MatchContextualKeyword(const std::string& keyword) {
         Token& lookahead = ctx->lookahead_;
         return lookahead.type == JsTokenType::Identifier && lookahead.value == keyword;
     }

@@ -15,9 +15,9 @@ namespace jetpack {
     class ImportIdentifierInfo {
     public:
         bool is_namespace;
-        UString local_name;
-        UString source_name;
-        UString module_name;
+        std::string local_name;
+        std::string source_name;
+        std::string module_name;
 
     };
 
@@ -38,7 +38,7 @@ namespace jetpack {
 
         ImportManager& operator=(const ImportManager&) = delete;
 
-        HashMap<UString, ImportIdentifierInfo> id_map;
+        HashMap<std::string, ImportIdentifierInfo> id_map;
 
         EC ResolveImportDecl(const std::shared_ptr<ImportDeclaration>&);
 

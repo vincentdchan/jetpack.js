@@ -14,7 +14,7 @@ namespace jetpack::parser {
     Sp<TSTypeAliasDeclaration> TypeScriptParser::ParseTypeAliasDeclaration() {
         auto start_marker = CreateStartMarker();
 
-        if (!MatchContextualKeyword(u"type")) {
+        if (!MatchContextualKeyword("type")) {
             ThrowUnexpectedToken(ctx->lookahead_);
         }
 

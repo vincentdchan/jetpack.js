@@ -9,7 +9,7 @@
 namespace jetpack {
 
     Scope::PVar
-    Scope::RecursivelyFindVariable(const UString &var_name) {
+    Scope::RecursivelyFindVariable(const std::string &var_name) {
         auto iter = own_variables.find(var_name);
         if (iter != own_variables.end()) {
             return iter->second;
@@ -82,7 +82,7 @@ namespace jetpack {
         }
     }
 
-    bool Scope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
+    bool Scope::BatchRenameSymbols(const std::vector<std::tuple<std::string, std::string>>& changeset) {
         std::vector<PVar> buffer;
         buffer.reserve(changeset.size());
 
@@ -120,7 +120,7 @@ namespace jetpack {
     ModuleScope::ModuleScope() : Scope(ScopeType::Module) {
     };
 
-    bool ModuleScope::BatchRenameSymbols(const std::vector<std::tuple<UString, UString>>& changeset) {
+    bool ModuleScope::BatchRenameSymbols(const std::vector<std::tuple<std::string, std::string>>& changeset) {
         if (!Scope::BatchRenameSymbols(changeset)) {
             return false;
         }

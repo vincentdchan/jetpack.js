@@ -6,7 +6,7 @@
 
 namespace jetpack {
 
-    ModuleCompositor& ModuleCompositor::append(const UString &content, Sp<MappingCollector> mappingCollector) {
+    ModuleCompositor& ModuleCompositor::append(const std::string &content, Sp<MappingCollector> mappingCollector) {
         if (likely(mappingCollector)) {
             for (auto& item : mappingCollector->items_) {
                 if (item.dist_line == 1) {  // first line

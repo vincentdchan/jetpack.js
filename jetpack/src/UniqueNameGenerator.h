@@ -17,9 +17,9 @@ namespace jetpack {
     class UniqueNameGenerator {
     public:
 
-        virtual std::optional<UString> Next(const UString& original_name) = 0;
+        virtual std::optional<std::string> Next(const std::string& original_name) = 0;
 
-        virtual bool IsNameUsed(const UString& name) { return false; };
+        virtual bool IsNameUsed(const std::string& name) { return false; };
 
         virtual ~UniqueNameGenerator() = default;
 
@@ -29,13 +29,13 @@ namespace jetpack {
     protected:
         UniqueNameGeneratorWithUsedName();
 
-        HashSet<UString> used_name;
+        HashSet<std::string> used_name;
 
-        bool IsJsKeyword(const UString& name);
+        bool IsJsKeyword(const std::string& name);
 
     private:
         static std::once_flag init_once_;
-        static HashSet<UString> long_keywords_set;
+        static HashSet<std::string> long_keywords_set;
 
     };
 
@@ -43,16 +43,16 @@ namespace jetpack {
     public:
         static std::shared_ptr<ReadableNameGenerator> Make();
 
-        std::optional<UString> Next(const UString& original_name) override;
+        std::optional<std::string> Next(const std::string& original_name) override;
 
-        bool IsNameUsed(const UString& name) override;
+        bool IsNameUsed(const std::string& name) override;
 
     private:
         ReadableNameGenerator() = default;
 
-        std::int32_t counter = 0;
+        int32_t counter = 0;
 
-        std::shared_ptr<ReadableNameGenerator> prev;
+        Sp<ReadableNameGenerator> prev;
 
         std::weak_ptr<ReadableNameGenerator> weak_self;
 
@@ -65,13 +65,13 @@ namespace jetpack {
     public:
         UnresolvedNameCollector() = default;
 
-        bool IsNameUsed(const UString& name) override;
+        bool IsNameUsed(const std::string& name) override;
 
-        std::optional<UString> Next(const UString& original_name) override {
+        std::optional<std::string> Next(const std::string& original_name) override {
             return std::nullopt;
         }
 
-        HashSet<UString> used_name;
+        HashSet<std::string> used_name;
 
         std::mutex logger_mutex;
 
@@ -94,18 +94,18 @@ namespace jetpack {
         Merge(std::vector<std::shared_ptr<MinifyNameGenerator>>& vec,
               const std::shared_ptr<UniqueNameGenerator>& prev);
 
-        std::optional<UString> Next(const UString& original_name) override;
+        std::optional<std::string> Next(const std::string& original_name) override;
 
-        bool IsNameUsed(const UString& name) override;
+        bool IsNameUsed(const std::string& name) override;
 
-        UString GenAName();
+        std::string GenAName();
 
     private:
         MinifyNameGenerator() = default;
 
-        std::int32_t counter = 0;
+        int32_t counter = 0;
 
-        std::shared_ptr<UniqueNameGenerator> prev;
+        Sp<UniqueNameGenerator> prev;
 
         std::weak_ptr<MinifyNameGenerator> weak_self;
 

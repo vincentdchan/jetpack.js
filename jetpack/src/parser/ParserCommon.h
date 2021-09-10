@@ -44,7 +44,7 @@ namespace jetpack::parser {
         struct FormalParameterOptions {
             bool simple = true;
             std::vector<Sp<SyntaxNode>> params;
-            std::unordered_set<UString> param_set;
+            HashSet<std::string> param_set;
             std::optional<Token> stricted;
             std::optional<Token> first_restricted;
             std::string message;
@@ -63,8 +63,8 @@ namespace jetpack::parser {
 
         Token NextRegexToken();
 
-        inline UString GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source().substr
+        inline std::string GetTokenRaw(const Token& token) {
+            return ctx->scanner_->Source()->ConstData().substr
             (token.range.first, token.range.second - token.range.first);
         }
 
@@ -86,7 +86,7 @@ namespace jetpack::parser {
 
         inline ParserContext::Marker CreateStartMarker() {
             return {
-                ctx->start_marker_.index,
+                ctx->start_marker_.cursor,
                 ctx->start_marker_.line,
                 ctx->start_marker_.column
             };
@@ -106,7 +106,7 @@ namespace jetpack::parser {
             return ctx->lookahead_.type == t;
         }
 
-        bool MatchContextualKeyword(const UString& keyword);
+        bool MatchContextualKeyword(const std::string& keyword);
         bool MatchAssign();
 
         void ConsumeSemicolon();
@@ -157,7 +157,7 @@ namespace jetpack::parser {
         template<typename T>
         typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
         Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
-            from->range = std::make_pair(marker.index, LastMarker().index);
+            from->range = std::make_pair(marker.cursor.u8, LastMarker().cursor.u8);
 
             from->location.fileId = ctx->fileIndex;
 

@@ -8,6 +8,37 @@
 #include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 
+/*
+ * This lookup table is used to help decode the first byte of
+ * a multi-byte UTF8 character.
+ * copy from SQLite3
+ */
+static const unsigned char Utf8Trans1[] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
+};
+
+static char32_t read_codepoint_from_utf8(const uint8_t buf[], uint32_t *idx, size_t strlen)
+{
+    char32_t c = buf[(*idx)++];
+    if( c>=0xc0 ){
+        c = Utf8Trans1[c-0xc0];
+        while (*idx < strlen && (buf[*idx] & 0xc0)==0x80) {
+            c = (c<<6) + (0x3f & buf[(*idx)++]);
+        }
+        if( c<0x80
+            || (c&0xFFFFF800)==0xD800
+            || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
+    }
+    return c;
+}
+
 namespace jetpack {
 
     using namespace std;
@@ -15,20 +46,20 @@ namespace jetpack {
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-    Scanner::Scanner(const UString& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
+    Scanner::Scanner(const Sp<StringWithMapping>& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
             source_(source), error_handler_(std::move(error_handler)) {
 
     }
 
     Scanner::ScannerState Scanner::SaveState() {
         ScannerState state {
-                index_, line_number_, line_start_,
+                cursor_, line_number_, line_start_,
         };
         return state;
     }
 
     void Scanner::RestoreState(const Scanner::ScannerState &state) {
-        index_ = state.index_;
+        cursor_ = state.cursor_;
         line_number_ = state.line_number_;
         line_start_ = state.line_start_;
     }
@@ -38,7 +69,11 @@ namespace jetpack {
     }
 
     void Scanner::ThrowUnexpectedToken(const std::string &message) {
-        throw error_handler_->CreateError(message, index_, line_number_, index_ - line_start_ + 1);
+        throw error_handler_->CreateError(
+                message,
+                cursor_.u16,
+                line_number_,
+                cursor_.u16 - line_start_ + 1);
     }
 
     void Scanner::TolerateUnexpectedToken() {
@@ -46,47 +81,64 @@ namespace jetpack {
     }
 
     void Scanner::TolerateUnexpectedToken(const std::string &message) {
-        auto error = error_handler_->CreateError(message, index_, line_number_, index_ - line_start_ + 1);
+        auto error = error_handler_->CreateError(
+                message,
+                cursor_.u16,
+                line_number_, cursor_.u16 - line_start_ + 1);
         error_handler_->TolerateError(error);
     }
 
-    std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(uint32_t offset) {
+    std::vector<std::shared_ptr<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
         std::vector<std::shared_ptr<Comment>> result;
         uint32_t start = 0;
         SourceLocation loc;
 
-        start = index_ - offset;
+        start = cursor_.u8 - u8_offset;
         loc.start.line = line_number_;
-        loc.start.column = index_ - line_start_ - offset;
+        loc.start.column = cursor_.u16 - line_start_ - u8_offset;
+
+        int32_t count = 0;
 
         while (!IsEnd()) {
-            char32_t ch = CodePointAt(index_);
-            index_++;
+            char32_t ch = NextUtf32();
+            if (ch == 0) {
+                break;
+            }
+
+            J_ASSERT(count++ < 2000);
 
             if (UChar::IsLineTerminator(ch)) {
-                loc.end = Position {line_number_, index_ - line_start_ - 1 };
+                loc.end = Position {
+                    line_number_,
+                    cursor_.u16 - line_start_ - 1
+                };
                 auto comment = new Comment {
                         false,
-                        source_.substr(start + offset, index_ - start - offset),
-                        make_pair(start, index_ - 1),
+                        source_->ConstData().substr(start + u8_offset, cursor_.u8 - start - u8_offset),
+                        make_pair(start, cursor_.u8 - 1),
                         loc
                 };
                 result.emplace_back(comment);
-                if (ch == 13 && CodePointAt(index_) == 10) {
-                    ++index_;
+                uint32_t tmp_len = 0;
+                char32_t tmp_ch = PeekUtf32(&tmp_len);
+                if (tmp_ch == 0) {
+                    break;
+                }
+                if (ch == '\r' && tmp_ch == '\n') {
+                    PlusCursor(tmp_len);
                 }
                 ++line_number_;
-                line_start_ = index_;
+                line_start_ = cursor_.u16;
                 return result;
             }
 
         }
 
-        loc.end = Position {line_number_, index_ - line_start_ };
+        loc.end = Position {line_number_, cursor_.u16 - line_start_ };
         auto comment = new Comment {
                 false,
-                source_.substr(start + offset, index_ - start - offset),
-                make_pair(start, index_),
+                source_->ConstData().substr(start + u8_offset, cursor_.u8 - start - u8_offset),
+                make_pair(start, cursor_.u8),
                 loc,
         };
         result.emplace_back(comment);
@@ -99,53 +151,53 @@ namespace jetpack {
         uint32_t start = 0;
         SourceLocation loc;
 
-        start = index_ - 2;
+        start = cursor_.u8 - 2;
         loc.start = Position {
                 line_number_,
-                index_ - line_start_ - 2,
+                cursor_.u16 - line_start_ - 2,
         };
         loc.end = Position {0, 0 };
 
         while (!IsEnd()) {
-            char32_t ch = CodePointAt(index_);
+            char ch = Peek();
             if (UChar::IsLineTerminator(ch)) {
-                if (ch == 0x0D && CodePointAt(index_ + 1) == 0x0A) {
-                    ++index_;
+                if (ch == '\r' && Peek(1) == '\n') {
+                    NextChar();
                 }
                 ++line_number_;
-                ++index_;
-                line_start_ = index_;
-            } else if (ch == 0x2A) {
-                if (CodePointAt(index_ + 1) == 0x2F) {
-                    index_ += 2;
+                NextChar();
+                line_start_ = cursor_.u16;
+            } else if (ch == '*') {
+                if (Peek(1) == '/') {
+                    PlusCursor(2);
                     loc.end = Position {
                             line_number_,
-                            index_ - line_start_,
+                            cursor_.u16 - line_start_,
                     };
                     auto comment = new Comment {
                             true,
-                            source_.substr(start + 2, index_ - start - 4),
-                            make_pair(start, index_),
+                            source_->ConstData().substr(start + 2, cursor_.u8 - start - 4),
+                            make_pair(start, cursor_.u8),
                             loc,
                     };
                     result.emplace_back(comment);
                     return result;
                 }
 
-                ++index_;
+                NextChar();
             } else {
-                ++index_;
+                NextUtf32();
             }
         }
 
         loc.end = Position {
                 line_number_,
-                index_ - line_start_,
+                cursor_.u16 - line_start_,
         };
         auto comment = new Comment {
                 true,
-                source_.substr(start + 2, index_ - start - 2),
-                make_pair(start, index_),
+                source_->ConstData().substr(start + 2, cursor_.u8 - start - 2),
+                make_pair(start, cursor_.u8),
                 loc,
         };
         result.emplace_back(comment);
@@ -155,46 +207,44 @@ namespace jetpack {
     }
 
     void Scanner::ScanComments(std::vector<std::shared_ptr<Comment>> &result) {
-        bool start = index_ == 0;
+        bool start = cursor_.u8 == 0;
 
         while (!IsEnd()) {
-            char32_t ch = CodePointAt(index_);
+            char ch = Peek();
 
             if (UChar::IsWhiteSpace(ch)) {
-                ++index_;
+                NextChar();
             } else if (UChar::IsLineTerminator(ch)) {
-                ++index_;
+                NextChar();
 
-                if (ch == 0x0D && CodePointAt(index_) == 0x0A) {
-                    ++index_;
+                if (ch == '\r' && Peek() == '\n') {
+                    NextChar();
                 }
                 ++line_number_;
-                line_start_ = index_;
+                line_start_ = cursor_.u16;
                 start = true;
-            } else if (ch == 0x2F) {
-                ch = CodePointAt(index_ + 1);
-                if (ch == 0x2F) {
-                    index_ += 2;
+            } else if (ch == '/') {
+                ch = Peek(1);
+                if (ch == '/') {
+                    PlusCursor(2);
                     auto comments = SkipSingleLineComment(2);
                     result.insert(result.end(), comments.begin(), comments.end());
                     start = true;
-                } else if (ch == 0x2A) {  // U+002A is '*'
-                    index_ += 2;
+                } else if (ch == '*') {
+                    PlusCursor(2);
                     auto comments = SkipMultiLineComment();
                     result.insert(result.end(), comments.begin(), comments.end());
-                } else if (start && ch == 0x2D) { // U+002D is '-'
-                    // U+003E is '>'
-                    if ((CodePointAt(index_ + 1) == 0x2D) && (CodePointAt(index_ + 2) == 0x3E)) {
-                        // '-->' is a single-line comment
-                        index_ += 3;
+                } else if (start && ch == '-') {
+                    if ((Peek(1) == '-') && (Peek(2) == '>')) {
+                        PlusCursor(3);
                         auto comments = SkipSingleLineComment(3);
                         result.insert(result.end(), comments.begin(), comments.end());
                     } else {
                         break;
                     }
-                } else if (ch == 0x3C && !is_module_) { // U+003C is '<'
-                    if (source_.substr(index_ + 1, index_ + 4) == u"!--") {
-                        index_ += 4; // `<!--`
+                } else if (ch == '<' && !is_module_) { // U+003C is '<'
+                    if (source_->ConstData().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
+                        PlusCursor(4); // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
                     } else {
@@ -210,25 +260,38 @@ namespace jetpack {
         }
     }
 
-    char32_t Scanner::CodePointAt(uint32_t index, uint32_t* size) const {
-        char32_t cp = source_.at(index);
-
-        if (cp >= 0xD800 && cp <= 0xDBFF) {
-            char32_t second = source_.at(index + 1);
-            if (second >= 0xDC00 && second <= 0xDFFF) {
-                char32_t first = cp;
-                cp = (first - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
-                if (size) {
-                    *size = 2;
-                }
+    char32_t Scanner::NextUtf32() {
+        uint32_t len = 0;
+        char32_t result = PeekUtf32(&len);
+        if (result != 0) {
+            for (uint32_t i = 0; i < len; i++) {
+                source_->mapping_[cursor_.u8 + i] = cursor_.u16;
             }
+            cursor_.u8 += len;
+            cursor_.u16 += std::max<uint32_t>(len / 2, 1);
         }
+        return result;
+    }
 
-        if (size) {
-            *size = 1;
+    char32_t Scanner::PeekUtf32(uint32_t* len) {
+        uint32_t pre_saved_index = cursor_.u8;
+        char32_t code = read_codepoint_from_utf8(
+                reinterpret_cast<const uint8_t *>(source_->ConstData().c_str()),
+                &pre_saved_index,
+                source_->ConstData().size());
+        if (len != nullptr) {
+            *len = pre_saved_index - cursor_.u8;
         }
+        return code;
+    }
 
-        return cp;
+    char Scanner::NextChar() {
+        char ch = Peek();
+        J_ASSERT((ch & 0x80) == 0);
+        source_->mapping_[cursor_.u8] = cursor_.u16;
+        cursor_.u8++;
+        cursor_.u16++;
+        return ch;
     }
 
 #define MAYBE_WORD(WORD) \
@@ -241,84 +304,84 @@ namespace jetpack {
                t == JsTokenType::K_Super;
     }
 
-    JsTokenType Scanner::IsStrictModeReservedWord(UStringView str_) {
-        if (str_ == UStr("implements")) return JsTokenType::KS_Implements;
-        if (str_ == UStr("interface")) return JsTokenType::KS_Interface;
-        if (str_ == UStr("package")) return JsTokenType::KS_Package;
-        if (str_ == UStr("private")) return JsTokenType::KS_Private;
-        if (str_ == UStr("protected")) return JsTokenType::KS_Protected;
-        if (str_ == UStr("public")) return JsTokenType::KS_Public;
-        if (str_ == UStr("static")) return JsTokenType::KS_Static;
-        if (str_ == UStr("yield")) return JsTokenType::K_Yield;
-        if (str_ == UStr("let")) return JsTokenType::K_Let;
+    JsTokenType Scanner::IsStrictModeReservedWord(std::string_view str_) {
+        if (str_ == "implements") return JsTokenType::KS_Implements;
+        if (str_ == "interface") return JsTokenType::KS_Interface;
+        if (str_ == "package") return JsTokenType::KS_Package;
+        if (str_ == "private") return JsTokenType::KS_Private;
+        if (str_ == "protected") return JsTokenType::KS_Protected;
+        if (str_ == "public") return JsTokenType::KS_Public;
+        if (str_ == "static") return JsTokenType::KS_Static;
+        if (str_ == "yield") return JsTokenType::K_Yield;
+        if (str_ == "let") return JsTokenType::K_Let;
         return JsTokenType::Invalid;
     }
 
-    bool Scanner::IsRestrictedWord(UStringView str_) {
-        MAYBE_WORD(UStr("eval"))
-        MAYBE_WORD(UStr("arguments"))
+    bool Scanner::IsRestrictedWord(std::string_view str_) {
+        MAYBE_WORD("eval")
+        MAYBE_WORD("arguments")
         return false;
     }
 
-    JsTokenType Scanner::ToKeyword(const UString &str_) {
+    JsTokenType Scanner::ToKeyword(const std::string &str_) {
         switch (str_.size()) {
             case 2:
-                if (str_ == UStr("if")) return JsTokenType::K_If;
-                if (str_ == UStr("in")) return JsTokenType::K_In;
-                if (str_ == UStr("do")) return JsTokenType::K_Do;
+                if (str_ == "if") return JsTokenType::K_If;
+                if (str_ == "in") return JsTokenType::K_In;
+                if (str_ == "do") return JsTokenType::K_Do;
                 return JsTokenType::Invalid;
 
             case 3:
-                if (str_ == UStr("var")) return JsTokenType::K_Var;
-                if (str_ == UStr("for")) return JsTokenType::K_For;
-                if (str_ == UStr("new")) return JsTokenType::K_New;
-                if (str_ == UStr("try")) return JsTokenType::K_Try;
-                if (str_ == UStr("let")) return JsTokenType::K_Let;
+                if (str_ == "var") return JsTokenType::K_Var;
+                if (str_ == "for") return JsTokenType::K_For;
+                if (str_ == "new") return JsTokenType::K_New;
+                if (str_ == "try") return JsTokenType::K_Try;
+                if (str_ == "let") return JsTokenType::K_Let;
                 return JsTokenType::Invalid;
 
             case 4:
-                if (str_ == UStr("this")) return JsTokenType::K_This;
-                if (str_ == UStr("else")) return JsTokenType::K_Else;
-                if (str_ == UStr("case")) return JsTokenType::K_Case;
-                if (str_ == UStr("void")) return JsTokenType::K_Void;
-                if (str_ == UStr("with")) return JsTokenType::K_With;
-                if (str_ == UStr("enum")) return JsTokenType::K_Enum;
+                if (str_ == "this") return JsTokenType::K_This;
+                if (str_ == "else") return JsTokenType::K_Else;
+                if (str_ == "case") return JsTokenType::K_Case;
+                if (str_ == "void") return JsTokenType::K_Void;
+                if (str_ == "with") return JsTokenType::K_With;
+                if (str_ == "enum") return JsTokenType::K_Enum;
                 return JsTokenType::Invalid;
 
             case 5:
-                if (str_ == UStr("while")) return JsTokenType::K_While;
-                if (str_ == UStr("break")) return JsTokenType::K_Break;
-                if (str_ == UStr("catch")) return JsTokenType::K_Catch;
-                if (str_ == UStr("throw")) return JsTokenType::K_Throw;
-                if (str_ == UStr("const")) return JsTokenType::K_Const;
-                if (str_ == UStr("yield")) return JsTokenType::K_Yield;
-                if (str_ == UStr("class")) return JsTokenType::K_Class;
-                if (str_ == UStr("super")) return JsTokenType::K_Super;
+                if (str_ == "while") return JsTokenType::K_While;
+                if (str_ == "break") return JsTokenType::K_Break;
+                if (str_ == "catch") return JsTokenType::K_Catch;
+                if (str_ == "throw") return JsTokenType::K_Throw;
+                if (str_ == "const") return JsTokenType::K_Const;
+                if (str_ == "yield") return JsTokenType::K_Yield;
+                if (str_ == "class") return JsTokenType::K_Class;
+                if (str_ == "super") return JsTokenType::K_Super;
                 return JsTokenType::Invalid;
 
             case 6:
-                if (str_ == UStr("return")) return JsTokenType::K_Return;
-                if (str_ == UStr("typeof")) return JsTokenType::K_Typeof;
-                if (str_ == UStr("delete")) return JsTokenType::K_Delete;
-                if (str_ == UStr("switch")) return JsTokenType::K_Switch;
-                if (str_ == UStr("export")) return JsTokenType::K_Export;
-                if (str_ == UStr("import")) return JsTokenType::K_Import;
+                if (str_ == "return") return JsTokenType::K_Return;
+                if (str_ == "typeof") return JsTokenType::K_Typeof;
+                if (str_ == "delete") return JsTokenType::K_Delete;
+                if (str_ == "switch") return JsTokenType::K_Switch;
+                if (str_ == "export") return JsTokenType::K_Export;
+                if (str_ == "import") return JsTokenType::K_Import;
                 return JsTokenType::Invalid;
 
             case 7:
-                if (str_ == UStr("default")) return JsTokenType::K_Default;
-                if (str_ == UStr("finally")) return JsTokenType::K_Finally;
-                if (str_ == UStr("extends")) return JsTokenType::K_Extends;
+                if (str_ == "default") return JsTokenType::K_Default;
+                if (str_ == "finally") return JsTokenType::K_Finally;
+                if (str_ == "extends") return JsTokenType::K_Extends;
                 return JsTokenType::Invalid;
 
             case 8:
-                if (str_ == UStr("function")) return JsTokenType::K_Function;
-                if (str_ == UStr("continue")) return JsTokenType::K_Continue;
-                if (str_ == UStr("debugger")) return JsTokenType::K_Debugger;
+                if (str_ == "function") return JsTokenType::K_Function;
+                if (str_ == "continue") return JsTokenType::K_Continue;
+                if (str_ == "debugger") return JsTokenType::K_Debugger;
                 return JsTokenType::Invalid;
 
             case 10:
-                if (str_ == UStr("instanceof")) return JsTokenType::K_Instanceof;
+                if (str_ == "instanceof") return JsTokenType::K_Instanceof;
                 return JsTokenType::Invalid;
 
             default:
@@ -335,12 +398,13 @@ namespace jetpack {
         return string("0123456789abcdef").find(ch);
     }
 
-    bool Scanner::ScanHexEscape(char16_t ch, char32_t& code) {
+    bool Scanner::ScanHexEscape(char32_t ch, char32_t& code) {
         uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (uint32_t i = 0; i < len; ++i) {
-            if (!IsEnd() && UChar::IsHexDigit(CodePointAt(index_))) {
-                code = code * 16 + HexValue(CodePointAt(index_++));
+            if (!IsEnd() && UChar::IsHexDigit(Peek())) {
+                code = code * 16 + HexValue(Peek());
+                NextChar();
             } else {
                 return false;
             }
@@ -350,7 +414,7 @@ namespace jetpack {
     }
 
     char32_t Scanner::ScanUnicodeCodePointEscape() {
-        char16_t ch = source_.at(index_);
+        char ch = Peek();
         char32_t code = 0;
 
         if (ch == '}') {
@@ -358,7 +422,7 @@ namespace jetpack {
         }
 
         while (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = NextChar();
             if (!UChar::IsHexDigit(ch)) {
                 break;
             }
@@ -372,86 +436,93 @@ namespace jetpack {
         return code;
     }
 
-    UString Scanner::GetIdentifier() {
-        uint32_t start = index_++;
-        UString result;
+    std::string Scanner::GetIdentifier(int32_t start_char_len) {
+        Cursor start = cursor_;
+        PlusCursor(start_char_len);
+        std::string result;
 
         while (!IsEnd()) {
-            auto ch = source_.at(index_);
-            if (ch == 0x5C) {
-                // Blackslash (U+005C) marks Unicode escape sequence.
-                index_ = start;
+            uint32_t len = 0;
+            char32_t ch = PeekUtf32(&len);
+            if (ch == 0) {
+                break;
+            }
+            if (ch == '\\') {
+                cursor_ = start;
                 return GetComplexIdentifier();
             } else if (ch >= 0xD800 && ch < 0xDFFF) {
                 // Need to handle surrogate pairs.
-                index_ = start;
+                cursor_ = start;
                 return GetComplexIdentifier();
             }
             if (UChar::IsIdentifierPart(ch)) {
-                ++index_;
+                PlusCursor(len);
             } else {
                 break;
             }
         }
 
-        result.append(source_.substr(start, index_ - start));
+        result.append(source_->ConstData().substr(start.u8, cursor_.u8 - start.u8));
         return result;
     }
 
-    UString Scanner::GetComplexIdentifier() {
-        uint32_t cp_size_;
-        auto cp = CodePointAt(index_, &cp_size_);
-        index_ += cp_size_;
-
-        UString result;
+    std::string Scanner::GetComplexIdentifier() {
+        std::string result;
 
         // '\u' (U+005C, U+0075) denotes an escaped character.
         char32_t ch = 0;
-        if (cp == 0x5C) {
-            if (CharAt(index_) != 0x75) {
+        char32_t cp = NextUtf32();
+        if (cp == 0) {
+            return "";
+        }
+        if (cp == '\\') {
+            if (Peek() != 'u') {
                 ThrowUnexpectedToken();
             }
-            ++index_;
-            if (CharAt(index_) == '{') {
-                ++index_;
+            NextChar();
+            if (Peek() == '{') {
+                NextChar();
                 ch = ScanUnicodeCodePointEscape();
             } else {
                 if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierStart(ch)) {
                     ThrowUnexpectedToken();
                 }
             }
-            result.push_back(ch);
+            result += StringFromUtf32(&ch, 1);
         }
 
         while (!IsEnd()) {
-            cp = CodePointAt(index_);
+            uint32_t ch_len = 0;
+            cp = PeekUtf32(&ch_len);
+            if (cp == 0) {
+                break;
+            }
             if (!UChar::IsIdentifierPart(cp)) {
                 break;
             }
 
-            UString ch_ = UStringFromCodePoint(cp);
+            std::string ch_ = StringFromCodePoint(cp);
 
             result.append(ch_);
 
-            std::cout << index_ << std::endl;
-            index_ += ch_.size();
+            PlusCursor(ch_len);
 
             // '\u' (U+005C, U+0075) denotes an escaped character.
-            if (cp == 0x5C) {
+            if (cp == '\\') {
                 result = result.substr(0, result.size() - 1);
-                if (source_.at(index_) != 0x75) {
+                if (Peek() != 'u') {
                     ThrowUnexpectedToken();
                 }
-                ++index_;
-                if (CharAt(index_) == '{') {
-                    ++index_;
+                NextChar();
+                if (Peek() == '{') {
+                    NextChar();
                     ch = ScanUnicodeCodePointEscape();
                 } else {
                     if (!ScanHexEscape('u', ch) || ch == '\\' || !UChar::IsIdentifierPart(ch)) {
                         ThrowUnexpectedToken();
                     }
                 }
-                result.push_back(ch);
+                result += StringFromUtf32(&ch, 1);
             }
         }
 
@@ -462,54 +533,54 @@ namespace jetpack {
         bool octal = (ch != '0');
         result = ch - '0';
 
-        if (!IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
+        if (!IsEnd() && UChar::IsOctalDigit(Peek())) {
             octal = true;
-            result = result * 8 + (source_.at(index_) - u'0');
+            result = result * 8 + (Peek() - u'0');
 
             // 3 digits are only allowed when string starts
             // with 0, 1, 2, 3
-            if (ch - u'0' && !IsEnd() && UChar::IsOctalDigit(source_.at(index_))) {
-                result = result * 8 + (source_.at(index_) - '0');
+            if (ch - u'0' && !IsEnd() && UChar::IsOctalDigit(Peek())) {
+                result = result * 8 + (Peek() - '0');
             }
         }
 
         return octal;
     }
 
-    Token Scanner::ScanIdentifier() {
-        auto start = index_;
+    Token Scanner::ScanIdentifier(int32_t start_char_len) {
+        auto start = cursor_;
         Token tok;
 
-        UString id;
-        if (source_.at(start) == 0x5C) {
+        std::string id;
+        if (source_->ConstData().at(start.u8) == '\\') {
             id = GetComplexIdentifier();
         } else {
-            id = GetIdentifier();
+            id = GetIdentifier(start_char_len);
         }
 
         if (id.size() == 1) {
             tok.type = JsTokenType::Identifier;
         } else if ((tok.type = ToKeyword(id)) != JsTokenType::Invalid) {
             // nothing
-        } else if (id == u"null") {
+        } else if (id == "null") {
             tok.type = JsTokenType::NullLiteral;
-        } else if (id == u"true") {
+        } else if (id == "true") {
             tok.type = JsTokenType::TrueLiteral;
-        } else if (id == u"false") {
+        } else if (id == "false") {
             tok.type = JsTokenType::FalseLiteral;
         } else {
             tok.type = JsTokenType::Identifier;
         }
 
-        if (tok.type != JsTokenType::Identifier && (start + id.size() != index_)) {
-            auto restore = index_;
-            index_ = start;
+        if (tok.type != JsTokenType::Identifier && (start.u8 + id.size() != cursor_.u8)) {
+            auto restore = cursor_;
+            cursor_ = start;
             TolerateUnexpectedToken(ParseMessages::InvalidEscapedReservedWord);
-            index_ = restore;
+            cursor_ = restore;
         }
 
         tok.value = move(id);
-        tok.range = make_pair(start, index_);
+        tok.range = make_pair(start.u8, cursor_.u8);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
 
@@ -517,107 +588,107 @@ namespace jetpack {
     }
 
     Token Scanner::ScanPunctuator() {
-        auto start = index_;
+        auto start = cursor_;
 
-        char16_t ch = source_.at(index_);
+        char ch = Peek();
 
         JsTokenType t;
         switch (ch) {
-            case u'(':
+            case '(':
                 t = JsTokenType::LeftParen;
-                ++index_;
+                NextChar();
                 break;
 
-            case u'{':
+            case '{':
                 t = JsTokenType::LeftBracket;
-                curly_stack_.push(u"{");
-                ++index_;
+                curly_stack_.push("{");
+                NextChar();
                 break;
 
-            case u'.':
+            case '.':
                 t = JsTokenType::Dot;
-                ++index_;
-                if (CharAt(index_) == '.' && CharAt(index_ + 1) == '.') {
+                NextChar();
+                if (Peek() == '.' && Peek(1) == '.') {
                     // Spread operator: ...
                     t = JsTokenType::Spread;
-                    index_ += 2;
+                    PlusCursor(2);
                 }
                 break;
 
-            case u'}':
+            case '}':
                 t = JsTokenType::RightBracket;
-                ++index_;
+                NextChar();
                 if (!curly_stack_.empty()) {
                     curly_stack_.pop();
                 }
                 break;
 
-            case u')':
+            case ')':
                 t = JsTokenType::RightParen;
-                ++index_;
+                NextChar();
                 break;
 
-            case u';':
+            case ';':
                 t = JsTokenType::Semicolon;
-                ++index_;
+                NextChar();
                 break;
 
-            case u',':
+            case ',':
                 t = JsTokenType::Comma;
-                ++index_;
+                NextChar();
                 break;
 
-            case u'[':
+            case '[':
                 t = JsTokenType::LeftBrace;
-                ++index_;
+                NextChar();
                 break;
 
-            case u']':
+            case ']':
                 t = JsTokenType::RightBrace;
-                ++index_;
+                NextChar();
                 break;
 
-            case u':':
+            case ':':
                 t = JsTokenType::Colon;
-                ++index_;
+                NextChar();
                 break;
 
-            case u'?':
+            case '?':
                 t = JsTokenType::Ask;
-                ++index_;
+                NextChar();
                 break;
 
-            case u'~':
+            case '~':
                 t = JsTokenType::Wave;
-                ++index_;
+                NextChar();
                 break;
 
-            case u'<':
-                ++index_;
-                if (CharAt(index_) == u'<') { // <<
-                    index_ ++;
-                    if (CharAt(index_) == u'=') { // <<=
-                        index_ ++;
+            case '<':
+                NextChar();
+                if (Peek() == '<') { // <<
+                    NextChar();
+                    if (Peek() == '=') { // <<=
+                        NextChar();
                         t = JsTokenType::LeftShiftAssign;
                     } else {
                         t = JsTokenType::LeftShift;
                     }
-                } else if (CharAt(index_) == u'=') { // <=
-                    index_++;
+                } else if (Peek() == '=') { // <=
+                    NextChar();
                     t = JsTokenType::LessEqual;
                 } else {
                     t = JsTokenType::LessThan;
                 }
                 break;
 
-            case u'>':
-                ++index_;
-                if (CharAt(index_) == u'>') { // >>
-                    index_++;
-                    if (CharAt(index_) == u'>') { // >>>
-                        index_++;
-                        if (CharAt(index_) == u'=') {
-                            index_++;
+            case '>':
+                NextChar();
+                if (Peek() == '>') { // >>
+                    NextChar();
+                    if (Peek() == '>') { // >>>
+                        NextChar();
+                        if (Peek() == '=') {
+                            NextChar();
                             t = JsTokenType::ZeroFillRightShiftAssign;
                         } else {
                             t = JsTokenType::ZeroFillRightShift;
@@ -625,38 +696,38 @@ namespace jetpack {
                     } else {
                         t = JsTokenType::RightShift;
                     }
-                } else if (CharAt(index_) == u'=') {
-                    index_++;
+                } else if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::GreaterEqual;
                 } else {
                     t = JsTokenType::GreaterThan;
                 }
                 break;
 
-            case u'=':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
-                    if (CharAt(index_) == u'=') {
-                        ++index_;
+            case '=':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
+                    if (Peek() == '=') {
+                        NextChar();
                         t = JsTokenType::StrictEqual;
                     } else {
                         t = JsTokenType::Equal;
                     }
-                } else if (CharAt(index_) == u'>') {
-                    ++index_;
+                } else if (Peek() == '>') {
+                    NextChar();
                     t = JsTokenType::Arrow;
                 } else {
                     t = JsTokenType::Assign;
                 }
                 break;
 
-            case u'!':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
-                    if (CharAt(index_) == u'=') {
-                        ++index_;
+            case '!':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
+                    if (Peek() == '=') {
+                        NextChar();
                         t = JsTokenType::StrictNotEqual;
                     } else {
                         t = JsTokenType::NotEqual;
@@ -666,41 +737,41 @@ namespace jetpack {
                 }
                 break;
 
-            case u'+':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '+':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::PlusAssign;
-                } else if (CharAt(index_) == u'+') {
-                    ++index_;
+                } else if (Peek() == '+') {
+                    NextChar();
                     t = JsTokenType::Increase;
                 } else {
                     t = JsTokenType::Plus;
                 }
                 break;
 
-            case u'-':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '-':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::MinusAssign;
-                } else if (CharAt(index_) == u'-') {
-                    ++index_;
+                } else if (Peek() == '-') {
+                    NextChar();
                     t = JsTokenType::Decrease;
                 } else {
                     t = JsTokenType::Minus;
                 }
                 break;
 
-            case u'*':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '*':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::MulAssign;
-                } else if (CharAt(index_) == u'*') {
-                    ++index_;
-                    if (CharAt(index_) == u'=') {
-                        ++index_;
+                } else if (Peek() == '*') {
+                    NextChar();
+                    if (Peek() == '=') {
+                        NextChar();
                         t = JsTokenType::PowAssign;
                     } else {
                         t = JsTokenType::Pow;
@@ -710,56 +781,56 @@ namespace jetpack {
                 }
                 break;
 
-            case u'%':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '%':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::ModAssign;
                 } else {
                     t = JsTokenType::Mod;
                 }
                 break;
 
-            case u'/':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '/':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::DivAssign;
                 } else {
                     t = JsTokenType::Div;
                 }
                 break;
 
-            case u'^':
-                ++index_;
-                if (CharAt(index_) == u'=') {
-                    ++index_;
+            case '^':
+                NextChar();
+                if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::BitXorAssign;
                 } else {
                     t = JsTokenType::Xor;
                 }
                 break;
 
-            case u'&':
-                ++index_;
-                if (CharAt(index_) == u'&') {
-                    ++index_;
+            case '&':
+                NextChar();
+                if (Peek() == '&') {
+                    NextChar();
                     t = JsTokenType::And;
-                } else if (CharAt(index_) == u'=') {
-                    ++index_;
+                } else if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::BitAndAssign;
                 } else {
                     t = JsTokenType::BitAnd;
                 }
                 break;
 
-            case u'|':
-                ++index_;
-                if (CharAt(index_) == u'|') {
-                    ++index_;
+            case '|':
+                NextChar();
+                if (Peek() == '|') {
+                    NextChar();
                     t = JsTokenType::Or;
-                } else if (CharAt(index_) == u'=') {
-                    ++index_;
+                } else if (Peek() == '=') {
+                    NextChar();
                     t = JsTokenType::BitOrAssign;
                 } else {
                     t = JsTokenType::BitOr;
@@ -768,58 +839,59 @@ namespace jetpack {
 
         }
 
-        if (index_ == start) {
+        if (cursor_ == start) {
             ThrowUnexpectedToken();
         }
 
         return {
                 t,
-                UString(),
+                string(),
                 SourceLocation(),
                 line_number_,
                 line_start_,
-                make_pair(start, index_)
+                make_pair(start.u8, cursor_.u8)
         };
     }
 
     Token Scanner::ScanHexLiteral(uint32_t start) {
-        UString num;
+        std::string num;
         Token tok;
 
         while (!IsEnd()) {
-            if (!UChar::IsHexDigit(CharAt(index_))) {
+            if (!UChar::IsHexDigit(Peek())) {
                 break;
             }
-            num += CharAt(index_++);
+            num += Peek();
+            NextChar();
         }
 
         if (num.size() == 0) {
             ThrowUnexpectedToken();
         }
 
-        if (UChar::IsIdentifierStart(CharAt(index_))) {
+        if (UChar::IsIdentifierStart(Peek())) {
             ThrowUnexpectedToken();
         }
 
         tok.type = JsTokenType::NumericLiteral;
-        tok.value = UString(u"0x") + num;
+        tok.value = "0x" + num;
         tok.lineStart = line_start_;
         tok.lineNumber = line_number_;
-        tok.range = make_pair(start, index_);
+        tok.range = make_pair(start, cursor_.u8);
 
         return tok;
     }
 
     Token Scanner::ScanBinaryLiteral(uint32_t start) {
-        UString num;
+        std::string num;
         char16_t ch;
 
         while (!IsEnd()) {
-            ch = source_.at(index_);
+            ch = Peek();
             if (ch != '0' && ch != '1') {
                 break;
             }
-            num.push_back(source_.at(index_++));
+            num.push_back(NextChar());
         }
 
         if (num.empty()) {
@@ -828,7 +900,7 @@ namespace jetpack {
         }
 
         if (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = NextChar();
             /* istanbul ignore else */
             if (UChar::IsIdentifierStart(ch) || UChar::IsDecimalDigit(ch)) {
                 ThrowUnexpectedToken();
@@ -841,53 +913,53 @@ namespace jetpack {
                 SourceLocation(),
                 line_number_,
                 line_start_,
-                make_pair(start, index_),
+                make_pair(start, cursor_.u8),
         };
     }
 
     Token Scanner::ScanOctalLiteral(char16_t prefix, uint32_t start) {
-        UString num;
+        std::string num;
         bool octal = false;
 
         if (UChar::IsOctalDigit(prefix)) {
             octal = true;
-            num = u'0' + source_.at(index_++);
+            num = std::string("0") + NextChar();
         } else {
-            ++index_;
+            NextChar();
         }
 
         while (!IsEnd()) {
-            if (!UChar::IsOctalDigit(source_.at(index_))) {
+            if (!UChar::IsOctalDigit(Peek())) {
                 break;
             }
-            num.push_back(source_.at(index_++));
+            num.push_back(NextChar());
         }
 
-        if (!octal && num.size() == 0) {
+        if (!octal && num.empty()) {
             // only 0o or 0O
             ThrowUnexpectedToken();
         }
 
-        if (UChar::IsIdentifierStart(source_.at(index_)) || UChar::IsDecimalDigit(source_.at(index_))) {
+        if (UChar::IsIdentifierStart(Peek()) || UChar::IsDecimalDigit(Peek())) {
             ThrowUnexpectedToken();
         }
 
         return {
-                JsTokenType::NumericLiteral,
-                num,
-                SourceLocation(),
-                line_number_,
-                line_start_,
-                make_pair(start, index_),
+            JsTokenType::NumericLiteral,
+            num,
+            SourceLocation(),
+            line_number_,
+            line_start_,
+            make_pair(start, cursor_.u8),
         };
     }
 
     bool Scanner::IsImplicitOctalLiteral() {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
-        for (uint32_t i = index_ + 1; i < Length(); ++i) {
-            char16_t ch = source_.at(i);
-            if (ch == u'8' || ch == u'9') {
+        for (uint32_t i = cursor_.u8 + 1; i < Length(); ++i) {
+            char ch = source_->ConstData().at(i);
+            if (ch == '8' || ch == '9') {
                 return false;
             }
             if (!UChar::IsOctalDigit(ch)) {
@@ -899,123 +971,123 @@ namespace jetpack {
     }
 
     Token Scanner::ScanNumericLiteral() {
-        auto start = index_;
-        char16_t ch = CharAt(start);
+        auto start = cursor_;
+        char ch = CharAt(start.u8);
         if (!(UChar::IsDecimalDigit(ch) || (ch == '.'))) {
-            auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", index_, line_number_, index_ - line_start_);
+            auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", cursor_.u8, line_number_, cursor_.u16 - line_start_);
             throw err;
         }
 
-        UString num;
+        std::string num;
         if (ch != '.') {
-            num.push_back(CharAt(index_++));
-            ch = CharAt(index_);
+            num.push_back(NextChar());
+            ch = Peek();
 
             // Hex number starts with '0x'.
             // Octal number starts with '0'.
             // Octal number in ES6 starts with '0o'.
             // Binary number in ES6 starts with '0b'.
-            if (num.at(0) == u'0') {
-                if (ch == u'x' || ch == u'X') {
-                    ++index_;
-                    return ScanHexLiteral(start);
+            if (num.at(0) == '0') {
+                if (ch == 'x' || ch == 'X') {
+                    NextChar();
+                    return ScanHexLiteral(start.u8);
                 }
-                if (ch == u'b' || ch == u'B') {
-                    ++index_;
-                    return ScanBinaryLiteral(start);
+                if (ch == 'b' || ch == 'B') {
+                    NextChar();
+                    return ScanBinaryLiteral(start.u8);
                 }
-                if (ch == u'o' || ch == u'O') {
-                    return ScanOctalLiteral(ch, start);
+                if (ch == 'o' || ch == 'O') {
+                    return ScanOctalLiteral(ch, start.u8);
                 }
 
                 if (ch && UChar::IsOctalDigit(ch)) {
                     if (IsImplicitOctalLiteral()) {
-                        return ScanOctalLiteral(ch, start);
+                        return ScanOctalLiteral(ch, start.u8);
                     }
                 }
             }
 
-            while (UChar::IsDecimalDigit(CharAt(index_))) {
-                num.push_back(CharAt(index_++));
+            while (UChar::IsDecimalDigit(Peek())) {
+                num.push_back(NextChar());
             }
-            ch = CharAt(index_);
+            ch = Peek();
         }
 
-        if (ch == u'.') {
-            num.push_back(CharAt(index_++));
-            while (UChar::IsDecimalDigit(CharAt(index_))) {
-                num.push_back(CharAt(index_++));
+        if (ch == '.') {
+            num.push_back(NextChar());
+            while (UChar::IsDecimalDigit(Peek())) {
+                num.push_back(NextChar());
             }
-            ch = CharAt(index_);
+            ch = Peek();
         }
 
-        if (ch == u'e' || ch == u'E') {
-            num.push_back(CharAt(index_++));
+        if (ch == 'e' || ch == 'E') {
+            num.push_back(NextChar());
 
-            ch = CharAt(index_);
-            if (ch == u'+' || ch == u'-') {
-                num.push_back(CharAt(index_++));
+            ch = Peek();
+            if (ch == '+' || ch == '-') {
+                num.push_back(NextChar());
             }
-            if (UChar::IsDecimalDigit(CharAt(index_))) {
-                while (UChar::IsDecimalDigit(CharAt(index_))) {
-                    num.push_back(CharAt(index_++));
+            if (UChar::IsDecimalDigit(Peek())) {
+                while (UChar::IsDecimalDigit(Peek())) {
+                    num.push_back(NextChar());
                 }
             } else {
                 ThrowUnexpectedToken();
             }
         }
 
-        if (UChar::IsIdentifierStart(CharAt(index_))) {
+        if (UChar::IsIdentifierStart(Peek())) {
             ThrowUnexpectedToken();
         }
 
         return {
-                JsTokenType::NumericLiteral,
-                num,
-                SourceLocation(),
-                line_number_,
-                line_start_,
-                make_pair(start, index_),
+            JsTokenType::NumericLiteral,
+            num,
+            SourceLocation(),
+            line_number_,
+            line_start_,
+            make_pair(start.u8, cursor_.u8),
         };
     }
 
     Token Scanner::ScanStringLiteral() {
-        auto start = index_;
-        char16_t quote = CharAt(start);
+        auto start = cursor_;
+        char quote = CharAt(start.u8);
 
         if (!(quote == '\'' || quote == '"')) {
             throw error_handler_->CreateError(
                     "String literal must starts with a quote",
-                    index_, line_number_, index_ - line_start_);
+                    cursor_.u8, line_number_, cursor_.u16 - line_start_);
         }
 
-        ++index_;
+        NextChar();
         bool octal = false;
-        UString str;
+        std::string str;
 
         while (!IsEnd()) {
-            char16_t ch = CharAt(index_++);
+            char ch = NextChar();
 
             if (ch == quote) {
                 quote = 0;
                 break;
             } else if (ch == '\\') {
-                ch = CharAt(index_++);
+                ch = NextChar();
                 if (!ch || !UChar::IsLineTerminator(ch)) {
                     char32_t unescaped = 0;
                     switch (ch) {
                         case 'u':
-                            if (CharAt(index_) == '{') {
-                                ++index_;
+                            if (Peek() == '{') {
+                                NextChar();
                                 char32_t tmp = ScanUnicodeCodePointEscape();
 
-                                str.append(UStringFromUtf32(&tmp, 1));
+                                str.append(StringFromUtf32(&tmp, 1));
                             } else {
                                 if (!ScanHexEscape(ch, unescaped)) {
                                     ThrowUnexpectedToken();
                                 }
 
-                                str.append(UStringFromUtf32(&unescaped, 1));
+                                str.append(StringFromUtf32(&unescaped, 1));
                             }
                             break;
 
@@ -1023,7 +1095,7 @@ namespace jetpack {
                             if (!ScanHexEscape(ch, unescaped)) {
                                 ThrowUnexpectedToken();
                             }
-                            str.append(UStringFromUtf32(&unescaped, 1));
+                            str.append(StringFromUtf32(&unescaped, 1));
                             break;
 
                         case 'n':
@@ -1055,7 +1127,7 @@ namespace jetpack {
                                 uint32_t octToDec;
                                 octal = OctalToDecimal(ch, octToDec);
 
-                                str.append(UStringFromUtf32(&unescaped, 1));
+                                str.append(StringFromUtf32(&unescaped, 1));
                             } else {
                                 str += ch;
                             }
@@ -1063,10 +1135,10 @@ namespace jetpack {
                     }
                 } else {
                     ++line_number_;
-                    if (ch == '\r' && CharAt(index_) == '\n') {
-                        ++index_;
+                    if (ch == '\r' && Peek() == '\n') {
+                        NextChar();
                     }
-                    line_start_ = index_;
+                    line_start_ = cursor_.u16;
                 }
             } else if (UChar::IsLineTerminator(ch)) {
                 break;
@@ -1076,7 +1148,7 @@ namespace jetpack {
         }
 
         if (quote != 0) {
-            index_ = start;
+            cursor_ = start;
             ThrowUnexpectedToken();
         }
 
@@ -1086,39 +1158,39 @@ namespace jetpack {
         tok.octal = octal;
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
-        tok.range = make_pair(start, index_);
+        tok.range = make_pair(start.u8, cursor_.u8);
 
         return tok;
     }
 
     Token Scanner::ScanTemplate() {
-        UString cooked;
+        std::string cooked;
         bool terminated = false;
-        uint32_t start = index_;
+        auto start = cursor_;
 
-        bool head = (source_.at(start) == '`');
+        bool head = (CharAt(start.u8) == '`');
         bool tail = false;
         uint32_t rawOffset = 2;
 
-        ++index_;
+        NextChar();
 
         while (!IsEnd()) {
-            char16_t ch = source_.at(index_++);
+            char32_t ch = NextUtf32();
             if (ch == '`') {
                 rawOffset = 1;
                 tail = true;
                 terminated = true;
                 break;
             } else if (ch == '$') {
-                if (source_.at(index_)== '{') {
-                    curly_stack_.push(u"${");
-                    ++index_;
+                if (Peek() == '{') {
+                    curly_stack_.push("${");
+                    NextChar();
                     terminated = true;
                     break;
                 }
-                cooked.push_back(ch);
+                cooked += StringFromUtf32(&ch, 1);
             } else if (ch == '\\') {
-                ch = source_.at(index_++);
+                ch = NextChar();
                 if (!UChar::IsLineTerminator(ch)) {
                     switch (ch) {
                         case 'n':
@@ -1131,18 +1203,18 @@ namespace jetpack {
                             cooked.push_back('\t');
                             break;
                         case 'u':
-                            if (source_.at(index_) == '{') {
-                                ++index_;
-                                char16_t tmp = ScanUnicodeCodePointEscape();
-                                cooked.push_back(tmp);
+                            if (Peek() == '{') {
+                                NextChar();
+                                char32_t tmp = ScanUnicodeCodePointEscape();
+                                cooked += StringFromUtf32(&tmp, 1);
                             } else {
-                                auto restore = index_;
-                                char32_t unescapedChar;
+                                auto restore = cursor_;
+                                char32_t unescapedChar = 0;
                                 if (ScanHexEscape(ch, unescapedChar)) {
-                                    cooked.push_back(unescapedChar);
+                                    cooked += StringFromUtf32(&unescapedChar, 1);
                                 } else {
-                                    index_= restore;
-                                    cooked.push_back(ch);
+                                    cursor_= restore;
+                                    cooked += StringFromUtf32(&ch, 1);
                                 }
                             }
                             break;
@@ -1165,7 +1237,7 @@ namespace jetpack {
 
                         default:
                             if (ch == '0') {
-                                if (UChar::IsDecimalDigit(CharAt(index_))) {
+                                if (UChar::IsDecimalDigit(Peek())) {
                                     // Illegal: \01 \02 and so on
                                     ThrowUnexpectedToken();
                                 }
@@ -1180,17 +1252,17 @@ namespace jetpack {
                     }
                 } else {
                     ++line_number_;
-                    if (ch == '\r' && CharAt(index_) == '\n') {
-                        ++index_;
+                    if (ch == '\r' && Peek() == '\n') {
+                        NextChar();
                     }
-                    line_start_ = index_;
+                    line_start_ = cursor_.u16;
                 }
             } else if (UChar::IsLineTerminator(ch)) {
                 ++line_number_;
-                if (ch == '\r' && CharAt(index_) == '\n') {
-                    ++index_;
+                if (ch == '\r' && Peek() == '\n') {
+                    NextChar();
                 }
-                line_start_  = index_;
+                line_start_  = cursor_.u16;
                 cooked.push_back('\n');
             } else {
                 cooked.push_back(ch);
@@ -1207,10 +1279,10 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_.substr(start + 1, index_ - rawOffset);
+        tok.value = source_->ConstData().substr(start.u8 + 1, cursor_.u8 - rawOffset);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
-        tok.range = make_pair(start, index_);
+        tok.range = make_pair(start.u8, cursor_.u8);
         tok.cooked = std::move(cooked);
         tok.head = head;
         tok.tail = tail;
@@ -1218,22 +1290,22 @@ namespace jetpack {
         return tok;
     }
 
-    UString Scanner::ScanRegExpBody() {
-        char16_t ch = source_.at(index_);
+    std::string Scanner::ScanRegExpBody() {
+        char16_t ch = Peek();
         if (ch != u'/') {
             ThrowUnexpectedToken("Regular expression literal must start with a slash");
         }
 
-        UString str;
-        str.push_back(source_.at(index_++));
+        std::string str;
+        str.push_back(NextChar());
         bool class_marker = false;
         bool terminated = false;
 
         while (!IsEnd()) {
-            ch = source_.at(index_++);
+            ch = NextChar();
             str.push_back(ch);
-            if (ch == u'\\') {
-                ch = CharAt(index_++);
+            if (ch == '\\') {
+                ch = NextChar();
                 if (UChar::IsLineTerminator(ch)) {
                     ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
                 }
@@ -1241,14 +1313,14 @@ namespace jetpack {
             } else if (UChar::IsLineTerminator(ch)) {
                 ThrowUnexpectedToken(ParseMessages::UnterminatedRegExp);
             } else if (class_marker) {
-                if (ch == u']') {
+                if (ch == ']') {
                     class_marker = false;
                 }
             } else {
-                if (ch == u'/') {
+                if (ch == '/') {
                     terminated = true;
                     break;
-                } else if (ch == u'[') {
+                } else if (ch == '[') {
                     class_marker = true;
                 }
             }
@@ -1261,35 +1333,37 @@ namespace jetpack {
         return str.substr(1, str.size() - 2);
     }
 
-    UString Scanner::ScanRegExpFlags() {
-        UString str;
-        UString flags;
+    std::string Scanner::ScanRegExpFlags() {
+        std::string str;
+        std::string flags;
         while (!IsEnd()) {
-            char16_t ch = source_.at(index_);
+            char ch = Peek();
             if (!UChar::IsIdentifierPart(ch)) {
                 break;
             }
 
-            ++index_;
-            if (ch == u'\\' && !IsEnd()) {
-                ch = CharAt(index_);
-                if (ch == u'u') {
-                    ++index_;
-                    auto restore = index_;
+            NextChar();
+            if (ch == '\\' && !IsEnd()) {
+                ch = Peek();
+                if (ch == 'u') {
+                    NextChar();
+                    auto restore = cursor_;
                     char32_t char_;
-                    if (ScanHexEscape(u'u', char_)) {
+                    if (ScanHexEscape('u', char_)) {
                         flags.push_back(char_);
-                        for (str += u"\\u"; restore < index_; ++ restore) {
-                            str.push_back(CharAt(restore));
+                        for (str += "\\u"; restore.u8 < cursor_.u8;) {
+                            str.push_back(CharAt(restore.u8));
+                            ++restore.u8;
+                            ++restore.u16;
                         }
                     } else {
-                        index_ = restore;
-                        flags += u"u";
-                        str += u"\\u";
+                        cursor_ = restore;
+                        flags += "u";
+                        str += "\\u";
                     }
                     TolerateUnexpectedToken();
                 } else {
-                    str += u"\\";
+                    str += "\\";
                     TolerateUnexpectedToken();
                 }
             } else {
@@ -1311,7 +1385,7 @@ namespace jetpack {
         token.type = JsTokenType::RegularExpression;
         token.lineNumber = line_number_;
         token.lineStart = line_start_;
-        token.value = UString(u"/") + pattern + u"/" + flags;
+        token.value = "/" + pattern + "/" + flags;
 
         return token;
     }
@@ -1322,29 +1396,33 @@ namespace jetpack {
             tok.type = JsTokenType::EOF_;
             tok.lineNumber = line_number_;
             tok.lineStart = line_start_;
-            tok.range = make_pair(index_, index_);
+            tok.range = make_pair(cursor_.u8, cursor_.u8);
             return tok;
         }
 
-        char16_t cp = source_.at(index_);
+        char cp = Peek();
 
         if (UChar::IsIdentifierStart(cp)) {
-            return ScanIdentifier();
+            // Possible identifier start in a surrogate pair.
+            if (cp & 0x80) {  // is a word > 1 byte
+                uint32_t char_len = 0;
+                char32_t unicode = PeekUtf32(&char_len);
+                return ScanIdentifier(char_len);
+            }
+            return ScanIdentifier(1);
         }
-        // Very common: ( and ) and ;
-        if (cp == 0x28 || cp == 0x29 || cp == 0x3B) {
+        if (cp == '(' || cp == ')' || cp == ';') {
             return ScanPunctuator();
         }
 
-        // String literal starts with single quote (U+0027) or double quote (U+0022).
-        if (cp == 0x27 || cp == 0x22) {
+        if (cp == '\'' || cp == '"') {
             return ScanStringLiteral();
         }
 
         // Dot (.) U+002E can also start a floating-point number, hence the need
         // to check the next character.
-        if (cp == 0x2E) {
-            if (UChar::IsDecimalDigit(CharAt(index_ + 1))) {
+        if (cp == '.') {
+            if (UChar::IsDecimalDigit(Peek(1))) {
                 return ScanNumericLiteral();
             }
             return ScanPunctuator();
@@ -1356,18 +1434,17 @@ namespace jetpack {
 
         // Template literals start with ` (U+0060) for template head
         // or } (U+007D) for template middle or template tail.
-        if (cp == 0x60 || (cp == 0x7D && !curly_stack_.empty() && curly_stack_.top() == u"${")) {
+        if (cp == '`' || (cp == '}' && !curly_stack_.empty() && curly_stack_.top() == "${")) {
             return ScanTemplate();
         }
 
-        // Possible identifier start in a surrogate pair.
-        if (cp >= 0xD800 && cp < 0xDFFF) {
-            if (UChar::IsIdentifierStart(CodePointAt(index_))) {
-                return ScanIdentifier();
-            }
-        }
-
         return ScanPunctuator();
+    }
+
+    void Scanner::PlusCursor(uint32_t n) {
+        for (uint32_t i = 0; i < n; i++) {
+            NextUtf32();
+        }
     }
 
 }
