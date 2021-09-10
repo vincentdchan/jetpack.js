@@ -26,7 +26,7 @@ namespace jetpack::parser {
         friend class JSXParser;
         friend class TypeScriptParser;
 
-        Parser(std::shared_ptr<ParserContext> state);
+        Parser(Sp<ParserContext> state);
 
         template <typename T>
         Sp<T> IsolateCoverGrammar(std::function<Sp<T>()> cb) {

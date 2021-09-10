@@ -6,7 +6,7 @@
 #include <vector>
 #include <memory>
 #include <tsl/ordered_map.h>
-#include "Utils.h"
+#include "utils/Common.h"
 
 namespace jetpack::dumper {
 
@@ -823,7 +823,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "AssignmentExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = parser_utils::To_UTF8(node->operator_);
+            result["operator"] = node->operator_;
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -853,7 +853,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "BinaryExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = parser_utils::To_UTF8(node->operator_);
+            result["operator"] = node->operator_;
             result["left"] = Dump(node->left);
             result["right"] = Dump(node->right);
 
@@ -991,7 +991,7 @@ namespace jetpack::dumper {
             result["type"] = "Directive";
             DumpBaseInfo(result, node);
             result["expression"] = Dump(node->expression);
-            result["directive"] = parser_utils::To_UTF8(node->directive);
+            result["directive"] = node->directive;
 
             return result;
         }
@@ -1158,7 +1158,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "Identifier";
             DumpBaseInfo(result, node);
-            result["name"] = parser_utils::To_UTF8(node->name);
+            result["name"] = node->name;
 
             return result;
         }
@@ -1241,10 +1241,26 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "Literal";
             DumpBaseInfo(result, node);
-            if (std::holds_alternative<bool>(node->value)) result["value"] = std::get<bool>(node->value);
-            if (std::holds_alternative<double>(node->value)) result["value"] = std::get<double>(node->value);
-            if (std::holds_alternative<UString>(node->value)) result["value"] = parser_utils::To_UTF8(std::get<UString>(node->value));
-            result["raw"] = parser_utils::To_UTF8(node->raw);
+
+            switch (node->ty) {
+                case Literal::Ty::Boolean:
+                    result["value"] = node->boolean_;
+                    break;
+
+                case Literal::Ty::Double:
+                    result["value"] = node->double_;
+                    break;
+
+                case Literal::Ty::String:
+                    result["value"] = node->str_;
+                    break;
+
+                default:
+                    break;
+
+            }
+
+            result["raw"] = node->raw;
 
             return result;
         }
@@ -1286,7 +1302,7 @@ namespace jetpack::dumper {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
-            result["sourceType"] = parser_utils::To_UTF8(node->source_type);
+            result["sourceType"] = node->source_type;
             json array_comments = json::array();
             result["comments"] = std::move(array_comments);
 
@@ -1356,8 +1372,8 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "RegexLiteral";
             DumpBaseInfo(result, node);
-            result["value"] = parser_utils::To_UTF8(node->value);
-            result["raw"] = parser_utils::To_UTF8(node->raw);
+            result["value"] = node->value;
+            result["raw"] = node->raw;
 
             return result;
         }
@@ -1392,7 +1408,7 @@ namespace jetpack::dumper {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
-            result["sourceType"] = parser_utils::To_UTF8(node->source_type);
+            result["sourceType"] = node->source_type;
             json array_comments = json::array();
             result["comments"] = std::move(array_comments);
 
@@ -1487,8 +1503,8 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "TemplateElement";
             DumpBaseInfo(result, node);
-            result["cooked"] = parser_utils::To_UTF8(node->cooked);
-            result["raw"] = parser_utils::To_UTF8(node->raw);
+            result["cooked"] = node->cooked;
+            result["raw"] = node->raw;
             result["tail"] = node->tail;
 
             return result;
@@ -1550,7 +1566,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "UnaryExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = parser_utils::To_UTF8(node->operator_);
+            result["operator"] = node->operator_;
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 
@@ -1561,7 +1577,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "UpdateExpression";
             DumpBaseInfo(result, node);
-            result["operator"] = parser_utils::To_UTF8(node->operator_);
+            result["operator"] = node->operator_;
             result["argument"] = Dump(node->argument);
             result["prefix"] = node->prefix;
 
@@ -1690,7 +1706,7 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "JSXIdentifier";
             DumpBaseInfo(result, node);
-            result["name"] = parser_utils::To_UTF8(node->name);
+            result["name"] = node->name;
 
             return result;
         }
@@ -1756,8 +1772,8 @@ namespace jetpack::dumper {
             json result = json::object();
             result["type"] = "JSXText";
             DumpBaseInfo(result, node);
-            result["value"] = parser_utils::To_UTF8(node->value);
-            result["raw"] = parser_utils::To_UTF8(node->raw);
+            result["value"] = node->value;
+            result["raw"] = node->raw;
 
             return result;
         }

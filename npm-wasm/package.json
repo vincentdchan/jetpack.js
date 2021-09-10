@@ -1,0 +1,14 @@
+{
+  "name": "jetpp-wasm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Vincent Chan",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/vincentdchan/jetpack.js"
+  },
+  "keywords": ["parser", "minifier", "wasm"],
+  "scripts": {
+    "build": "node build.js"
+  }
+}

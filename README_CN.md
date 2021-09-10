@@ -5,18 +5,14 @@
 
 [English Version](./README.md)
 
-`jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具。
-
-`jetpack.js` 采用模块化的设计，各部分组件都分离开，parser 可以单独使用
+`jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具，用 C++ 写成。
 
 - [特性](#特性)
     - [Parser](#parser)
     - [Bundler](#bundler)
 - [安装](#Installation)
 - [使用](#usage)
-- [单独使用 Parser](#单独使用-Parser)
-- [性能](#performance)
-- [架构](#architecture)
+- [WebAssembly 用户](#WebAssembly-用户)
 - [平台](#platform)
 
 # 特性
@@ -79,14 +75,27 @@ Usage:
       --sourcemap           generate sourcemaps
 ```
 
-# 单独使用 Parser
+# WebAssembly 用户
 
-jetpack.js 使用 CMake 进行构建，所以你可以很好地继承到你的项目
+WASM 让你可以在浏览器环境里面运行 Jetpack.js.
 
-```cmake
-add_subdirectory(esparser)
-target_include_directories(${PROJECT_NAME} ./esparser/src)
-target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
+## 安装 WASM 版 Jetpack
+
+```
+yarn add jetpp-wasm
+```
+
+## 引入 Jetpack.js 到你的项目里面
+
+```javascript
+
+import loadJetpack from 'jetpp-wasm';
+
+async function main(code) {
+    const jetpack = await loadJetpack();
+    return jetpack.minify(code);
+}
+
 ```
 
 # 平台
@@ -96,7 +105,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
 - macOS
 - Windows 64bit
 - Linux 64bit
-- Wasm(开发中)
+- WebAssembly
 
 # 构建依赖
 - jemalloc 5.2.1

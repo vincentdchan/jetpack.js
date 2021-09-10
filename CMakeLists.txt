@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 option(JETPACK_BUILD_CLI "Build CLI tool" ON)
+option(JETPACK_BUILD_WASM "Build WASM tool" ON)
 option(JETPACK_BUILD_TESTS "Build jetpack tests" ON)
 
 IF (CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -30,4 +31,8 @@ add_subdirectory(./third_party/xxHash/cmake_unofficial)
 add_subdirectory(./jetpack)
 if(JETPACK_BUILD_CLI)
     add_subdirectory(./jetpack-cli)
+endif()
+
+if(JETPACK_BUILD_WASM)
+    add_subdirectory(./jetpack-wasm)
 endif()
