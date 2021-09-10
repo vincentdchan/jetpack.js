@@ -172,14 +172,10 @@ namespace jetpack {
         }
     }
 
-    CodeGenResult GlobalImportHandler::GenCode(const CodeGen::Config &config, const Sp<MappingCollector>& mc) {
-        CodeGen codegen(config, mc);
-
+    void GlobalImportHandler::GenCode(CodeGen& codegen) {
         for (auto& decl : gen_import_decls) {
             codegen.Traverse(decl);
         }
-
-        return codegen.GetResult();
     }
 
 }

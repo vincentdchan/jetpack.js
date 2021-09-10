@@ -45,8 +45,8 @@ namespace jetpack {
 
         bool DumpFile(const std::string& path, bool pretty = false);
 
-        inline void AddCollector(Sp<MappingCollector>&& collector) {
-            collectors_.push_back(std::move(collector));
+        inline void AddCollector(const Sp<MappingCollector>& collector) {
+            collectors_.push_back(collector);
         }
 
     private:

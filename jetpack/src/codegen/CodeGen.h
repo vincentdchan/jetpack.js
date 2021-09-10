@@ -62,7 +62,7 @@ namespace jetpack {
 
         CodeGen(
                 const Config& config,
-                const Sp<MappingCollector>& sourceMapGenerator);
+                Sp<MappingCollector> sourceMapGenerator = nullptr);
 
         [[nodiscard]]
         inline CodeGenResult GetResult() const {
