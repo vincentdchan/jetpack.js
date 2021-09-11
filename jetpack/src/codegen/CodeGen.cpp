@@ -2,10 +2,12 @@
 // Created by Duzhong Chen on 2019/9/27.
 //
 
-#include "CodeGen.h"
 #include <iostream>
 #include <algorithm>
-#include <scope/Variable.h>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
+#include "CodeGen.h"
+#include "scope/Variable.h"
 
 using namespace std;
 
@@ -59,6 +61,15 @@ namespace jetpack {
             const Config& config,
             Sp<MappingCollector> mc):
             config_(config), mappingCollector(std::move(mc)) {}
+
+    void CodeGen::AddSnippet(const std::string &content) {
+        std::vector<std::string> lines;
+        boost::split(lines, content, boost::is_any_of("\n"), boost::token_compress_on);
+        for (const auto& line : lines) {
+            Write(line);
+            WriteLineEnd();
+        }
+    }
 
     void CodeGen::WriteLineEnd() {
         if (likely(mappingCollector)) {

@@ -8,7 +8,11 @@
 
 namespace jetpack {
 
+    Sp<Literal> MakeNull();
+
     Sp<Identifier> MakeId(const std::string& content);
+
+    Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content);
 
     Sp<Literal> MakeStringLiteral(const std::string& str);
 

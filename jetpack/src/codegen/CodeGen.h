@@ -60,9 +60,9 @@ namespace jetpack {
 
         };
 
-        CodeGen(
-                const Config& config,
-                Sp<MappingCollector> sourceMapGenerator = nullptr);
+        explicit CodeGen(
+                 const Config& config,
+                 Sp<MappingCollector> sourceMapGenerator = nullptr);
 
         [[nodiscard]]
         inline CodeGenResult GetResult() const {
@@ -72,6 +72,8 @@ namespace jetpack {
                     output,
             };
         }
+
+        void AddSnippet(const std::string& content);
 
     private:
         inline void Write(char ch) {

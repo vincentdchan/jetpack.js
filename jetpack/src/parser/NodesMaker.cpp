@@ -6,6 +6,22 @@
 
 namespace jetpack {
 
+    Sp<Literal> MakeNull() {
+        auto null_lit = std::make_shared<Literal>();
+        null_lit->ty = Literal::Ty::Null;
+        null_lit->str_ = "null";
+        null_lit->raw = "null";
+
+        return null_lit;
+    }
+
+    Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
+        auto id = std::make_shared<Identifier>();
+        id->name = content;
+        id->location = loc;
+        return id;
+    }
+
     Sp<Identifier> MakeId(const std::string& content) {
         auto id = std::make_shared<Identifier>();
         id->location.fileId = -2;

@@ -5,7 +5,6 @@
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
-#include <parser/ParserCommon.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -14,9 +13,19 @@
 #include "utils/JetJSON.h"
 #include "utils/Path.h"
 #include "utils/io/FileIO.h"
+#include "parser/ParserCommon.h"
+#include "parser/NodesMaker.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
-#include "Error.h"
+
+static const char* COMMON_JS_CODE =
+    "let __commonJS = (callback, module) => () => {\n"
+    "  if (!module) {\n"
+    "    module = {exports: {}};\n"
+    "    callback(module.exports, module);\n"
+    "  }\n"
+    "  return module.exports;\n"
+    "};";
 
 namespace jetpack {
     using fmt::format;
@@ -24,56 +33,6 @@ namespace jetpack {
     using parser::Parser;
 
     static const char* PackageJsonName = "package.json";
-
-    inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
-        auto id = std::make_shared<Identifier>();
-        id->name = content;
-        id->location = loc;
-        return id;
-    }
-
-//    inline Sp<SyntaxNode> MakeModuleVar(const SourceLocation& loc, const UString& var_name) {
-//        auto mod_var = std::make_shared<VariableDeclaration>();
-//        mod_var->kind = VarKind::Const;
-//
-//        auto declarator = std::make_shared<VariableDeclarator>();
-//        declarator->id = MakeId(loc, var_name);
-//
-//        declarator->init = { std::make_shared<ObjectExpression>() };
-//
-//        mod_var->declarations.push_back(std::move(declarator));
-//        return mod_var;
-//    }
-
-    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
-        auto lit = std::make_shared<Literal>();
-        lit->ty = Literal::Ty::String;
-        lit->str_ = str;
-        lit->raw += '"';
-        lit->raw += str;
-        lit->raw += '"';
-        return lit;
-    }
-
-    inline Sp<Literal> MakeNull() {
-        auto null_lit = std::make_shared<Literal>();
-        null_lit->ty = Literal::Ty::Null;
-        null_lit->str_ = "null";
-        null_lit->raw = "null";
-
-        return null_lit;
-    }
-
-//    inline void AddKeyValueToObject(const std::shared_ptr<ObjectExpression>& expr,
-//                                    const UString& key,
-//                                    const UString& value) {
-//
-//        auto prop = std::make_shared<Property>();
-//        prop->key = MakeId(key);
-//        prop->value = MakeId(value);
-//
-//        expr->properties.push_back(std::move(prop));
-//    }
 
     ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
     : file_path(path), error_content(content) {
@@ -244,7 +203,9 @@ namespace jetpack {
                 childMod->cjs_call_name = "jp_require";
             }
         }
-        has_common_js_.store(true);
+        if (childMod->IsCommonJS()) {
+            has_common_js_.store(true);
+        }
 
         mf->ref_mods.push_back(childMod);
 
@@ -490,9 +451,16 @@ namespace jetpack {
         CodeGen codegen(config, mappingCollector);
         sourcemapGenerator->AddCollector(mappingCollector);
 
+        if (has_common_js_.load()) {
+            codegen.AddSnippet(COMMON_JS_CODE);
+        }
+
         for (auto& tuple : modules_table_.pathToModule) {
             auto& mod = tuple.second;
             sourcemapGenerator->AddSource(mod);
+            if (mod->IsCommonJS()) {
+                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+            }
             codegen.Traverse(mod->ast);
         }
         // codegen all result end
