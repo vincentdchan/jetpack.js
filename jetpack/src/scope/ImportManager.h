@@ -6,8 +6,8 @@
 
 #include <memory>
 #include <robin_hood.h>
+#include <vector>
 #include "utils/Common.h"
-#include "utils/string/UString.h"
 #include "parser/NodeTypes.h"
 
 namespace jetpack {
@@ -39,8 +39,11 @@ namespace jetpack {
         ImportManager& operator=(const ImportManager&) = delete;
 
         HashMap<std::string, ImportIdentifierInfo> id_map;
+        std::vector<Sp<CallExpression>> require_calls;
 
         EC ResolveImportDecl(const std::shared_ptr<ImportDeclaration>&);
+
+        EC ResolveRequireCallExpr(const std::shared_ptr<CallExpression>&);
 
     };
 

@@ -58,9 +58,9 @@ namespace jetpack {
 
         ScopeType type = ScopeType::Invalid;
 
-        ModuleScope* CastToMoudle();
+        ModuleScope* CastToModule();
 
-        inline bool IsMoudle() const {
+        inline bool IsModule() const {
             return type == ScopeType::Module;
         }
 
@@ -85,6 +85,14 @@ namespace jetpack {
 
         inline Scope* GetParent() {
             return parent;
+        }
+
+        inline Scope* GetRoot() {
+            Scope* result = this;
+            while (result->GetParent() != nullptr) {
+                result = result->GetParent();
+            }
+            return result;
         }
 
         /**
@@ -126,18 +134,31 @@ namespace jetpack {
     };
 
     /**
-     * Moudle scope is special
+     * Module scope is special
      */
     class ModuleScope : public Scope {
     public:
         using ChangeSet = std::vector<std::tuple<std::string, std::string>>;
 
-        ModuleScope();
+        enum class ModuleType {
+            EsModule,
+            CommonJs,
+        };
+
+        ModuleScope(ModuleType mt);
 
         bool BatchRenameSymbols(const ChangeSet& changeset) override;
 
         ImportManager import_manager;
         ExportManager export_manager;
+
+        [[nodiscard]]
+        inline ModuleType moduleType() const {
+            return module_type_;
+        }
+
+    private:
+        ModuleType module_type_;
 
     };
 

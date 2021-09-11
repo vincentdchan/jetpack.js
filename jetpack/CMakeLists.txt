@@ -25,6 +25,7 @@ set(SOURCE_FILES
         src/utils/Path.h
         src/utils/Common.h
         src/utils/Common.cpp
+        src/utils/JetFlags.h
         src/tokenizer/Token.h
         src/tokenizer/Token.cpp
         src/tokenizer/Location.h
@@ -79,7 +80,14 @@ set(SOURCE_FILES
         src/codegen/CodeGen.cpp)
 
 if (EMSCRIPTEN)
-add_definitions(-DJETPACK_SINGLE_THREAD)
+    add_definitions(-DJETPACK_SINGLE_THREAD)
+    set(CMAKE_C_FLAGS_DEBUG "-g3 -O0 -Werror -fexceptions")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Werror -fexceptions")
+    set(CMAKE_C_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
+    set(CMAKE_CXX_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
+else()
+    set(CMAKE_CXX_FLAGS_DEBUG "-g0 -O3 -Werror")
+    set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3 -Werror")
 endif()
 
 include_directories(PUBLIC
@@ -111,6 +119,7 @@ if(JETPACK_BUILD_TESTS)
             tests/codegen.cpp
             tests/jsx.cpp
             tests/simple_api.cpp
+            tests/common_js.cpp
             tests/constant_folding.cpp)
 
     target_include_directories(jetpack-test PUBLIC
@@ -130,8 +139,6 @@ if(JETPACK_BUILD_TESTS)
             -DJETPACK_BUILD_DIR="${TEST_BUILD_DIR}"
     )
 endif()
-
-set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3")
 
 if (UNIX AND NOT EMSCRIPTEN)
     add_definitions(-DJETPACK_HAS_JEMALLOC)

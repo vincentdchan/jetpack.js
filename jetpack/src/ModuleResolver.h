@@ -22,6 +22,7 @@
 #include "GlobalImportHandler.h"
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"
+#include "utils/JetFlags.h"
 
 namespace jetpack {
 
@@ -52,6 +53,14 @@ namespace jetpack {
      */
     class ModuleResolver : public std::enable_shared_from_this<ModuleResolver> {
     public:
+        enum LocationAddOption {
+            LocationImported = 0x1,
+            LocationExported = 0x2,
+            LocationIsCommonJS = 0x4,
+        };
+
+        JET_DECLARE_FLAGS(LocationAddOptions, LocationAddOption)
+
         ModuleResolver() {
             name_generator = ReadableNameGenerator::Make();
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
@@ -134,14 +143,17 @@ namespace jetpack {
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
                                                  std::int32_t& counter);
 
-        void HandleNewLocationAdded(const parser::ParserContext::Config& config,
+        Sp<ModuleFile> HandleNewLocationAdded(const parser::ParserContext::Config& config,
                                     const Sp<ModuleFile>& mf,
-                                    bool is_import,
+                                    LocationAddOptions flags,
                                     const std::string& path);
 
         void DumpAllResult(const CodeGen::Config& config,
                            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
+
+
+        void CodeGenModule(const Sp<ModuleFile>& mod, CodeGen& codegen, SourceMapGenerator& sourcemap);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
 
@@ -189,6 +201,8 @@ namespace jetpack {
 
         int32_t enqueued_files_count_ = 0;
         int32_t finished_files_count_ = 0;
+
+        std::atomic<bool> has_common_js_{ false };
 
         std::mutex main_lock_;
         std::condition_variable main_cv_;

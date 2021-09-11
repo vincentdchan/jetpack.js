@@ -5,6 +5,7 @@
 #include "ModuleFile.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
+#include "parser/NodesMaker.h"
 
 namespace jetpack {
 

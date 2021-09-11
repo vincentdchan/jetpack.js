@@ -8,7 +8,6 @@
 #include <memory>
 #include "macros.h"
 #include "utils/Common.h"
-#include "utils/string/UString.h"
 #include "parser/NodeTypes.h"
 
 namespace jetpack {
@@ -36,10 +35,8 @@ namespace jetpack {
     class Variable {
     public:
         VarKind kind = VarKind::Invalid;
-//        bool is_exported = false;
-//        bool is_imported = false;
-//        bool is_mutated = false;
-        Scope* scope = nullptr;
+        bool    predefined = false;
+        Scope*  scope = nullptr;
 
         std::string name;
 

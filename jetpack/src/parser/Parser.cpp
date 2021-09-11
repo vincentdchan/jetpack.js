@@ -1190,6 +1190,11 @@ namespace jetpack::parser {
                     placeholder->params = node->arguments;
                     placeholder->async = true;
                     expr = move(placeholder);
+                } else if (ctx->config_.common_js) {
+                    auto new_call = CheckRequireCall(scope, std::dynamic_pointer_cast<CallExpression>(expr));
+                    if (new_call.has_value()) {
+                        return std::dynamic_pointer_cast<Expression>(*new_call);
+                    }
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
                 ctx->is_binding_element_ = false;
@@ -1254,9 +1259,15 @@ namespace jetpack::parser {
         ctx->strict_ = true;
         ctx->is_module_ = true;
         auto marker = CreateStartMarker();
-        auto node = make_shared<Module>();
+        Sp<Module> node;
+        if (ctx->is_common_js_) {
+            node = make_shared<Module>(ModuleScope::ModuleType::CommonJs);
+            node->source_type = u"commonjs";
+        } else {
+            node = make_shared<Module>(ModuleScope::ModuleType::EsModule);
+            node->source_type = u"module";
+        }
         node->body = ParseDirectivePrologues(*node->scope.get());
-        node->source_type = u"module";
         while (ctx->lookahead_.type != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem(*node->scope.get()));
         }
@@ -2299,7 +2310,7 @@ namespace jetpack::parser {
     }
 
     Sp<Declaration> Parser::ParseExportDeclaration(Scope& scope) {
-        auto module_scope = scope.CastToMoudle();
+        auto module_scope = scope.CastToModule();
         Assert(module_scope, "scope should be module scope");
 
         if (ctx->in_function_body_) {
@@ -2452,6 +2463,32 @@ namespace jetpack::parser {
         }
 
         return export_decl;
+    }
+
+    /**
+     * check for require('')
+     */
+    std::optional<Sp<SyntaxNode>> Parser::CheckRequireCall(Scope& scope, const Sp<CallExpression> &call) {
+        if (call->callee->type == SyntaxNodeType::Identifier) {
+            auto id = std::dynamic_pointer_cast<Identifier>(call->callee);
+            if (!(id->name == "require")) {
+                return std::nullopt;
+            }
+            if (call->arguments.size() == 1 && call->arguments[0]->type == SyntaxNodeType::Literal) {
+                // very likely
+                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+                if (lit->ty != Literal::Ty::String) {
+                    return std::nullopt;
+                }
+
+                auto new_call = require_call_created_listener.Emit(call);
+
+                Scope* root_scope = scope.GetRoot();
+                root_scope->CastToModule()->import_manager.ResolveRequireCallExpr(call);
+                return { new_call };
+            }
+        }
+        return std::nullopt;
     }
 
     Sp<Expression> Parser::ParseAssignmentExpression(Scope& scope) {
@@ -2889,7 +2926,7 @@ namespace jetpack::parser {
     }
 
     Sp<ImportDeclaration> Parser::ParseImportDeclaration(Scope& scope) {
-        auto module_scope = scope.CastToMoudle();
+        auto module_scope = scope.CastToModule();
         Assert(module_scope, "import specifier is not in module scope");
 
         if (ctx->in_function_body_) {

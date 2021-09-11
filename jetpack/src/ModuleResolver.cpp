@@ -5,7 +5,6 @@
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
-#include <parser/ParserCommon.h>
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -14,9 +13,19 @@
 #include "utils/JetJSON.h"
 #include "utils/Path.h"
 #include "utils/io/FileIO.h"
+#include "parser/ParserCommon.h"
+#include "parser/NodesMaker.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
-#include "Error.h"
+
+static const char* COMMON_JS_CODE =
+    "let __commonJS = (callback, module) => () => {\n"
+    "  if (!module) {\n"
+    "    module = {exports: {}};\n"
+    "    callback(module.exports, module);\n"
+    "  }\n"
+    "  return module.exports;\n"
+    "};";
 
 namespace jetpack {
     using fmt::format;
@@ -24,56 +33,6 @@ namespace jetpack {
     using parser::Parser;
 
     static const char* PackageJsonName = "package.json";
-
-    inline Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content) {
-        auto id = std::make_shared<Identifier>();
-        id->name = content;
-        id->location = loc;
-        return id;
-    }
-
-//    inline Sp<SyntaxNode> MakeModuleVar(const SourceLocation& loc, const UString& var_name) {
-//        auto mod_var = std::make_shared<VariableDeclaration>();
-//        mod_var->kind = VarKind::Const;
-//
-//        auto declarator = std::make_shared<VariableDeclarator>();
-//        declarator->id = MakeId(loc, var_name);
-//
-//        declarator->init = { std::make_shared<ObjectExpression>() };
-//
-//        mod_var->declarations.push_back(std::move(declarator));
-//        return mod_var;
-//    }
-
-    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
-        auto lit = std::make_shared<Literal>();
-        lit->ty = Literal::Ty::String;
-        lit->str_ = str;
-        lit->raw += '"';
-        lit->raw += str;
-        lit->raw += '"';
-        return lit;
-    }
-
-    inline Sp<Literal> MakeNull() {
-        auto null_lit = std::make_shared<Literal>();
-        null_lit->ty = Literal::Ty::Null;
-        null_lit->str_ = "null";
-        null_lit->raw = "null";
-
-        return null_lit;
-    }
-
-//    inline void AddKeyValueToObject(const std::shared_ptr<ObjectExpression>& expr,
-//                                    const UString& key,
-//                                    const UString& value) {
-//
-//        auto prop = std::make_shared<Property>();
-//        prop->key = MakeId(key);
-//        prop->value = MakeId(value);
-//
-//        expr->properties.push_back(std::move(prop));
-//    }
 
     ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
     : file_path(path), error_content(content) {
@@ -162,6 +121,10 @@ namespace jetpack {
         }
 
         auto ctx = std::make_shared<ParserContext>(mf->id(), mf->src_content, config);
+
+        if (mf->IsCommonJS()) {
+            ctx->is_common_js_ = true;
+        }
         Parser parser(ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
@@ -170,19 +133,33 @@ namespace jetpack {
                 global_import_handler_.HandleImport(import_decl);
                 return;
             }
-            HandleNewLocationAdded(config, mf, true, u8path);
+            HandleNewLocationAdded(config, mf, LocationImported, u8path);
         });
         parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
             if (export_decl->source.has_value()) {
                 const auto& u8path = (*export_decl->source)->str_;
-                HandleNewLocationAdded(config, mf, false, u8path);
+                HandleNewLocationAdded(config, mf, LocationExported, u8path);
             }
         });
         parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
             const auto& u8path = export_decl->source->str_;
-            HandleNewLocationAdded(config, mf, false, u8path);
+            HandleNewLocationAdded(config, mf, LocationExported, u8path);
         });
-
+        if (config.common_js) {
+            parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) {
+                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+                const auto& u8path = lit->str_;
+                auto child_mod = HandleNewLocationAdded(
+                        config,
+                        mf,
+                        LocationAddOptions(LocationImported | LocationIsCommonJS),
+                        u8path
+                        );
+                auto new_call = std::make_shared<CallExpression>();
+                new_call->callee = MakeId(SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
+                return new_call;
+            });
+        }
 
         benchmark::BenchMarker bench(benchmark::BENCH_PARSING);
         mf->ast = parser.ParseModule();
@@ -194,16 +171,16 @@ namespace jetpack {
         id_logger_->InsertByList(unresolved_ids);
     }
 
-    void ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
-                                                const Sp<jetpack::ModuleFile> &mf, bool is_import,
+    Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
+                                                const Sp<jetpack::ModuleFile> &mf, LocationAddOptions flags,
                                                 const std::string &path) {
-        if (unlikely(!trace_file)) return;
+        if (unlikely(!trace_file)) return nullptr;
 
         auto matchResult = FindProviderByPath(mf, path);
         if (matchResult.first == nullptr) {
             WorkerError err {mf->Path(), std::string("module can't be resolved: ") + path };
             worker_errors_.emplace_back(std::move(err));
-            return;
+            return nullptr;
         }
 
         mf->resolved_map[path] = matchResult.second;
@@ -212,10 +189,23 @@ namespace jetpack {
         Sp<ModuleFile> childMod = modules_table_.createNewIfNotExists(matchResult.second, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
-            return;
+            return childMod;
         }
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
+        if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
+            std::lock_guard<std::mutex> guard(main_lock_);
+            childMod->SetIsCommonJS(true);
+            auto name = name_generator->Next("jp_require");
+            if (name.has_value()) {
+                childMod->cjs_call_name = *name;
+            } else {
+                childMod->cjs_call_name = "jp_require";
+            }
+        }
+        if (childMod->IsCommonJS()) {
+            has_common_js_.store(true);
+        }
 
         mf->ref_mods.push_back(childMod);
 
@@ -238,6 +228,7 @@ namespace jetpack {
             }
             FinishOne();
         });
+        return childMod;
     }
 
     void ModuleResolver::PrintStatistic() {
@@ -460,16 +451,14 @@ namespace jetpack {
         CodeGen codegen(config, mappingCollector);
         sourcemapGenerator->AddCollector(mappingCollector);
 
-        for (auto& tuple : modules_table_.pathToModule) {
-            auto& mod = tuple.second;
-            sourcemapGenerator->AddSource(mod);
-            codegen.Traverse(mod->ast);
-        }
-        // codegen all result end
-
         global_import_handler_.GenCode(codegen);
 
-        ClearAllVisitedMark();
+        if (has_common_js_.load()) {
+            codegen.AddSnippet(COMMON_JS_CODE);
+        }
+
+        CodeGenModule(entry_module, codegen, *sourcemapGenerator);
+        // codegen all result end
 
         if (!final_export_vars.empty()) {
             auto final_export = GenFinalExportDecl(final_export_vars);
@@ -495,6 +484,24 @@ namespace jetpack {
                 std::cerr << "dump source map failed: " << outPath << std::endl;
             }
         }
+    }
+
+    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &mod, CodeGen &codegen, SourceMapGenerator& sourcemap) {
+        for (auto& ref : mod->ref_mods) {
+            auto child = ref.lock();
+            if (!child) {
+                continue;
+            }
+            CodeGenModule(child, codegen, sourcemap);
+        }
+
+        if (mod->IsCommonJS()) {
+            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+        }
+        if (mod->IsCommonJS()) {
+            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+        }
+        codegen.Traverse(mod->ast);
     }
 
     // dump parallel

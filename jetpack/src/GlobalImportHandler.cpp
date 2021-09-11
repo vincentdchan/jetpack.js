@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include "GlobalImportHandler.h"
+#include "parser/NodesMaker.h"
 
 namespace jetpack {
 

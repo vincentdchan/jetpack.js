@@ -3,9 +3,9 @@
 //
 
 #include <gtest/gtest.h>
-#include <parser/Parser.hpp>
-#include <parser/ParserContext.h>
 #include <iostream>
+#include "parser/Parser.hpp"
+#include "parser/ParserContext.h"
 
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
