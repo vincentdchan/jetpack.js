@@ -7,11 +7,20 @@
   "repository": {
     "url": "https://github.com/vincentdchan/jetpack.js"
   },
-  "keywords": ["parser", "minifier", "node", "bundler"],
+  "keywords": [
+    "parser",
+    "minifier",
+    "node",
+    "bundler"
+  ],
   "bin": {
     "jetpp": "./index.js"
   },
   "scripts": {
-    "install": "node scripts/download_lib.js"
+    "install": "node scripts/download_lib.js",
+    "build": "cmake-js compile"
+  },
+  "devDependencies": {
+    "cmake-js": "^6.2.1"
   }
 }
