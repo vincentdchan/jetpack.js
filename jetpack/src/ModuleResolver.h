@@ -96,12 +96,6 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        void MergeModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
-
-        void RecursivelyMergeCJSModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
-
-        void RecursivelyMergeEsModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
-
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {
                 tuple.second->visited_mark = false;
@@ -157,6 +151,9 @@ namespace jetpack {
         void DumpAllResult(const CodeGen::Config& config,
                            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
+
+
+        void CodeGenModule(const Sp<ModuleFile>& mod, CodeGen& codegen, SourceMapGenerator& sourcemap);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
 

@@ -86,7 +86,7 @@ if (EMSCRIPTEN)
     set(CMAKE_C_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
     set(CMAKE_CXX_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
 else()
-    set(CMAKE_CXX_FLAGS_DEBUG "-Werror")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g0 -O3 -Werror")
     set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3 -Werror")
 endif()
 

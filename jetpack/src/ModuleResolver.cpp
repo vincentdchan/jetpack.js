@@ -451,23 +451,14 @@ namespace jetpack {
         CodeGen codegen(config, mappingCollector);
         sourcemapGenerator->AddCollector(mappingCollector);
 
+        global_import_handler_.GenCode(codegen);
+
         if (has_common_js_.load()) {
             codegen.AddSnippet(COMMON_JS_CODE);
         }
 
-        for (auto& tuple : modules_table_.pathToModule) {
-            auto& mod = tuple.second;
-            sourcemapGenerator->AddSource(mod);
-            if (mod->IsCommonJS()) {
-                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
-            }
-            codegen.Traverse(mod->ast);
-        }
+        CodeGenModule(entry_module, codegen, *sourcemapGenerator);
         // codegen all result end
-
-        global_import_handler_.GenCode(codegen);
-
-        ClearAllVisitedMark();
 
         if (!final_export_vars.empty()) {
             auto final_export = GenFinalExportDecl(final_export_vars);
@@ -493,6 +484,24 @@ namespace jetpack {
                 std::cerr << "dump source map failed: " << outPath << std::endl;
             }
         }
+    }
+
+    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &mod, CodeGen &codegen, SourceMapGenerator& sourcemap) {
+        for (auto& ref : mod->ref_mods) {
+            auto child = ref.lock();
+            if (!child) {
+                continue;
+            }
+            CodeGenModule(child, codegen, sourcemap);
+        }
+
+        if (mod->IsCommonJS()) {
+            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+        }
+        if (mod->IsCommonJS()) {
+            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+        }
+        codegen.Traverse(mod->ast);
     }
 
     // dump parallel
