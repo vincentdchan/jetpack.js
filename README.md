@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
 [![npm version](https://img.shields.io/npm/v/jetpp.svg)](https://www.npmjs.com/package/jetpp)
 
-[中文版](./README_CN.md)
+| [中文版](./README_CN.md) | [WASM Online Demo](https://diverse.space/jetpack-wasm-demo/)
 
 `jetpack.js` is an extremely fast js bundler and minifier written in C++.
 

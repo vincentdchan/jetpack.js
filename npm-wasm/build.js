@@ -8,6 +8,16 @@ const fileList = [
 
 const buildDir = '../cmake-build-release-wasm/jetpack-wasm';
 
+function copyReadme() {
+  const name = 'README.md';
+  const filePath = '../README.md';
+
+  try {
+    fs.unlinkSync(name);
+  } catch (e) {}
+  fs.copyFileSync(filePath, name);
+}
+
 function main() {
   fileList.forEach(name => {
     const filePath = path.join(buildDir, name);
@@ -17,6 +27,7 @@ function main() {
     fs.copyFileSync(filePath, name);
   });
 
+  copyReadme();
 }
 
 main();

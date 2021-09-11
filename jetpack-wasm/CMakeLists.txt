@@ -18,9 +18,13 @@ if (EMSCRIPTEN)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
             "-s ALLOW_MEMORY_GROWTH=1 \
             -s LLD_REPORT_UNDEFINED=1 \
-            -s DISABLE_EXCEPTION_CATCHING=0 \
             -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\", \"allocateUTF8\", \"UTF8ToString\"]' \
             -s EXPORTED_FUNCTIONS='[\"_parse_and_codegen\",\"_parse_to_ast\"]' \
             -s EXPORT_ES6=1 \
             -s ENVIRONMENT='web'")
+
+    set(CMAKE_C_FLAGS_DEBUG "-g3 -O0 -Werror -fexceptions")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Werror -fexceptions")
+    set(CMAKE_C_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
+    set(CMAKE_CXX_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
 endif()
