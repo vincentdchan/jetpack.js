@@ -1,6 +1,8 @@
 #include <node_api.h>
+#include <cstdlib>
 #include <cassert>
 
+#include "parser/ParseErrorHandler.h"
 #include "SimpleAPI.h"
 
 #define ENTRY_PATH_MAX 512
@@ -111,7 +113,44 @@ static napi_value minify_code(napi_env env, napi_callback_info info) {
   status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
   assert(status = napi_ok);
 
-  return 0;
+  size_t str_size = 0;
+  status = napi_get_value_string_utf8(env, argv[0], nullptr, 0, &str_size);
+  if (status != 0) {
+    napi_throw_type_error(env, nullptr, "the first arg should be a string");
+    return 0;
+  }
+
+  char* buffer = (char*)malloc(str_size + 1);
+  buffer[str_size] = 0;
+  status = napi_get_value_string_utf8(env, argv[0], buffer, str_size + 1, &str_size);
+  assert(status == napi_ok);
+
+  std::string result;
+  try {
+      std::string content(buffer);
+      jetpack::parser::Config parser_config = jetpack::parser::Config::Default();
+      jetpack::CodeGenConfig code_gen_config;
+      parser_config.jsx = true;
+      parser_config.constant_folding = true;
+      code_gen_config.minify = true;
+      result = jetpack::simple_api::ParseAndCodeGen(std::move(content), parser_config, code_gen_config);
+  } catch (jetpack::parser::ParseError& err) {
+      std::string errMsg = err.ErrorMessage();
+      free(buffer);
+      napi_throw_type_error(env, nullptr, errMsg.c_str());
+      return 0;
+  } catch (...) {
+      free(buffer);
+      napi_throw_type_error(env, nullptr, "unknown error");
+      return 0;
+  }
+
+  free(buffer);
+
+  napi_value js_result;
+  status = napi_create_string_utf8(env, result.c_str(), result.size(), &js_result);
+  assert(status == napi_ok);
+  return js_result;
 }
 
 static napi_value Init(napi_env env, napi_value exports) {

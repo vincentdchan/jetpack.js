@@ -48,7 +48,7 @@ Usage:
 jetpack-cli --help
 ```
 
-## Node.js User
+## Node.js CLI
 
 ```
 npm install -g jetpp
@@ -78,6 +78,16 @@ Usage:
       --minify              minify the code
       --out arg             output filename of bundle
       --sourcemap           generate sourcemaps
+```
+
+## Node.js Program
+
+```javascript
+
+const jetpp = require('jetpp');
+
+console.log(jetpp.minify('let hello = "world";'));
+
 ```
 
 # WebAssembly User
