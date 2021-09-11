@@ -8,35 +8,29 @@
 #include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
 #include "ModuleResolver.h"
-#include "ModuleCompositor.h"
 #include "SimpleAPI.h"
-#include "Path.h"
-#include "io/FileIO.h"
+#include "utils/Path.h"
+#include "utils/io/FileIO.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndGenSourceMap(const UString& content, bool print) {
+inline std::string ParseAndGenSourceMap(const std::string& content, bool print) {
     auto resolver = std::make_shared<ModuleResolver>();
     ParserContext::Config config = ParserContext::Config::Default();
     resolver->BeginFromEntryString(config, content);
 
     SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
-    auto mod =  resolver->GetEntryModule();
+    auto mod = resolver->GetEntryModule();
     CodeGen::Config codegenConfig;
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
-    mod->codegen_result = codegen.GetResult();
 
-    resolver->EscapeSrcContentsAndPaths();
-
-    ModuleCompositor compositor(sourceMapGenerator);
-    compositor.append(mod->codegen_result.content, mod->mapping_collector_);
-    auto composition = compositor.Finalize();
+    sourceMapGenerator.Finalize();
 
     if (print) {
-        std::cout << "gen: " << std::endl << composition.toStdString() << std::endl;
+        std::cout << "gen: " << std::endl << sourceMapGenerator.ToPrettyString() << std::endl;
     }
 
     return sourceMapGenerator.ToPrettyString();
@@ -62,12 +56,12 @@ TEST(SourceMap, VLQEncoding) {
 }
 
 TEST(SourceMap, Simple) {
-    UString src(u""
+    std::string src(""
                 "function main() {\n"
                 "    console.log('hello world');\n"
                 "}\n"
     );
-    auto result = ParseAndGenSourceMap(src, true);
+    auto result = ParseAndGenSourceMap(std::move(src), true);
 
     std::cout << result << std::endl;
     auto resultJson = nlohmann::json::parse(result);
@@ -128,8 +122,8 @@ TEST(SourceMap, Complex) {
 
     std::vector<SourceMapDecoder::ResultMapping> expect_mappings {
             { 0, 3, 0, 1, 0 },
-            { 1, 3, 4, 4, 2 },
-            { 1, 3, 12, 4, 10},
+            { 1, 3, 4, 3, 2 },
+            { 1, 3, 12, 3, 10},
     };
 
     EXPECT_EQ(expect_mappings.size(), result.content.size());

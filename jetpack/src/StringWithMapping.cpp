@@ -1,0 +1,18 @@
+//
+// Created by Duzhong Chen on 2021/9/8.
+//
+
+#include "StringWithMapping.h"
+
+namespace jetpack {
+
+    Sp<StringWithMapping> StringWithMapping::Make(std::string &&content) {
+        return std::make_shared<StringWithMapping>(std::move(content));
+    }
+
+    StringWithMapping::StringWithMapping(std::string &&content):
+            data_(std::move(content)) {
+        mapping_.resize(data_.size(), 0);
+    }
+
+}

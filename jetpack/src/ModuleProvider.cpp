@@ -2,9 +2,9 @@
 // Created by Duzhong Chen on 2021/3/25.
 //
 
+#include "utils/io/FileIO.h"
 #include "ModuleProvider.h"
-#include "Path.h"
-#include "io/FileIO.h"
+#include "utils/Path.h"
 
 namespace jetpack {
 
@@ -53,8 +53,8 @@ namespace jetpack {
         return { jsPath.substr(base_path_.size() + 1) };
     }
 
-    ResolveResult<UString> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
-        UString result;
+    ResolveResult<std::string> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
+        std::string result;
 
         // resolvedPath should not be a absolute path
         J_ASSERT(resolvedPath.at(0) != Path::PATH_DIV);
@@ -63,9 +63,9 @@ namespace jetpack {
         absolutePath.Join(resolvedPath);
         auto absPathStr = absolutePath.ToString();
 
-        io::IOError err = io::ReadFileToUString(absPathStr, result);
+        io::IOError err = io::ReadFileToStdString(absPathStr, result);
         if (err != io::IOError::Ok) {
-            ResolveResult<UString> errResult;
+            ResolveResult<std::string> errResult;
             errResult.error = { { absPathStr, std::string(io::IOErrorToString(err)) } };
             return errResult;
         }
@@ -79,7 +79,7 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    ResolveResult<UString> MemoryModuleProvider::resolve(const ModuleFile &mf, const std::string &path) {
+    ResolveResult<std::string> MemoryModuleProvider::resolve(const ModuleFile &mf, const std::string &path) {
         return ResolveResult(content_);
     }
 

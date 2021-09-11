@@ -32,7 +32,7 @@ namespace jetpack {
             temp.push_back(RenameInnerScopes(*child, idLogger));
         }
 
-        std::vector<std::tuple<UString, UString>> renames;
+        std::vector<std::tuple<std::string, std::string>> renames;
         auto renamer = MinifyNameGenerator::Merge(temp);
 
         for (auto& variable : scope.own_variables) {
@@ -47,33 +47,28 @@ namespace jetpack {
         return renamer;
     }
 
-    void ModuleFile::CodeGenFromAst(const CodeGen::Config &config) {
-//        if (config.comments) {
-//            memoryOutputStream << u"// " << UString::fromStdString(Path()) << u"\n";
-//        }
-
-        if (is_common_js_) {
-            WrapModuleWithCommonJsTemplate(ast, cjs_call_name, u"__commonJS");
-        }
-        CodeGen codegen(config, mapping_collector_);
-        codegen.Traverse(ast);
-        codegen_result = codegen.GetResult();
-    }
-
     UString ModuleFile::GetModuleVarName() const {
         std::string tmp = "mod_" + std::to_string(id());
-        return UString::fromStdString(tmp);
+        return UStringFromUtf8(tmp.c_str(), tmp.size());
     }
 
-    ResolveResult<UString> ModuleFile::GetSource() {
+    bool ModuleFile::GetSource(WorkerError& error) {
         J_ASSERT(provider);
         benchmark::BenchMarker marker(benchmark::BENCH_READING_IO);
         auto result =  provider->resolve(*this, Path());
-        if (likely(!result.HasError())) {
-            src_content = result.value;
+        if (unlikely(result.HasError())) {
+            marker.Submit();
+
+            error = *result.error;
+
+            return false;
+        } else {
+            std::string tmp;
+            result.value.swap(tmp);
+            src_content = StringWithMapping::Make(std::move(tmp));
         }
         marker.Submit();
-        return result;
+        return true;
     }
 
 

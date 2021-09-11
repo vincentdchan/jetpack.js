@@ -5,7 +5,7 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 
-const version = '0.1.0';
+const version = '0.2.0';
 
 const platform = os.platform();
 const arch = os.arch();
@@ -14,9 +14,12 @@ const downloadChecksumUrl = name => `${downloadUrl(name)}.SHA256`;
 
 const libsName = [
   'jetpp.node',
-  'libjetpackd.dylib',
-  'libjemalloc.2.dylib',
 ];
+
+if (platform === 'darwin') {
+  libsName.push('libjetpackd.dylib');
+  libsName.push('libjemalloc.2.dylib');
+}
 
 function getDownloadPath(name) {
   const tmpDir = os.tmpdir();

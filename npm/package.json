@@ -1,10 +1,26 @@
 {
   "name": "jetpp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
+  "repository": {
+    "url": "https://github.com/vincentdchan/jetpack.js"
+  },
+  "keywords": [
+    "parser",
+    "minifier",
+    "node",
+    "bundler"
+  ],
   "bin": {
     "jetpp": "./index.js"
+  },
+  "scripts": {
+    "install": "node scripts/download_lib.js",
+    "build": "cmake-js compile"
+  },
+  "devDependencies": {
+    "cmake-js": "^6.2.1"
   }
 }

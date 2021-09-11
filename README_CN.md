@@ -5,18 +5,14 @@
 
 [English Version](./README.md)
 
-`jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具。
-
-`jetpack.js` 采用模块化的设计，各部分组件都分离开，parser 可以单独使用
+`jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具，用 C++ 写成。
 
 - [特性](#特性)
     - [Parser](#parser)
     - [Bundler](#bundler)
 - [安装](#Installation)
 - [使用](#usage)
-- [单独使用 Parser](#单独使用-Parser)
-- [性能](#performance)
-- [架构](#architecture)
+- [WebAssembly 用户](#WebAssembly-用户)
 - [平台](#platform)
 
 # 特性
@@ -79,32 +75,28 @@ Usage:
       --sourcemap           generate sourcemaps
 ```
 
-# 单独使用 Parser
+# WebAssembly 用户
 
-jetpack.js 使用 CMake 进行构建，所以你可以很好地继承到你的项目
+WASM 让你可以在浏览器环境里面运行 Jetpack.js.
 
-```cmake
-add_subdirectory(esparser)
-target_include_directories(${PROJECT_NAME} ./esparser/src)
-target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
+## 安装 WASM 版 Jetpack
+
+```
+yarn add jetpp-wasm
 ```
 
-# 性能
+## 引入 Jetpack.js 到你的项目里面
 
-我做了和 [esbuild](https://github.com/evanw/esbuild) 相同的测试。
+```javascript
 
-> My main benchmark approximates a large codebase by duplicating the three.js library 10 times and building a single bundle from scratch, without any caches. For this benchmark, esbuild is 10-100x faster than the other JavaScript bundlers I tested (Webpack, Rollup, Parcel, and FuseBox). The benchmark can be run with make bench-three.
+import loadJetpack from 'jetpp-wasm';
 
-![](./images/chart.svg)
+async function main(code) {
+    const jetpack = await loadJetpack();
+    return jetpack.minify(code);
+}
 
-The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
-(similar to esbuild).
-
-# 架构
-
-![](./images/Rocket-Bundle-Arch.png)
-
-代码都有注释，可以读读代码。
+```
 
 # 平台
 
@@ -113,6 +105,7 @@ The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
 - macOS
 - Windows 64bit
 - Linux 64bit
+- WebAssembly
 
 # 构建依赖
 - jemalloc 5.2.1
@@ -121,3 +114,4 @@ The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
 - nlohmann_json
 - robin-hood-hashing 3.11.1
 - xxHash
+- boost(头文件) 1.76

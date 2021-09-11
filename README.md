@@ -3,22 +3,16 @@
 [![Build Status](https://travis-ci.com/vincentdchan/jetpack.js.svg?branch=master)](https://travis-ci.com/vincentdchan/jetpack.js)
 [![npm version](https://img.shields.io/npm/v/jetpp.svg)](https://www.npmjs.com/package/jetpp)
 
-[中文版](./README_CN.md)
+| [中文版](./README_CN.md) | [WASM Online Demo](https://diverse.space/jetpack-wasm-demo/)
 
-`jetpack.js` is an extremely fast js bundler and minifier.
-
-`jetpack.js` a well designed tool. It's modulize into parser and bundler.
-The parser can be used as a library independently.
+`jetpack.js` is an extremely fast js bundler and minifier written in C++.
 
 - [Features](#Features)
   - [Parser](#parser)
   - [Bundler](#bundler)
 - [Installation](#Installation)
 - [Usage](#usage)
-- [Use the parser as a library](#use-the-parser-as-a-standalone-library)
-  - [Example](#example)
-- [Performance](#performance)
-- [Architecture](#architecture)
+- [WebAssembly User](#webAssembly-user)
 - [Platform](#platform)
 
 # Features
@@ -86,33 +80,28 @@ Usage:
       --sourcemap           generate sourcemaps
 ```
 
-# Use the parser as a standalone library
+# WebAssembly User
 
-jetpack.js is built with CMake, so it can be
-easily integrated to your project.
+WASM gives you the power of running Jetpack.js in the browser environment.
 
-```cmake
-add_subdirectory(esparser)
-target_include_directories(${PROJECT_NAME} ./esparser/src)
-target_link_libraries(${PROJECT_NAME} PUBLIC esparser)
+## Install the WASM version
+
+```
+yarn add jetpp-wasm
 ```
 
-# Performance
+## Include Jetpack.js in your project
 
-I do the same benchmark provided by [esbuild](https://github.com/evanw/esbuild).
+```javascript
 
-> My main benchmark approximates a large codebase by duplicating the three.js library 10 times and building a single bundle from scratch, without any caches. For this benchmark, esbuild is 10-100x faster than the other JavaScript bundlers I tested (Webpack, Rollup, Parcel, and FuseBox). The benchmark can be run with make bench-three.
+import loadJetpack from 'jetpp-wasm';
 
-![](./images/chart.svg)
+async function main(code) {
+    const jetpack = await loadJetpack();
+    return jetpack.minify(code);
+}
 
-The tests were done on a 6-core 2018 MacBook Pro with 16GB of RAM
-(similar to esbuild).
-
-# Architecture
-
-![](./images/Rocket-Bundle-Arch.png)
-
-The code are well commented, please read the code.
+```
 
 # Platform
 
@@ -121,6 +110,7 @@ The code are well commented, please read the code.
 - macOS x64/arm64
 - Windows 64bit
 - Linux 64bit
+- WebAssembly
 
 # Build Dependencies
 
@@ -130,3 +120,4 @@ The code are well commented, please read the code.
 - nlohmann_json
 - robin-hood-hashing 3.11.1
 - xxHash
+- boost(Header-only) 1.76

@@ -7,7 +7,7 @@
 #include <vector>
 #include <set>
 #include <mutex>
-#include "Utils.h"
+#include "utils/Common.h"
 #include "parser/SyntaxNodes.h"
 #include "UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"
@@ -19,16 +19,16 @@ namespace jetpack {
         std::int32_t id = -1;
 
         bool has_namespace = false;
-        UString ns_import_name;
+        std::string ns_import_name;
 
         bool has_default = false;
-        UString default_local_name;
+        std::string default_local_name;
 
-        UString path;
+        std::string path;
 
-        std::vector<UString> names;
+        std::vector<std::string> names;
 
-        HashMap<UString, UString> alias_map;
+        HashMap<std::string, std::string> alias_map;
 
     };
 
@@ -46,9 +46,7 @@ namespace jetpack {
 
         void GenAst(const std::shared_ptr<UniqueNameGenerator>&);
 
-        CodeGenResult GenCode(
-                const CodeGen::Config &config,
-                const Sp<MappingCollector>& mc);
+        void GenCode(CodeGen& codegen);
 
         std::vector<Sp<ImportDeclaration>> imports;
 
@@ -57,7 +55,7 @@ namespace jetpack {
          */
         std::set<uintptr_t> external_import_ptrs;
 
-        HashMap<UString, GlobalImportInfo> import_infos;
+        HashMap<std::string, GlobalImportInfo> import_infos;
 
         std::vector<Sp<ImportDeclaration>> gen_import_decls;
 

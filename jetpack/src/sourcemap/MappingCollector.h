@@ -5,10 +5,10 @@
 #pragma once
 
 #include <cinttypes>
-#include "Utils.h"
-#include "tokenizer/Location.h"
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
+#include "utils/Common.h"
+#include "tokenizer/Location.h"
 
 namespace jetpack {
     template<class Key, class T, class Ignore, class Allocator,
@@ -24,7 +24,7 @@ namespace jetpack {
 
     struct MappingItem {
     public:
-        inline MappingItem(const UString& n,
+        inline MappingItem(const std::string& n,
                            const SourceLocation& loc,
                            int32_t dL,
                            int32_t dC) noexcept:
@@ -32,7 +32,7 @@ namespace jetpack {
                 dist_line(dL),
                 dist_column(dC) {}
 
-        UString        name;
+        std::string        name;
         SourceLocation origin;
         int32_t        dist_line   = -1;
         int32_t        dist_column = -1;
@@ -51,7 +51,7 @@ namespace jetpack {
             dist_line_++;
         }
 
-        void AddMapping(const UString& name, const SourceLocation& origin, int32_t column);
+        void AddMapping(const std::string& name, const SourceLocation& origin, int32_t column);
 
         friend class SourceMapGenerator;
         friend class ModuleCompositor;

@@ -9,18 +9,18 @@
 #include "parser/NodesMaker.h"
 #include "codegen/CodeGen.h"
 #include "SimpleAPI.h"
-#include "Path.h"
+#include "utils/Path.h"
 
 #include "ModuleResolver.h"
 
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndCodeGen(UString content) {
+inline std::string ParseAndCodeGen(std::string content) {
     ParserContext::Config config = ParserContext::Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -28,16 +28,16 @@ inline std::string ParseAndCodeGen(UString content) {
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    return codegen.GetResult().content.toStdString();
+    return codegen.GetResult().content;
 }
 
 TEST(CommonJS, HookParser) {
-    UString content = UString::fromStdString("const result = require('react');\n");
+    std::string content = "const result = require('react');\n";
 
     ParserContext::Config config = ParserContext::Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
+    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
     bool is_called = false;
     parser.require_call_created_listener.On([&is_called](const Sp<CallExpression>& expr) {
@@ -51,7 +51,7 @@ TEST(CommonJS, HookParser) {
 }
 
 TEST(CommonJS, AddModuleVariable) {
-    UString content = UString::fromStdString("exports.name = function() { console.log('name'); }\n");
+    auto content = "exports.name = function() { console.log('name'); }\n";
 
     ParserContext::Config config = ParserContext::Config::Default();
     config.jsx = true;
@@ -67,12 +67,12 @@ TEST(CommonJS, AddModuleVariable) {
     module_scope->ResolveAllSymbols(&unresolved_ids);
     EXPECT_EQ(unresolved_ids.size(), 1);  // has a 'console'
 
-    const auto& var = module_scope->own_variables[u"exports"];
+    const auto& var = module_scope->own_variables["exports"];
     EXPECT_EQ(var->identifiers.size(), 2);
 }
 
 TEST(CommonJS, CodeGen) {
-    UString content = UString::fromStdString("exports.name = function() { console.log('name'); }\n");
+    auto content = "exports.name = function() { console.log('name'); }\n";
 
     ParserContext::Config config = ParserContext::Config::Default();
     config.jsx = true;
@@ -82,22 +82,22 @@ TEST(CommonJS, CodeGen) {
 
     Parser parser(ctx);
     auto mod = parser.ParseModule();
-    WrapModuleWithCommonJsTemplate(mod, u"require_foo", u"__commonJS");
+    WrapModuleWithCommonJsTemplate(mod, "require_foo", "__commonJS");
 
     ModuleScope* module_scope = mod->scope->CastToModule();
 
     std::vector<Sp<Identifier>> unresolved_ids;
     module_scope->ResolveAllSymbols(&unresolved_ids);
 
-    std::vector<std::tuple<UString, UString>> renames {
-            { u"exports", u"a" },
+    std::vector<std::tuple<std::string, std::string>> renames {
+            { "exports", "a" },
     };
     module_scope->BatchRenameSymbols(renames);
 
     CodeGen::Config code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
-    std::string output = codegen.GetResult().content.toStdString();
+    const auto& output = codegen.GetResult().content;
     EXPECT_EQ(output, "let require_foo = __commonJS(a => {\n"
                       "  a.name = function() {\n"
                       "    console.log('name');\n"

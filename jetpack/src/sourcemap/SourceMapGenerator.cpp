@@ -4,8 +4,8 @@
 
 #include <cstring>
 #include <iostream>
-#include "JetJSON.h"
-#include "io/FileIO.h"
+#include "utils/JetJSON.h"
+#include "utils/io/FileIO.h"
 #include "Benchmark.h"
 #include "SourceMapGenerator.h"
 #include "ModuleResolver.h"
@@ -173,7 +173,7 @@ namespace jetpack {
         ss << R"(  "sources": [)" << std::endl;
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << module->escaped_path.get() << "\"";
+            ss << "    \"" << EscapeJSONString(module->Path()) << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
@@ -191,7 +191,7 @@ namespace jetpack {
 
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << module->escaped_src_content.get() << "\"";
+            ss << "    \"" << EscapeJSONString(module->src_content->ConstData()) << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
@@ -218,7 +218,7 @@ namespace jetpack {
         }
     }
 
-    bool SourceMapGenerator::AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col) {
+    bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col) {
         if (unlikely(fileId < 0)) {
             J_ASSERT(fileId != -1);
             return true;

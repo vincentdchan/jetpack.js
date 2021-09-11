@@ -8,7 +8,7 @@
 
 #include <cxxopts.hpp>
 #include "SimpleAPI.h"
-#include "JetTime.h"
+#include "utils/JetTime.h"
 #include "ModuleResolver.h"
 #include "Benchmark.h"
 
@@ -27,7 +27,7 @@
 
 namespace jetpack::simple_api {
 
-    int AnalyzeModule(const std::string& path, Flags flags) {
+    int AnalyzeModule(const std::string& path, Flags flags, const std::string& basePath) {
         parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
         if (flags.isJsx()) {
             parser_config.jsx = true;
@@ -39,7 +39,7 @@ namespace jetpack::simple_api {
 
         try {
             resolver->SetTraceFile(flags.isTraceFile());
-            resolver->BeginFromEntry(parser_config, path);
+            resolver->BeginFromEntry(parser_config, path, basePath);
             resolver->PrintStatistic();
             return 0;
         } catch (ModuleResolveException& err) {
@@ -48,7 +48,7 @@ namespace jetpack::simple_api {
         }
     }
 
-    int BundleModule(const std::string& path, const std::string& out_path, Flags flags) {
+    int BundleModule(const std::string& path, const std::string& out_path, Flags flags, const std::string& basePath) {
 
         auto start = time::GetCurrentMs();
 
@@ -72,7 +72,7 @@ namespace jetpack::simple_api {
             codegen_config.sourcemap = flags.isSourcemap();
 
             resolver->SetTraceFile(true);
-            resolver->BeginFromEntry(parser_config, path);
+            resolver->BeginFromEntry(parser_config, path, basePath);
             resolver->CodeGenAllModules(codegen_config, out_path);
 
             std::cout << "Finished." << std::endl;

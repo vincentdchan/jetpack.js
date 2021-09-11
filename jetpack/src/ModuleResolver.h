@@ -15,15 +15,14 @@
 #include <functional>
 #include <fstream>
 #include <mutex>
-#include "JetFlags.h"
 
 #include "ModuleProvider.h"
 #include "ModuleFile.h"
 #include "ModulesTable.h"
-#include "ModuleCompositor.h"
 #include "GlobalImportHandler.h"
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"
+#include "utils/JetFlags.h"
 
 namespace jetpack {
 
@@ -68,10 +67,11 @@ namespace jetpack {
         }
 
         void BeginFromEntry(const parser::ParserContext::Config& config,
-                            const std::string& originPath);
+                            const std::string& originPath,
+                            const std::string& basePathOverride="");
 
         void BeginFromEntryString(const parser::ParserContext::Config& config,
-                                  UString str);
+                                  const std::string& str);
 
         void ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
                                const parser::ParserContext::Config& config,
@@ -102,8 +102,6 @@ namespace jetpack {
 
         void RecursivelyMergeEsModules(const Sp<ModuleFile>& mf, ModuleCompositor& moduleCompositor);
 
-        void EscapeSrcContentsAndPaths();
-
         inline void ClearAllVisitedMark() {
             for (auto& tuple : modules_table_.pathToModule) {
                 tuple.second->visited_mark = false;
@@ -128,7 +126,7 @@ namespace jetpack {
         ModulesTable modules_table_;
 
         json GetImportStat();
-        Vec<std::tuple<Sp<ModuleFile>, UString>> GetAllExportVars();
+        Vec<std::tuple<Sp<ModuleFile>, std::string>> GetAllExportVars();
 
         void RenameAllRootLevelVariable();
 
@@ -144,9 +142,9 @@ namespace jetpack {
         void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::ParserContext::Config& config, const std::string& resolvedPath);
 
         void TraverseModulePushExportVars(
-                std::vector<std::tuple<Sp<ModuleFile>, UString>>& arr,
+                std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                 const Sp<ModuleFile>&,
-                HashSet<UString>* white_list);
+                HashSet<std::string>* white_list);
 
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
                                                  std::int32_t& counter);
@@ -157,7 +155,7 @@ namespace jetpack {
                                     const std::string& path);
 
         void DumpAllResult(const CodeGen::Config& config,
-                           const Vec<std::tuple<Sp<ModuleFile>, UString>>& final_export_vars,
+                           const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
@@ -182,9 +180,9 @@ namespace jetpack {
         bool IsExternalImportModulePath(const std::string& path);
 
         std::optional<Sp<LocalExportInfo>>
-        FindLocalExportByPath(const std::string& path, const UString& export_name, std::set<std::int32_t>& visited);
+        FindLocalExportByPath(const std::string& path, const std::string& export_name, std::set<int32_t>& visited);
 
-        Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, UString>>&);
+        Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>&);
 
         // return nullable
         std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);

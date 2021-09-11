@@ -7,11 +7,12 @@
 #include <cinttypes>
 #include <string>
 #include <future>
-#include <parser/Parser.hpp>
-#include "string/UString.h"
+#include "parser/Parser.hpp"
+#include "utils/string/UString.h"
 #include "codegen/CodeGen.h"
 #include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"
+#include "StringWithMapping.h"
 #include "ResolveResult.h"
 
 namespace jetpack {
@@ -50,8 +51,8 @@ namespace jetpack {
             return path_;
         }
 
-        UString default_export_name;
-        UString cjs_call_name;
+        std::string default_export_name;
+        std::string cjs_call_name;
 
         // interface to provide content by contents;
         Sp<ModuleProvider> provider;
@@ -65,15 +66,7 @@ namespace jetpack {
          */
         HashMap<std::string, std::string> resolved_map;
 
-        /**
-         * Temp for parallel codegen
-         */
-        CodeGenResult codegen_result;
-
-        UString src_content;
-
-        std::future<std::string> escaped_src_content;
-        std::future<std::string> escaped_path;
+        Sp<StringWithMapping> src_content;
 
         /**
          * For Postorder traversal
@@ -90,11 +83,9 @@ namespace jetpack {
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
 
-        void CodeGenFromAst(const CodeGen::Config &config);
-
         UString GetModuleVarName() const;
 
-        ResolveResult<UString> GetSource();
+        bool GetSource(WorkerError& error);
 
         inline ExportManager& GetExportManager() {
             return ast->scope->export_manager;

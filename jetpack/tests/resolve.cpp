@@ -19,10 +19,10 @@ using namespace jetpack::parser;
  */
 TEST(MinifyNameGenerator, Next) {
     auto gen = MinifyNameGenerator::Make();
-    std::unordered_set<UString> gen_set;
+    std::unordered_set<std::string> gen_set;
 
     for (int i = 0; i < 10000; i++) {
-        auto next_str_opt = gen->Next(u"");
+        auto next_str_opt = gen->Next("");
         EXPECT_TRUE(next_str_opt.has_value());
 //        std::cout << utils::To_UTF8(next_str) << std::endl;
         EXPECT_TRUE(gen_set.find(*next_str_opt) == gen_set.end());
@@ -30,14 +30,13 @@ TEST(MinifyNameGenerator, Next) {
     }
 }
 
-inline std::string ReplaceDefault(const std::string& src) {
+inline std::string ReplaceDefault(std::string&& src) {
     auto resolver = std::make_shared<ModuleResolver>();
     auto mod = std::make_shared<ModuleFile>("memory0", -1);
     mod->module_resolver = resolver;
 
-    UString u16src = UString::fromUtf8(src.c_str(), src.size());
     ParserContext::Config config = ParserContext::Config::Default();
-    auto ctx = std::make_shared<ParserContext>(mod->id(), u16src, config);
+    auto ctx = std::make_shared<ParserContext>(mod->id(), std::move(src), config);
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
@@ -47,13 +46,13 @@ inline std::string ReplaceDefault(const std::string& src) {
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod->ast);
 
-    return codegen.GetResult().content.toStdString();
+    return codegen.GetResult().content;
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
     std::string src = "export default a = 3;";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result, "var _default = a = 3;\n");
 }
@@ -62,7 +61,7 @@ TEST(ModuleResolver, HandleExportDefaultFunction1) {
     std::string src = "export default function() {\n"
                       "}";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result,
               "function _default() {}\n");
@@ -72,7 +71,7 @@ TEST(ModuleResolver, HandleExportDefaultFunction2) {
     std::string src = "export default function name() {\n"
                       "}";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result,
               "function name() {}\n"
@@ -82,7 +81,7 @@ TEST(ModuleResolver, HandleExportDefaultFunction2) {
 TEST(ModuleResolver, HandleExportDefaultLiteral) {
     std::string src = "export default 3;\n";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result,
               "var _default = 3;\n");
@@ -91,7 +90,7 @@ TEST(ModuleResolver, HandleExportDefaultLiteral) {
 TEST(ModuleResolver, HandleExportDefaultLiteral2) {
     std::string src = "export default `3`;\n";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result,
               "var _default = `3`;\n");
@@ -102,7 +101,7 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
                       "aaaabb\n"
                       "ddd`;\n";
 
-    auto result = ReplaceDefault(src);
+    auto result = ReplaceDefault(std::move(src));
 
     EXPECT_EQ(result,
               "var _default = `\n"
@@ -111,8 +110,8 @@ TEST(ModuleResolver, HandleExportDefaultLiteral3) {
 }
 
 TEST(ModuleResolver, SingleMemoryFile) {
-    UString buffer =
-            u"function hello(world) {\n"
+    std::string buffer =
+            "function hello(world) {\n"
             "  console.log(world);\n"
             "}\n"
             "hello('world');\n";
@@ -137,7 +136,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
     }
 
     resolver->SetTraceFile(false);
-    resolver->BeginFromEntryString(parser_config, buffer.constData());
+    resolver->BeginFromEntryString(parser_config, buffer);
 
     auto final_export_vars = resolver->GetAllExportVars();
     if (minify) {
@@ -146,9 +145,10 @@ TEST(ModuleResolver, SingleMemoryFile) {
     resolver->RenameAllRootLevelVariable();
 
     auto entry_mod = resolver->GetEntryModule();
-    entry_mod->CodeGenFromAst(codegen_config);
+    CodeGen codegen(codegen_config);
+    codegen.Traverse(entry_mod->ast);
 
-    std::cout << entry_mod->codegen_result.content.toStdString() << std::endl;
+    std::cout << codegen.GetResult().content << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {

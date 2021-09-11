@@ -9,7 +9,7 @@
 #include <string>
 #include <memory>
 #include <ThreadPool.h>
-#include "string/UString.h"
+#include "utils/string/UString.h"
 #include "MappingCollector.h"
 #include "ModuleFile.h"
 
@@ -45,8 +45,8 @@ namespace jetpack {
 
         bool DumpFile(const std::string& path, bool pretty = false);
 
-        inline void AddCollector(Sp<MappingCollector>&& collector) {
-            collectors_.push_back(std::move(collector));
+        inline void AddCollector(const Sp<MappingCollector>& collector) {
+            collectors_.push_back(collector);
         }
 
     private:
@@ -63,7 +63,7 @@ namespace jetpack {
 
         void FinalizeSourcesContent();
 
-        bool AddLocation(const UString& name, int after_col, int fileId, int before_line, int before_col);
+        bool AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col);
 
         int32_t GetFilenameIndexByModuleId(int32_t moduleId);
 

@@ -17,7 +17,7 @@ namespace jetpack {
     public:
         virtual std::optional<std::string> match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual ResolveResult<UString> resolve(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string& resolvedPath) = 0;
 
         ~ModuleProvider() noexcept = default;
 
@@ -29,7 +29,7 @@ namespace jetpack {
 
         std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
 
-        ResolveResult<UString> resolve(const ModuleFile &mf, const std::string& resolvedPath) override;
+        ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string& resolvedPath) override;
 
     private:
         std::string base_path_;
@@ -46,16 +46,16 @@ namespace jetpack {
 
     class MemoryModuleProvider : public ModuleProvider {
     public:
-        explicit inline MemoryModuleProvider(const std::string& token, const UString& content):
+        explicit inline MemoryModuleProvider(const std::string& token, const std::string& content):
         token_(token), content_(content) {}
 
         std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
 
-        ResolveResult<UString> resolve(const ModuleFile &mf, const std::string &path) override;
+        ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string &path) override;
 
     private:
         std::string token_;
-        UString     content_;
+        std::string content_;
 
     };
 

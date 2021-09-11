@@ -9,9 +9,9 @@
 #include <sstream>
 #include <cinttypes>
 #include <deque>
-#include "Utils.h"
 #include "NodeTraverser.h"
-#include "string/UString.h"
+#include "utils/string/UString.h"
+#include "utils/Common.h"
 #include "sourcemap/MappingCollector.h"
 
 namespace jetpack {
@@ -20,7 +20,7 @@ namespace jetpack {
     public:
         int32_t lines_count;
         int32_t last_line_column;
-        UString content;
+        std::string content;
 
     };
 
@@ -53,8 +53,8 @@ namespace jetpack {
 
             bool     minify = false;
             uint32_t start_indent_level = 0;
-            UString  indent = u"  ";
-            UString  line_end = u"\n";
+            std::string  indent = "  ";
+            std::string  line_end = "\n";
             bool     sourcemap = false;
             bool     comments = true;
 
@@ -62,7 +62,7 @@ namespace jetpack {
 
         CodeGen(
                 const Config& config,
-                const Sp<MappingCollector>& sourceMapGenerator);
+                Sp<MappingCollector> sourceMapGenerator = nullptr);
 
         [[nodiscard]]
         inline CodeGenResult GetResult() const {
@@ -79,13 +79,13 @@ namespace jetpack {
             state_.column += 1;
         }
 
-        inline void Write(const char16_t* c_str) {
-            UString str(c_str);
+        inline void Write(const std::string& str) {
             output += str;
+            // TODO: use mapped length
             state_.column += str.length();
         }
 
-        inline void Write(const UString& str, Sp<SyntaxNode> node = nullptr) {
+        inline void Write(const std::string& str, Sp<SyntaxNode> node) {
             output += str;
             state_.column += str.length();
         }
@@ -94,12 +94,7 @@ namespace jetpack {
 
         void WriteIndent();
 
-        inline void WriteIndentWith(const char16_t* c_str) {
-            WriteIndent();
-            Write(c_str);
-        }
-
-        inline void WriteIndentWith(const UString& str) {
+        inline void WriteIndentWith(const std::string& str) {
             WriteIndent();
             Write(str);
         }
@@ -198,7 +193,7 @@ namespace jetpack {
         // nullable
         Sp<MappingCollector> mappingCollector;
 
-        UString output;
+        std::string output;
 
     };
 

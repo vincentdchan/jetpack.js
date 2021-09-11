@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "UniqueNameGenerator.h"
-#include "Utils.h"
+#include "utils/Common.h"
 
 namespace jetpack {
 
@@ -35,21 +35,21 @@ namespace jetpack {
     UniqueNameGeneratorWithUsedName::UniqueNameGeneratorWithUsedName() {
         std::call_once(init_once_, [] {
             for (auto& keyword : LongJsKeywords) {
-                long_keywords_set.insert(UString::fromUtf8(keyword, strlen(keyword)));
+                long_keywords_set.insert(keyword);
             }
         });
     }
 
-    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const UString& name) {
+    bool UniqueNameGeneratorWithUsedName::IsJsKeyword(const std::string& name) {
         if (name.size() == 1) {
             return false;
         } else if (name.size() == 2) {
             switch (name.at(0)) {
-                case u'd':
-                    return name.at(1) == u'o';
+                case 'd':
+                    return name.at(1) == 'o';
 
-                case u'i':
-                    return name.at(1) == u'f' || name.at(1) == u'n';
+                case 'i':
+                    return name.at(1) == 'f' || name.at(1) == 'n';
 
                 default:
                     return false;
@@ -57,17 +57,17 @@ namespace jetpack {
             }
         } else if (name.size() == 3) {
             switch (name.at(0)) {
-                case u't':
-                    return name == u"try";
+                case 't':
+                    return name == "try";
 
-                case u'n':
-                    return name == u"new";
+                case 'n':
+                    return name == "new";
 
-                case u'v':
-                    return name == u"var";
+                case 'v':
+                    return name == "var";
 
-                case u'f':
-                    return name == u"for";
+                case 'f':
+                    return name == "for";
 
                 default:
                     return false;
@@ -79,7 +79,7 @@ namespace jetpack {
     }
 
     std::once_flag UniqueNameGeneratorWithUsedName::init_once_;
-    HashSet<UString> UniqueNameGeneratorWithUsedName::long_keywords_set;
+    HashSet<std::string> UniqueNameGeneratorWithUsedName::long_keywords_set;
 
     std::shared_ptr<ReadableNameGenerator> ReadableNameGenerator::Make() {
         std::shared_ptr<ReadableNameGenerator> result(new ReadableNameGenerator);
@@ -87,20 +87,20 @@ namespace jetpack {
         return result;
     }
 
-    std::optional<UString>
-    ReadableNameGenerator::Next(const UString &original_name) {
+    std::optional<std::string>
+    ReadableNameGenerator::Next(const std::string &original_name) {
         if (!IsNameUsed(original_name)) {  // not exist
             used_name.insert(original_name);
             return std::nullopt;
         }
 
         std::string tmp = std::to_string(counter++);
-        UString new_name = original_name + u"_" + UString::fromUtf8(tmp.c_str(), tmp.size());
+        std::string new_name = original_name + "_" + tmp;
         used_name.insert(new_name);
         return { new_name };
     }
 
-    bool ReadableNameGenerator::IsNameUsed(const UString &name) {
+    bool ReadableNameGenerator::IsNameUsed(const std::string &name) {
         if (IsJsKeyword(name)) {
             return true;
         }
@@ -148,9 +148,9 @@ namespace jetpack {
         return result;
     }
 
-    std::optional<UString>
-    MinifyNameGenerator::Next(const UString& original) {
-        UString result;
+    std::optional<std::string>
+    MinifyNameGenerator::Next(const std::string& original) {
+        std::string result;
 
         do {
             result = GenAName();
@@ -159,7 +159,7 @@ namespace jetpack {
         return { result };
     }
 
-    bool MinifyNameGenerator::IsNameUsed(const UString &name) {
+    bool MinifyNameGenerator::IsNameUsed(const std::string &name) {
         if (IsJsKeyword(name)) {
             return true;
         }
@@ -171,7 +171,7 @@ namespace jetpack {
         return prev != nullptr && prev->IsNameUsed(name);
     }
 
-    UString MinifyNameGenerator::GenAName() {
+    std::string MinifyNameGenerator::GenAName() {
         std::string result;
 
         std::int32_t buffer[BUFFER_SIZE];
@@ -209,7 +209,7 @@ namespace jetpack {
 
         counter++;
 
-        return UString::fromUtf8(result.c_str(), result.size());
+        return result;
     }
 
     void UnresolvedNameCollector::InsertByList(std::vector<std::shared_ptr<Identifier>> list) {
@@ -219,7 +219,7 @@ namespace jetpack {
         }
     }
 
-    bool UnresolvedNameCollector::IsNameUsed(const UString &name) {
+    bool UnresolvedNameCollector::IsNameUsed(const std::string& name) {
         return used_name.find(name) != used_name.end();
     }
 
