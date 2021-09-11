@@ -117,9 +117,9 @@ TEST(CommonJS, Comple) {
 
     std::cout << "output dir: " << outputPath.ToString() << std::endl;
 
-    simple_api::Flags flags;
-    flags.setJsx(true);
-    flags.setMinify(false);
-    flags.setSourcemap(true);
+    JetpackFlags flags;
+    flags |= JetpackFlag::Jsx;
+    flags |= JetpackFlag::Minify;
+    flags |= JetpackFlag::Sourcemap;
     EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 }
