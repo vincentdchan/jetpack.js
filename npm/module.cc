@@ -34,8 +34,8 @@ static napi_value bundle_file(napi_env env, napi_callback_info info) {
   status = napi_get_value_string_utf8(env, entry_value, path, ENTRY_PATH_MAX, &s);
   assert(status == napi_ok);
 
-  jetpack::simple_api::Flags flags;
-  flags.setJsx(true);
+  JetpackFlags flags;
+  flags |= JetpackFlag::Jsx;
   jetpack::simple_api::BundleModule(path, "bundle.js", flags);
 
   return 0;
@@ -103,6 +103,17 @@ static napi_status SetCallbackProp(napi_env env, napi_value exports, const char*
   return status;
 }
 
+static napi_value minify_code(napi_env env, napi_callback_info info) {
+  napi_status status;
+
+  size_t argc = 1;
+  napi_value argv[1];
+  status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  assert(status = napi_ok);
+
+  return 0;
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_status status;
 
@@ -111,8 +122,8 @@ static napi_value Init(napi_env env, napi_value exports) {
     assert(status == napi_ok)
 
   REGISTER_CALLBACK("bundleFile", bundle_file);
-
   REGISTER_CALLBACK("handleCli", handle_command_line);
+  REGISTER_CALLBACK("minify", minify_code);
 
   return exports;
 }

@@ -12,14 +12,14 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline Sp<Module> ParseString(std::string&& src) {
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     auto ctx = std::make_shared<ParserContext>(-1, std::move(src), config);
     Parser parser(ctx);
     return parser.ParseModule();
 }
 
 inline std::string GenCode(Sp<Module>& mod) {
-    CodeGen::Config code_gen_config;
+    CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     return codegen.GetResult().content;
@@ -28,7 +28,7 @@ inline std::string GenCode(Sp<Module>& mod) {
 TEST(Scope, Collect) {
     std::string content("var name = 3;");
 
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 

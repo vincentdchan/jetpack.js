@@ -7,36 +7,13 @@
 #include <vector>
 #include "utils/Common.h"
 #include "tokenizer/Scanner.h"
+#include "parser/Config.h"
 #include "SyntaxNodes.h"
 
 namespace jetpack::parser {
 
     class ParserContext final {
     public:
-        struct Config {
-        public:
-            static Config Default();
-
-            std::optional<UString> source;
-            bool tokens;
-            bool comment;
-            bool tolerant;
-            bool jsx;
-            bool typescript;
-            bool constant_folding;
-
-            /**
-             * transpile jsx when parsing
-             */
-            bool transpile_jsx;
-
-            bool common_js;
-
-        private:
-            Config() = delete;
-
-        };
-
         struct Marker {
             Scanner::Cursor cursor;
             uint32_t line = 0;

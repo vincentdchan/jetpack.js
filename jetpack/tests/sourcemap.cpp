@@ -17,13 +17,13 @@ using namespace jetpack::parser;
 
 inline std::string ParseAndGenSourceMap(const std::string& content, bool print) {
     auto resolver = std::make_shared<ModuleResolver>();
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     resolver->BeginFromEntryString(config, content);
 
     SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
     auto mod = resolver->GetEntryModule();
-    CodeGen::Config codegenConfig;
+    CodeGenConfig codegenConfig;
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(mod->ast);
 

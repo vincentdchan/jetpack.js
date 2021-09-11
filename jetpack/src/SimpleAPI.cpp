@@ -55,7 +55,7 @@ namespace jetpack {
 namespace jetpack::simple_api {
 
     int AnalyzeModule(const std::string& path, JetpackFlags flags, const std::string& basePath) {
-        parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+        parser::Config parser_config = parser::Config::Default();
         parser_config.jsx = !!(flags & JetpackFlag::Jsx);
 
         // do not release memory
@@ -80,8 +80,8 @@ namespace jetpack::simple_api {
 
         try {
             auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void*) {});
-            CodeGen::Config codegen_config;
-            parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+            CodeGenConfig codegen_config;
+            parser::Config parser_config = parser::Config::Default();
 
             if (flags & JetpackFlag::Jsx) {
                 parser_config.jsx = true;
@@ -122,7 +122,7 @@ namespace jetpack::simple_api {
         }
     }
 
-    std::string ParseAndCodeGen(std::string&& content, const jetpack::parser::ParserContext::Config& config, const CodeGen::Config& code_gen_config) {
+    std::string ParseAndCodeGen(std::string&& content, const jetpack::parser::Config& config, const CodeGenConfig& code_gen_config) {
         auto ctx = std::make_shared<jetpack::parser::ParserContext>(-1, std::move(content), config);
         jetpack::parser::Parser parser(ctx);
 

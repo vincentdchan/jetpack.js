@@ -7,8 +7,8 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
-#include "parser/ParserContext.h"
-#include "codegen/CodeGen.h"
+#include "parser/Config.h"
+#include "codegen/CodeGenConfig.h"
 #include "utils/JetFlags.h"
 
 enum class JetpackFlag {
@@ -36,8 +36,8 @@ namespace jetpack { namespace simple_api {
                      const std::string& base_path="");
 
     std::string ParseAndCodeGen(std::string&& content,
-                                const jetpack::parser::ParserContext::Config& config,
-                                const jetpack::CodeGen::Config& code_gen_config);
+                                const jetpack::parser::Config& config,
+                                const jetpack::CodeGenConfig& code_gen_config);
 
     int HandleCommandLine(int argc, char** argv);
 

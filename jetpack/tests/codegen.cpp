@@ -14,13 +14,13 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline std::string ParseAndCodeGen(std::string&& content) {
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
 
-    CodeGen::Config code_gen_config;
+    CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     return codegen.GetResult().content;

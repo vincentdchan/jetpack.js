@@ -66,18 +66,18 @@ namespace jetpack {
             id_logger_ = std::make_shared<UnresolvedNameCollector>();
         }
 
-        void BeginFromEntry(const parser::ParserContext::Config& config,
+        void BeginFromEntry(const parser::Config& config,
                             const std::string& originPath,
                             const std::string& basePathOverride="");
 
-        void BeginFromEntryString(const parser::ParserContext::Config& config,
+        void BeginFromEntryString(const parser::Config& config,
                                   const std::string& str);
 
         void ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
-                               const parser::ParserContext::Config& config,
+                               const parser::Config& config,
                                const std::string& path);
 
-        void ParseFile(const parser::ParserContext::Config& config,
+        void ParseFile(const parser::Config& config,
                        Sp<ModuleFile>);
 
         inline void SetTraceFile(bool val) {
@@ -92,7 +92,7 @@ namespace jetpack {
 
         void PrintErrors();
 
-        void CodeGenAllModules(const CodeGen::Config& config, const std::string& out_path);
+        void CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path);
 
         void RenameAllInnerScopes();
 
@@ -133,7 +133,7 @@ namespace jetpack {
         }
 
     private:
-        void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::ParserContext::Config& config, const std::string& resolvedPath);
+        void pBeginFromEntry(const Sp<ModuleProvider>& rootProvider, const parser::Config& config, const std::string& resolvedPath);
 
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
@@ -143,12 +143,12 @@ namespace jetpack {
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
                                                  std::int32_t& counter);
 
-        Sp<ModuleFile> HandleNewLocationAdded(const parser::ParserContext::Config& config,
+        Sp<ModuleFile> HandleNewLocationAdded(const parser::Config& config,
                                     const Sp<ModuleFile>& mf,
                                     LocationAddOptions flags,
                                     const std::string& path);
 
-        void DumpAllResult(const CodeGen::Config& config,
+        void DumpAllResult(const CodeGenConfig& config,
                            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
 
