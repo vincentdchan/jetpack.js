@@ -83,8 +83,6 @@ namespace jetpack {
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
 
-        UString GetModuleVarName() const;
-
         bool GetSource(WorkerError& error);
 
         inline ExportManager& GetExportManager() {

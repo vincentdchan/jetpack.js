@@ -2,23 +2,37 @@
 // Created by Duzhong Chen on 2021/3/23.
 //
 
-#include <boost/locale.hpp>
 #include "UString.h"
 
 std::string StringFromCodePoint(char32_t cp) {
     return StringFromUtf32(&cp, 1);
 }
 
-UString UStringFromUtf8(const char* content, std::size_t size) {
-    return boost::locale::conv::utf_to_utf<char16_t>(content, content + size);
-}
+#define U8(C) static_cast<uint8_t>(C)
 
 std::string StringFromUtf32(const char32_t* content, std::size_t size) {
-    return boost::locale::conv::utf_to_utf<char>(content, content + size);
-}
-
-std::string UStringToUtf8(const UString& str) {
-    return boost::locale::conv::utf_to_utf<char>(str);
+    std::string result;
+    for (std::size_t i = 0; i < size; i++) {
+        char32_t c = content[i];
+        if( c<0x00080 ){
+            result.push_back(U8(c&0xFF));
+        }
+        else if( c<0x00800 ){
+            result.push_back(U8(0xC0) + (unsigned char)((c>>6)&0x1F));
+            result.push_back(U8(0x80) + U8(c & 0x3F));
+        }
+        else if( c<0x10000 ){
+            result.push_back(U8(0xE0) + U8((c>>12)&0x0F));
+            result.push_back(U8(0x80) + U8((c>>6) & 0x3F));
+            result.push_back(U8(0x80) + U8(c & 0x3F));
+        }else{
+            result.push_back(U8(0xF0) + U8((c>>18) & 0x07));
+            result.push_back(U8(0x80) + U8((c>>12) & 0x3F));
+            result.push_back(U8(0x800) + U8((c>>6) & 0x3F));
+            result.push_back(U8(0x80) + U8(c & 0x3F));
+        }
+    }
+    return result;
 }
 
 //#include "PrivateStringUtils.h"

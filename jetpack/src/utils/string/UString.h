@@ -21,12 +21,7 @@ using UStringView = std::u16string_view;
 #define UStr(STR) (UStringView(u"" STR, sizeof(u"" STR) / sizeof(char16_t) - 1))
 
 std::string StringFromCodePoint(char32_t cp);
-UString UStringFromUtf8(const char* content, std::size_t size);
-inline UString UStringFromStdString(const std::string& str) {
-    return UStringFromUtf8(str.c_str(), str.size());
-}
 std::string StringFromUtf32(const char32_t* content, std::size_t size);
-std::string UStringToUtf8(const UString& str);
 
 //namespace std {
 //
@@ -40,21 +35,5 @@ std::string UStringToUtf8(const UString& str);
 //    };
 //
 //}
-
-template<>
-struct fmt::formatter<UString>
-{
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
-        return ctx.begin();
-    }
-
-    template<typename FormatContext>
-    auto format(UString const& content, FormatContext& ctx) {
-        auto utf8 = UStringToUtf8(content);
-        return fmt::format_to(ctx.out(), "{}", utf8);
-    }
-};
-
 
 #endif //ROCKET_BUNDLE_USTRING_H

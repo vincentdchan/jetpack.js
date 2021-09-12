@@ -47,11 +47,6 @@ namespace jetpack {
         return renamer;
     }
 
-    UString ModuleFile::GetModuleVarName() const {
-        std::string tmp = "mod_" + std::to_string(id());
-        return UStringFromUtf8(tmp.c_str(), tmp.size());
-    }
-
     bool ModuleFile::GetSource(WorkerError& error) {
         J_ASSERT(provider);
         benchmark::BenchMarker marker(benchmark::BENCH_READING_IO);
