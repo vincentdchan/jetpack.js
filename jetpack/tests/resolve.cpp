@@ -35,14 +35,14 @@ inline std::string ReplaceDefault(std::string&& src) {
     auto mod = std::make_shared<ModuleFile>("memory0", -1);
     mod->module_resolver = resolver;
 
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     auto ctx = std::make_shared<ParserContext>(mod->id(), std::move(src), config);
     Parser parser(ctx);
 
     mod->ast = parser.ParseModule();
     resolver->ReplaceExports(mod);
 
-    CodeGen::Config code_gen_config;
+    CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod->ast);
 
@@ -120,8 +120,8 @@ TEST(ModuleResolver, SingleMemoryFile) {
     bool minify = true;
 
     auto resolver = std::make_shared<ModuleResolver>();
-    CodeGen::Config codegen_config;
-    parser::ParserContext::Config parser_config = parser::ParserContext::Config::Default();
+    CodeGenConfig codegen_config;
+    parser::Config parser_config = parser::Config::Default();
 
     if (jsx) {
         parser_config.jsx = true;

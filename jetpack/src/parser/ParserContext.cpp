@@ -6,20 +6,6 @@
 namespace jetpack::parser {
     using namespace std;
 
-    ParserContext::Config ParserContext::Config::Default() {
-        return {
-            nullopt,
-            false,
-            true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            true,
-        };
-    }
-
     ParserContext::ParserContext(int32_t fileId, std::string&& src, const Config& config):
         ParserContext(fileId, StringWithMapping::Make(std::move(src)), config) {
     }

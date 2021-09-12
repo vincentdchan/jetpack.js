@@ -12,6 +12,7 @@
 #include "NodeTraverser.h"
 #include "utils/string/UString.h"
 #include "utils/Common.h"
+#include "codegen/CodeGenConfig.h"
 #include "sourcemap/MappingCollector.h"
 
 namespace jetpack {
@@ -47,21 +48,8 @@ namespace jetpack {
         };
 
     public:
-        struct Config {
-        public:
-            Config() = default;
-
-            bool     minify = false;
-            uint32_t start_indent_level = 0;
-            std::string  indent = "  ";
-            std::string  line_end = "\n";
-            bool     sourcemap = false;
-            bool     comments = true;
-
-        };
-
         explicit CodeGen(
-                 const Config& config,
+                 const CodeGenConfig& config,
                  Sp<MappingCollector> sourceMapGenerator = nullptr);
 
         [[nodiscard]]
@@ -188,7 +176,7 @@ namespace jetpack {
         std::deque<Sp<Comment>> ordered_comments_;
         void SortComments(std::vector<Sp<Comment>> comments);
 
-        Config config_;
+        CodeGenConfig config_;
 
         State state_;
 

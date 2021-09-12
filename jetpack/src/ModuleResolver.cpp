@@ -51,7 +51,7 @@ namespace jetpack {
         std::cerr << "Error: " << error_content << std::endl;
     }
 
-    void ModuleResolver::BeginFromEntry(const parser::ParserContext::Config& config, const std::string& targetPath, const std::string& basePathOverride) {
+    void ModuleResolver::BeginFromEntry(const parser::Config& config, const std::string& targetPath, const std::string& basePathOverride) {
         std::string absolutePath;
         if (targetPath.empty()) {
             return;
@@ -75,7 +75,7 @@ namespace jetpack {
         pBeginFromEntry(fileProvider, config, absolutePath.substr(basePath->size() + 1));
     }
 
-    void ModuleResolver::BeginFromEntryString(const parser::ParserContext::Config& config,
+    void ModuleResolver::BeginFromEntryString(const parser::Config& config,
                                               const std::string& src) {
         std::string m0("memory0");
 
@@ -88,7 +88,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::ParseFileFromPath(const Sp<ModuleProvider>& rootProvider,
-                                           const parser::ParserContext::Config& config,
+                                           const parser::Config& config,
                                            const std::string &path) {
         bool isNew = false;
         entry_module = modules_table_.createNewIfNotExists(path, isNew);
@@ -112,7 +112,7 @@ namespace jetpack {
         return path[0] != '.' && path[0] != '/';
     }
 
-    void ModuleResolver::ParseFile(const parser::ParserContext::Config& config,
+    void ModuleResolver::ParseFile(const parser::Config& config,
                                    Sp<ModuleFile> mf) {
         WorkerError error;
         if (!mf->GetSource(error)) {
@@ -171,7 +171,7 @@ namespace jetpack {
         id_logger_->InsertByList(unresolved_ids);
     }
 
-    Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::ParserContext::Config &config,
+    Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::Config &config,
                                                 const Sp<jetpack::ModuleFile> &mf, LocationAddOptions flags,
                                                 const std::string &path) {
         if (unlikely(!trace_file)) return nullptr;
@@ -269,7 +269,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::pBeginFromEntry(const Sp<ModuleProvider>& rootProvider,
-                                         const parser::ParserContext::Config &config,
+                                         const parser::Config &config,
                                          const std::string &resolvedPath) {
         auto thread_pool_size = std::thread::hardware_concurrency();
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
@@ -417,7 +417,7 @@ namespace jetpack {
      * 3. replace all import declarations
      * 4. generate final export declaration
      */
-    void ModuleResolver::CodeGenAllModules(const CodeGen::Config& config, const std::string& out_path) {
+    void ModuleResolver::CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path) {
         enqueued_files_count_ = 0;
         finished_files_count_ = 0;
 
@@ -441,7 +441,7 @@ namespace jetpack {
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGen::Config& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
+    void ModuleResolver::DumpAllResult(const CodeGenConfig& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
         benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);

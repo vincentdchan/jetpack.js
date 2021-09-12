@@ -7,90 +7,37 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
+#include "parser/Config.h"
+#include "codegen/CodeGenConfig.h"
+#include "utils/JetFlags.h"
+
+enum class JetpackFlag {
+    Jsx = 0x1,
+    ConstantFolding = 0x2,
+    Minify = 0x100,
+    TraceFile = 0x10000,
+    Sourcemap = 0x20000,
+    Library = 0x40000,
+    Profile = 0x1000000,
+    ProfileMalloc = 0x2000000,
+};
+
+JET_DECLARE_FLAGS(JetpackFlags, JetpackFlag)
 
 namespace jetpack { namespace simple_api {
 
-    struct Flags {
-    public:
-        Flags() {
-            ::memset(this, 0, sizeof(Flags));
-            setTraceFile(true);
-        }
-
-        bool isTraceFile() const {
-            return trace_file;
-        }
-
-        void setTraceFile(bool traceFile) {
-            trace_file = traceFile;
-        }
-
-        bool isMinify() const {
-            return minify;
-        }
-
-        void setMinify(bool minify) {
-            Flags::minify = minify;
-        }
-
-        bool isJsx() const {
-            return jsx;
-        }
-
-        void setJsx(bool jsx) {
-            Flags::jsx = jsx;
-        }
-
-        bool isLibrary() const {
-            return library;
-        }
-
-        void setLibrary(bool library) {
-            Flags::library = library;
-        }
-
-        bool isSourcemap() const {
-            return sourcemap;
-        }
-
-        void setSourcemap(bool sourcemap) {
-            Flags::sourcemap = sourcemap;
-        }
-
-        bool isProfile() const {
-            return profile;
-        }
-
-        void setProfile(bool profile) {
-            Flags::profile = profile;
-        }
-
-        bool isProfileMalloc() const {
-            return profile_malloc;
-        }
-
-        void setProfileMalloc(bool profileMalloc) {
-            profile_malloc = profileMalloc;
-        }
-
-    private:
-        bool trace_file     : 1;
-        bool minify         : 1;
-        bool jsx            : 1;
-        bool library        : 1;
-        bool sourcemap      : 1;
-        bool profile        : 1;
-        bool profile_malloc : 1;
-    };
-
     int AnalyzeModule(const std::string& path,
-                      Flags flags,
+                      JetpackFlags flags,
                       const std::string& base_path="");
 
     int BundleModule(const std::string& path,
                      const std::string& out_path,
-                     Flags flags,
+                     JetpackFlags flags,
                      const std::string& base_path="");
+
+    std::string ParseAndCodeGen(std::string&& content,
+                                const jetpack::parser::Config& config,
+                                const jetpack::CodeGenConfig& code_gen_config);
 
     int HandleCommandLine(int argc, char** argv);
 

@@ -17,7 +17,7 @@ using namespace jetpack;
 using namespace jetpack::parser;
 
 inline std::string ParseAndCodeGen(std::string content) {
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
     auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
@@ -25,7 +25,7 @@ inline std::string ParseAndCodeGen(std::string content) {
 
     auto mod = parser.ParseModule();
 
-    CodeGen::Config code_gen_config;
+    CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     return codegen.GetResult().content;
@@ -34,7 +34,7 @@ inline std::string ParseAndCodeGen(std::string content) {
 TEST(CommonJS, HookParser) {
     std::string content = "const result = require('react');\n";
 
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
     auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
@@ -53,7 +53,7 @@ TEST(CommonJS, HookParser) {
 TEST(CommonJS, AddModuleVariable) {
     auto content = "exports.name = function() { console.log('name'); }\n";
 
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
     auto ctx = std::make_shared<ParserContext>(-1, content, config);
@@ -74,7 +74,7 @@ TEST(CommonJS, AddModuleVariable) {
 TEST(CommonJS, CodeGen) {
     auto content = "exports.name = function() { console.log('name'); }\n";
 
-    ParserContext::Config config = ParserContext::Config::Default();
+    Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
     auto ctx = std::make_shared<ParserContext>(-1, content, config);
@@ -94,7 +94,7 @@ TEST(CommonJS, CodeGen) {
     };
     module_scope->BatchRenameSymbols(renames);
 
-    CodeGen::Config code_gen_config;
+    CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     const auto& output = codegen.GetResult().content;
@@ -117,9 +117,9 @@ TEST(CommonJS, Comple) {
 
     std::cout << "output dir: " << outputPath.ToString() << std::endl;
 
-    simple_api::Flags flags;
-    flags.setJsx(true);
-    flags.setMinify(false);
-    flags.setSourcemap(true);
+    JetpackFlags flags;
+    flags |= JetpackFlag::Jsx;
+    flags |= JetpackFlag::Minify;
+    flags |= JetpackFlag::Sourcemap;
     EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 }

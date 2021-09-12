@@ -14,7 +14,7 @@
     "bundler"
   ],
   "bin": {
-    "jetpp": "./index.js"
+    "jetpp": "./cli.js"
   },
   "scripts": {
     "install": "node scripts/download_lib.js",

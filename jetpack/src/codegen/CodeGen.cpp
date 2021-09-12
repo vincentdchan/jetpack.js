@@ -58,7 +58,7 @@ namespace jetpack {
     }
 
     CodeGen::CodeGen(
-            const Config& config,
+            const CodeGenConfig& config,
             Sp<MappingCollector> mc):
             config_(config), mappingCollector(std::move(mc)) {}
 
