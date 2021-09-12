@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <stack>
 #include <set>
 
 #include "utils/JetJSON.h"
@@ -486,22 +487,45 @@ namespace jetpack {
         }
     }
 
-    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &mod, CodeGen &codegen, SourceMapGenerator& sourcemap) {
-        for (auto& ref : mod->ref_mods) {
-            auto child = ref.lock();
-            if (!child) {
+    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &root, CodeGen &codegen, SourceMapGenerator& sourcemap) {
+        ClearAllVisitedMark();
+        std::stack<Sp<ModuleFile>> stack;
+        std::stack<Sp<ModuleFile>> spare_stack;
+
+        stack.push(root);
+
+        while (!stack.empty()) {
+            auto top = stack.top();
+            stack.pop();
+            if (top->visited_mark) {
                 continue;
             }
-            CodeGenModule(child, codegen, sourcemap);
+
+            top->visited_mark = true;
+            spare_stack.push(top);
+
+            for (auto& ref : top->ref_mods) {
+                auto child = ref.lock();
+                if (!child) {
+                    continue;
+                }
+                stack.push(child);
+            }
         }
 
-        if (mod->IsCommonJS()) {
-            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+        while (!spare_stack.empty()) {
+            const auto& mod = spare_stack.top();
+
+            if (mod->IsCommonJS()) {
+                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+            }
+            if (mod->IsCommonJS()) {
+                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+            }
+            codegen.Traverse(mod->ast);
+
+            spare_stack.pop();
         }
-        if (mod->IsCommonJS()) {
-            WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
-        }
-        codegen.Traverse(mod->ast);
     }
 
     // dump parallel

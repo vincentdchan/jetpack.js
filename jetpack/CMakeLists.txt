@@ -87,8 +87,8 @@ if (EMSCRIPTEN)
     set(CMAKE_C_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
     set(CMAKE_CXX_FLAGS_RELEASE "-g0 -O3 -Werror -fexceptions")
 elseif(NOT WIN32)
-    set(CMAKE_CXX_FLAGS_DEBUG "-g0 -O3 -Werror")
-    set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O3 -Werror")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Werror")
+    set(CMAKE_CXX_FLAGS_RELEASE "-g0 -O3 -Werror")
 endif()
 
 include_directories(PUBLIC
