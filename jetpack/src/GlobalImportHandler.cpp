@@ -8,21 +8,6 @@
 
 namespace jetpack {
 
-    inline Sp<Identifier> MakeId(const std::string& content) {
-        auto id = std::make_shared<Identifier>();
-        id->location.fileId = -2;
-        id->name = content;
-        return id;
-    }
-
-    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
-        auto lit = std::make_shared<Literal>();
-        lit->ty = Literal::Ty::String;
-        lit->str_ = str;
-        lit->raw = "\"" + str + "\"";
-        return lit;
-    }
-
     void GlobalImportHandler::HandleImport(const Sp<ImportDeclaration> &import) {
         std::lock_guard<std::mutex> guard(m);
 

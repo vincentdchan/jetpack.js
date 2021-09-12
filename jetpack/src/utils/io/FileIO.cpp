@@ -119,26 +119,6 @@ namespace jetpack::io {
         return IOError::Ok;
     }
 
-    IOError ReadFileToUString(const std::string& filename, UString& result) {
-#if defined(_WIN32)
-        std::ifstream t(filename);
-        std::string str((std::istreambuf_iterator<char>(t)),
-                        std::istreambuf_iterator<char>());
-        result = UString::fromStdString(str);
-        return IOError::Ok;
-#else
-        MappedFileReader reader;
-        IOError error = reader.Open(filename);
-        if (error != IOError::Ok) {
-            return error;
-        }
-
-        result = UStringFromUtf8(reader.Data(), reader.FileSize());
-
-        return IOError::Ok;
-#endif
-    }
-
     const char* IOErrorToString(IOError err) {
         switch (err) {
             case IOError::WriteFailed:

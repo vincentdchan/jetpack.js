@@ -4,18 +4,11 @@
 
 #include <string>
 #include <boost/lexical_cast.hpp>
+#include "parser/NodesMaker.h"
 #include "ConstantFolding.h"
 #include "utils/string/UString.h"
 
 namespace jetpack {
-
-    inline Sp<Literal> MakeStringLiteral(const std::string& str) {
-        auto lit = std::make_shared<Literal>();
-        lit->ty = Literal::Ty::String;
-        lit->str_ = str;
-        lit->raw = "\"" + str + "\"";
-        return lit;
-    }
 
     inline Sp<Literal> MakeIntLiteral(std::int32_t tmp) {
         auto lit = std::make_shared<Literal>();

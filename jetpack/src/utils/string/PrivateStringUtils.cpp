@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <algorithm>
 #include "PrivateStringUtils.h"
 
 constexpr int lencmp(uint32_t lhs, uint32_t rhs) noexcept
