@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cassert>
 
+#include "./node_helper.hpp"
 #include "parser/ParseErrorHandler.h"
 #include "SimpleAPI.h"
 
@@ -19,8 +20,8 @@ static napi_value bundle_file(napi_env env, napi_callback_info info) {
   napi_status status;
 
   size_t argc = 1;
-  napi_value argv[1];
-  status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  node_args<1> argv;
+  status = argv.load(env, info);
   assert(status = napi_ok);
 
   napi_value entry_value;
@@ -47,9 +48,8 @@ static napi_value handle_command_line(napi_env env, napi_callback_info info) {
   int rt = 3;
   napi_status status;
 
-  size_t argc = 1;
-  napi_value argv[1];
-  status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  node_args<1> argv;
+  status = argv.load(env, info);
   assert(status = napi_ok);
 
   bool is_arr = false;
@@ -108,9 +108,8 @@ static napi_status SetCallbackProp(napi_env env, napi_value exports, const char*
 static napi_value minify_code(napi_env env, napi_callback_info info) {
   napi_status status;
 
-  size_t argc = 1;
-  napi_value argv[1];
-  status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  node_args<1> argv;
+  status = argv.load(env, info);
   assert(status = napi_ok);
 
   size_t str_size = 0;
@@ -167,4 +166,4 @@ static napi_value Init(napi_env env, napi_value exports) {
   return exports;
 }
 
-NAPI_MODULE(polodb, Init)
+NAPI_MODULE(jetpack, Init)

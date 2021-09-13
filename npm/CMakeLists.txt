@@ -8,7 +8,7 @@ include_directories(
   "../jetpack/src"
 )
 
-add_library(${PROJECT_NAME} SHARED module.cc ${CMAKE_JS_SRC})
+add_library(${PROJECT_NAME} SHARED module.cc node_helper.hpp ${CMAKE_JS_SRC})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 
