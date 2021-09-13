@@ -288,7 +288,7 @@ namespace jetpack::parser {
         NodeCreatedEventEmitter<ImportDeclaration> import_decl_created_listener;
         NodeCreatedEventEmitter<ExportNamedDeclaration> export_named_decl_created_listener;
         NodeCreatedEventEmitter<ExportAllDeclaration> export_all_decl_created_listener;
-        NodeCreatedEventEmitterRet<Sp<SyntaxNode>, CallExpression> require_call_created_listener;
+        NodeCreatedEventEmitterRet<std::optional<Sp<SyntaxNode>>, CallExpression> require_call_created_listener;
 
     };
 

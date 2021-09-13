@@ -8,37 +8,6 @@
 #include "utils/string/UChar.h"
 #include "parser/ErrorMessage.h"
 
-/*
- * This lookup table is used to help decode the first byte of
- * a multi-byte UTF8 character.
- * copy from SQLite3
- */
-static const unsigned char Utf8Trans1[] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
-};
-
-static char32_t read_codepoint_from_utf8(const uint8_t buf[], uint32_t *idx, size_t strlen)
-{
-    char32_t c = buf[(*idx)++];
-    if( c>=0xc0 ){
-        c = Utf8Trans1[c-0xc0];
-        while (*idx < strlen && (buf[*idx] & 0xc0)==0x80) {
-            c = (c<<6) + (0x3f & buf[(*idx)++]);
-        }
-        if( c<0x80
-            || (c&0xFFFFF800)==0xD800
-            || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
-    }
-    return c;
-}
-
 namespace jetpack {
 
     using namespace std;
@@ -273,7 +242,7 @@ namespace jetpack {
 
     char32_t Scanner::PeekUtf32(uint32_t* len) {
         uint32_t pre_saved_index = cursor_.u8;
-        char32_t code = read_codepoint_from_utf8(
+        char32_t code = ReadCodepointFromUtf8(
                 reinterpret_cast<const uint8_t *>(source_->Data().data()),
                 &pre_saved_index,
                 source_->Data().size());

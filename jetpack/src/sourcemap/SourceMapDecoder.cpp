@@ -9,27 +9,27 @@
 
 namespace jetpack {
 
-    static void DumpBufferToResult(uint32_t line, const std::string& buffer, SourceMapDecoder::Result& result) {
+    void SourceMapDecoder::DumpBufferToResult(uint32_t line, const std::string& buffer, SourceMapDecoder::Result& result) {
         if (unlikely(buffer.empty())) {
             return;
         }
 
         const char* str = buffer.c_str();
-        int after_column = SourceMapGenerator::VLQToInt(str, str);
-        int source_index = SourceMapGenerator::VLQToInt(str, str);
-        int before_line = SourceMapGenerator::VLQToInt(str, str);
-        int before_column = SourceMapGenerator::VLQToInt(str, str);
+        l_after_column_ += SourceMapGenerator::VLQToInt(str, str);
+        l_source_index_ += SourceMapGenerator::VLQToInt(str, str);
+        l_before_line_ += SourceMapGenerator::VLQToInt(str, str);
+        l_before_column_ += SourceMapGenerator::VLQToInt(str, str);
 //        int names_index = -1;
 //        if (str < buffer.c_str() + buffer.size()) {
 //            names_index = SourceMapGenerator::VLQToInt(str, str);
 //        }
 
         SourceMapDecoder::ResultMapping mapping {
-            static_cast<uint32_t>(source_index),
-            before_line,
-            before_column,
+            static_cast<uint32_t>(l_source_index_),
+            l_before_line_,
+            l_before_column_,
             static_cast<int32_t>(line),
-            after_column,
+            l_after_column_,
         };
         result.content.push_back(mapping);
     }
@@ -59,6 +59,7 @@ namespace jetpack {
                 case ';':
                     DumpBufferToResult(line_counter, buffer, result);
                     line_counter++;
+                    l_after_column_ = 0;
                     buffer.clear();
                     break;
 
@@ -69,6 +70,9 @@ namespace jetpack {
             }
         }
 
+        if (!buffer.empty()) {
+            DumpBufferToResult(line_counter, buffer, result);
+        }
 
         return result;
     }

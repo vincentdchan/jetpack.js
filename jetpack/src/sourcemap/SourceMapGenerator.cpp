@@ -37,8 +37,7 @@ namespace jetpack {
     void SourceMapGenerator::IntToVLQ(std::string& ss, int code) {
         int buffer[IntToVLQBufferSize];
 
-        J_ASSERT(code >= 0);
-        int s1 = code << 1;
+        int s1 = code < 0 ? (-code << 1) | 1 : code << 1;
         int counter = 0;
         if (s1 > 0b11111) {
             memset(buffer, 0, IntToVLQBufferSize * sizeof(int));
@@ -77,6 +76,8 @@ namespace jetpack {
 
         std::vector<int> buffer;
 
+        int factor = (str[0] & 1) ? 1 : -1;
+
         while (str[len] != '\0') {
             char ch = str[len++];
             J_ASSERT(ch < 127);
@@ -94,7 +95,7 @@ namespace jetpack {
 
         next = str + len;
 
-        return result >> 1;
+        return (result >> 1) * factor;
     }
 
     void SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,
@@ -213,23 +214,38 @@ namespace jetpack {
 
     void SourceMapGenerator::AddEnoughLines(int32_t target_line) {
         while (line_counter_ < target_line) {
+            l_after_col_ = 0;
+//            l_file_index_ = 0;
             line_counter_++;
             EndLine();
         }
     }
+
+#define SW(NEW, OLD) ((NEW) - (OLD))
 
     bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col) {
         if (unlikely(fileId < 0)) {
             J_ASSERT(fileId != -1);
             return true;
         }
+        if (mappings.length() > 0 && mappings[mappings.length() - 1] != ';' && mappings[mappings.length() - 1] != ',') {
+            mappings.push_back(',');
+        }
 //        int32_t var_index = GetIdOfName(name);
         int32_t filenameIndex = GetFilenameIndexByModuleId(fileId);
         if (unlikely(filenameIndex < 0)) {
             return false;
         }
-        GenerateVLQStr(mappings, after_col, filenameIndex, before_line, before_col, -1);
-        mappings.push_back(',');
+        GenerateVLQStr(mappings,
+                       SW(after_col, l_after_col_),
+                       SW(filenameIndex, l_file_index_),
+                       SW(before_line, l_before_line_),
+                       SW(before_col, l_before_col_),
+                       -1);
+        l_after_col_ = after_col;
+        l_file_index_ = filenameIndex;
+        l_before_line_ = before_line;
+        l_before_col_ = before_col;
         return true;
     }
 

@@ -36,11 +36,40 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     return sourceMapGenerator.ToPrettyString();
 }
 
+static std::string encoding_vlq(const std::vector<int>& array) {
+    std::string str;
+
+    for (const auto& value : array) {
+        SourceMapGenerator::IntToVLQ(str, value);
+    }
+
+    return str;
+}
+
+static std::vector<int> decoding_vlq(const std::string& str) {
+    std::vector<int> result;
+
+    const char* next = str.c_str();
+    while (next < str.c_str() + str.size()) {
+        result.push_back(SourceMapGenerator::VLQToInt(next, next));
+    }
+
+    return result;
+}
+
 TEST(SourceMap, VLQEncoding) {
     std::string str;
     SourceMapGenerator::IntToVLQ(str, 16);
     EXPECT_STREQ(str.c_str(), "gB");
 
+    EXPECT_EQ(encoding_vlq({ 0, 0, 0, 0 }), "AAAA");
+    EXPECT_EQ(encoding_vlq({ 0, 0, 16, 1 }), "AAgBC");
+    EXPECT_EQ(encoding_vlq({ 0, 0, 0, 0 }), "AAAA");
+    EXPECT_EQ(encoding_vlq({ -1 }), "D");
+    EXPECT_EQ(encoding_vlq({ 1,2,3,4,5,6,7,8,9,11 }), "CEGIKMOQSW");
+}
+
+TEST(SourceMap, Decode) {
     const char* next;
     EXPECT_EQ(SourceMapGenerator::VLQToInt("gB", next), 16);
 
@@ -53,6 +82,9 @@ TEST(SourceMap, VLQEncoding) {
         int back = SourceMapGenerator::VLQToInt(vlq.c_str(), next);
         EXPECT_EQ(back, i);
     }
+
+    auto vec = decoding_vlq("D");
+    EXPECT_EQ(vec[0], -1);
 }
 
 TEST(SourceMap, Simple) {

@@ -39,6 +39,13 @@ namespace jetpack {
     private:
         nlohmann::json& sourcemap_json;
 
+        int l_after_column_ = 0;
+        int l_source_index_ = 0;
+        int l_before_line_ = 1;
+        int l_before_column_ = 0;
+
+        void DumpBufferToResult(uint32_t line, const std::string& buffer, SourceMapDecoder::Result& result);
+
     };
 
     inline bool operator==(const SourceMapDecoder::ResultMapping& lhs, const SourceMapDecoder::ResultMapping& rhs) {

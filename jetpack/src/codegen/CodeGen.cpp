@@ -71,6 +71,11 @@ namespace jetpack {
         }
     }
 
+    void CodeGen::Write(const std::string& str) {
+        output += str;
+        state_.column += UTF16LenOfUtf8(str);
+    }
+
     void CodeGen::WriteLineEnd() {
         if (likely(mappingCollector)) {
             mappingCollector->EndLine();
@@ -278,9 +283,9 @@ namespace jetpack {
                 TraverseNode(*elem);
             }
             if (count++ < node->elements.size() - 1) {
-                output += S_COMMA;
+                Write(S_COMMA);
             } else if (!elem.has_value()) {
-                output += S_COMMA;
+                Write(S_COMMA);
             }
         }
         Write("]");

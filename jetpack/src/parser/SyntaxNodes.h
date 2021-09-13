@@ -434,7 +434,7 @@ namespace jetpack {
         Module(ModuleScope::ModuleType mt);
 
         std::vector<Sp<SyntaxNode>> body;
-        UString source_type;
+        std::string source_type;
         std::vector<Sp<Comment>> comments;
 
         std::unique_ptr<ModuleScope> scope;
@@ -509,7 +509,7 @@ namespace jetpack {
         Script();
 
         std::vector<Sp<SyntaxNode>> body;
-        UString source_type;
+        std::string source_type;
         std::vector<Sp<Comment>> comments;
 
         std::unique_ptr<Scope> scope;

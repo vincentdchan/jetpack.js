@@ -11,7 +11,6 @@
 #include "tokenizer/Comment.h"
 
 typedef double JS_Number;
-typedef UString JS_RegExp;
 
 namespace jetpack {
 

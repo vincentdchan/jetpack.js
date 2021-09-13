@@ -1262,10 +1262,10 @@ namespace jetpack::parser {
         Sp<Module> node;
         if (ctx->is_common_js_) {
             node = make_shared<Module>(ModuleScope::ModuleType::CommonJs);
-            node->source_type = u"commonjs";
+            node->source_type = "commonjs";
         } else {
             node = make_shared<Module>(ModuleScope::ModuleType::EsModule);
-            node->source_type = u"module";
+            node->source_type = "module";
         }
         node->body = ParseDirectivePrologues(*node->scope.get());
         while (ctx->lookahead_.type != JsTokenType::EOF_) {
@@ -1284,7 +1284,7 @@ namespace jetpack::parser {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<Script>();
         node->body = ParseDirectivePrologues(*node->scope);
-        node->source_type = u"script";
+        node->source_type = "script";
         while (ctx->lookahead_.type != JsTokenType::EOF_) {
             node->body.push_back(ParseStatementListItem(*node->scope));
         }
@@ -2482,10 +2482,13 @@ namespace jetpack::parser {
                 }
 
                 auto new_call = require_call_created_listener.Emit(call);
+                if (!new_call.has_value()) {
+                    return std::nullopt;
+                }
 
                 Scope* root_scope = scope.GetRoot();
                 root_scope->CastToModule()->import_manager.ResolveRequireCallExpr(call);
-                return { new_call };
+                return new_call;
             }
         }
         return std::nullopt;
