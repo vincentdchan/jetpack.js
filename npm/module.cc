@@ -11,6 +11,23 @@
 #define DECLARE_NAPI_METHOD(name, func)                                        \
   { name, 0, func, 0, 0, 0, napi_enumerable, 0 }
 
+#define NAPI_CALL(env, call)                                      \
+  do {                                                            \
+    napi_status status = (call);                                  \
+    if (status != napi_ok) {                                      \
+      const napi_extended_error_info* error_info = NULL;          \
+      napi_get_last_error_info((env), &error_info);               \
+      bool is_pending;                                            \
+      napi_is_exception_pending((env), &is_pending);              \
+      if (!is_pending) {                                          \
+        const char* message = (error_info->error_message == NULL) \
+            ? "empty error message"                               \
+            : error_info->error_message;                          \
+        napi_throw_error((env), NULL, message);                   \
+        return NULL;                                              \
+      }                                                           \
+    }                                                             \
+  } while(0)
 
 /// bundleFile({
 ///   entry: '',
@@ -31,11 +48,7 @@ static napi_value bundle_file(napi_env env, napi_callback_info info) {
     return 0;
   }
 
-  char path[ENTRY_PATH_MAX];
-  ::memset(path, 0, ENTRY_PATH_MAX);
-  size_t s;
-  status = napi_get_value_string_utf8(env, entry_value, path, ENTRY_PATH_MAX, &s);
-  assert(status == napi_ok);
+  std::string path = node_cast<std::string>(env, entry_value);
 
   JetpackFlags flags;
   flags |= JetpackFlag::Jsx;
@@ -61,23 +74,19 @@ static napi_value handle_command_line(napi_env env, napi_callback_info info) {
   }
 
   uint32_t arr_len = 0;
-  status = napi_get_array_length(env, argv[0], &arr_len);
-  assert(status == napi_ok);
+  NAPI_CALL(env, napi_get_array_length(env, argv[0], &arr_len));
 
   char** cmd_argv = (char**)malloc(sizeof(char*) * arr_len);
-
 
 #define STR_BUFFER_SIZE 1024
   for (uint32_t i = 0; i < arr_len; i++) {
     napi_value result;
-    status = napi_get_element(env, argv[0], i, &result);
-    assert(status == napi_ok);
+    NAPI_CALL(env, napi_get_element(env, argv[0], i, &result));
 
     char* str_buffer = (char*)::malloc(STR_BUFFER_SIZE);
     ::memset(str_buffer, 0, STR_BUFFER_SIZE);
     size_t str_size;
-    status = napi_get_value_string_utf8(env, result, str_buffer, 1024, &str_size);
-    assert(status == napi_ok);
+    NAPI_CALL(env, napi_get_value_string_utf8(env, result, str_buffer, 1024, &str_size));
 
     cmd_argv[i] = str_buffer;
   }
@@ -90,10 +99,7 @@ failed:
   }
   ::free(cmd_argv);
 
-  napi_value ret_value;
-  status = napi_create_int32(env, rt, &ret_value);
-  assert(status == napi_ok);
-  return ret_value;
+  return to_node_value(env, rt);
 }
 
 static napi_status SetCallbackProp(napi_env env, napi_value exports, const char* key, napi_callback cb) {
@@ -112,44 +118,25 @@ static napi_value minify_code(napi_env env, napi_callback_info info) {
   status = argv.load(env, info);
   assert(status = napi_ok);
 
-  size_t str_size = 0;
-  status = napi_get_value_string_utf8(env, argv[0], nullptr, 0, &str_size);
-  if (status != 0) {
-    napi_throw_type_error(env, nullptr, "the first arg should be a string");
-    return 0;
-  }
-
-  char* buffer = (char*)malloc(str_size + 1);
-  buffer[str_size] = 0;
-  status = napi_get_value_string_utf8(env, argv[0], buffer, str_size + 1, &str_size);
-  assert(status == napi_ok);
-
   std::string result;
   try {
-      std::string content(buffer);
+      std::string content = node_cast<std::string>(env, argv[0]);
       jetpack::parser::Config parser_config = jetpack::parser::Config::Default();
       jetpack::CodeGenConfig code_gen_config;
       parser_config.jsx = true;
       parser_config.constant_folding = true;
       code_gen_config.minify = true;
-      result = jetpack::simple_api::ParseAndCodeGen(std::move(content), parser_config, code_gen_config);
+      result = jetpack::simple_api::ParseAndCodeGen(content, parser_config, code_gen_config);
   } catch (jetpack::parser::ParseError& err) {
       std::string errMsg = err.ErrorMessage();
-      free(buffer);
       napi_throw_type_error(env, nullptr, errMsg.c_str());
       return 0;
   } catch (...) {
-      free(buffer);
       napi_throw_type_error(env, nullptr, "unknown error");
       return 0;
   }
 
-  free(buffer);
-
-  napi_value js_result;
-  status = napi_create_string_utf8(env, result.c_str(), result.size(), &js_result);
-  assert(status == napi_ok);
-  return js_result;
+  return to_node_value(env, result);
 }
 
 static napi_value Init(napi_env env, napi_value exports) {
