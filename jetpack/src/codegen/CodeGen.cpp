@@ -71,6 +71,12 @@ namespace jetpack {
         }
     }
 
+    void CodeGen::Write(const std::string& str) {
+        output += str;
+        // TODO: use mapped length
+        state_.column += str.length();
+    }
+
     void CodeGen::WriteLineEnd() {
         if (likely(mappingCollector)) {
             mappingCollector->EndLine();

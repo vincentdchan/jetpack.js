@@ -20,9 +20,9 @@ namespace jetpack {
     class ExternalVariable {
     public:
         bool is_export_all;
-        UString source_name;
+        std::string source_name;
 
-        std::vector<UString> export_names;
+        std::vector<std::string> export_names;
 
     };
 

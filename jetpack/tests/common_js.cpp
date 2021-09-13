@@ -26,6 +26,7 @@ inline std::string ParseAndCodeGen(std::string_view content) {
     auto mod = parser.ParseModule();
 
     CodeGenConfig code_gen_config;
+    code_gen_config.minify = false;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(mod);
     return codegen.GetResult().content;
@@ -105,7 +106,7 @@ TEST(CommonJS, CodeGen) {
                       "});\n");
 }
 
-TEST(CommonJS, Comple) {
+TEST(CommonJS, Complex) {
     Path path(JETPACK_TEST_RUNNING_DIR);
     path.Join("tests/fixtures/cjs/index.js");
 
@@ -119,7 +120,6 @@ TEST(CommonJS, Comple) {
 
     JetpackFlags flags;
     flags |= JetpackFlag::Jsx;
-    flags |= JetpackFlag::Minify;
     flags |= JetpackFlag::Sourcemap;
     EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 }

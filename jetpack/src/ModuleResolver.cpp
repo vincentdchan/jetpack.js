@@ -28,6 +28,14 @@ static const char* COMMON_JS_CODE =
     "  return module.exports;\n"
     "};";
 
+static HashSet<std::string> NODE_JS_BUILTIN_MODULE = {
+    "assert", "buffer", "child_process", "cluster",
+    "crypto", "dgram", "dns", "events", "fs", "http",
+    "https", "net", "os", "path", "querystring" "readline",
+    "stream", "string_decoder", "timers", "tls", "tty",
+    "url", "util", "v8", "vm", "zlib",
+};
+
 namespace jetpack {
     using fmt::format;
     using parser::ParserContext;
@@ -147,9 +155,12 @@ namespace jetpack {
             HandleNewLocationAdded(config, mf, LocationExported, u8path);
         });
         if (config.common_js) {
-            parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) {
+            parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) -> std::optional<Sp<SyntaxNode>> {
                 auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
                 const auto& u8path = lit->str_;
+                if (NODE_JS_BUILTIN_MODULE.find(u8path) != NODE_JS_BUILTIN_MODULE.end()) {
+                    return std::nullopt;
+                }
                 auto child_mod = HandleNewLocationAdded(
                         config,
                         mf,
@@ -158,7 +169,7 @@ namespace jetpack {
                         );
                 auto new_call = std::make_shared<CallExpression>();
                 new_call->callee = MakeId(SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
-                return new_call;
+                return { new_call };
             });
         }
 
@@ -519,9 +530,6 @@ namespace jetpack {
             if (mod->IsCommonJS()) {
                 WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
             }
-            if (mod->IsCommonJS()) {
-                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
-            }
             codegen.Traverse(mod->ast);
 
             spare_stack.pop();
@@ -556,7 +564,6 @@ namespace jetpack {
             col.errors = std::move(worker_errors_);
             throw std::move(col);
         }
-        std::vector<std::tuple<UString, UString>> renames;
         name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
     }
 

@@ -69,11 +69,7 @@ namespace jetpack {
             state_.column += 1;
         }
 
-        inline void Write(const std::string& str) {
-            output += str;
-            // TODO: use mapped length
-            state_.column += str.length();
-        }
+        void Write(const std::string& str);
 
         inline void Write(const std::string& str, Sp<SyntaxNode> node) {
             output += str;
