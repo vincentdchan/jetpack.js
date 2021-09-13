@@ -191,7 +191,7 @@ namespace jetpack {
 
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << EscapeJSONString(module->src_content->ConstData()) << "\"";
+            ss << "    \"" << EscapeJSONString(module->src_content->Data()) << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }

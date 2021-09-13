@@ -9,7 +9,7 @@
 
 namespace jetpack {
 
-    std::string EscapeJSONString(const std::string& str);
+    std::string EscapeJSONString(std::string_view str);
 
 }
 

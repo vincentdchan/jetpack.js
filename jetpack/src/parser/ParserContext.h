@@ -20,7 +20,7 @@ namespace jetpack::parser {
             uint32_t column = 0;
         };
 
-        ParserContext(int32_t fileId, std::string&& src, const Config& config);
+        ParserContext(int32_t fileId, std::string_view src, const Config& config);
         ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;

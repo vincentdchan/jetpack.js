@@ -4,20 +4,23 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 #include <vector>
 #include <cinttypes>
+#include "utils/MemoryViewOwner.h"
 #include "utils/Common.h"
 
 namespace jetpack {
 
     class Scanner;
 
+    /**
+     * Do NOT own the string it self
+     * The string could be from a mapped file
+     */
     class StringWithMapping {
     public:
-        static Sp<StringWithMapping> Make(std::string&& content);
-
-        StringWithMapping(std::string&& content);
+        explicit StringWithMapping(Up<MemoryViewOwner> content);
 
         StringWithMapping(const StringWithMapping&) = delete;
         StringWithMapping(StringWithMapping&&) = delete;
@@ -26,23 +29,19 @@ namespace jetpack {
         StringWithMapping& operator=(StringWithMapping&&) = delete;
 
         [[nodiscard]]
-        inline const std::string& ConstData() const {
-            return data_;
-        }
-
-        inline std::string& Data() {
-            return data_;
+        inline std::string_view Data() const {
+            return data_->View();
         }
 
         [[nodiscard]]
         inline std::string::size_type size() const {
-            return data_.size();
+            return data_->View().size();
         }
 
         friend class Scanner;
 
     private:
-        std::string data_;
+        Up<MemoryViewOwner> data_;
         // utf8 index -> u16 index
         std::vector<uint32_t> mapping_;
 

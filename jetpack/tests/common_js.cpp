@@ -16,11 +16,11 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline std::string ParseAndCodeGen(std::string content) {
+inline std::string ParseAndCodeGen(std::string_view content) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();

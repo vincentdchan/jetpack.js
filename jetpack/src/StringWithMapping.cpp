@@ -6,13 +6,8 @@
 
 namespace jetpack {
 
-    Sp<StringWithMapping> StringWithMapping::Make(std::string &&content) {
-        return std::make_shared<StringWithMapping>(std::move(content));
-    }
-
-    StringWithMapping::StringWithMapping(std::string &&content):
-            data_(std::move(content)) {
-        mapping_.resize(data_.size(), 0);
+    StringWithMapping::StringWithMapping(Up<MemoryViewOwner> content): data_(std::move(content)) {
+        mapping_.resize(data_->View().size(), 0);
     }
 
 }

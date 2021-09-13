@@ -11,13 +11,23 @@
 
 namespace jetpack {
 
+    class ResolveException : public std::exception {
+    public:
+        ResolveException(WorkerError e): error(std::move(e)) {}
+
+        WorkerError error;
+
+        const char *what() const _NOEXCEPT override;
+
+    };
+
     // better to be stateless
     // should be implemented thread-safe
     class ModuleProvider {
     public:
-        virtual std::optional<std::string> match(const ModuleFile &mf, const std::string& path) = 0;
+        virtual std::optional<std::string> Match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) = 0;
 
         ~ModuleProvider() noexcept = default;
 
@@ -27,9 +37,9 @@ namespace jetpack {
     public:
         explicit FileModuleProvider(const std::string& base_path): base_path_(base_path) {}
 
-        std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
+        std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
-        ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string& resolvedPath) override;
+        Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) override;
 
     private:
         std::string base_path_;
@@ -49,9 +59,9 @@ namespace jetpack {
         explicit inline MemoryModuleProvider(const std::string& token, const std::string& content):
         token_(token), content_(content) {}
 
-        std::optional<std::string> match(const ModuleFile &mf, const std::string &path) override;
+        std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
-        ResolveResult<std::string> resolve(const ModuleFile &mf, const std::string &path) override;
+        Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string &path) override;
 
     private:
         std::string token_;

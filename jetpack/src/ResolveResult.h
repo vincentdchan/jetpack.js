@@ -10,13 +10,14 @@
 
 namespace jetpack {
 
-    template <typename T>
+    template <typename T, typename C = T>
     struct ResolveResult {
     public:
         ResolveResult() = default;
-        explicit ResolveResult(const T& v): value(v) {}
-        ResolveResult(const ResolveResult<T>& that) = delete;
-        ResolveResult(ResolveResult<T>&& that) = default;
+        explicit ResolveResult(const C& v): value(v) {}
+        ResolveResult(C&& v): value(std::move(v)) {}
+        ResolveResult(const ResolveResult<T, C>& that) = delete;
+        ResolveResult(ResolveResult<T, C>&& that) = default;
 
         [[nodiscard]]
         inline bool HasError() const {
