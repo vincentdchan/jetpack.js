@@ -73,8 +73,7 @@ namespace jetpack {
 
     void CodeGen::Write(const std::string& str) {
         output += str;
-        // TODO: use mapped length
-        state_.column += str.length();
+        state_.column += UTF16LenOfUtf8(str);
     }
 
     void CodeGen::WriteLineEnd() {
