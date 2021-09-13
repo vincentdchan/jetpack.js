@@ -283,9 +283,9 @@ namespace jetpack {
                 TraverseNode(*elem);
             }
             if (count++ < node->elements.size() - 1) {
-                output += S_COMMA;
+                Write(S_COMMA);
             } else if (!elem.has_value()) {
-                output += S_COMMA;
+                Write(S_COMMA);
             }
         }
         Write("]");

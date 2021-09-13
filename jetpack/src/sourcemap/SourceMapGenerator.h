@@ -55,6 +55,11 @@ namespace jetpack {
         int32_t src_counter_ = 0;
         int32_t line_counter_ = 1;
 
+        int32_t l_after_col_ = 0;
+        int32_t l_file_index_ = 0;
+        int32_t l_before_line_ = 1;
+        int32_t l_before_col_ = 0;
+
         void AddEnoughLines(int32_t target_line);
 
         void FinalizeCollector(const MappingCollector& collector);
