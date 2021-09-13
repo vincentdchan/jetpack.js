@@ -1,6 +1,6 @@
 {
   "name": "jetpp-wasm",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
