@@ -46,7 +46,7 @@ namespace jetpack::io {
                 std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
                 return IOError::ReadFailed;
             }
-            mapped_mem = reinterpret_cast<intptr_t>(p);
+            mapped_mem = reinterpret_cast<uintptr_t>(p);
             return IOError::Ok;
 #else
             fd = ::open(filename.c_str(), O_RDONLY);
@@ -60,7 +60,7 @@ namespace jetpack::io {
 
             size = st.st_size;
 
-            mapped_mem = (intptr_t)::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
+            mapped_mem = (uintptr_t)::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
             if (reinterpret_cast<void*>(mapped_mem) == MAP_FAILED) {
                 std::cerr << "map file failed: " << strerror(errno) << std::endl;
                 return IOError::ReadFailed;
@@ -97,7 +97,7 @@ namespace jetpack::io {
 
     private:
         int64_t  size = -1;
-        intptr_t mapped_mem = -1;
+        uintptr_t mapped_mem = 0;
 #ifdef _WIN32
         HANDLE hMapping = INVALID_HANDLE_VALUE;
         HANDLE hFile = INVALID_HANDLE_VALUE;
@@ -106,6 +106,30 @@ namespace jetpack::io {
 #endif
 
     };
+
+    class MappedFileMemoryInternal {
+    public:
+
+        MappedFileReader reader;
+
+    };
+
+    MappedFileMemory::MappedFileMemory() {
+        auto intern = new MappedFileMemoryInternal();
+        data_ = std::unique_ptr<MappedFileMemoryInternal, MappedFileMemoryInternalDeleter>(intern);
+    }
+
+    IOError MappedFileMemory::Open(const std::string &filename) {
+        return data_->reader.Open(filename);
+    }
+
+    std::string_view MappedFileMemory::View() {
+        return std::string_view(data_->reader.Data(), data_->reader.FileSize());
+    }
+
+    void MappedFileMemoryInternalDeleter::operator()(MappedFileMemoryInternal* intern) {
+        delete intern;
+    }
 
     IOError ReadFileToStdString(const std::string& filename, std::string& result) {
         MappedFileReader reader;

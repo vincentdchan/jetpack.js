@@ -3,6 +3,7 @@
 //
 
 #include <memory>
+#include <string_view>
 #include <gtest/gtest.h>
 #include <parser/Parser.hpp>
 
@@ -11,9 +12,9 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline Sp<Module> ParseString(std::string&& src) {
+inline Sp<Module> ParseString(std::string_view src) {
     Config config = Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(src), config);
+    auto ctx = std::make_shared<ParserContext>(-1, src, config);
     Parser parser(ctx);
     return parser.ParseModule();
 }
@@ -26,10 +27,10 @@ inline std::string GenCode(Sp<Module>& mod) {
 }
 
 TEST(Scope, Collect) {
-    std::string content("var name = 3;");
+    auto content = "var name = 3;";
 
     Config config = Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
+    auto ctx = std::make_shared<ParserContext>(-1, content, config);
     Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -112,17 +113,17 @@ TEST(Scope, RenameFunction2) {
 }
 
 TEST(Scope, RenameFunction3) {
-    std::string src = "var name = 3;\n"
-                      "function ok(name) {\n"
-                      "  console.log(name);\n"
-                      "}\n";
+    auto src = "var name = 3;\n"
+               "function ok(name) {\n"
+               "  console.log(name);\n"
+               "}\n";
 
     std::string expected = "var rename = 3;\n"
                            "function ok(name) {\n"
                            "  console.log(name);\n"
                            "}\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -133,11 +134,11 @@ TEST(Scope, RenameFunction3) {
 }
 
 TEST(Scope, RenameObjectPattern) {
-    std::string src = "var { name: other } = obj;\n";
+    auto src = "var { name: other } = obj;\n";
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -148,11 +149,11 @@ TEST(Scope, RenameObjectPattern) {
 }
 
 TEST(Scope, RenameObjectPattern2) {
-    std::string src = "var { name: other } = obj;\n";
+    auto src = "var { name: other } = obj;\n";
 
     std::string expected = "var { name: other } = obj;\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -163,11 +164,11 @@ TEST(Scope, RenameObjectPattern2) {
 }
 
 TEST(Scope, RenameObjectPattern3) {
-    std::string src = "var { name } = obj;\n";
+    auto src = "var { name } = obj;\n";
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -178,12 +179,12 @@ TEST(Scope, RenameObjectPattern3) {
 }
 
 TEST(Scope, Cls) {
-    std::string src = "const print = 'hello world';\n"
-                      "class A {"
-                      "  print() {\n"
-                      "    console.log(print);\n"
-                      "  }\n"
-                      "}\n";
+    auto src = "const print = 'hello world';\n"
+               "class A {"
+               "  print() {\n"
+               "    console.log(print);\n"
+               "  }\n"
+               "}\n";
 
     std::string expected = "const renamed = 'hello world';\n"
                            "class A {\n"
@@ -192,7 +193,7 @@ TEST(Scope, Cls) {
                            "  }\n"
                            "}\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -203,11 +204,11 @@ TEST(Scope, Cls) {
 }
 
 TEST(Scope, RenameImport) {
-    std::string src = "import { name } from 'main';\n";
+    auto src = "import { name } from 'main';\n";
 
     std::string expected = "import { name as renamed } from 'main';\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -218,13 +219,13 @@ TEST(Scope, RenameImport) {
 }
 
 TEST(Scope, RenameImport3) {
-    std::string src = "import { a, fun, ooo } from './a';\n"
-                      "\n"
-                      "var b = 44444;\n"
-                      "\n"
-                      "export default a + 3 + b + fun();";
+    auto src = "import { a, fun, ooo } from './a';\n"
+               "\n"
+               "var b = 44444;\n"
+               "\n"
+               "export default a + 3 + b + fun();";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -242,11 +243,11 @@ TEST(Scope, RenameImport3) {
 }
 
 TEST(Scope, RenameImportDefault) {
-    std::string src = "import React from 'react';\n";
+    auto src = "import React from 'react';\n";
 
     std::string expected = "import Angular from 'react';\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -257,13 +258,13 @@ TEST(Scope, RenameImportDefault) {
 }
 
 TEST(Scope, RenameImport2) {
-    std::string src = "import { cc as name } from 'main';\n"
-                      "console.log(name);\n";
+    auto src = "import { cc as name } from 'main';\n"
+               "console.log(name);\n";
 
     std::string expected = "import { cc as renamed } from 'main';\n"
                            "console.log(renamed);\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -274,13 +275,13 @@ TEST(Scope, RenameImport2) {
 }
 
 TEST(Scope, RenameExport1) {
-    std::string src = "const name = 3;\n"
-                      "export { name as foo };\n";
+    auto src = "const name = 3;\n"
+               "export { name as foo };\n";
 
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as foo };\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -291,13 +292,13 @@ TEST(Scope, RenameExport1) {
 }
 
 TEST(Scope, RenameExport2) {
-    std::string src = "const name = 3;\n"
-                      "export { name };\n";
+    auto src = "const name = 3;\n"
+               "export { name };\n";
 
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as name };\n";
 
-    auto mod = ParseString(std::move(src));
+    auto mod = ParseString(src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;

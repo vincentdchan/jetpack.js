@@ -112,7 +112,7 @@ namespace jetpack {
                 };
                 auto comment = new Comment {
                         false,
-                        source_->ConstData().substr(start + u8_offset, cursor_.u8 - start - u8_offset),
+                        std::string(source_->Data().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                         make_pair(start, cursor_.u8 - 1),
                         loc
                 };
@@ -135,7 +135,7 @@ namespace jetpack {
         loc.end = Position {line_number_, cursor_.u16 - line_start_ };
         auto comment = new Comment {
                 false,
-                source_->ConstData().substr(start + u8_offset, cursor_.u8 - start - u8_offset),
+                std::string(source_->Data().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -174,7 +174,7 @@ namespace jetpack {
                     };
                     auto comment = new Comment {
                             true,
-                            source_->ConstData().substr(start + 2, cursor_.u8 - start - 4),
+                            std::string(source_->Data().substr(start + 2, cursor_.u8 - start - 4)),
                             make_pair(start, cursor_.u8),
                             loc,
                     };
@@ -194,7 +194,7 @@ namespace jetpack {
         };
         auto comment = new Comment {
                 true,
-                source_->ConstData().substr(start + 2, cursor_.u8 - start - 2),
+                std::string(source_->Data().substr(start + 2, cursor_.u8 - start - 2)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -241,7 +241,7 @@ namespace jetpack {
                         break;
                     }
                 } else if (ch == '<' && !is_module_) { // U+003C is '<'
-                    if (source_->ConstData().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
+                    if (source_->Data().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
                         PlusCursor(4); // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
@@ -274,9 +274,9 @@ namespace jetpack {
     char32_t Scanner::PeekUtf32(uint32_t* len) {
         uint32_t pre_saved_index = cursor_.u8;
         char32_t code = read_codepoint_from_utf8(
-                reinterpret_cast<const uint8_t *>(source_->ConstData().c_str()),
+                reinterpret_cast<const uint8_t *>(source_->Data().data()),
                 &pre_saved_index,
-                source_->ConstData().size());
+                source_->Data().size());
         if (len != nullptr) {
             *len = pre_saved_index - cursor_.u8;
         }
@@ -460,7 +460,7 @@ namespace jetpack {
             }
         }
 
-        result.append(source_->ConstData().substr(start.u8, cursor_.u8 - start.u8));
+        result.append(source_->Data().substr(start.u8, cursor_.u8 - start.u8));
         return result;
     }
 
@@ -550,7 +550,7 @@ namespace jetpack {
         Token tok;
 
         std::string id;
-        if (source_->ConstData().at(start.u8) == '\\') {
+        if (source_->Data().at(start.u8) == '\\') {
             id = GetComplexIdentifier();
         } else {
             id = GetIdentifier(start_char_len);
@@ -956,7 +956,7 @@ namespace jetpack {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
         for (uint32_t i = cursor_.u8 + 1; i < Length(); ++i) {
-            char ch = source_->ConstData().at(i);
+            char ch = source_->Data().at(i);
             if (ch == '8' || ch == '9') {
                 return false;
             }
@@ -1277,7 +1277,7 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_->ConstData().substr(start.u8 + 1, cursor_.u8 - rawOffset);
+        tok.value = source_->Data().substr(start.u8 + 1, cursor_.u8 - rawOffset);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
         tok.range = make_pair(start.u8, cursor_.u8);

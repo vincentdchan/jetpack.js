@@ -15,7 +15,7 @@ namespace jetpack {
         return ss.str();
     }
 
-    std::string EscapeJSONString(const std::string& str) {
+    std::string EscapeJSONString(std::string_view str) {
         std::string m;
         m.reserve(str.size() * 2);
 

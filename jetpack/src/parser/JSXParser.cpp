@@ -729,10 +729,10 @@ namespace jetpack::parser {
                     break;
                 }
             }
-            std::string id = scanner.Source()->ConstData().substr(start.u8, scanner.Index().u8 - start.u8);
+            std::string_view id = scanner.Source()->Data().substr(start.u8, scanner.Index().u8 - start.u8);
 
             token.type = JsTokenType::Identifier;
-            token.value = move(id);
+            token.value = std::string(id);
             token.lineStart = scanner.LineStart();
             token.lineNumber = scanner.LineNumber();
             token.range = {

@@ -2,11 +2,12 @@
 // Created by Duzhong Chen on 2021/3/28.
 //
 
-#ifndef ROCKET_BUNDLE_FILEIO_H
-#define ROCKET_BUNDLE_FILEIO_H
+#pragma once
 
+#include <memory>
 #include <string>
 #include "utils/string/UString.h"
+#include "utils/MemoryViewOwner.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -15,7 +16,6 @@
 #endif
 
 namespace jetpack::io {
-
     enum class IOError {
         WriteFailed = -3,
         ReadFailed = -2,
@@ -23,9 +23,29 @@ namespace jetpack::io {
         Ok = 0,
     };
 
+    class MappedFileMemoryInternal;
+
+    struct MappedFileMemoryInternalDeleter {
+    public:
+        void operator()(MappedFileMemoryInternal*);
+
+    };
+
+    class MappedFileMemory : public MemoryViewOwner {
+    public:
+        explicit MappedFileMemory();
+
+        IOError Open(const std::string& filename);
+
+        std::string_view View() override;
+
+    private:
+        std::unique_ptr<MappedFileMemoryInternal, MappedFileMemoryInternalDeleter> data_;
+
+    };
+
     const char* IOErrorToString(IOError);
     IOError ReadFileToStdString(const std::string& filename, std::string& result);
-    IOError ReadFileToUString(const std::string& filename, UString& result);
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size);
 
@@ -41,5 +61,3 @@ namespace jetpack::io {
     }
 
 }
-
-#endif //ROCKET_BUNDLE_FILEIO_H

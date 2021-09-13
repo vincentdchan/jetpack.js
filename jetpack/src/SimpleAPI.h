@@ -35,7 +35,7 @@ namespace jetpack { namespace simple_api {
                      JetpackFlags flags,
                      const std::string& base_path="");
 
-    std::string ParseAndCodeGen(std::string&& content,
+    std::string ParseAndCodeGen(std::string_view content,
                                 const jetpack::parser::Config& config,
                                 const jetpack::CodeGenConfig& code_gen_config);
 

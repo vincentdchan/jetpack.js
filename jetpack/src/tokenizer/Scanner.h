@@ -87,7 +87,7 @@ namespace jetpack {
         }
 
         inline std::string_view View(uint32_t start, uint32_t end) {
-            return std::string_view (source_->data_).substr(start, end - start);
+            return source_->Data().substr(start, end - start);
         }
 
         std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
@@ -121,7 +121,7 @@ namespace jetpack {
         [[nodiscard]]
         inline char CharAt(uint32_t index) const {
             if (unlikely(index >= source_->size())) return u'\0';
-            return source_->data_.at(index);
+            return source_->Data().at(index);
         }
 
         [[nodiscard]]

@@ -1,13 +1,14 @@
 //
 // Created by Duzhong Chen on 2019/10/30.
 //
+#include <memory>
 #include "ParserContext.h"
 
 namespace jetpack::parser {
     using namespace std;
 
-    ParserContext::ParserContext(int32_t fileId, std::string&& src, const Config& config):
-        ParserContext(fileId, StringWithMapping::Make(std::move(src)), config) {
+    ParserContext::ParserContext(int32_t fileId, std::string_view src, const Config& config):
+        ParserContext(fileId, std::make_shared<StringWithMapping>(std::make_unique<RawMemoryViewOwner>(src)), config) {
     }
 
     ParserContext::ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config &config):

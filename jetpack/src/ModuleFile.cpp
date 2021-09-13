@@ -49,20 +49,13 @@ namespace jetpack {
 
     bool ModuleFile::GetSource(WorkerError& error) {
         J_ASSERT(provider);
-        benchmark::BenchMarker marker(benchmark::BENCH_READING_IO);
-        auto result =  provider->resolve(*this, Path());
-        if (unlikely(result.HasError())) {
-            marker.Submit();
-
-            error = *result.error;
-
+        try {
+            auto result = provider->ResolveWillThrow(*this, Path());
+            src_content = std::make_shared<StringWithMapping>(std::move(result));
+        } catch (ResolveException& exc) {
+            error = exc.error;
             return false;
-        } else {
-            std::string tmp;
-            result.value.swap(tmp);
-            src_content = StringWithMapping::Make(std::move(tmp));
         }
-        marker.Submit();
         return true;
     }
 

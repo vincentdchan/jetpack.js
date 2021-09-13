@@ -108,7 +108,8 @@ import loadJetpack from 'jetpp-wasm';
 
 async function main(code) {
     const jetpack = await loadJetpack();
-    return jetpack.minify(code);
+    console.log(jetpack.minify(code));  // minify
+    console.log(jetpack.parse(code));  // parse
 }
 
 ```

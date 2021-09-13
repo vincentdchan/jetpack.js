@@ -34,13 +34,12 @@ JpResult *parse_and_codegen(const char *str, uint32_t flags) {
     std::string result;
     JpResult* jp_result = nullptr;
     try {
-        std::string content(str);
         parser::Config parser_config = parser::Config::Default();
         CodeGenConfig code_gen_config;
         parser_config.jsx = !!(flags & JSX_FLAG);
         parser_config.constant_folding = !!(flags & CONSTANT_FOLDING_FLAG);
         code_gen_config.minify = !!(flags & MINIFY_FLAG);
-        result = jetpack::simple_api::ParseAndCodeGen(std::move(content), parser_config, code_gen_config);
+        result = jetpack::simple_api::ParseAndCodeGen(str, parser_config, code_gen_config);
     } catch (jetpack::parser::ParseError& err) {
         std::string errMsg = err.ErrorMessage();
         jp_result = reinterpret_cast<JpResult *>(::malloc(sizeof(JpResult) + errMsg.size() + 1));
@@ -65,10 +64,11 @@ JpResult *parse_and_codegen(const char *str, uint32_t flags) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-JpResult *parse_to_ast(const char *str) {
-    std::string content(str);
+JpResult *parse_to_ast(const char *str, uint32_t flags) {
     parser::Config config = parser::Config::Default();
-    auto ctx = std::make_shared<parser::ParserContext>(-1, std::move(content), config);
+    config.jsx = !!(flags & JSX_FLAG);
+    config.constant_folding = !!(flags & CONSTANT_FOLDING_FLAG);
+    auto ctx = std::make_shared<parser::ParserContext>(-1, str, config);
     parser::Parser parser(ctx);
 
     auto mod = parser.ParseModule();
@@ -77,11 +77,22 @@ JpResult *parse_to_ast(const char *str) {
     auto json_str = json.dump();
 
     // muse be freed in JS
-    auto jp_result = reinterpret_cast<JpResult*>(::malloc(sizeof(JpResult) + json_str.size() + 1));
-    jp_result->flags = 0;
-    jp_result->content[json_str.size()] = 0;
-    std::memcpy(jp_result->content, json_str.c_str(), json_str.size());
-    return jp_result;
+    JpResult* jp_result = nullptr;
+    try {
+        jp_result = reinterpret_cast<JpResult*>(::malloc(sizeof(JpResult) + json_str.size() + 1));
+        jp_result->flags = 0;
+        jp_result->content[json_str.size()] = 0;
+        std::memcpy(jp_result->content, json_str.c_str(), json_str.size());
+        return jp_result;
+    } catch (jetpack::parser::ParseError& err) {
+        std::string errMsg = err.ErrorMessage();
+        jp_result = reinterpret_cast<JpResult *>(::malloc(sizeof(JpResult) + errMsg.size() + 1));
+        jp_result->flags = 1;
+        std::memcpy(jp_result->content, errMsg.c_str(), errMsg.size());
+        jp_result->content[errMsg.size()] = 0;
+        return jp_result;
+    }
+    return nullptr;
 }
 
 }

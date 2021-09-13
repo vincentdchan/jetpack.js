@@ -12,7 +12,6 @@ namespace jetpack::benchmark {
     enum BenchType {
         BENCH_PARSING = 0,
         BENCH_PARSING_STAGE,
-        BENCH_READING_IO,
         BENCH_WRITING_IO,
         BENCH_MINIFY,
         BENCH_CODEGEN,

@@ -8,7 +8,11 @@
 
 namespace jetpack {
 
-    std::optional<std::string> FileModuleProvider::match(const ModuleFile &mf, const std::string &path) {
+    const char *ResolveException::what() const noexcept {
+        return error.error_content.c_str();
+    }
+
+    std::optional<std::string> FileModuleProvider::Match(const ModuleFile &mf, const std::string &path) {
         return pMatch(mf, path);
     }
 
@@ -53,8 +57,7 @@ namespace jetpack {
         return { jsPath.substr(base_path_.size() + 1) };
     }
 
-    ResolveResult<std::string> FileModuleProvider::resolve(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
-        std::string result;
+    Up<MemoryViewOwner> FileModuleProvider::ResolveWillThrow(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
 
         // resolvedPath should not be a absolute path
         J_ASSERT(resolvedPath.at(0) != Path::PATH_DIV);
@@ -63,24 +66,24 @@ namespace jetpack {
         absolutePath.Join(resolvedPath);
         auto absPathStr = absolutePath.ToString();
 
-        io::IOError err = io::ReadFileToStdString(absPathStr, result);
+        auto result = std::make_unique<io::MappedFileMemory>();
+        io::IOError err = result->Open(absPathStr);
         if (err != io::IOError::Ok) {
-            ResolveResult<std::string> errResult;
-            errResult.error = { { absPathStr, std::string(io::IOErrorToString(err)) } };
-            return errResult;
+            WorkerError error = { absPathStr, std::string(io::IOErrorToString(err)) };
+            throw ResolveException(error);
         }
-        return ResolveResult(result);
+        return result;
     }
 
-    std::optional<std::string> MemoryModuleProvider::match(const ModuleFile &mf, const std::string &path) {
+    std::optional<std::string> MemoryModuleProvider::Match(const ModuleFile &mf, const std::string &path) {
         if (path == token_) {
             return { path };
         }
         return std::nullopt;
     }
 
-    ResolveResult<std::string> MemoryModuleProvider::resolve(const ModuleFile &mf, const std::string &path) {
-        return ResolveResult(content_);
+    Up<MemoryViewOwner> MemoryModuleProvider::ResolveWillThrow(const ModuleFile &mf, const std::string &path) {
+        return std::make_unique<StringMemoryOwner>(content_);
     }
 
 }

@@ -1111,7 +1111,7 @@ namespace jetpack {
 
     std::pair<Sp<ModuleProvider>, std::string> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
         for (auto iter = providers_.rbegin(); iter != providers_.rend(); iter++) {
-            auto matchResult = (*iter)->match(*parent, path);
+            auto matchResult = (*iter)->Match(*parent, path);
             if (matchResult.has_value()) {
                 return { *iter, *matchResult };
             }

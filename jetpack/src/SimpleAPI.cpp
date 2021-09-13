@@ -122,8 +122,8 @@ namespace jetpack::simple_api {
         }
     }
 
-    std::string ParseAndCodeGen(std::string&& content, const jetpack::parser::Config& config, const CodeGenConfig& code_gen_config) {
-        auto ctx = std::make_shared<jetpack::parser::ParserContext>(-1, std::move(content), config);
+    std::string ParseAndCodeGen(std::string_view content, const jetpack::parser::Config& config, const CodeGenConfig& code_gen_config) {
+        auto ctx = std::make_shared<jetpack::parser::ParserContext>(-1, content, config);
         jetpack::parser::Parser parser(ctx);
 
         auto mod = parser.ParseModule();
