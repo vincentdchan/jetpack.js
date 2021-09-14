@@ -37,21 +37,40 @@ static napi_value bundle_file(napi_env env, napi_callback_info info) {
   napi_status status;
 
   size_t argc = 1;
-  node_args<1> argv;
-  status = argv.load(env, info);
-  assert(status = napi_ok);
+  node_args<2> argv;
+  assert(argv.load(env, info) == napi_ok);
 
-  napi_value entry_value;
-  status = napi_get_named_property(env, argv[0], "entry", &entry_value);
-  if (status != napi_ok) {
+  std::string path = get_object_prop<std::string>(env, argv[0], "entry");
+  if (path.empty()) {
     napi_throw_type_error(env, nullptr, "entry is not proviede");
     return 0;
   }
 
-  std::string path = node_cast<std::string>(env, entry_value);
-
   JetpackFlags flags;
-  flags |= JetpackFlag::Jsx;
+
+  if (argv.size() >= 2) {
+    bool jsx = get_object_prop_or<bool>(env, argv[1], "jsx", true);
+    if (jsx) {
+      flags |= JetpackFlag::Jsx;
+    }
+    bool minify = get_object_prop_or<bool>(env, argv[1], "minify", false);
+    if (minify) {
+      flags |= JetpackFlag::Minify;
+    }
+    bool sourcemap = get_object_prop_or<bool>(env, argv[1], "sourcemap", false);
+    if (sourcemap) {
+      flags |= JetpackFlag::Sourcemap;
+    }
+    bool trace_file = get_object_prop_or<bool>(env, argv[1], "traceFile", true);
+    if (trace_file) {
+      flags |= JetpackFlag::TraceFile;
+    }
+  } else {
+    // default
+    flags |= JetpackFlag::Jsx;
+    flags |= JetpackFlag::TraceFile;
+  }
+
   jetpack::simple_api::BundleModule(path, "bundle.js", flags);
 
   return 0;
@@ -62,12 +81,9 @@ static napi_value handle_command_line(napi_env env, napi_callback_info info) {
   napi_status status;
 
   node_args<1> argv;
-  status = argv.load(env, info);
-  assert(status = napi_ok);
+  NAPI_CALL(env, argv.load(env, info));
 
-  bool is_arr = false;
-  status = napi_is_array(env, argv[0], &is_arr);
-  assert(status = napi_ok);
+  bool is_arr = node_is_array(env, argv[0]);
   if (!is_arr) {
     napi_throw_type_error(env, NULL, "first arguments should be an array");
     return 0;
