@@ -53,13 +53,18 @@ std::string node_cast<std::string>(napi_env env, napi_value value) {
   return result;
 }
 
+template<typename T>
+struct assert_false : std::false_type
+{ };
+
 template <typename T>
-napi_value to_node_value(napi_env env, T v) {
+napi_value to_node_value(napi_env env, const T& v) {
+  static_assert(assert_false<T>::value , "not impl");
   return nullptr;
 }
 
 template <>
-napi_value to_node_value<const std::string &>(napi_env env, const std::string &v) {
+napi_value to_node_value<std::string>(napi_env env, const std::string &v) {
   napi_value result = nullptr;
   napi_status status = napi_create_string_utf8(env, v.c_str(), v.size(), &result);
   assert(status == napi_ok);
@@ -67,7 +72,7 @@ napi_value to_node_value<const std::string &>(napi_env env, const std::string &v
 }
 
 template <>
-napi_value to_node_value<int32_t>(napi_env env, int32_t v) {
+napi_value to_node_value<int32_t>(napi_env env, const int32_t& v) {
   napi_value ret_value;
   napi_status status = napi_create_int32(env, v, &ret_value);
   assert(status == napi_ok);
