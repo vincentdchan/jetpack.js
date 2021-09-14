@@ -131,6 +131,7 @@ TEST(SourceMap, Complex) {
     JetpackFlags flags;
     flags |= JetpackFlag::Jsx;
     flags |= JetpackFlag::Sourcemap;
+    flags |= JetpackFlag::TraceFile;
     EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
 
     std::string sourcemapContent;

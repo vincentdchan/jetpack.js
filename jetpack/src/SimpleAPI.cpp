@@ -97,7 +97,7 @@ namespace jetpack::simple_api {
 
             codegen_config.sourcemap = !!(flags & JetpackFlag::Sourcemap);
 
-            resolver->SetTraceFile(true);
+            resolver->SetTraceFile(!!(flags & JetpackFlag::TraceFile));
             resolver->BeginFromEntry(parser_config, path, basePath);
             resolver->CodeGenAllModules(codegen_config, out_path);
 
