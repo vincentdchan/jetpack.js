@@ -158,6 +158,7 @@ TEST(SourceMap, Complex) {
     std::vector<SourceMapDecoder::ResultMapping> expect_mappings {
             { 0, 3, 4, 2, 2 },
             { 0, 3, 12, 2, 10 },
+            { 0, 3, 16, 2, 14 },
             { 1, 3, 0, 4, 0},
     };
 
