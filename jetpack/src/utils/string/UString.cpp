@@ -78,8 +78,8 @@ std::string StringFromUtf32(const char32_t* content, std::size_t size) {
 }
 
 std::size_t UTF16LenOfUtf8(std::string_view u8) {
-    const char* zIn = u8.data();
-    const char* zTerm = u8.data() + u8.size();
+    const uint8_t* zIn = reinterpret_cast<const uint8_t*>(u8.data());
+    const uint8_t* zTerm = zIn + u8.size();
     uint32_t c;
     std::size_t result = 0;
     while (zIn < zTerm) {

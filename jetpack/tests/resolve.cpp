@@ -44,7 +44,7 @@ inline std::string ReplaceDefault(std::string_view src) {
 
     CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(mod->ast);
+    codegen.Traverse(*mod->ast);
 
     return codegen.GetResult().content;
 }
@@ -146,7 +146,7 @@ TEST(ModuleResolver, SingleMemoryFile) {
 
     auto entry_mod = resolver->GetEntryModule();
     CodeGen codegen(codegen_config);
-    codegen.Traverse(entry_mod->ast);
+    codegen.Traverse(*entry_mod->ast);
 
     std::cout << codegen.GetResult().content << std::endl;
 }

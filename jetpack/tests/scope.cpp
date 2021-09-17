@@ -22,7 +22,7 @@ inline Sp<Module> ParseString(std::string_view src) {
 inline std::string GenCode(Sp<Module>& mod) {
     CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(mod);
+    codegen.Traverse(*mod);
     return codegen.GetResult().content;
 }
 

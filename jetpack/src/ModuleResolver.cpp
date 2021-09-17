@@ -474,7 +474,7 @@ namespace jetpack {
 
         if (!final_export_vars.empty()) {
             auto final_export = GenFinalExportDecl(final_export_vars);
-            codegen.Traverse(final_export);
+            codegen.Traverse(*final_export);
         }
 
         const std::string finalResult = codegen.GetResult().content;
@@ -530,7 +530,7 @@ namespace jetpack {
             if (mod->IsCommonJS()) {
                 WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
             }
-            codegen.Traverse(mod->ast);
+            codegen.Traverse(*mod->ast);
 
             spare_stack.pop();
         }

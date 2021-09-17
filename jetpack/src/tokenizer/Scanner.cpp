@@ -59,10 +59,9 @@ namespace jetpack {
 
     std::vector<Sp<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
         std::vector<Sp<Comment>> result;
-        uint32_t start = 0;
         SourceLocation loc;
 
-        start = cursor_.u8 - u8_offset;
+        const uint32_t start = cursor_.u8 - u8_offset;
         loc.start.line = line_number_;
         loc.start.column = cursor_.u16 - line_start_ - u8_offset;
 

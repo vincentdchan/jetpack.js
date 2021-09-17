@@ -162,7 +162,7 @@ namespace jetpack::simple_api {
         }
 
         CodeGen codegen(code_gen_config, nullptr);
-        codegen.Traverse(mod);
+        codegen.Traverse(*mod);
         return codegen.GetResult().content;
     }
 

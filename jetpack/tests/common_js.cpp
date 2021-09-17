@@ -28,7 +28,7 @@ inline std::string ParseAndCodeGen(std::string_view content) {
     CodeGenConfig code_gen_config;
     code_gen_config.minify = false;
     CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(mod);
+    codegen.Traverse(*mod);
     return codegen.GetResult().content;
 }
 
@@ -97,7 +97,7 @@ TEST(CommonJS, CodeGen) {
 
     CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(mod);
+    codegen.Traverse(*mod);
     const auto& output = codegen.GetResult().content;
     EXPECT_EQ(output, "let require_foo = __commonJS(a => {\n"
                       "  a.name = function() {\n"

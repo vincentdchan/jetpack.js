@@ -25,7 +25,7 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     auto mod = resolver->GetEntryModule();
     CodeGenConfig codegenConfig;
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
-    codegen.Traverse(mod->ast);
+    codegen.Traverse(*mod->ast);
 
     sourceMapGenerator.Finalize();
 

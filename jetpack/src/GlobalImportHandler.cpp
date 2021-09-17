@@ -160,7 +160,7 @@ namespace jetpack {
 
     void GlobalImportHandler::GenCode(CodeGen& codegen) {
         for (auto& decl : gen_import_decls) {
-            codegen.Traverse(decl);
+            codegen.Traverse(*decl);
         }
     }
 

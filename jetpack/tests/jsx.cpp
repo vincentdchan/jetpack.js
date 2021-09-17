@@ -24,7 +24,7 @@ inline std::string ParseJSXAndCodeGen(std::string_view content) {
 
     CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(mod);
+    codegen.Traverse(*mod);
     return codegen.GetResult().content;
 }
 

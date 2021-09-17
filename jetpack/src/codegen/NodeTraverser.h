@@ -308,150 +308,150 @@ namespace jetpack {
 
         NodeTraverser() = default;
 
-        void TraverseNode(const Sp<SyntaxNode>& node);
+        void TraverseNode(SyntaxNode& node);
 
-        virtual void Traverse(const Sp<ArrayExpression>& node) {}
-        virtual void Traverse(const Sp<ArrayPattern>& node) {}
-        virtual void Traverse(const Sp<ArrowFunctionExpression>& node) {}
-        virtual void Traverse(const Sp<AssignmentExpression>& node) {}
-        virtual void Traverse(const Sp<AssignmentPattern>& node) {}
-        virtual void Traverse(const Sp<AwaitExpression>& node) {}
-        virtual void Traverse(const Sp<BinaryExpression>& node) {}
-        virtual void Traverse(const Sp<BlockStatement>& node) {}
-        virtual void Traverse(const Sp<BreakStatement>& node) {}
-        virtual void Traverse(const Sp<CallExpression>& node) {}
-        virtual void Traverse(const Sp<CatchClause>& node) {}
-        virtual void Traverse(const Sp<ClassBody>& node) {}
-        virtual void Traverse(const Sp<ClassDeclaration>& node) {}
-        virtual void Traverse(const Sp<ClassExpression>& node) {}
-        virtual void Traverse(const Sp<ConditionalExpression>& node) {}
-        virtual void Traverse(const Sp<ContinueStatement>& node) {}
-        virtual void Traverse(const Sp<DebuggerStatement>& node) {}
-        virtual void Traverse(const Sp<Directive>& node) {}
-        virtual void Traverse(const Sp<DoWhileStatement>& node) {}
-        virtual void Traverse(const Sp<EmptyStatement>& node) {}
-        virtual void Traverse(const Sp<ExportAllDeclaration>& node) {}
-        virtual void Traverse(const Sp<ExportDefaultDeclaration>& node) {}
-        virtual void Traverse(const Sp<ExportNamedDeclaration>& node) {}
-        virtual void Traverse(const Sp<ExportSpecifier>& node) {}
-        virtual void Traverse(const Sp<ExpressionStatement>& node) {}
-        virtual void Traverse(const Sp<ForInStatement>& node) {}
-        virtual void Traverse(const Sp<ForOfStatement>& node) {}
-        virtual void Traverse(const Sp<ForStatement>& node) {}
-        virtual void Traverse(const Sp<FunctionDeclaration>& node) {}
-        virtual void Traverse(const Sp<FunctionExpression>& node) {}
-        virtual void Traverse(const Sp<Identifier>& node) {}
-        virtual void Traverse(const Sp<IfStatement>& node) {}
-        virtual void Traverse(const Sp<Import>& node) {}
-        virtual void Traverse(const Sp<ImportDeclaration>& node) {}
-        virtual void Traverse(const Sp<ImportDefaultSpecifier>& node) {}
-        virtual void Traverse(const Sp<ImportNamespaceSpecifier>& node) {}
-        virtual void Traverse(const Sp<ImportSpecifier>& node) {}
-        virtual void Traverse(const Sp<LabeledStatement>& node) {}
-        virtual void Traverse(const Sp<Literal>& node) {}
-        virtual void Traverse(const Sp<MetaProperty>& node) {}
-        virtual void Traverse(const Sp<MethodDefinition>& node) {}
-        virtual void Traverse(const Sp<Module>& node) {}
-        virtual void Traverse(const Sp<NewExpression>& node) {}
-        virtual void Traverse(const Sp<ObjectExpression>& node) {}
-        virtual void Traverse(const Sp<ObjectPattern>& node) {}
-        virtual void Traverse(const Sp<Property>& node) {}
-        virtual void Traverse(const Sp<RegexLiteral>& node) {}
-        virtual void Traverse(const Sp<RestElement>& node) {}
-        virtual void Traverse(const Sp<ReturnStatement>& node) {}
-        virtual void Traverse(const Sp<Script>& node) {}
-        virtual void Traverse(const Sp<SequenceExpression>& node) {}
-        virtual void Traverse(const Sp<SpreadElement>& node) {}
-        virtual void Traverse(const Sp<MemberExpression>& node) {}
-        virtual void Traverse(const Sp<Super>& node) {}
-        virtual void Traverse(const Sp<SwitchCase>& node) {}
-        virtual void Traverse(const Sp<SwitchStatement>& node) {}
-        virtual void Traverse(const Sp<TaggedTemplateExpression>& node) {}
-        virtual void Traverse(const Sp<TemplateElement>& node) {}
-        virtual void Traverse(const Sp<TemplateLiteral>& node) {}
-        virtual void Traverse(const Sp<ThisExpression>& node) {}
-        virtual void Traverse(const Sp<ThrowStatement>& node) {}
-        virtual void Traverse(const Sp<TryStatement>& node) {}
-        virtual void Traverse(const Sp<UnaryExpression>& node) {}
-        virtual void Traverse(const Sp<UpdateExpression>& node) {}
-        virtual void Traverse(const Sp<VariableDeclaration>& node) {}
-        virtual void Traverse(const Sp<VariableDeclarator>& node) {}
-        virtual void Traverse(const Sp<WhileStatement>& node) {}
-        virtual void Traverse(const Sp<WithStatement>& node) {}
-        virtual void Traverse(const Sp<YieldExpression>& node) {}
-        virtual void Traverse(const Sp<ArrowParameterPlaceHolder>& node) {}
-        virtual void Traverse(const Sp<JSXClosingElement>& node) {}
-        virtual void Traverse(const Sp<JSXElement>& node) {}
-        virtual void Traverse(const Sp<JSXEmptyExpression>& node) {}
-        virtual void Traverse(const Sp<JSXExpressionContainer>& node) {}
-        virtual void Traverse(const Sp<JSXIdentifier>& node) {}
-        virtual void Traverse(const Sp<JSXMemberExpression>& node) {}
-        virtual void Traverse(const Sp<JSXAttribute>& node) {}
-        virtual void Traverse(const Sp<JSXNamespacedName>& node) {}
-        virtual void Traverse(const Sp<JSXOpeningElement>& node) {}
-        virtual void Traverse(const Sp<JSXSpreadAttribute>& node) {}
-        virtual void Traverse(const Sp<JSXText>& node) {}
-        virtual void Traverse(const Sp<TSParameterProperty>& node) {}
-        virtual void Traverse(const Sp<TSDeclareFunction>& node) {}
-        virtual void Traverse(const Sp<TSDeclareMethod>& node) {}
-        virtual void Traverse(const Sp<TSQualifiedName>& node) {}
-        virtual void Traverse(const Sp<TSCallSignatureDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSConstructSignatureDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSPropertySignature>& node) {}
-        virtual void Traverse(const Sp<TSMethodSignature>& node) {}
-        virtual void Traverse(const Sp<TSIndexSignature>& node) {}
-        virtual void Traverse(const Sp<TSAnyKeyword>& node) {}
-        virtual void Traverse(const Sp<TSBooleanKeyword>& node) {}
-        virtual void Traverse(const Sp<TSBigIntKeyword>& node) {}
-        virtual void Traverse(const Sp<TSNeverKeyword>& node) {}
-        virtual void Traverse(const Sp<TSNullKeyword>& node) {}
-        virtual void Traverse(const Sp<TSNumberKeyword>& node) {}
-        virtual void Traverse(const Sp<TSObjectKeyword>& node) {}
-        virtual void Traverse(const Sp<TSStringKeyword>& node) {}
-        virtual void Traverse(const Sp<TSSymbolKeyword>& node) {}
-        virtual void Traverse(const Sp<TSUndefinedKeyword>& node) {}
-        virtual void Traverse(const Sp<TSUnknownKeyword>& node) {}
-        virtual void Traverse(const Sp<TSVoidKeyword>& node) {}
-        virtual void Traverse(const Sp<TSThisType>& node) {}
-        virtual void Traverse(const Sp<TSFunctionType>& node) {}
-        virtual void Traverse(const Sp<TSConstructorType>& node) {}
-        virtual void Traverse(const Sp<TSTypeReference>& node) {}
-        virtual void Traverse(const Sp<TSTypePredicate>& node) {}
-        virtual void Traverse(const Sp<TSTypeQuery>& node) {}
-        virtual void Traverse(const Sp<TSTypeLiteral>& node) {}
-        virtual void Traverse(const Sp<TSArrayType>& node) {}
-        virtual void Traverse(const Sp<TSTupleType>& node) {}
-        virtual void Traverse(const Sp<TSOptionalType>& node) {}
-        virtual void Traverse(const Sp<TSRestType>& node) {}
-        virtual void Traverse(const Sp<TSUnionType>& node) {}
-        virtual void Traverse(const Sp<TSIntersectionType>& node) {}
-        virtual void Traverse(const Sp<TSConditionalType>& node) {}
-        virtual void Traverse(const Sp<TSInferType>& node) {}
-        virtual void Traverse(const Sp<TSParenthesizedType>& node) {}
-        virtual void Traverse(const Sp<TSTypeOperator>& node) {}
-        virtual void Traverse(const Sp<TSIndexedAccessType>& node) {}
-        virtual void Traverse(const Sp<TSMappedType>& node) {}
-        virtual void Traverse(const Sp<TSLiteralType>& node) {}
-        virtual void Traverse(const Sp<TSExpressionWithTypeArguments>& node) {}
-        virtual void Traverse(const Sp<TSInterfaceDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSInterfaceBody>& node) {}
-        virtual void Traverse(const Sp<TSTypeAliasDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSAsExpression>& node) {}
-        virtual void Traverse(const Sp<TSTypeAssertion>& node) {}
-        virtual void Traverse(const Sp<TSEnumDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSEnumMember>& node) {}
-        virtual void Traverse(const Sp<TSModuleDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSModuleBlock>& node) {}
-        virtual void Traverse(const Sp<TSImportType>& node) {}
-        virtual void Traverse(const Sp<TSImportEqualsDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSExternalModuleReference>& node) {}
-        virtual void Traverse(const Sp<TSNonNullExpression>& node) {}
-        virtual void Traverse(const Sp<TSExportAssignment>& node) {}
-        virtual void Traverse(const Sp<TSNamespaceExportDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSTypeAnnotation>& node) {}
-        virtual void Traverse(const Sp<TSTypeParameterInstantiation>& node) {}
-        virtual void Traverse(const Sp<TSTypeParameterDeclaration>& node) {}
-        virtual void Traverse(const Sp<TSTypeParameter>& node) {}
+        virtual void Traverse(ArrayExpression& node) {}
+        virtual void Traverse(ArrayPattern& node) {}
+        virtual void Traverse(ArrowFunctionExpression& node) {}
+        virtual void Traverse(AssignmentExpression& node) {}
+        virtual void Traverse(AssignmentPattern& node) {}
+        virtual void Traverse(AwaitExpression& node) {}
+        virtual void Traverse(BinaryExpression& node) {}
+        virtual void Traverse(BlockStatement& node) {}
+        virtual void Traverse(BreakStatement& node) {}
+        virtual void Traverse(CallExpression& node) {}
+        virtual void Traverse(CatchClause& node) {}
+        virtual void Traverse(ClassBody& node) {}
+        virtual void Traverse(ClassDeclaration& node) {}
+        virtual void Traverse(ClassExpression& node) {}
+        virtual void Traverse(ConditionalExpression& node) {}
+        virtual void Traverse(ContinueStatement& node) {}
+        virtual void Traverse(DebuggerStatement& node) {}
+        virtual void Traverse(Directive& node) {}
+        virtual void Traverse(DoWhileStatement& node) {}
+        virtual void Traverse(EmptyStatement& node) {}
+        virtual void Traverse(ExportAllDeclaration& node) {}
+        virtual void Traverse(ExportDefaultDeclaration& node) {}
+        virtual void Traverse(ExportNamedDeclaration& node) {}
+        virtual void Traverse(ExportSpecifier& node) {}
+        virtual void Traverse(ExpressionStatement& node) {}
+        virtual void Traverse(ForInStatement& node) {}
+        virtual void Traverse(ForOfStatement& node) {}
+        virtual void Traverse(ForStatement& node) {}
+        virtual void Traverse(FunctionDeclaration& node) {}
+        virtual void Traverse(FunctionExpression& node) {}
+        virtual void Traverse(Identifier& node) {}
+        virtual void Traverse(IfStatement& node) {}
+        virtual void Traverse(Import& node) {}
+        virtual void Traverse(ImportDeclaration& node) {}
+        virtual void Traverse(ImportDefaultSpecifier& node) {}
+        virtual void Traverse(ImportNamespaceSpecifier& node) {}
+        virtual void Traverse(ImportSpecifier& node) {}
+        virtual void Traverse(LabeledStatement& node) {}
+        virtual void Traverse(Literal& node) {}
+        virtual void Traverse(MetaProperty& node) {}
+        virtual void Traverse(MethodDefinition& node) {}
+        virtual void Traverse(Module& node) {}
+        virtual void Traverse(NewExpression& node) {}
+        virtual void Traverse(ObjectExpression& node) {}
+        virtual void Traverse(ObjectPattern& node) {}
+        virtual void Traverse(Property& node) {}
+        virtual void Traverse(RegexLiteral& node) {}
+        virtual void Traverse(RestElement& node) {}
+        virtual void Traverse(ReturnStatement& node) {}
+        virtual void Traverse(Script& node) {}
+        virtual void Traverse(SequenceExpression& node) {}
+        virtual void Traverse(SpreadElement& node) {}
+        virtual void Traverse(MemberExpression& node) {}
+        virtual void Traverse(Super& node) {}
+        virtual void Traverse(SwitchCase& node) {}
+        virtual void Traverse(SwitchStatement& node) {}
+        virtual void Traverse(TaggedTemplateExpression& node) {}
+        virtual void Traverse(TemplateElement& node) {}
+        virtual void Traverse(TemplateLiteral& node) {}
+        virtual void Traverse(ThisExpression& node) {}
+        virtual void Traverse(ThrowStatement& node) {}
+        virtual void Traverse(TryStatement& node) {}
+        virtual void Traverse(UnaryExpression& node) {}
+        virtual void Traverse(UpdateExpression& node) {}
+        virtual void Traverse(VariableDeclaration& node) {}
+        virtual void Traverse(VariableDeclarator& node) {}
+        virtual void Traverse(WhileStatement& node) {}
+        virtual void Traverse(WithStatement& node) {}
+        virtual void Traverse(YieldExpression& node) {}
+        virtual void Traverse(ArrowParameterPlaceHolder& node) {}
+        virtual void Traverse(JSXClosingElement& node) {}
+        virtual void Traverse(JSXElement& node) {}
+        virtual void Traverse(JSXEmptyExpression& node) {}
+        virtual void Traverse(JSXExpressionContainer& node) {}
+        virtual void Traverse(JSXIdentifier& node) {}
+        virtual void Traverse(JSXMemberExpression& node) {}
+        virtual void Traverse(JSXAttribute& node) {}
+        virtual void Traverse(JSXNamespacedName& node) {}
+        virtual void Traverse(JSXOpeningElement& node) {}
+        virtual void Traverse(JSXSpreadAttribute& node) {}
+        virtual void Traverse(JSXText& node) {}
+        virtual void Traverse(TSParameterProperty& node) {}
+        virtual void Traverse(TSDeclareFunction& node) {}
+        virtual void Traverse(TSDeclareMethod& node) {}
+        virtual void Traverse(TSQualifiedName& node) {}
+        virtual void Traverse(TSCallSignatureDeclaration& node) {}
+        virtual void Traverse(TSConstructSignatureDeclaration& node) {}
+        virtual void Traverse(TSPropertySignature& node) {}
+        virtual void Traverse(TSMethodSignature& node) {}
+        virtual void Traverse(TSIndexSignature& node) {}
+        virtual void Traverse(TSAnyKeyword& node) {}
+        virtual void Traverse(TSBooleanKeyword& node) {}
+        virtual void Traverse(TSBigIntKeyword& node) {}
+        virtual void Traverse(TSNeverKeyword& node) {}
+        virtual void Traverse(TSNullKeyword& node) {}
+        virtual void Traverse(TSNumberKeyword& node) {}
+        virtual void Traverse(TSObjectKeyword& node) {}
+        virtual void Traverse(TSStringKeyword& node) {}
+        virtual void Traverse(TSSymbolKeyword& node) {}
+        virtual void Traverse(TSUndefinedKeyword& node) {}
+        virtual void Traverse(TSUnknownKeyword& node) {}
+        virtual void Traverse(TSVoidKeyword& node) {}
+        virtual void Traverse(TSThisType& node) {}
+        virtual void Traverse(TSFunctionType& node) {}
+        virtual void Traverse(TSConstructorType& node) {}
+        virtual void Traverse(TSTypeReference& node) {}
+        virtual void Traverse(TSTypePredicate& node) {}
+        virtual void Traverse(TSTypeQuery& node) {}
+        virtual void Traverse(TSTypeLiteral& node) {}
+        virtual void Traverse(TSArrayType& node) {}
+        virtual void Traverse(TSTupleType& node) {}
+        virtual void Traverse(TSOptionalType& node) {}
+        virtual void Traverse(TSRestType& node) {}
+        virtual void Traverse(TSUnionType& node) {}
+        virtual void Traverse(TSIntersectionType& node) {}
+        virtual void Traverse(TSConditionalType& node) {}
+        virtual void Traverse(TSInferType& node) {}
+        virtual void Traverse(TSParenthesizedType& node) {}
+        virtual void Traverse(TSTypeOperator& node) {}
+        virtual void Traverse(TSIndexedAccessType& node) {}
+        virtual void Traverse(TSMappedType& node) {}
+        virtual void Traverse(TSLiteralType& node) {}
+        virtual void Traverse(TSExpressionWithTypeArguments& node) {}
+        virtual void Traverse(TSInterfaceDeclaration& node) {}
+        virtual void Traverse(TSInterfaceBody& node) {}
+        virtual void Traverse(TSTypeAliasDeclaration& node) {}
+        virtual void Traverse(TSAsExpression& node) {}
+        virtual void Traverse(TSTypeAssertion& node) {}
+        virtual void Traverse(TSEnumDeclaration& node) {}
+        virtual void Traverse(TSEnumMember& node) {}
+        virtual void Traverse(TSModuleDeclaration& node) {}
+        virtual void Traverse(TSModuleBlock& node) {}
+        virtual void Traverse(TSImportType& node) {}
+        virtual void Traverse(TSImportEqualsDeclaration& node) {}
+        virtual void Traverse(TSExternalModuleReference& node) {}
+        virtual void Traverse(TSNonNullExpression& node) {}
+        virtual void Traverse(TSExportAssignment& node) {}
+        virtual void Traverse(TSNamespaceExportDeclaration& node) {}
+        virtual void Traverse(TSTypeAnnotation& node) {}
+        virtual void Traverse(TSTypeParameterInstantiation& node) {}
+        virtual void Traverse(TSTypeParameterDeclaration& node) {}
+        virtual void Traverse(TSTypeParameter& node) {}
 
         virtual ~NodeTraverser() = default;
 
