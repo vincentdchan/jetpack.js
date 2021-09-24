@@ -9,6 +9,7 @@
 #include <mutex>
 #include "utils/Common.h"
 #include "parser/SyntaxNodes.h"
+#include "parser/AstContext.h"
 #include "UniqueNameGenerator.h"
 #include "codegen/CodeGen.h"
 
@@ -37,9 +38,9 @@ namespace jetpack {
      */
     class GlobalImportHandler {
     public:
-        void HandleImport(const Sp<ImportDeclaration>& import);
+        void HandleImport(ImportDeclaration* import);
 
-        bool IsImportExternal(const Sp<ImportDeclaration>& import);
+        bool IsImportExternal(ImportDeclaration* import);
 
         void DistributeNameToImportVars(const std::shared_ptr<UniqueNameGenerator>&,
                                         const std::vector<GlobalImportInfo*>& infos);
@@ -48,7 +49,7 @@ namespace jetpack {
 
         void GenCode(CodeGen& codegen);
 
-        std::vector<Sp<ImportDeclaration>> imports;
+        std::vector<ImportDeclaration*> imports;
 
         /**
          * use set of pointers to mark external imports
@@ -57,11 +58,12 @@ namespace jetpack {
 
         HashMap<std::string, GlobalImportInfo> import_infos;
 
-        std::vector<Sp<ImportDeclaration>> gen_import_decls;
+        std::vector<ImportDeclaration*> gen_import_decls;
 
         int32_t import_counter = 0;
 
     private:
+        AstContext ctx_;
         std::mutex m;
 
     };

@@ -5,17 +5,20 @@
 #pragma once
 
 #include "SyntaxNodes.h"
+#include "parser/AstContext.h"
 
 namespace jetpack {
 
-    Sp<Literal> MakeNull();
+    Literal* MakeNull(AstContext& ctx);
 
-    Sp<Identifier> MakeId(const std::string& content);
+    Identifier* MakeId(AstContext& ctx, const std::string& content);
 
-    Sp<Identifier> MakeId(const SourceLocation& loc, const std::string& content);
+    Identifier* MakeId(AstContext& ctx, const SourceLocation& loc, const std::string& content);
 
-    Sp<Literal> MakeStringLiteral(const std::string& str);
+    Literal* MakeStringLiteral(AstContext& ctx, const std::string& str);
 
-    void WrapModuleWithCommonJsTemplate(const Sp<Module>& module, const std::string& var_name, const std::string& cjs_call);
+    void WrapModuleWithCommonJsTemplate(
+            AstContext& ctx,
+            Module& module, const std::string& var_name, const std::string& cjs_call);
 
 }

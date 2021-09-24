@@ -11,12 +11,13 @@
 #include "../scope/Scope.h"
 
 namespace jetpack {
+    class AstContext;
 
     class ArrayExpression: public Expression {
     public:
         ArrayExpression();
 
-        std::vector<std::optional<Sp<SyntaxNode>>> elements;
+        std::vector<std::optional<SyntaxNode*>> elements;
 
     };
 
@@ -24,17 +25,17 @@ namespace jetpack {
     public:
         ArrayPattern();
 
-        std::vector<std::optional<Sp<SyntaxNode>>> elements;
+        std::vector<std::optional<SyntaxNode*>> elements;
 
     };
 
     class ArrowFunctionExpression: public Expression {
     public:
-        ArrowFunctionExpression();
+        ArrowFunctionExpression(std::unique_ptr<Scope> s);
 
-        std::optional<Sp<Identifier>> id;
-        std::vector<Sp<SyntaxNode>> params;
-        Sp<SyntaxNode> body;
+        std::optional<Identifier*> id;
+        std::vector<SyntaxNode*> params;
+        SyntaxNode* body;
         bool generator = false;
         bool expression = false;
         bool async = false;
@@ -51,8 +52,8 @@ namespace jetpack {
         AssignmentExpression();
 
         std::string operator_;
-        Sp<Pattern> left;
-        Sp<Expression> right;
+        Pattern* left;
+        Expression* right;
 
     };
 
@@ -60,8 +61,8 @@ namespace jetpack {
     public:
         AssignmentPattern();
 
-        Sp<SyntaxNode> left;
-        Sp<Expression> right;
+        SyntaxNode* left;
+        Expression* right;
 
     };
 
@@ -69,7 +70,7 @@ namespace jetpack {
     public:
         AwaitExpression();
 
-        Sp<Expression> argument;
+        Expression* argument;
 
     };
 
@@ -78,8 +79,8 @@ namespace jetpack {
         BinaryExpression();
 
         std::string operator_;
-        Sp<Expression> left;
-        Sp<Expression> right;
+        Expression* left;
+        Expression* right;
 
     };
 
@@ -87,7 +88,7 @@ namespace jetpack {
     public:
         BlockStatement();
 
-        std::vector<Sp<SyntaxNode>> body;
+        std::vector<SyntaxNode*> body;
 
         std::optional<std::unique_ptr<Scope>> scope;
 
@@ -97,7 +98,7 @@ namespace jetpack {
     public:
         BreakStatement();
 
-        std::optional<Sp<Identifier>> label;
+        std::optional<Identifier*> label;
 
     };
 
@@ -105,8 +106,8 @@ namespace jetpack {
     public:
         CallExpression();
 
-        Sp<Expression> callee;
-        std::vector<Sp<SyntaxNode>> arguments;
+        Expression* callee;
+        std::vector<SyntaxNode*> arguments;
 
     };
 
@@ -114,8 +115,8 @@ namespace jetpack {
     public:
         CatchClause();
 
-        Sp<SyntaxNode> param;
-        Sp<BlockStatement> body;
+        SyntaxNode* param;
+        BlockStatement* body;
 
         std::unique_ptr<Scope> scope;
 
@@ -125,17 +126,17 @@ namespace jetpack {
     public:
         ClassBody();
 
-        std::vector<Sp<MethodDefinition>> body;
+        std::vector<MethodDefinition*> body;
 
     };
 
     class ClassDeclaration: public Declaration {
     public:
-        ClassDeclaration();
+        ClassDeclaration(std::unique_ptr<Scope> s);
 
-        std::optional<Sp<Identifier>> id;
-        std::optional<Sp<Identifier>> super_class;
-        Sp<ClassBody> body;
+        std::optional<Identifier*> id;
+        std::optional<Identifier*> super_class;
+        ClassBody* body;
 
         std::unique_ptr<Scope> scope;
 
@@ -143,11 +144,11 @@ namespace jetpack {
 
     class ClassExpression: public Expression {
     public:
-        ClassExpression();
+        ClassExpression(std::unique_ptr<Scope> s);
 
-        std::optional<Sp<Identifier>> id;
-        std::optional<Sp<Identifier>> super_class;
-        std::optional<Sp<ClassBody>> body;
+        std::optional<Identifier*> id;
+        std::optional<Identifier*> super_class;
+        std::optional<ClassBody*> body;
 
         std::unique_ptr<Scope> scope;
 
@@ -157,9 +158,9 @@ namespace jetpack {
     public:
         ConditionalExpression();
 
-        Sp<Expression> test;
-        Sp<Expression> consequent;
-        Sp<Expression> alternate;
+        Expression* test;
+        Expression* consequent;
+        Expression* alternate;
 
     };
 
@@ -167,7 +168,7 @@ namespace jetpack {
     public:
         ContinueStatement();
 
-        std::optional<Sp<Identifier>> label;
+        std::optional<Identifier*> label;
 
     };
 
@@ -182,7 +183,7 @@ namespace jetpack {
     public:
         Directive();
 
-        Sp<Expression> expression;
+        Expression* expression;
         std::string directive;
 
     };
@@ -191,8 +192,8 @@ namespace jetpack {
     public:
         DoWhileStatement();
 
-        Sp<Statement> body;
-        Sp<Expression> test;
+        Statement* body;
+        Expression* test;
 
     };
 
@@ -207,7 +208,7 @@ namespace jetpack {
     public:
         ExportAllDeclaration();
 
-        Sp<Literal> source;
+        Literal* source;
 
     };
 
@@ -215,7 +216,7 @@ namespace jetpack {
     public:
         ExportDefaultDeclaration();
 
-        Sp<SyntaxNode> declaration;
+        SyntaxNode* declaration;
 
     };
 
@@ -223,9 +224,9 @@ namespace jetpack {
     public:
         ExportNamedDeclaration();
 
-        std::optional<Sp<SyntaxNode>> declaration;
-        std::vector<Sp<ExportSpecifier>> specifiers;
-        std::optional<Sp<Literal>> source;
+        std::optional<SyntaxNode*> declaration;
+        std::vector<ExportSpecifier*> specifiers;
+        std::optional<Literal*> source;
 
     };
 
@@ -233,8 +234,8 @@ namespace jetpack {
     public:
         ExportSpecifier();
 
-        Sp<Identifier> exported;
-        Sp<Identifier> local;
+        Identifier* exported;
+        Identifier* local;
 
     };
 
@@ -242,17 +243,17 @@ namespace jetpack {
     public:
         ExpressionStatement();
 
-        Sp<Expression> expression;
+        Expression* expression;
 
     };
 
     class ForInStatement: public Statement {
     public:
-        ForInStatement();
+        ForInStatement(std::unique_ptr<Scope> s);
 
-        Sp<SyntaxNode> left;
-        Sp<SyntaxNode> right;
-        Sp<Statement> body;
+        SyntaxNode* left;
+        SyntaxNode* right;
+        Statement* body;
         bool each = false;
 
         std::unique_ptr<Scope> scope;
@@ -261,11 +262,11 @@ namespace jetpack {
 
     class ForOfStatement: public Statement {
     public:
-        ForOfStatement();
+        ForOfStatement(std::unique_ptr<Scope> s);
 
-        Sp<SyntaxNode> left;
-        Sp<SyntaxNode> right;
-        Sp<Statement> body;
+        SyntaxNode* left;
+        SyntaxNode* right;
+        Statement* body;
 
         std::unique_ptr<Scope> scope;
 
@@ -273,12 +274,12 @@ namespace jetpack {
 
     class ForStatement: public Statement {
     public:
-        ForStatement();
+        ForStatement(std::unique_ptr<Scope> s);
 
-        std::optional<Sp<SyntaxNode>> init;
-        std::optional<Sp<SyntaxNode>> test;
-        std::optional<Sp<SyntaxNode>> update;
-        Sp<Statement> body;
+        std::optional<SyntaxNode*> init;
+        std::optional<SyntaxNode*> test;
+        std::optional<SyntaxNode*> update;
+        Statement* body;
 
         std::unique_ptr<Scope> scope;
 
@@ -286,11 +287,11 @@ namespace jetpack {
 
     class FunctionDeclaration: public Declaration {
     public:
-        FunctionDeclaration();
+        FunctionDeclaration(std::unique_ptr<Scope> s);
 
-        std::optional<Sp<Identifier>> id;
-        std::vector<Sp<SyntaxNode>> params;
-        Sp<BlockStatement> body;
+        std::optional<Identifier*> id;
+        std::vector<SyntaxNode*> params;
+        BlockStatement* body;
         bool generator = false;
         bool expression = false;
         bool async = false;
@@ -303,9 +304,9 @@ namespace jetpack {
     public:
         FunctionExpression();
 
-        std::optional<Sp<Identifier>> id;
-        std::vector<Sp<SyntaxNode>> params;
-        Sp<BlockStatement> body;
+        std::optional<Identifier*> id;
+        std::vector<SyntaxNode*> params;
+        BlockStatement* body;
         bool generator = false;
         bool expression = false;
         bool async = false;
@@ -329,9 +330,9 @@ namespace jetpack {
     public:
         IfStatement();
 
-        Sp<Expression> test;
-        Sp<Statement> consequent;
-        std::optional<Sp<Statement>> alternate;
+        Expression* test;
+        Statement* consequent;
+        std::optional<Statement*> alternate;
 
     };
 
@@ -346,8 +347,8 @@ namespace jetpack {
     public:
         ImportDeclaration();
 
-        std::vector<Sp<SyntaxNode>> specifiers;
-        Sp<Literal> source;
+        std::vector<SyntaxNode*> specifiers;
+        Literal* source;
 
     };
 
@@ -355,7 +356,7 @@ namespace jetpack {
     public:
         ImportDefaultSpecifier();
 
-        Sp<Identifier> local;
+        Identifier* local;
 
     };
 
@@ -363,7 +364,7 @@ namespace jetpack {
     public:
         ImportNamespaceSpecifier();
 
-        Sp<Identifier> local;
+        Identifier* local;
 
     };
 
@@ -371,8 +372,8 @@ namespace jetpack {
     public:
         ImportSpecifier();
 
-        Sp<Identifier> local;
-        Sp<Identifier> imported;
+        Identifier* local;
+        Identifier* imported;
 
     };
 
@@ -380,8 +381,8 @@ namespace jetpack {
     public:
         LabeledStatement();
 
-        Sp<Identifier> label;
-        Sp<Statement> body;
+        Identifier* label;
+        Statement* body;
 
     };
 
@@ -412,8 +413,8 @@ namespace jetpack {
     public:
         MetaProperty();
 
-        Sp<Identifier> meta;
-        Sp<Identifier> property;
+        Identifier* meta;
+        Identifier* property;
 
     };
 
@@ -421,9 +422,9 @@ namespace jetpack {
     public:
         MethodDefinition();
 
-        std::optional<Sp<SyntaxNode>> key;
+        std::optional<SyntaxNode*> key;
         bool computed = false;
-        std::optional<Sp<Expression>> value;
+        std::optional<Expression*> value;
         VarKind kind;
         bool static_ = false;
 
@@ -431,9 +432,9 @@ namespace jetpack {
 
     class Module: public SyntaxNode {
     public:
-        Module(ModuleScope::ModuleType mt);
+        Module(std::unique_ptr<ModuleScope> s);
 
-        std::vector<Sp<SyntaxNode>> body;
+        std::vector<SyntaxNode*> body;
         std::string source_type;
         std::vector<Sp<Comment>> comments;
 
@@ -445,8 +446,8 @@ namespace jetpack {
     public:
         NewExpression();
 
-        Sp<Expression> callee;
-        std::vector<Sp<SyntaxNode>> arguments;
+        Expression* callee;
+        std::vector<SyntaxNode*> arguments;
 
     };
 
@@ -454,7 +455,7 @@ namespace jetpack {
     public:
         ObjectExpression();
 
-        std::vector<Sp<SyntaxNode>> properties;
+        std::vector<SyntaxNode*> properties;
 
     };
 
@@ -462,7 +463,7 @@ namespace jetpack {
     public:
         ObjectPattern();
 
-        std::vector<Sp<SyntaxNode>> properties;
+        std::vector<SyntaxNode*> properties;
 
     };
 
@@ -470,9 +471,9 @@ namespace jetpack {
     public:
         Property();
 
-        Sp<SyntaxNode> key;
+        SyntaxNode* key;
         bool computed = false;
-        std::optional<Sp<SyntaxNode>> value;
+        std::optional<SyntaxNode*> value;
         VarKind kind;
         bool method = false;
         bool shorthand = false;
@@ -492,7 +493,7 @@ namespace jetpack {
     public:
         RestElement();
 
-        Sp<SyntaxNode> argument;
+        SyntaxNode* argument;
 
     };
 
@@ -500,15 +501,15 @@ namespace jetpack {
     public:
         ReturnStatement();
 
-        std::optional<Sp<Expression>> argument;
+        std::optional<Expression*> argument;
 
     };
 
     class Script: public SyntaxNode {
     public:
-        Script();
+        Script(std::unique_ptr<Scope> s);
 
-        std::vector<Sp<SyntaxNode>> body;
+        std::vector<SyntaxNode*> body;
         std::string source_type;
         std::vector<Sp<Comment>> comments;
 
@@ -520,7 +521,7 @@ namespace jetpack {
     public:
         SequenceExpression();
 
-        std::vector<Sp<Expression>> expressions;
+        std::vector<Expression*> expressions;
 
     };
 
@@ -528,7 +529,7 @@ namespace jetpack {
     public:
         SpreadElement();
 
-        Sp<Expression> argument;
+        Expression* argument;
 
     };
 
@@ -537,8 +538,8 @@ namespace jetpack {
         MemberExpression();
 
         bool computed = false;
-        Sp<Expression> object;
-        Sp<Expression> property;
+        Expression* object;
+        Expression* property;
 
         bool IsComputed() const override { return computed; }
 
@@ -555,17 +556,17 @@ namespace jetpack {
     public:
         SwitchCase();
 
-        std::optional<Sp<Expression>> test;
-        std::vector<Sp<Statement>> consequent;
+        std::optional<Expression*> test;
+        std::vector<Statement*> consequent;
 
     };
 
     class SwitchStatement: public Statement {
     public:
-        SwitchStatement();
+        SwitchStatement(std::unique_ptr<Scope> s);
 
-        Sp<Expression> discrimiant;
-        std::vector<Sp<SwitchCase>> cases;
+        Expression* discrimiant;
+        std::vector<SwitchCase*> cases;
 
         std::unique_ptr<Scope> scope;
 
@@ -575,8 +576,8 @@ namespace jetpack {
     public:
         TaggedTemplateExpression();
 
-        Sp<Expression> tag;
-        Sp<TemplateLiteral> quasi;
+        Expression* tag;
+        TemplateLiteral* quasi;
 
     };
 
@@ -594,8 +595,8 @@ namespace jetpack {
     public:
         TemplateLiteral();
 
-        std::vector<Sp<TemplateElement>> quasis;
-        std::vector<Sp<Expression>> expressions;
+        std::vector<TemplateElement*> quasis;
+        std::vector<Expression*> expressions;
 
     };
 
@@ -610,7 +611,7 @@ namespace jetpack {
     public:
         ThrowStatement();
 
-        Sp<Expression> argument;
+        Expression* argument;
 
     };
 
@@ -618,9 +619,9 @@ namespace jetpack {
     public:
         TryStatement();
 
-        Sp<BlockStatement> block;
-        std::optional<Sp<CatchClause>> handler;
-        std::optional<Sp<BlockStatement>> finalizer;
+        BlockStatement* block;
+        std::optional<CatchClause*> handler;
+        std::optional<BlockStatement*> finalizer;
 
     };
 
@@ -629,7 +630,7 @@ namespace jetpack {
         UnaryExpression();
 
         std::string operator_;
-        Sp<Expression> argument;
+        Expression* argument;
         bool prefix = false;
 
     };
@@ -639,7 +640,7 @@ namespace jetpack {
         UpdateExpression();
 
         std::string operator_;
-        Sp<Expression> argument;
+        Expression* argument;
         bool prefix = false;
 
     };
@@ -648,17 +649,17 @@ namespace jetpack {
     public:
         VariableDeclaration();
 
-        std::vector<Sp<VariableDeclarator>> declarations;
+        std::vector<VariableDeclarator*> declarations;
         VarKind kind;
 
     };
 
     class VariableDeclarator: public SyntaxNode {
     public:
-        VariableDeclarator();
+        VariableDeclarator(std::unique_ptr<Scope> s);
 
-        Sp<SyntaxNode> id;
-        std::optional<Sp<Expression>> init;
+        SyntaxNode* id;
+        std::optional<Expression*> init;
 
         std::unique_ptr<Scope> scope;
 
@@ -668,8 +669,8 @@ namespace jetpack {
     public:
         WhileStatement();
 
-        Sp<Expression> test;
-        Sp<Statement> body;
+        Expression* test;
+        Statement* body;
 
     };
 
@@ -677,8 +678,8 @@ namespace jetpack {
     public:
         WithStatement();
 
-        Sp<Expression> object;
-        Sp<Statement> body;
+        Expression* object;
+        Statement* body;
 
     };
 
@@ -686,7 +687,7 @@ namespace jetpack {
     public:
         YieldExpression();
 
-        std::optional<Sp<Expression>> argument;
+        std::optional<Expression*> argument;
         bool delegate = false;
 
     };
@@ -695,7 +696,7 @@ namespace jetpack {
     public:
         ArrowParameterPlaceHolder();
 
-        std::vector<Sp<SyntaxNode>> params;
+        std::vector<SyntaxNode*> params;
         bool async = false;
 
         bool IsAsync() const override { return async; }
@@ -706,7 +707,7 @@ namespace jetpack {
     public:
         JSXClosingElement();
 
-        Sp<SyntaxNode> name;
+        SyntaxNode* name;
 
     };
 
@@ -714,9 +715,9 @@ namespace jetpack {
     public:
         JSXElement();
 
-        Sp<JSXOpeningElement> opening_element;
-        std::vector<Sp<SyntaxNode>> children;
-        std::optional<Sp<JSXClosingElement>> closing_element;
+        JSXOpeningElement* opening_element;
+        std::vector<SyntaxNode*> children;
+        std::optional<JSXClosingElement*> closing_element;
 
     };
 
@@ -731,7 +732,7 @@ namespace jetpack {
     public:
         JSXExpressionContainer();
 
-        Sp<Expression> expression;
+        Expression* expression;
 
     };
 
@@ -747,8 +748,8 @@ namespace jetpack {
     public:
         JSXMemberExpression();
 
-        Sp<SyntaxNode> object;
-        Sp<JSXIdentifier> property;
+        SyntaxNode* object;
+        JSXIdentifier* property;
 
     };
 
@@ -756,8 +757,8 @@ namespace jetpack {
     public:
         JSXAttribute();
 
-        Sp<SyntaxNode> name;
-        std::optional<Sp<SyntaxNode>> value;
+        SyntaxNode* name;
+        std::optional<SyntaxNode*> value;
 
     };
 
@@ -765,8 +766,8 @@ namespace jetpack {
     public:
         JSXNamespacedName();
 
-        Sp<JSXIdentifier> namespace_;
-        Sp<JSXIdentifier> name;
+        JSXIdentifier* namespace_;
+        JSXIdentifier* name;
 
     };
 
@@ -774,9 +775,9 @@ namespace jetpack {
     public:
         JSXOpeningElement();
 
-        Sp<SyntaxNode> name;
+        SyntaxNode* name;
         bool self_closing = false;
-        std::vector<Sp<SyntaxNode>> attributes;
+        std::vector<SyntaxNode*> attributes;
 
     };
 
@@ -784,7 +785,7 @@ namespace jetpack {
     public:
         JSXSpreadAttribute();
 
-        Sp<Expression> argument;
+        Expression* argument;
 
     };
 
@@ -802,7 +803,7 @@ namespace jetpack {
         TSParameterProperty();
 
         bool readonly_ = false;
-        Sp<SyntaxNode> parameter;
+        SyntaxNode* parameter;
 
     };
 
@@ -810,9 +811,9 @@ namespace jetpack {
     public:
         TSDeclareFunction();
 
-        Sp<Identifier> id;
+        Identifier* id;
         bool decare = false;
-        Sp<TSTypeAnnotation> return_type;
+        TSTypeAnnotation* return_type;
 
     };
 
@@ -1114,9 +1115,9 @@ namespace jetpack {
     public:
         TSTypeAliasDeclaration();
 
-        Sp<Identifier> id;
-        std::optional<Sp<TSTypeParameterDeclaration>> type_parameters;
-        Sp<TSType> type_annotation;
+        Identifier* id;
+        std::optional<TSTypeParameterDeclaration*> type_parameters;
+        TSType* type_annotation;
 
     };
 

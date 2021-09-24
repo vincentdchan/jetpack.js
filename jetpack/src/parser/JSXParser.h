@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Parser.hpp"
+#include "utils/Common.h"
 #include <vector>
-#include <robin_hood.h>
 
 namespace jetpack::parser {
 
@@ -17,13 +17,13 @@ namespace jetpack::parser {
             MetaJSXElement() = default;
 
             ParserContext::Marker start_marker_;
-            Sp<JSXOpeningElement> opening_;
-            std::optional<Sp<JSXClosingElement>> closing_;
-            std::vector<Sp<SyntaxNode>> children_;
+            JSXOpeningElement* opening_;
+            std::optional<JSXClosingElement*> closing_;
+            std::vector<SyntaxNode*> children_;
 
         };
 
-        static std::string GetQualifiedElementName(const Sp<SyntaxNode>& node);
+        static std::string GetQualifiedElementName(SyntaxNode* node);
 
         JSXParser(Parser& parent, std::shared_ptr<ParserContext> ctx);
         JSXParser(const JSXParser& parser) = delete;
@@ -32,42 +32,42 @@ namespace jetpack::parser {
         JSXParser& operator=(const JSXParser& parser) = delete;
         JSXParser& operator=(JSXParser&&) = delete;
 
-        Sp<Expression> ParseJSXRoot(Scope& scope);
+        Expression* ParseJSXRoot(Scope& scope);
 
-        Sp<Expression> TranspileJSX(Scope& scope, const Sp<JSXElement>& jsx);
+        Expression* TranspileJSX(Scope& scope, JSXElement* jsx);
 
-        std::vector<Sp<SyntaxNode>>
-        TranspileJSXChildren(Scope& scope, const std::vector<Sp<SyntaxNode>>& children);
+        std::vector<SyntaxNode*>
+        TranspileJSXChildren(Scope& scope, const std::vector<SyntaxNode*>& children);
 
-        Sp<JSXElement> ParseJSXElement(Scope& scope);
+        JSXElement* ParseJSXElement(Scope& scope);
 
-        Sp<JSXOpeningElement> ParseJSXOpeningElement(Scope& scope);
+        JSXOpeningElement* ParseJSXOpeningElement(Scope& scope);
 
-        Sp<SyntaxNode> ParseJSXElementName(Scope& scope);
+        SyntaxNode* ParseJSXElementName(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseJSXAttributes(Scope& scope);
+        std::vector<SyntaxNode*> ParseJSXAttributes(Scope& scope);
 
-        Sp<JSXIdentifier> ParseJSXIdentifier();
+        JSXIdentifier* ParseJSXIdentifier();
 
         Sp<MetaJSXElement> ParseComplexJSXElement(Scope& scope, Sp<MetaJSXElement> el);
 
-        Sp<SyntaxNode> ParseJSXBoundaryElement(Scope& scope);
+        SyntaxNode* ParseJSXBoundaryElement(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseJSXChildren(Scope& scope);
+        std::vector<SyntaxNode*> ParseJSXChildren(Scope& scope);
 
-        Sp<JSXExpressionContainer> ParseJSXExpressionContainer(Scope& scope);
+        JSXExpressionContainer* ParseJSXExpressionContainer(Scope& scope);
 
-        Sp<JSXSpreadAttribute> ParseJSXSpreadAttribute(Scope& scope);
+        JSXSpreadAttribute* ParseJSXSpreadAttribute(Scope& scope);
 
-        Sp<JSXAttribute> ParseJSXNameValueAttribute(Scope& scope);
+        JSXAttribute* ParseJSXNameValueAttribute(Scope& scope);
 
-        Sp<SyntaxNode> ParseJSXAttributeName();
+        SyntaxNode* ParseJSXAttributeName();
 
-        Sp<SyntaxNode> ParseJSXAttributeValue(Scope& scope);
+        SyntaxNode* ParseJSXAttributeValue(Scope& scope);
 
-        Sp<JSXExpressionContainer> ParseJSXExpressionAttribute(Scope& scope);
+        JSXExpressionContainer* ParseJSXExpressionAttribute(Scope& scope);
 
-        Sp<Literal> ParseJSXStringLiteralAttribute();
+        Literal* ParseJSXStringLiteralAttribute();
 
         void StartJSX();
         void FinishJSX();
@@ -81,7 +81,7 @@ namespace jetpack::parser {
 
         std::string ScanXHTMLEntity(char quote);
 
-        static std::unique_ptr<robin_hood::unordered_map<std::string, char16_t>> XHTMLEntities;
+        static std::unique_ptr<HashMap<std::string, char16_t>> XHTMLEntities;
 
         void InitXHTMLEntities();
 

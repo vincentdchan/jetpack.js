@@ -12,9 +12,8 @@ namespace jetpack {
         type = SyntaxNodeType::ArrayPattern;
     }
 
-    ArrowFunctionExpression::ArrowFunctionExpression(): Expression() {
+    ArrowFunctionExpression::ArrowFunctionExpression(std::unique_ptr<Scope> s): Expression(), scope(std::move(s)) {
         type = SyntaxNodeType::ArrowFunctionExpression;
-        scope = std::make_unique<Scope>();
     }
 
     AssignmentExpression::AssignmentExpression(): Expression() {
@@ -53,14 +52,12 @@ namespace jetpack {
         type = SyntaxNodeType::ClassBody;
     }
 
-    ClassDeclaration::ClassDeclaration(): Declaration() {
+    ClassDeclaration::ClassDeclaration(std::unique_ptr<Scope> s): Declaration(), scope(std::move(s)) {
         type = SyntaxNodeType::ClassDeclaration;
-        scope = std::make_unique<Scope>();
     }
 
-    ClassExpression::ClassExpression(): Expression() {
+    ClassExpression::ClassExpression(std::unique_ptr<Scope> s): Expression(), scope(std::move(s)) {
         type = SyntaxNodeType::ClassExpression;
-        scope = std::make_unique<Scope>();
     }
 
     ConditionalExpression::ConditionalExpression(): Expression() {
@@ -107,24 +104,20 @@ namespace jetpack {
         type = SyntaxNodeType::ExpressionStatement;
     }
 
-    ForInStatement::ForInStatement(): Statement() {
+    ForInStatement::ForInStatement(std::unique_ptr<Scope> s): Statement(), scope(std::move(s)) {
         type = SyntaxNodeType::ForInStatement;
-        scope = std::make_unique<Scope>();
     }
 
-    ForOfStatement::ForOfStatement(): Statement() {
+    ForOfStatement::ForOfStatement(std::unique_ptr<Scope> s): Statement(), scope(std::move(s)) {
         type = SyntaxNodeType::ForOfStatement;
-        scope = std::make_unique<Scope>();
     }
 
-    ForStatement::ForStatement(): Statement() {
+    ForStatement::ForStatement(std::unique_ptr<Scope> s): Statement(), scope(std::move(s)) {
         type = SyntaxNodeType::ForStatement;
-        scope = std::make_unique<Scope>();
     }
 
-    FunctionDeclaration::FunctionDeclaration(): Declaration() {
+    FunctionDeclaration::FunctionDeclaration(std::unique_ptr<Scope> s): Declaration(), scope(std::move(s)) {
         type = SyntaxNodeType::FunctionDeclaration;
-        scope = std::make_unique<Scope>();
     }
 
     FunctionExpression::FunctionExpression(): Expression() {
@@ -175,9 +168,8 @@ namespace jetpack {
         type = SyntaxNodeType::MethodDefinition;
     }
 
-    Module::Module(ModuleScope::ModuleType mt): SyntaxNode() {
+    Module::Module(std::unique_ptr<ModuleScope> s): SyntaxNode(), scope(std::move(s)) {
         type = SyntaxNodeType::Module;
-        scope = std::make_unique<ModuleScope>(mt);
     }
 
     NewExpression::NewExpression(): Expression() {
@@ -208,9 +200,8 @@ namespace jetpack {
         type = SyntaxNodeType::ReturnStatement;
     }
 
-    Script::Script(): SyntaxNode() {
+    Script::Script(std::unique_ptr<Scope> s): SyntaxNode(), scope(std::move(s)) {
         type = SyntaxNodeType::Script;
-        scope = std::make_unique<Scope>(ScopeType::Global);
     }
 
     SequenceExpression::SequenceExpression(): Expression() {
@@ -233,9 +224,8 @@ namespace jetpack {
         type = SyntaxNodeType::SwitchCase;
     }
 
-    SwitchStatement::SwitchStatement(): Statement() {
+    SwitchStatement::SwitchStatement(std::unique_ptr<Scope> s): Statement(), scope(std::move(s)) {
         type = SyntaxNodeType::SwitchStatement;
-        scope = std::make_unique<Scope>();
     }
 
     TaggedTemplateExpression::TaggedTemplateExpression(): Expression() {
@@ -274,9 +264,8 @@ namespace jetpack {
         type = SyntaxNodeType::VariableDeclaration;
     }
 
-    VariableDeclarator::VariableDeclarator(): SyntaxNode() {
+    VariableDeclarator::VariableDeclarator(std::unique_ptr<Scope> s): SyntaxNode(), scope(std::move(s)) {
         type = SyntaxNodeType::VariableDeclarator;
-        scope = std::make_unique<Scope>(ScopeType::VariableDeclarator);
     }
 
     WhileStatement::WhileStatement(): Statement() {

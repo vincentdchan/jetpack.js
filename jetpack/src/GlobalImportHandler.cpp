@@ -8,11 +8,11 @@
 
 namespace jetpack {
 
-    void GlobalImportHandler::HandleImport(const Sp<ImportDeclaration> &import) {
+    void GlobalImportHandler::HandleImport(ImportDeclaration* import) {
         std::lock_guard<std::mutex> guard(m);
 
         imports.push_back(import);
-        external_import_ptrs.insert(reinterpret_cast<std::intptr_t>(import.get()));
+        external_import_ptrs.insert(reinterpret_cast<std::intptr_t>(import));
 
         auto& path = import->source->str_;
         for (auto& spec : import->specifiers) {
@@ -64,8 +64,8 @@ namespace jetpack {
         }
     }
 
-    bool GlobalImportHandler::IsImportExternal(const Sp<ImportDeclaration> &import) {
-        return external_import_ptrs.find(reinterpret_cast<std::intptr_t>(import.get())) != external_import_ptrs.end();
+    bool GlobalImportHandler::IsImportExternal(ImportDeclaration* import) {
+        return external_import_ptrs.find(reinterpret_cast<std::intptr_t>(import)) != external_import_ptrs.end();
     }
 
     void GlobalImportHandler::DistributeNameToImportVars(const std::shared_ptr<UniqueNameGenerator>& generator,
@@ -113,24 +113,24 @@ namespace jetpack {
 
         for (GlobalImportInfo* import_info : infos) {
             if (import_info->has_namespace) {
-                auto import_ns_decl = std::make_shared<ImportDeclaration>();
+                auto import_ns_decl = ctx_.Alloc<ImportDeclaration>();
 
-                auto ns_spec = std::make_shared<ImportNamespaceSpecifier>();
-                ns_spec->local = MakeId(import_info->ns_import_name);
+                auto ns_spec = ctx_.Alloc<ImportNamespaceSpecifier>();
+                ns_spec->local = MakeId(ctx_, import_info->ns_import_name);
 
                 import_ns_decl->specifiers.push_back(std::move(ns_spec));
 
-                import_ns_decl->source = MakeStringLiteral(import_info->path);
-                gen_import_decls.push_back(std::move(import_ns_decl));
+                import_ns_decl->source = MakeStringLiteral(ctx_, import_info->path);
+                gen_import_decls.push_back(import_ns_decl);
             }
             if (!import_info->names.empty() || import_info->has_default) {
-                auto import_decl = std::make_shared<ImportDeclaration>();
-                import_decl->source = MakeStringLiteral(import_info->path);
+                auto import_decl = ctx_.Alloc<ImportDeclaration>();
+                import_decl->source = MakeStringLiteral(ctx_, import_info->path);
 
                 if (import_info->has_default) {
-                    auto default_spec = std::make_shared<ImportDefaultSpecifier>();
-                    default_spec->local = MakeId(import_info->default_local_name);
-                    import_decl->specifiers.push_back(std::move(default_spec));
+                    auto default_spec = ctx_.Alloc<ImportDefaultSpecifier>();
+                    default_spec->local = MakeId(ctx_, import_info->default_local_name);
+                    import_decl->specifiers.push_back(default_spec);
                 }
 
                 HashSet<std::string> visited_names;
@@ -141,19 +141,19 @@ namespace jetpack {
                     }
                     visited_names.insert(name);
 
-                    auto spec = std::make_shared<ImportSpecifier>();
-                    spec->imported = MakeId(name);
+                    auto spec = ctx_.Alloc<ImportSpecifier>();
+                    spec->imported = MakeId(ctx_, name);
 
                     if (auto iter = import_info->alias_map.find(name); iter != import_info->alias_map.end()) {
-                        spec->local = MakeId(iter->second);
+                        spec->local = MakeId(ctx_, iter->second);
                     } else {
-                        spec->local = MakeId(name);
+                        spec->local = MakeId(ctx_, name);
                     }
 
-                    import_decl->specifiers.push_back(std::move(spec));
+                    import_decl->specifiers.push_back(spec);
                 }
 
-                gen_import_decls.push_back(std::move(import_decl));
+                gen_import_decls.push_back(import_decl);
             }
         }
     }

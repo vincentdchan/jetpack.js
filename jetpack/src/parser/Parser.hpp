@@ -21,15 +21,21 @@ namespace jetpack::parser {
     class JSXParser;
     class TypeScriptParser;
 
-    class Parser final: private ParserCommon {
+    class Parser : public ParserCommon {
     public:
         friend class JSXParser;
         friend class TypeScriptParser;
 
-        Parser(Sp<ParserContext> state);
+        Parser(AstContext& ast_ctx, std::string_view src, const Config& config);
+        Parser(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config);
+
+    private:
+        void Init();
+
+    public:
 
         template <typename T>
-        Sp<T> IsolateCoverGrammar(std::function<Sp<T>()> cb) {
+        T* IsolateCoverGrammar(std::function<T*()> cb) {
             auto previousIsBindingElement = ctx->is_binding_element_;
             auto previousIsAssignmentTarget = ctx->is_assignment_target_;
             auto previousFirstCoverInitializedNameError = ctx->first_cover_initialized_name_error_;
@@ -38,7 +44,7 @@ namespace jetpack::parser {
             ctx->is_assignment_target_ = true;
             ctx->first_cover_initialized_name_error_.reset();
 
-            Sp<T> result = cb();
+            T* result = cb();
             if (ctx->first_cover_initialized_name_error_) {
                 ThrowUnexpectedToken(Token(), "firstCoverInitializedNameError");
                 return nullptr;
@@ -52,7 +58,7 @@ namespace jetpack::parser {
         }
 
         template <typename T>
-        Sp<T> InheritCoverGrammar(std::function<Sp<T>()> cb) {
+        T* InheritCoverGrammar(std::function<T*()> cb) {
             auto previousIsBindingElement = ctx->is_binding_element_;
             auto previousIsAssignmentTarget = ctx->is_assignment_target_;
             auto previousFirstCoverInitializedNameError = ctx->first_cover_initialized_name_error_;
@@ -61,7 +67,7 @@ namespace jetpack::parser {
             ctx->is_assignment_target_ = true;
             ctx->first_cover_initialized_name_error_.reset();
 
-            Sp<T> result = cb();
+            T* result = cb();
 
             ctx->is_binding_element_ &= previousIsBindingElement;
             ctx->is_assignment_target_ &= previousIsAssignmentTarget;
@@ -72,206 +78,206 @@ namespace jetpack::parser {
             return result;
         }
 
-        Sp<Expression> ParsePrimaryExpression(Scope& scope);
+        Expression* ParsePrimaryExpression(Scope& scope);
 
-        Sp<SpreadElement> ParseSpreadElement(Scope& scope);
+        SpreadElement* ParseSpreadElement(Scope& scope);
 
-        Sp<BlockStatement> ParsePropertyMethod(Scope& scope, FormalParameterOptions& options);
+        BlockStatement* ParsePropertyMethod(Scope& scope, FormalParameterOptions& options);
 
-        Sp<FunctionExpression> ParsePropertyMethodFunction(Scope& scope);
+        FunctionExpression* ParsePropertyMethodFunction(Scope& scope);
 
-        Sp<FunctionExpression> ParsePropertyMethodAsyncFunction(Scope& scope);
+        FunctionExpression* ParsePropertyMethodAsyncFunction(Scope& scope);
 
-        Sp<Property> ParseObjectProperty(Scope& scope, bool& has_proto);
+        Property* ParseObjectProperty(Scope& scope, bool& has_proto);
 
-        Sp<SyntaxNode> ParseObjectPropertyKey(Scope& scope);
+        SyntaxNode* ParseObjectPropertyKey(Scope& scope);
 
-        Sp<Expression> ParseObjectInitializer(Scope& scope);
+        Expression* ParseObjectInitializer(Scope& scope);
 
-        Sp<TemplateElement> ParseTemplateHead();
+        TemplateElement* ParseTemplateHead();
 
-        Sp<TemplateElement> ParseTemplateElement();
+        TemplateElement* ParseTemplateElement();
 
-        Sp<TemplateLiteral> ParseTemplateLiteral(Scope& scope);
+        TemplateLiteral* ParseTemplateLiteral(Scope& scope);
 
-        Sp<Pattern> ReinterpretExpressionAsPattern(const Sp<SyntaxNode>& expr);
+        Pattern* ReinterpretExpressionAsPattern(SyntaxNode* expr);
 
-        std::optional<FormalParameterOptions> ReinterpretAsCoverFormalsList(const Sp<SyntaxNode>& ptr);
+        std::optional<FormalParameterOptions> ReinterpretAsCoverFormalsList(SyntaxNode* ptr);
 
-        void CheckPatternParam(FormalParameterOptions& options, const Sp<SyntaxNode>& param);
+        void CheckPatternParam(FormalParameterOptions& options, SyntaxNode* param);
 
-        Sp<Expression> ParseGroupExpression(Scope& scope);
+        Expression* ParseGroupExpression(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseArguments(Scope& scope);
+        std::vector<SyntaxNode*> ParseArguments(Scope& scope);
 
-        Sp<Identifier> ParseIdentifierName();
+        Identifier* ParseIdentifierName();
 
-        Sp<Expression> ParseNewExpression(Scope& scope);
+        Expression* ParseNewExpression(Scope& scope);
 
-        Sp<SyntaxNode> ParseAsyncArgument(Scope& scope);
+        SyntaxNode* ParseAsyncArgument(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseAsyncArguments(Scope& scope);
+        std::vector<SyntaxNode*> ParseAsyncArguments(Scope& scope);
 
-        Sp<Import> ParseImportCall();
+        Import* ParseImportCall();
 
-        Sp<Expression> ParseLeftHandSideExpressionAllowCall(Scope& scope);
+        Expression* ParseLeftHandSideExpressionAllowCall(Scope& scope);
 
-        Sp<Super> ParseSuper();
+        Super* ParseSuper();
 
-        Sp<Expression> ParseLeftHandSideExpression(Scope& scope);
+        Expression* ParseLeftHandSideExpression(Scope& scope);
 
-        Sp<Expression> ParseUpdateExpression(Scope& scope);
+        Expression* ParseUpdateExpression(Scope& scope);
 
-        Sp<AwaitExpression> ParseAwaitExpression(Scope& scope);
+        AwaitExpression* ParseAwaitExpression(Scope& scope);
 
-        Sp<Expression> ParseUnaryExpression(Scope& scope);
+        Expression* ParseUnaryExpression(Scope& scope);
 
-        Sp<Expression> ParseExponentiationExpression(Scope& scope);
+        Expression* ParseExponentiationExpression(Scope& scope);
 
-        Sp<Expression> ParseBinaryExpression(Scope& scope);
-        Sp<Expression> ParseBinaryExpression(Scope& scope, const Sp<Expression>& left, const Token& left_tk);
+        Expression* ParseBinaryExpression(Scope& scope);
+        Expression* ParseBinaryExpression(Scope& scope, Expression* left, const Token& left_tk);
 
-        Sp<Expression> ParseConditionalExpression(Scope& scope);
+        Expression* ParseConditionalExpression(Scope& scope);
 
-        Sp<Expression>
+        Expression*
         ParseAssignmentExpression(Scope& scope);
 
-        Sp<Statement> ParseStatementListItem(Scope& scope);
+        Statement* ParseStatementListItem(Scope& scope);
 
-        Sp<BlockStatement> ParseBlock(Scope& scope, bool new_scope);
+        BlockStatement* ParseBlock(Scope& scope, bool new_scope);
 
-        Sp<VariableDeclarator> ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for);
+        VariableDeclarator* ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for);
 
-        std::vector<Sp<VariableDeclarator>> ParseBindingList(Scope& scope, VarKind kind, bool& in_for);
+        std::vector<VariableDeclarator*> ParseBindingList(Scope& scope, VarKind kind, bool& in_for);
 
         bool IsLexicalDeclaration();
 
-        Sp<Declaration> ParseLexicalDeclaration(Scope& scope, bool& in_for);
+        Declaration* ParseLexicalDeclaration(Scope& scope, bool& in_for);
 
-        Sp<RestElement> ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind);
+        RestElement* ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<ArrayPattern> ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
+        ArrayPattern* ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Property> ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
+        Property* ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<RestElement> ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind);
+        RestElement* ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<ObjectPattern> ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
+        ObjectPattern* ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Expression> ParseArrayInitializer(Scope& scope);
+        Expression* ParseArrayInitializer(Scope& scope);
 
         FormalParameterOptions ParseFormalParameters(Scope& scope, std::optional<Token> first_restricted = std::nullopt);
         void ParseFormalParameter(Scope& scope, FormalParameterOptions& option);
         void ValidateParam(FormalParameterOptions& option, const Token& param, const std::string& name);
         bool IsStartOfExpression();
 
-        Sp<RestElement> ParseRestElement(Scope& scope, std::vector<Token>& params);
+        RestElement* ParseRestElement(Scope& scope, std::vector<Token>& params);
 
-        Sp<SyntaxNode> ParsePattern(Scope& scope, std::vector<Token>& params, VarKind kind = VarKind::Invalid);
+        SyntaxNode* ParsePattern(Scope& scope, std::vector<Token>& params, VarKind kind = VarKind::Invalid);
 
-        Sp<SyntaxNode> ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind);
+        SyntaxNode* ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind);
 
-        Sp<Identifier> ParseVariableIdentifier(Scope& scope, VarKind kind);
+        Identifier* ParseVariableIdentifier(Scope& scope, VarKind kind);
 
-        Sp<VariableDeclarator> ParseVariableDeclaration(Scope& scope, bool in_for);
+        VariableDeclarator* ParseVariableDeclaration(Scope& scope, bool in_for);
 
-        std::vector<Sp<VariableDeclarator>> ParseVariableDeclarationList(Scope& scope, bool in_for);
+        std::vector<VariableDeclarator*> ParseVariableDeclarationList(Scope& scope, bool in_for);
 
-        Sp<VariableDeclaration> ParseVariableStatement(Scope& scope);
+        VariableDeclaration* ParseVariableStatement(Scope& scope);
 
-        Sp<EmptyStatement> ParseEmptyStatement();
+        EmptyStatement* ParseEmptyStatement();
 
-        Sp<ExpressionStatement> ParseExpressionStatement(Scope& scope);
+        ExpressionStatement* ParseExpressionStatement(Scope& scope);
 
-        Sp<Expression> ParseExpression(Scope& scope);
+        Expression* ParseExpression(Scope& scope);
 
-        Sp<Statement> ParseIfClause(Scope& scope);
+        Statement* ParseIfClause(Scope& scope);
 
-        Sp<IfStatement> ParseIfStatement(Scope& scope);
+        IfStatement* ParseIfStatement(Scope& scope);
 
-        Sp<DoWhileStatement> ParseDoWhileStatement(Scope& scope);
+        DoWhileStatement* ParseDoWhileStatement(Scope& scope);
 
-        Sp<WhileStatement> ParseWhileStatement(Scope& scope);
+        WhileStatement* ParseWhileStatement(Scope& scope);
 
-        Sp<Statement> ParseForStatement(Scope& scope);
+        Statement* ParseForStatement(Scope& scope);
 
-        Sp<ContinueStatement> ParseContinueStatement();
+        ContinueStatement* ParseContinueStatement();
 
-        Sp<BreakStatement> ParseBreakStatement();
+        BreakStatement* ParseBreakStatement();
 
-        Sp<ReturnStatement> ParseReturnStatement(Scope& scope);
+        ReturnStatement* ParseReturnStatement(Scope& scope);
 
-        Sp<WithStatement> ParseWithStatement(Scope& scope);
+        WithStatement* ParseWithStatement(Scope& scope);
 
-        Sp<SwitchCase> ParseSwitchCase(Scope& scope);
+        SwitchCase* ParseSwitchCase(Scope& scope);
 
-        Sp<SwitchStatement> ParseSwitchStatement(Scope& scope);
+        SwitchStatement* ParseSwitchStatement(Scope& scope);
 
-        Sp<Statement> ParseLabelledStatement(Scope& scope);
+        Statement* ParseLabelledStatement(Scope& scope);
 
-        Sp<ThrowStatement> ParseThrowStatement(Scope& scope);
+        ThrowStatement* ParseThrowStatement(Scope& scope);
 
-        Sp<CatchClause> ParseCatchClause(Scope& scope);
+        CatchClause* ParseCatchClause(Scope& scope);
 
-        Sp<BlockStatement> ParseFinallyClause(Scope& scope);
+        BlockStatement* ParseFinallyClause(Scope& scope);
 
-        Sp<TryStatement> ParseTryStatement(Scope& scope);
+        TryStatement* ParseTryStatement(Scope& scope);
 
-        Sp<DebuggerStatement> ParseDebuggerStatement();
+        DebuggerStatement* ParseDebuggerStatement();
 
-        Sp<Statement> ParseStatement(Scope& scope);
+        Statement* ParseStatement(Scope& scope);
 
-        Sp<BlockStatement> ParseFunctionSourceElements(Scope& scope);
+        BlockStatement* ParseFunctionSourceElements(Scope& scope);
 
-        Sp<FunctionDeclaration> ParseFunctionDeclaration(Scope& scope, bool identifier_is_optional);
+        FunctionDeclaration* ParseFunctionDeclaration(Scope& scope, bool identifier_is_optional);
 
-        Sp<FunctionExpression> ParseFunctionExpression(Scope& scope);
+        FunctionExpression* ParseFunctionExpression(Scope& scope);
 
-        Sp<Statement> ParseDirective(Scope& scope);
+        Statement* ParseDirective(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseDirectivePrologues(Scope& scope);
+        std::vector<SyntaxNode*> ParseDirectivePrologues(Scope& scope);
 
-        Sp<FunctionExpression> ParseGetterMethod(Scope& scope);
+        FunctionExpression* ParseGetterMethod(Scope& scope);
 
-        Sp<FunctionExpression> ParseSetterMethod(Scope& scope);
+        FunctionExpression* ParseSetterMethod(Scope& scope);
 
-        Sp<FunctionExpression> ParseGeneratorMethod(Scope& scope);
+        FunctionExpression* ParseGeneratorMethod(Scope& scope);
 
-        Sp<YieldExpression> ParseYieldExpression(Scope& scope);
+        YieldExpression* ParseYieldExpression(Scope& scope);
 
         bool QualifiedPropertyName(const Token& token);
 
-        Sp<MethodDefinition> ParseClassElement(Scope& scope, bool& has_ctor);
+        MethodDefinition* ParseClassElement(Scope& scope, bool& has_ctor);
 
-        std::vector<Sp<MethodDefinition>> ParseClassElementList(Scope& scope);
+        std::vector<MethodDefinition*> ParseClassElementList(Scope& scope);
 
-        bool IsPropertyKey(const Sp<SyntaxNode>& key, const std::string& name);
+        bool IsPropertyKey(SyntaxNode* key, const std::string& name);
 
-        Sp<ClassBody> ParseClassBody(Scope& scope);
+        ClassBody* ParseClassBody(Scope& scope);
 
-        Sp<ClassDeclaration> ParseClassDeclaration(Scope& scope, bool identifier_is_optional);
+        ClassDeclaration* ParseClassDeclaration(Scope& scope, bool identifier_is_optional);
 
-        Sp<ClassExpression> ParseClassExpression(Scope& scope);
+        ClassExpression* ParseClassExpression(Scope& scope);
 
-        Sp<Module> ParseModule();
+        Module* ParseModule();
 
-        Sp<Script> ParseScript();
+        Script* ParseScript();
 
-        Sp<Literal> ParseModuleSpecifier();
+        Literal* ParseModuleSpecifier();
 
-        Sp<ImportSpecifier> ParseImportSpecifier(Scope& scope);
+        ImportSpecifier* ParseImportSpecifier(Scope& scope);
 
-        std::vector<Sp<SyntaxNode>> ParseNamedImports(Scope& scope);
+        std::vector<SyntaxNode*> ParseNamedImports(Scope& scope);
 
-        Sp<ImportDefaultSpecifier> ParseImportDefaultSpecifier(Scope& scope);
+        ImportDefaultSpecifier* ParseImportDefaultSpecifier(Scope& scope);
 
-        Sp<ImportNamespaceSpecifier> ParseImportNamespaceSpecifier(Scope& scope);
+        ImportNamespaceSpecifier* ParseImportNamespaceSpecifier(Scope& scope);
 
-        Sp<ImportDeclaration> ParseImportDeclaration(Scope& scope);
+        ImportDeclaration* ParseImportDeclaration(Scope& scope);
 
-        Sp<ExportSpecifier> ParseExportSpecifier(Scope& scope);
+        ExportSpecifier* ParseExportSpecifier(Scope& scope);
 
-        Sp<Declaration> ParseExportDeclaration(Scope& scope);
+        Declaration* ParseExportDeclaration(Scope& scope);
 
         bool MatchImportCall();
 
@@ -281,14 +287,14 @@ namespace jetpack::parser {
             return ctx->comments_;
         }
 
-        std::optional<Sp<SyntaxNode>> CheckRequireCall(Scope& scope, const Sp<CallExpression>& call);
+        std::optional<SyntaxNode*> CheckRequireCall(Scope& scope, CallExpression* call);
 
         ~Parser() = default;
 
         NodeCreatedEventEmitter<ImportDeclaration> import_decl_created_listener;
         NodeCreatedEventEmitter<ExportNamedDeclaration> export_named_decl_created_listener;
         NodeCreatedEventEmitter<ExportAllDeclaration> export_all_decl_created_listener;
-        NodeCreatedEventEmitterRet<std::optional<Sp<SyntaxNode>>, CallExpression> require_call_created_listener;
+        NodeCreatedEventEmitterRet<std::optional<SyntaxNode*>, CallExpression> require_call_created_listener;
 
     };
 

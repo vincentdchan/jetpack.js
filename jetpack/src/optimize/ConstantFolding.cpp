@@ -10,8 +10,8 @@
 
 namespace jetpack {
 
-    inline Sp<Literal> MakeIntLiteral(std::int32_t tmp) {
-        auto lit = std::make_shared<Literal>();
+    inline Literal* MakeIntLiteral(AstContext& ctx, std::int32_t tmp) {
+        auto lit = ctx.Alloc<Literal>();
         lit->ty = Literal::Ty::Double;
         lit->str_ = std::to_string(tmp);
         lit->raw = lit->str_;
@@ -25,16 +25,16 @@ namespace jetpack {
         return tmp >= std::numeric_limits<std::int32_t>::min DUMMY () && tmp <= std::numeric_limits<std::int32_t>::max DUMMY ();
     }
 
-    Sp<Expression> ContantFolding::TryBinaryExpression(const Sp<BinaryExpression> &binary) {
+    Expression* ContantFolding::TryBinaryExpression(AstContext& ctx, BinaryExpression* binary) {
         if (binary->left->type == SyntaxNodeType::Literal
             && binary->right->type == SyntaxNodeType::Literal) {
 
-            auto left_lit = std::dynamic_pointer_cast<Literal>(binary->left);
-            auto right_lit = std::dynamic_pointer_cast<Literal>(binary->right);
+            auto left_lit = dynamic_cast<Literal*>(binary->left);
+            auto right_lit = dynamic_cast<Literal*>(binary->right);
 
             if (binary->operator_ == "+" && left_lit->ty == Literal::Ty::String && right_lit->ty == Literal::Ty::String) {
                 std::string result = left_lit->str_ + right_lit->str_;
-                return MakeStringLiteral(result);
+                return MakeStringLiteral(ctx, result);
             } else if (left_lit->ty == Literal::Ty::Double && right_lit->ty == Literal::Ty::Double) {
                 int32_t left_int, right_int;
                 try {
@@ -56,7 +56,7 @@ namespace jetpack {
                 if (!IsValieResult(tmp_result)) {
                     return binary;
                 }
-                return MakeIntLiteral(static_cast<std::int32_t>(tmp_result));
+                return MakeIntLiteral(ctx, static_cast<std::int32_t>(tmp_result));
             }
         }
         return binary;

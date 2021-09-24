@@ -17,8 +17,8 @@ inline std::string ParseJSXAndCodeGen(std::string_view content) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
 
     auto mod = parser.ParseModule();
 

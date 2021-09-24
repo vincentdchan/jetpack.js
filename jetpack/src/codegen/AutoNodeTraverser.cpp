@@ -2,15 +2,15 @@
 // Created by Duzhong Chen on 2021/9/17.
 //
 
-#include "NodeTraverser.h"
+#include "AutoNodeTraverser.h"
 
 namespace jetpack {
 
-    void AutoNodeTraverser::TraverseNode(const Sp<SyntaxNode>& node) {
+    void AutoNodeTraverser::TraverseNode(SyntaxNode* node) {
         switch (node->type) {
 
             case SyntaxNodeType::ArrayExpression: {
-                auto child = std::dynamic_pointer_cast<ArrayExpression>(node);
+                auto child = dynamic_cast<ArrayExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->elements) {
@@ -24,7 +24,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ArrayPattern: {
-                auto child = std::dynamic_pointer_cast<ArrayPattern>(node);
+                auto child = dynamic_cast<ArrayPattern*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->elements) {
@@ -38,7 +38,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ArrowFunctionExpression: {
-                auto child = std::dynamic_pointer_cast<ArrowFunctionExpression>(node);
+                auto child = dynamic_cast<ArrowFunctionExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->id) {
                     TraverseNode(*child->id);
@@ -54,7 +54,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::AssignmentExpression: {
-                auto child = std::dynamic_pointer_cast<AssignmentExpression>(node);
+                auto child = dynamic_cast<AssignmentExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->left);
                 TraverseNode(child->right);
@@ -64,7 +64,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::AssignmentPattern: {
-                auto child = std::dynamic_pointer_cast<AssignmentPattern>(node);
+                auto child = dynamic_cast<AssignmentPattern*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->left);
                 TraverseNode(child->right);
@@ -74,7 +74,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::AwaitExpression: {
-                auto child = std::dynamic_pointer_cast<AwaitExpression>(node);
+                auto child = dynamic_cast<AwaitExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -83,7 +83,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::BinaryExpression: {
-                auto child = std::dynamic_pointer_cast<BinaryExpression>(node);
+                auto child = dynamic_cast<BinaryExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->left);
                 TraverseNode(child->right);
@@ -93,7 +93,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::BlockStatement: {
-                auto child = std::dynamic_pointer_cast<BlockStatement>(node);
+                auto child = dynamic_cast<BlockStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->body) {
@@ -105,7 +105,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::BreakStatement: {
-                auto child = std::dynamic_pointer_cast<BreakStatement>(node);
+                auto child = dynamic_cast<BreakStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->label) {
                     TraverseNode(*child->label);
@@ -116,7 +116,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::CallExpression: {
-                auto child = std::dynamic_pointer_cast<CallExpression>(node);
+                auto child = dynamic_cast<CallExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->callee);
 
@@ -129,7 +129,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::CatchClause: {
-                auto child = std::dynamic_pointer_cast<CatchClause>(node);
+                auto child = dynamic_cast<CatchClause*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->param);
                 TraverseNode(child->body);
@@ -139,7 +139,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ClassBody: {
-                auto child = std::dynamic_pointer_cast<ClassBody>(node);
+                auto child = dynamic_cast<ClassBody*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->body) {
@@ -151,7 +151,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ClassDeclaration: {
-                auto child = std::dynamic_pointer_cast<ClassDeclaration>(node);
+                auto child = dynamic_cast<ClassDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->id) {
                     TraverseNode(*child->id);
@@ -166,7 +166,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ClassExpression: {
-                auto child = std::dynamic_pointer_cast<ClassExpression>(node);
+                auto child = dynamic_cast<ClassExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->id) {
                     TraverseNode(*child->id);
@@ -183,7 +183,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ConditionalExpression: {
-                auto child = std::dynamic_pointer_cast<ConditionalExpression>(node);
+                auto child = dynamic_cast<ConditionalExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->test);
                 TraverseNode(child->consequent);
@@ -194,7 +194,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ContinueStatement: {
-                auto child = std::dynamic_pointer_cast<ContinueStatement>(node);
+                auto child = dynamic_cast<ContinueStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->label) {
                     TraverseNode(*child->label);
@@ -205,7 +205,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::DebuggerStatement: {
-                auto child = std::dynamic_pointer_cast<DebuggerStatement>(node);
+                auto child = dynamic_cast<DebuggerStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -213,7 +213,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Directive: {
-                auto child = std::dynamic_pointer_cast<Directive>(node);
+                auto child = dynamic_cast<Directive*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->expression);
 
@@ -222,7 +222,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::DoWhileStatement: {
-                auto child = std::dynamic_pointer_cast<DoWhileStatement>(node);
+                auto child = dynamic_cast<DoWhileStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->body);
                 TraverseNode(child->test);
@@ -232,7 +232,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::EmptyStatement: {
-                auto child = std::dynamic_pointer_cast<EmptyStatement>(node);
+                auto child = dynamic_cast<EmptyStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -240,7 +240,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ExportAllDeclaration: {
-                auto child = std::dynamic_pointer_cast<ExportAllDeclaration>(node);
+                auto child = dynamic_cast<ExportAllDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->source);
 
@@ -249,7 +249,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ExportDefaultDeclaration: {
-                auto child = std::dynamic_pointer_cast<ExportDefaultDeclaration>(node);
+                auto child = dynamic_cast<ExportDefaultDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->declaration);
 
@@ -258,7 +258,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ExportNamedDeclaration: {
-                auto child = std::dynamic_pointer_cast<ExportNamedDeclaration>(node);
+                auto child = dynamic_cast<ExportNamedDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->declaration) {
                     TraverseNode(*child->declaration);
@@ -276,7 +276,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ExportSpecifier: {
-                auto child = std::dynamic_pointer_cast<ExportSpecifier>(node);
+                auto child = dynamic_cast<ExportSpecifier*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->exported);
                 TraverseNode(child->local);
@@ -286,7 +286,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ExpressionStatement: {
-                auto child = std::dynamic_pointer_cast<ExpressionStatement>(node);
+                auto child = dynamic_cast<ExpressionStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->expression);
 
@@ -295,7 +295,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ForInStatement: {
-                auto child = std::dynamic_pointer_cast<ForInStatement>(node);
+                auto child = dynamic_cast<ForInStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->left);
                 TraverseNode(child->right);
@@ -306,7 +306,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ForOfStatement: {
-                auto child = std::dynamic_pointer_cast<ForOfStatement>(node);
+                auto child = dynamic_cast<ForOfStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->left);
                 TraverseNode(child->right);
@@ -317,7 +317,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ForStatement: {
-                auto child = std::dynamic_pointer_cast<ForStatement>(node);
+                auto child = dynamic_cast<ForStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->init) {
                     TraverseNode(*child->init);
@@ -335,7 +335,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::FunctionDeclaration: {
-                auto child = std::dynamic_pointer_cast<FunctionDeclaration>(node);
+                auto child = dynamic_cast<FunctionDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->id) {
                     TraverseNode(*child->id);
@@ -351,7 +351,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::FunctionExpression: {
-                auto child = std::dynamic_pointer_cast<FunctionExpression>(node);
+                auto child = dynamic_cast<FunctionExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->id) {
                     TraverseNode(*child->id);
@@ -367,7 +367,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Identifier: {
-                auto child = std::dynamic_pointer_cast<Identifier>(node);
+                auto child = dynamic_cast<Identifier*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -375,7 +375,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::IfStatement: {
-                auto child = std::dynamic_pointer_cast<IfStatement>(node);
+                auto child = dynamic_cast<IfStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->test);
                 TraverseNode(child->consequent);
@@ -388,7 +388,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Import: {
-                auto child = std::dynamic_pointer_cast<Import>(node);
+                auto child = dynamic_cast<Import*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -396,7 +396,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ImportDeclaration: {
-                auto child = std::dynamic_pointer_cast<ImportDeclaration>(node);
+                auto child = dynamic_cast<ImportDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->specifiers) {
@@ -409,7 +409,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ImportDefaultSpecifier: {
-                auto child = std::dynamic_pointer_cast<ImportDefaultSpecifier>(node);
+                auto child = dynamic_cast<ImportDefaultSpecifier*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->local);
 
@@ -418,7 +418,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ImportNamespaceSpecifier: {
-                auto child = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(node);
+                auto child = dynamic_cast<ImportNamespaceSpecifier*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->local);
 
@@ -427,7 +427,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ImportSpecifier: {
-                auto child = std::dynamic_pointer_cast<ImportSpecifier>(node);
+                auto child = dynamic_cast<ImportSpecifier*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->local);
                 TraverseNode(child->imported);
@@ -437,7 +437,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::LabeledStatement: {
-                auto child = std::dynamic_pointer_cast<LabeledStatement>(node);
+                auto child = dynamic_cast<LabeledStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->label);
                 TraverseNode(child->body);
@@ -447,7 +447,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Literal: {
-                auto child = std::dynamic_pointer_cast<Literal>(node);
+                auto child = dynamic_cast<Literal*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -455,7 +455,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::MetaProperty: {
-                auto child = std::dynamic_pointer_cast<MetaProperty>(node);
+                auto child = dynamic_cast<MetaProperty*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->meta);
                 TraverseNode(child->property);
@@ -465,7 +465,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::MethodDefinition: {
-                auto child = std::dynamic_pointer_cast<MethodDefinition>(node);
+                auto child = dynamic_cast<MethodDefinition*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->key) {
                     TraverseNode(*child->key);
@@ -479,7 +479,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Module: {
-                auto child = std::dynamic_pointer_cast<Module>(node);
+                auto child = dynamic_cast<Module*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->body) {
@@ -491,7 +491,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::NewExpression: {
-                auto child = std::dynamic_pointer_cast<NewExpression>(node);
+                auto child = dynamic_cast<NewExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->callee);
 
@@ -504,7 +504,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ObjectExpression: {
-                auto child = std::dynamic_pointer_cast<ObjectExpression>(node);
+                auto child = dynamic_cast<ObjectExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->properties) {
@@ -516,7 +516,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ObjectPattern: {
-                auto child = std::dynamic_pointer_cast<ObjectPattern>(node);
+                auto child = dynamic_cast<ObjectPattern*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->properties) {
@@ -528,7 +528,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Property: {
-                auto child = std::dynamic_pointer_cast<Property>(node);
+                auto child = dynamic_cast<Property*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->key);
                 if (child->value) {
@@ -540,7 +540,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::RegexLiteral: {
-                auto child = std::dynamic_pointer_cast<RegexLiteral>(node);
+                auto child = dynamic_cast<RegexLiteral*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -548,7 +548,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::RestElement: {
-                auto child = std::dynamic_pointer_cast<RestElement>(node);
+                auto child = dynamic_cast<RestElement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -557,7 +557,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ReturnStatement: {
-                auto child = std::dynamic_pointer_cast<ReturnStatement>(node);
+                auto child = dynamic_cast<ReturnStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->argument) {
                     TraverseNode(*child->argument);
@@ -568,7 +568,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Script: {
-                auto child = std::dynamic_pointer_cast<Script>(node);
+                auto child = dynamic_cast<Script*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->body) {
@@ -580,7 +580,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::SequenceExpression: {
-                auto child = std::dynamic_pointer_cast<SequenceExpression>(node);
+                auto child = dynamic_cast<SequenceExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->expressions) {
@@ -592,7 +592,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::SpreadElement: {
-                auto child = std::dynamic_pointer_cast<SpreadElement>(node);
+                auto child = dynamic_cast<SpreadElement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -601,7 +601,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::MemberExpression: {
-                auto child = std::dynamic_pointer_cast<MemberExpression>(node);
+                auto child = dynamic_cast<MemberExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->object);
                 TraverseNode(child->property);
@@ -611,7 +611,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::Super: {
-                auto child = std::dynamic_pointer_cast<Super>(node);
+                auto child = dynamic_cast<Super*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -619,7 +619,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::SwitchCase: {
-                auto child = std::dynamic_pointer_cast<SwitchCase>(node);
+                auto child = dynamic_cast<SwitchCase*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->test) {
                     TraverseNode(*child->test);
@@ -634,7 +634,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::SwitchStatement: {
-                auto child = std::dynamic_pointer_cast<SwitchStatement>(node);
+                auto child = dynamic_cast<SwitchStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->discrimiant);
 
@@ -647,7 +647,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TaggedTemplateExpression: {
-                auto child = std::dynamic_pointer_cast<TaggedTemplateExpression>(node);
+                auto child = dynamic_cast<TaggedTemplateExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->tag);
                 TraverseNode(child->quasi);
@@ -657,7 +657,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TemplateElement: {
-                auto child = std::dynamic_pointer_cast<TemplateElement>(node);
+                auto child = dynamic_cast<TemplateElement*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -665,7 +665,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TemplateLiteral: {
-                auto child = std::dynamic_pointer_cast<TemplateLiteral>(node);
+                auto child = dynamic_cast<TemplateLiteral*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->quasis) {
@@ -681,7 +681,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ThisExpression: {
-                auto child = std::dynamic_pointer_cast<ThisExpression>(node);
+                auto child = dynamic_cast<ThisExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -689,7 +689,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ThrowStatement: {
-                auto child = std::dynamic_pointer_cast<ThrowStatement>(node);
+                auto child = dynamic_cast<ThrowStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -698,7 +698,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TryStatement: {
-                auto child = std::dynamic_pointer_cast<TryStatement>(node);
+                auto child = dynamic_cast<TryStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->block);
                 if (child->handler) {
@@ -713,7 +713,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::UnaryExpression: {
-                auto child = std::dynamic_pointer_cast<UnaryExpression>(node);
+                auto child = dynamic_cast<UnaryExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -722,7 +722,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::UpdateExpression: {
-                auto child = std::dynamic_pointer_cast<UpdateExpression>(node);
+                auto child = dynamic_cast<UpdateExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -731,7 +731,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::VariableDeclaration: {
-                auto child = std::dynamic_pointer_cast<VariableDeclaration>(node);
+                auto child = dynamic_cast<VariableDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->declarations) {
@@ -743,7 +743,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::VariableDeclarator: {
-                auto child = std::dynamic_pointer_cast<VariableDeclarator>(node);
+                auto child = dynamic_cast<VariableDeclarator*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->id);
                 if (child->init) {
@@ -755,7 +755,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::WhileStatement: {
-                auto child = std::dynamic_pointer_cast<WhileStatement>(node);
+                auto child = dynamic_cast<WhileStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->test);
                 TraverseNode(child->body);
@@ -765,7 +765,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::WithStatement: {
-                auto child = std::dynamic_pointer_cast<WithStatement>(node);
+                auto child = dynamic_cast<WithStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->object);
                 TraverseNode(child->body);
@@ -775,7 +775,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::YieldExpression: {
-                auto child = std::dynamic_pointer_cast<YieldExpression>(node);
+                auto child = dynamic_cast<YieldExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 if (child->argument) {
                     TraverseNode(*child->argument);
@@ -786,7 +786,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::ArrowParameterPlaceHolder: {
-                auto child = std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node);
+                auto child = dynamic_cast<ArrowParameterPlaceHolder*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 for (auto& i : child->params) {
@@ -798,7 +798,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXClosingElement: {
-                auto child = std::dynamic_pointer_cast<JSXClosingElement>(node);
+                auto child = dynamic_cast<JSXClosingElement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->name);
 
@@ -807,7 +807,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXElement: {
-                auto child = std::dynamic_pointer_cast<JSXElement>(node);
+                auto child = dynamic_cast<JSXElement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->opening_element);
 
@@ -823,7 +823,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXEmptyExpression: {
-                auto child = std::dynamic_pointer_cast<JSXEmptyExpression>(node);
+                auto child = dynamic_cast<JSXEmptyExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -831,7 +831,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXExpressionContainer: {
-                auto child = std::dynamic_pointer_cast<JSXExpressionContainer>(node);
+                auto child = dynamic_cast<JSXExpressionContainer*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->expression);
 
@@ -840,7 +840,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXIdentifier: {
-                auto child = std::dynamic_pointer_cast<JSXIdentifier>(node);
+                auto child = dynamic_cast<JSXIdentifier*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -848,7 +848,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXMemberExpression: {
-                auto child = std::dynamic_pointer_cast<JSXMemberExpression>(node);
+                auto child = dynamic_cast<JSXMemberExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->object);
                 TraverseNode(child->property);
@@ -858,7 +858,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXAttribute: {
-                auto child = std::dynamic_pointer_cast<JSXAttribute>(node);
+                auto child = dynamic_cast<JSXAttribute*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->name);
                 if (child->value) {
@@ -870,7 +870,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXNamespacedName: {
-                auto child = std::dynamic_pointer_cast<JSXNamespacedName>(node);
+                auto child = dynamic_cast<JSXNamespacedName*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->namespace_);
                 TraverseNode(child->name);
@@ -880,7 +880,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXOpeningElement: {
-                auto child = std::dynamic_pointer_cast<JSXOpeningElement>(node);
+                auto child = dynamic_cast<JSXOpeningElement*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->name);
 
@@ -893,7 +893,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXSpreadAttribute: {
-                auto child = std::dynamic_pointer_cast<JSXSpreadAttribute>(node);
+                auto child = dynamic_cast<JSXSpreadAttribute*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->argument);
 
@@ -902,7 +902,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::JSXText: {
-                auto child = std::dynamic_pointer_cast<JSXText>(node);
+                auto child = dynamic_cast<JSXText*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -910,7 +910,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSParameterProperty: {
-                auto child = std::dynamic_pointer_cast<TSParameterProperty>(node);
+                auto child = dynamic_cast<TSParameterProperty*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->parameter);
 
@@ -919,7 +919,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSDeclareFunction: {
-                auto child = std::dynamic_pointer_cast<TSDeclareFunction>(node);
+                auto child = dynamic_cast<TSDeclareFunction*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->id);
                 TraverseNode(child->return_type);
@@ -929,7 +929,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSDeclareMethod: {
-                auto child = std::dynamic_pointer_cast<TSDeclareMethod>(node);
+                auto child = dynamic_cast<TSDeclareMethod*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -937,7 +937,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSQualifiedName: {
-                auto child = std::dynamic_pointer_cast<TSQualifiedName>(node);
+                auto child = dynamic_cast<TSQualifiedName*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -945,7 +945,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSCallSignatureDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSCallSignatureDeclaration>(node);
+                auto child = dynamic_cast<TSCallSignatureDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -953,7 +953,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSConstructSignatureDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSConstructSignatureDeclaration>(node);
+                auto child = dynamic_cast<TSConstructSignatureDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -961,7 +961,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSPropertySignature: {
-                auto child = std::dynamic_pointer_cast<TSPropertySignature>(node);
+                auto child = dynamic_cast<TSPropertySignature*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -969,7 +969,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSMethodSignature: {
-                auto child = std::dynamic_pointer_cast<TSMethodSignature>(node);
+                auto child = dynamic_cast<TSMethodSignature*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -977,7 +977,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSIndexSignature: {
-                auto child = std::dynamic_pointer_cast<TSIndexSignature>(node);
+                auto child = dynamic_cast<TSIndexSignature*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -985,7 +985,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSAnyKeyword: {
-                auto child = std::dynamic_pointer_cast<TSAnyKeyword>(node);
+                auto child = dynamic_cast<TSAnyKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -993,7 +993,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSBooleanKeyword: {
-                auto child = std::dynamic_pointer_cast<TSBooleanKeyword>(node);
+                auto child = dynamic_cast<TSBooleanKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1001,7 +1001,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSBigIntKeyword: {
-                auto child = std::dynamic_pointer_cast<TSBigIntKeyword>(node);
+                auto child = dynamic_cast<TSBigIntKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1009,7 +1009,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSNeverKeyword: {
-                auto child = std::dynamic_pointer_cast<TSNeverKeyword>(node);
+                auto child = dynamic_cast<TSNeverKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1017,7 +1017,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSNullKeyword: {
-                auto child = std::dynamic_pointer_cast<TSNullKeyword>(node);
+                auto child = dynamic_cast<TSNullKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1025,7 +1025,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSNumberKeyword: {
-                auto child = std::dynamic_pointer_cast<TSNumberKeyword>(node);
+                auto child = dynamic_cast<TSNumberKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1033,7 +1033,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSObjectKeyword: {
-                auto child = std::dynamic_pointer_cast<TSObjectKeyword>(node);
+                auto child = dynamic_cast<TSObjectKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1041,7 +1041,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSStringKeyword: {
-                auto child = std::dynamic_pointer_cast<TSStringKeyword>(node);
+                auto child = dynamic_cast<TSStringKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1049,7 +1049,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSSymbolKeyword: {
-                auto child = std::dynamic_pointer_cast<TSSymbolKeyword>(node);
+                auto child = dynamic_cast<TSSymbolKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1057,7 +1057,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSUndefinedKeyword: {
-                auto child = std::dynamic_pointer_cast<TSUndefinedKeyword>(node);
+                auto child = dynamic_cast<TSUndefinedKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1065,7 +1065,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSUnknownKeyword: {
-                auto child = std::dynamic_pointer_cast<TSUnknownKeyword>(node);
+                auto child = dynamic_cast<TSUnknownKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1073,7 +1073,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSVoidKeyword: {
-                auto child = std::dynamic_pointer_cast<TSVoidKeyword>(node);
+                auto child = dynamic_cast<TSVoidKeyword*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1081,7 +1081,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSThisType: {
-                auto child = std::dynamic_pointer_cast<TSThisType>(node);
+                auto child = dynamic_cast<TSThisType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1089,7 +1089,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSFunctionType: {
-                auto child = std::dynamic_pointer_cast<TSFunctionType>(node);
+                auto child = dynamic_cast<TSFunctionType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1097,7 +1097,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSConstructorType: {
-                auto child = std::dynamic_pointer_cast<TSConstructorType>(node);
+                auto child = dynamic_cast<TSConstructorType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1105,7 +1105,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeReference: {
-                auto child = std::dynamic_pointer_cast<TSTypeReference>(node);
+                auto child = dynamic_cast<TSTypeReference*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1113,7 +1113,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypePredicate: {
-                auto child = std::dynamic_pointer_cast<TSTypePredicate>(node);
+                auto child = dynamic_cast<TSTypePredicate*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1121,7 +1121,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeQuery: {
-                auto child = std::dynamic_pointer_cast<TSTypeQuery>(node);
+                auto child = dynamic_cast<TSTypeQuery*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1129,7 +1129,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeLiteral: {
-                auto child = std::dynamic_pointer_cast<TSTypeLiteral>(node);
+                auto child = dynamic_cast<TSTypeLiteral*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1137,7 +1137,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSArrayType: {
-                auto child = std::dynamic_pointer_cast<TSArrayType>(node);
+                auto child = dynamic_cast<TSArrayType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1145,7 +1145,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTupleType: {
-                auto child = std::dynamic_pointer_cast<TSTupleType>(node);
+                auto child = dynamic_cast<TSTupleType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1153,7 +1153,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSOptionalType: {
-                auto child = std::dynamic_pointer_cast<TSOptionalType>(node);
+                auto child = dynamic_cast<TSOptionalType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1161,7 +1161,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSRestType: {
-                auto child = std::dynamic_pointer_cast<TSRestType>(node);
+                auto child = dynamic_cast<TSRestType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1169,7 +1169,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSUnionType: {
-                auto child = std::dynamic_pointer_cast<TSUnionType>(node);
+                auto child = dynamic_cast<TSUnionType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1177,7 +1177,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSIntersectionType: {
-                auto child = std::dynamic_pointer_cast<TSIntersectionType>(node);
+                auto child = dynamic_cast<TSIntersectionType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1185,7 +1185,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSConditionalType: {
-                auto child = std::dynamic_pointer_cast<TSConditionalType>(node);
+                auto child = dynamic_cast<TSConditionalType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1193,7 +1193,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSInferType: {
-                auto child = std::dynamic_pointer_cast<TSInferType>(node);
+                auto child = dynamic_cast<TSInferType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1201,7 +1201,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSParenthesizedType: {
-                auto child = std::dynamic_pointer_cast<TSParenthesizedType>(node);
+                auto child = dynamic_cast<TSParenthesizedType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1209,7 +1209,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeOperator: {
-                auto child = std::dynamic_pointer_cast<TSTypeOperator>(node);
+                auto child = dynamic_cast<TSTypeOperator*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1217,7 +1217,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSIndexedAccessType: {
-                auto child = std::dynamic_pointer_cast<TSIndexedAccessType>(node);
+                auto child = dynamic_cast<TSIndexedAccessType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1225,7 +1225,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSMappedType: {
-                auto child = std::dynamic_pointer_cast<TSMappedType>(node);
+                auto child = dynamic_cast<TSMappedType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1233,7 +1233,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSLiteralType: {
-                auto child = std::dynamic_pointer_cast<TSLiteralType>(node);
+                auto child = dynamic_cast<TSLiteralType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1241,7 +1241,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSExpressionWithTypeArguments: {
-                auto child = std::dynamic_pointer_cast<TSExpressionWithTypeArguments>(node);
+                auto child = dynamic_cast<TSExpressionWithTypeArguments*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1249,7 +1249,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSInterfaceDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSInterfaceDeclaration>(node);
+                auto child = dynamic_cast<TSInterfaceDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1257,7 +1257,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSInterfaceBody: {
-                auto child = std::dynamic_pointer_cast<TSInterfaceBody>(node);
+                auto child = dynamic_cast<TSInterfaceBody*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1265,7 +1265,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeAliasDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSTypeAliasDeclaration>(node);
+                auto child = dynamic_cast<TSTypeAliasDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->id);
                 if (child->type_parameters) {
@@ -1278,7 +1278,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSAsExpression: {
-                auto child = std::dynamic_pointer_cast<TSAsExpression>(node);
+                auto child = dynamic_cast<TSAsExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1286,7 +1286,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeAssertion: {
-                auto child = std::dynamic_pointer_cast<TSTypeAssertion>(node);
+                auto child = dynamic_cast<TSTypeAssertion*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1294,7 +1294,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSEnumDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSEnumDeclaration>(node);
+                auto child = dynamic_cast<TSEnumDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1302,7 +1302,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSEnumMember: {
-                auto child = std::dynamic_pointer_cast<TSEnumMember>(node);
+                auto child = dynamic_cast<TSEnumMember*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1310,7 +1310,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSModuleDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSModuleDeclaration>(node);
+                auto child = dynamic_cast<TSModuleDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1318,7 +1318,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSModuleBlock: {
-                auto child = std::dynamic_pointer_cast<TSModuleBlock>(node);
+                auto child = dynamic_cast<TSModuleBlock*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1326,7 +1326,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSImportType: {
-                auto child = std::dynamic_pointer_cast<TSImportType>(node);
+                auto child = dynamic_cast<TSImportType*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1334,7 +1334,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSImportEqualsDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSImportEqualsDeclaration>(node);
+                auto child = dynamic_cast<TSImportEqualsDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1342,7 +1342,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSExternalModuleReference: {
-                auto child = std::dynamic_pointer_cast<TSExternalModuleReference>(node);
+                auto child = dynamic_cast<TSExternalModuleReference*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1350,7 +1350,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSNonNullExpression: {
-                auto child = std::dynamic_pointer_cast<TSNonNullExpression>(node);
+                auto child = dynamic_cast<TSNonNullExpression*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1358,7 +1358,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSExportAssignment: {
-                auto child = std::dynamic_pointer_cast<TSExportAssignment>(node);
+                auto child = dynamic_cast<TSExportAssignment*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1366,7 +1366,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSNamespaceExportDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSNamespaceExportDeclaration>(node);
+                auto child = dynamic_cast<TSNamespaceExportDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1374,7 +1374,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeAnnotation: {
-                auto child = std::dynamic_pointer_cast<TSTypeAnnotation>(node);
+                auto child = dynamic_cast<TSTypeAnnotation*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1382,7 +1382,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeParameterInstantiation: {
-                auto child = std::dynamic_pointer_cast<TSTypeParameterInstantiation>(node);
+                auto child = dynamic_cast<TSTypeParameterInstantiation*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1390,7 +1390,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeParameterDeclaration: {
-                auto child = std::dynamic_pointer_cast<TSTypeParameterDeclaration>(node);
+                auto child = dynamic_cast<TSTypeParameterDeclaration*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);
@@ -1398,7 +1398,7 @@ namespace jetpack {
             }
 
             case SyntaxNodeType::TSTypeParameter: {
-                auto child = std::dynamic_pointer_cast<TSTypeParameter>(node);
+                auto child = dynamic_cast<TSTypeParameter*>(node);
                 if (!this->TraverseBefore(child)) return;
 
                 this->TraverseAfter(child);

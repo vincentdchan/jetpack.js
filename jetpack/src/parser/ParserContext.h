@@ -8,11 +8,12 @@
 #include "utils/Common.h"
 #include "tokenizer/Scanner.h"
 #include "parser/Config.h"
+#include "parser/AstContext.h"
 #include "SyntaxNodes.h"
 
 namespace jetpack::parser {
 
-    class ParserContext final {
+    class ParserContext {
     public:
         struct Marker {
             Scanner::Cursor cursor;
@@ -20,13 +21,19 @@ namespace jetpack::parser {
             uint32_t column = 0;
         };
 
-        ParserContext(int32_t fileId, std::string_view src, const Config& config);
-        ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config& config);
+        ParserContext(AstContext& ast_ctx, std::string_view src, const Config& config);
+        ParserContext(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;
 
         ParserContext& operator=(const ParserContext& ps) = delete;
         ParserContext& operator=(ParserContext&& ps) = delete;
+
+        AstContext&              ast_context_;
+
+        inline void SetFileIndex(int32_t file_index) {
+            fileIndex = file_index;
+        }
 
         Config                   config_;
         Token                    lookahead_;
@@ -55,7 +62,7 @@ namespace jetpack::parser {
         bool    in_iteration_           = false;
         bool    in_switch_              = false;
         bool    strict_                 = false;
-        int32_t fileIndex;
+        int32_t fileIndex = -1;
 
         std::optional<Token> first_cover_initialized_name_error_;
         std::unique_ptr<HashSet<std::string>> label_set_;

@@ -59,7 +59,9 @@ namespace jetpack {
 
         Weak<ModuleResolver> module_resolver;
 
-        Sp<Module> ast;
+        AstContext ast_context;
+
+        Module* ast;
 
         /**
          * relative path -> absolute path

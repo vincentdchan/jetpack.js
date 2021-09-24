@@ -129,14 +129,15 @@ namespace jetpack {
             return;
         }
 
-        auto ctx = std::make_shared<ParserContext>(mf->id(), mf->src_content, config);
+        Parser parser(mf->ast_context, mf->src_content, config);
+        auto ctx = parser.Context();
+        ctx->SetFileIndex(mf->id());
 
         if (mf->IsCommonJS()) {
             ctx->is_common_js_ = true;
         }
-        Parser parser(ctx);
 
-        parser.import_decl_created_listener.On([this, &config, &mf] (const Sp<ImportDeclaration>& import_decl) {
+        parser.import_decl_created_listener.On([this, &config, &mf] (ImportDeclaration* import_decl) {
             const auto& u8path = import_decl->source->str_;
             if (IsExternalImportModulePath(u8path)) {
                 global_import_handler_.HandleImport(import_decl);
@@ -144,19 +145,19 @@ namespace jetpack {
             }
             HandleNewLocationAdded(config, mf, LocationImported, u8path);
         });
-        parser.export_named_decl_created_listener.On([this, &config, &mf] (const Sp<ExportNamedDeclaration>& export_decl) {
+        parser.export_named_decl_created_listener.On([this, &config, &mf] (ExportNamedDeclaration* export_decl) {
             if (export_decl->source.has_value()) {
                 const auto& u8path = (*export_decl->source)->str_;
                 HandleNewLocationAdded(config, mf, LocationExported, u8path);
             }
         });
-        parser.export_all_decl_created_listener.On([this, &config, &mf] (const Sp<ExportAllDeclaration>& export_decl) {
+        parser.export_all_decl_created_listener.On([this, &config, &mf] (ExportAllDeclaration* export_decl) {
             const auto& u8path = export_decl->source->str_;
             HandleNewLocationAdded(config, mf, LocationExported, u8path);
         });
         if (config.common_js) {
-            parser.require_call_created_listener.On([this, &config, &mf](const Sp<CallExpression>& call) -> std::optional<Sp<SyntaxNode>> {
-                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+            parser.require_call_created_listener.On([this, &config, &mf](CallExpression* call) -> std::optional<SyntaxNode*> {
+                auto lit = dynamic_cast<Literal*>(call->arguments[0]);
                 const auto& u8path = lit->str_;
                 if (NODE_JS_BUILTIN_MODULE.find(u8path) != NODE_JS_BUILTIN_MODULE.end()) {
                     return std::nullopt;
@@ -167,8 +168,8 @@ namespace jetpack {
                         LocationAddOptions(LocationImported | LocationIsCommonJS),
                         u8path
                         );
-                auto new_call = std::make_shared<CallExpression>();
-                new_call->callee = MakeId(SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
+                auto new_call = mf->ast_context.Alloc<CallExpression>();
+                new_call->callee = MakeId(mf->ast_context, SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
                 return { new_call };
             });
         }
@@ -177,7 +178,7 @@ namespace jetpack {
         mf->ast = parser.ParseModule();
         bench.Submit();
 
-        std::vector<Sp<Identifier>> unresolved_ids;
+        std::vector<Identifier*> unresolved_ids;
         mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
 
         id_logger_->InsertByList(unresolved_ids);
@@ -528,7 +529,11 @@ namespace jetpack {
             const auto& mod = spare_stack.top();
 
             if (mod->IsCommonJS()) {
-                WrapModuleWithCommonJsTemplate(mod->ast, mod->cjs_call_name, "__commonJS");
+                WrapModuleWithCommonJsTemplate(
+                        mod->ast_context,
+                        *mod->ast,
+                        mod->cjs_call_name,
+                        "__commonJS");
             }
             codegen.Traverse(*mod->ast);
 
@@ -617,8 +622,8 @@ namespace jetpack {
     /**
      * Turn import and export statements into variable declarations
      */
-    void ModuleResolver::ReplaceExports(const std::shared_ptr<ModuleFile>& mf) {
-        std::vector<Sp<SyntaxNode>> new_body;
+    void ModuleResolver::ReplaceExports(const Sp<ModuleFile>& mf) {
+        std::vector<SyntaxNode*> new_body;
 
         for (auto& stmt : mf->ast->body) {
             switch (stmt->type) {
@@ -635,7 +640,7 @@ namespace jetpack {
                  * REMOVE export {}
                  */
                 case SyntaxNodeType::ExportNamedDeclaration: {
-                    auto export_named_decl = std::dynamic_pointer_cast<ExportNamedDeclaration>(stmt);
+                    auto export_named_decl = dynamic_cast<ExportNamedDeclaration*>(stmt);
                     if (export_named_decl->declaration.has_value()) {  // is local
                         new_body.push_back(*export_named_decl->declaration);
                     }
@@ -650,7 +655,7 @@ namespace jetpack {
                  * var default_0 = 1 + 1;
                  */
                 case SyntaxNodeType::ExportDefaultDeclaration: {
-                    auto export_default_decl = std::dynamic_pointer_cast<ExportDefaultDeclaration>(stmt);
+                    auto export_default_decl = dynamic_cast<ExportDefaultDeclaration*>(stmt);
                     std::string new_name = "_default";
                     auto new_name_opt = name_generator->Next(new_name);
                     if (new_name_opt.has_value()) {
@@ -660,14 +665,14 @@ namespace jetpack {
                     mf->default_export_name = new_name;
 
                     if (export_default_decl->declaration->IsExpression()) {
-                        auto exist_id = std::dynamic_pointer_cast<Expression>(export_default_decl->declaration);
+                        auto exist_id = dynamic_cast<Expression*>(export_default_decl->declaration);
 
-                        auto var_decl = std::make_shared<VariableDeclaration>();
+                        auto var_decl = module_ast_ctx_.Alloc<VariableDeclaration>();
                         var_decl->kind = VarKind::Var;
 
-                        auto var_dector = std::make_shared<VariableDeclarator>();
+                        auto var_dector = module_ast_ctx_.Alloc<VariableDeclarator>(std::make_unique<Scope>(module_ast_ctx_));
 
-                        auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
+                        auto new_id = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, new_name);
                         var_dector->id = new_id;
                         var_dector->init = { exist_id };
 
@@ -703,22 +708,22 @@ namespace jetpack {
                              *
                              */
                             case SyntaxNodeType::FunctionDeclaration: {
-                                auto fun_decl = std::dynamic_pointer_cast<FunctionDeclaration>(export_default_decl->declaration);
+                                auto fun_decl = dynamic_cast<FunctionDeclaration*>(export_default_decl->declaration);
 
-                                auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
+                                auto new_id = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, new_name);
                                 mf->ast->scope->CreateVariable(new_id, VarKind::Var);
                                 if (fun_decl->id.has_value()) {
                                     stmt = fun_decl;
 
-                                    auto var_decl = std::make_shared<VariableDeclaration>();
+                                    auto var_decl = module_ast_ctx_.Alloc<VariableDeclaration>();
                                     var_decl->kind = VarKind::Var;
 
-                                    auto dector = std::make_shared<VariableDeclarator>();
+                                    auto dector = module_ast_ctx_.Alloc<VariableDeclarator>(std::make_unique<Scope>(module_ast_ctx_));
 
                                     dector->id = new_id;
 
 
-                                    auto right_id = MakeId(SourceLocation::NoOrigin, (*fun_decl->id)->name);
+                                    auto right_id = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, (*fun_decl->id)->name);
                                     mf->ast->scope->CreateVariable(right_id, VarKind::Var);
 
                                     dector->init = { right_id };
@@ -728,7 +733,7 @@ namespace jetpack {
                                     new_body.push_back(stmt);
                                     new_body.push_back(var_decl);
                                 } else {
-                                    fun_decl->id = { MakeId(SourceLocation::NoOrigin, new_name) };
+                                    fun_decl->id = { MakeId(module_ast_ctx_, SourceLocation::NoOrigin, new_name) };
 
                                     new_body.push_back(fun_decl);
                                 }
@@ -739,22 +744,22 @@ namespace jetpack {
                              * Similar to FunctionDeclaration
                              */
                             case SyntaxNodeType::ClassDeclaration: {
-                                auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(export_default_decl->declaration);
+                                auto cls_decl = dynamic_cast<ClassDeclaration*>(export_default_decl->declaration);
 
-                                auto new_id = MakeId(SourceLocation::NoOrigin, new_name);
+                                auto new_id = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, new_name);
                                 mf->ast->scope->CreateVariable(new_id, VarKind::Var);
 
                                 if (cls_decl->id.has_value()) {
                                     stmt = cls_decl;
 
-                                    auto var_decl = std::make_shared<VariableDeclaration>();
+                                    auto var_decl = module_ast_ctx_.Alloc<VariableDeclaration>();
                                     var_decl->kind = VarKind::Var;
 
-                                    auto dector = std::make_shared<VariableDeclarator>();
+                                    auto dector = module_ast_ctx_.Alloc<VariableDeclarator>(std::make_unique<Scope>(module_ast_ctx_));
 
                                     dector->id = new_id;
 
-                                    auto right_id = std::make_shared<Identifier>();
+                                    auto right_id = module_ast_ctx_.Alloc<Identifier>();
                                     right_id->name = (*cls_decl->id)->name;
 
                                     dector->init = { right_id };
@@ -816,18 +821,18 @@ namespace jetpack {
     }
 
     void ModuleResolver::ReplaceImports(const Sp<jetpack::ModuleFile> &mf) {
-        std::vector<Sp<SyntaxNode>> new_body;
+        std::vector<SyntaxNode*> new_body;
 
         for (auto& stmt : mf->ast->body) {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
-                    auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(stmt);
+                    auto import_decl = dynamic_cast<ImportDeclaration*>(stmt);
                     if (global_import_handler_.IsImportExternal(import_decl)) {  // remove from body
                         RenameExternalImports(mf, import_decl);
                         continue;
                     }
 
-                    std::vector<Sp<VariableDeclaration>> result;
+                    std::vector<VariableDeclaration*> result;
                     HandleImportDeclaration(mf, import_decl, result);
                     new_body.insert(std::end(new_body), std::begin(result), std::end(result));
                     continue;
@@ -844,7 +849,7 @@ namespace jetpack {
     }
 
     void ModuleResolver::RenameExternalImports(const Sp<jetpack::ModuleFile> &mf,
-                                               const Sp<jetpack::ImportDeclaration> &import_decl) {
+                                               jetpack::ImportDeclaration* import_decl) {
         std::vector<std::tuple<std::string, std::string>> renames;
 
         auto& source_path = import_decl->source->str_;
@@ -899,8 +904,8 @@ namespace jetpack {
      * const { a, b: c } = mod_1;
      */
     void ModuleResolver::HandleImportDeclaration(const Sp<ModuleFile>& mf,
-                                                 Sp<jetpack::ImportDeclaration> &import_decl,
-                                                 std::vector<Sp<VariableDeclaration>>& result) {
+                                                 jetpack::ImportDeclaration* import_decl,
+                                                 std::vector<VariableDeclaration*>& result) {
         auto full_path_iter = mf->resolved_map.find(import_decl->source->str_);
         if (full_path_iter == mf->resolved_map.end()) {
             throw ModuleResolveException(
@@ -921,14 +926,14 @@ namespace jetpack {
         }
 
         if (import_decl->specifiers[0]->type == SyntaxNodeType::ImportNamespaceSpecifier) {
-            auto import_ns = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(import_decl->specifiers[0]);
+            auto import_ns = dynamic_cast<ImportNamespaceSpecifier*>(import_decl->specifiers[0]);
 
-            auto decl = std::make_shared<VariableDeclaration>();
+            auto decl = module_ast_ctx_.Alloc<VariableDeclaration>();
             decl->kind = VarKind::Var;
 
-            auto declarator = std::make_shared<VariableDeclarator>();
+            auto declarator = module_ast_ctx_.Alloc<VariableDeclarator>(std::make_unique<Scope>(module_ast_ctx_));
 
-            auto new_id = MakeId(import_ns->local->location, import_ns->local->name);
+            auto new_id = MakeId(module_ast_ctx_, import_ns->local->location, import_ns->local->name);
 
             // debug
 //            std::cout << utils::To_UTF8(ast->scope->own_variables[import_ns->local->name].name) << std::endl;
@@ -941,13 +946,13 @@ namespace jetpack {
 
             declarator->id = new_id;  // try not to use old ast
 
-            auto obj = std::make_shared<ObjectExpression>();
+            auto obj = module_ast_ctx_.Alloc<ObjectExpression>();
 
             {
-                auto proto = std::make_shared<Property>();
+                auto proto = module_ast_ctx_.Alloc<Property>();
 
-                proto->key = MakeId(SourceLocation::NoOrigin, "__proto__");
-                proto->value = MakeNull();
+                proto->key = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, "__proto__");
+                proto->value = MakeNull(module_ast_ctx_);
 
                 obj->properties.push_back(proto);
             }
@@ -965,27 +970,27 @@ namespace jetpack {
                 auto& export_manager = ref_mod->GetExportManager();
 
                 for (auto& tuple : export_manager.local_exports_name) {
-                    auto prop = std::make_shared<Property>();
+                    auto prop = module_ast_ctx_.Alloc<Property>();
 
                     prop->kind = VarKind::Get;
-                    prop->key = MakeId(SourceLocation::NoOrigin, tuple.first);
+                    prop->key = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, tuple.first);
 
-                    auto fun = std::make_shared<FunctionExpression>();
-                    auto block = std::make_shared<BlockStatement>();
-                    auto ret_stmt = std::make_shared<ReturnStatement>();
-                    ret_stmt->argument = { MakeId(SourceLocation::NoOrigin, tuple.second->local_name) };
+                    auto fun = module_ast_ctx_.Alloc<FunctionExpression>();
+                    auto block = module_ast_ctx_.Alloc<BlockStatement>();
+                    auto ret_stmt = module_ast_ctx_.Alloc<ReturnStatement>();
+                    ret_stmt->argument = { MakeId(module_ast_ctx_, SourceLocation::NoOrigin, tuple.second->local_name) };
 
-                    block->body.push_back(std::move(ret_stmt));
-                    fun->body = std::move(block);
-                    prop->value = std::move(fun);
-                    obj->properties.push_back(std::move(prop));
+                    block->body.push_back(ret_stmt);
+                    fun->body = block;
+                    prop->value = fun;
+                    obj->properties.push_back(prop);
                 }
             }
 
             declarator->init = { obj };
 
-            decl->declarations.push_back(std::move(declarator));
-            result.push_back(std::move(decl));
+            decl->declarations.push_back(declarator);
+            result.push_back(decl);
         } else {
             for (auto& spec : import_decl->specifiers) {
                 std::string absolute_path;
@@ -993,7 +998,7 @@ namespace jetpack {
                 std::string import_local_name;
                 switch (spec->type) {
                     case SyntaxNodeType::ImportDefaultSpecifier: {
-                        auto default_spec = std::dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+                        auto default_spec = dynamic_cast<ImportDefaultSpecifier*>(spec);
                         const auto& relative_path = import_decl->source->str_;
                         absolute_path = mf->resolved_map[relative_path];
                         target_export_name = "default";
@@ -1002,7 +1007,7 @@ namespace jetpack {
                     }
 
                     case SyntaxNodeType::ImportSpecifier: {
-                        auto import_spec = std::dynamic_pointer_cast<ImportSpecifier>(spec);
+                        auto import_spec = dynamic_cast<ImportSpecifier*>(spec);
                         const auto& relative_path = import_decl->source->str_;
                         absolute_path = mf->resolved_map[relative_path];
                         target_export_name = import_spec->imported->name;
@@ -1107,10 +1112,10 @@ namespace jetpack {
             }
             auto info = iter->second;
 
-            auto spec = std::make_shared<ExportSpecifier>();
-            spec->local = MakeId(SourceLocation::NoOrigin, info->local_name);
-            spec->exported = MakeId(SourceLocation::NoOrigin, export_name);
-            result->specifiers.push_back(std::move(spec));
+            auto spec = module_ast_ctx_.Alloc<ExportSpecifier>();
+            spec->local = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, info->local_name);
+            spec->exported = MakeId(module_ast_ctx_, SourceLocation::NoOrigin, export_name);
+            result->specifiers.push_back(spec);
         }
 
         return result;

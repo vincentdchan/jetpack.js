@@ -10,6 +10,7 @@
 #include <cinttypes>
 #include <deque>
 #include "NodeTraverser.h"
+#include "AutoNodeTraverser.h"
 #include "utils/string/UString.h"
 #include "utils/Common.h"
 #include "codegen/CodeGenConfig.h"
@@ -40,7 +41,7 @@ namespace jetpack {
         public:
             bool has_call = false;
 
-            bool TraverseBefore(const Sp<CallExpression>& node) override  {
+            bool TraverseBefore(CallExpression* node) override  {
                 has_call = true;
                 return false;
             }
@@ -87,9 +88,9 @@ namespace jetpack {
         static int ExpressionPrecedence(SyntaxNode& node);
 
         void FormatVariableDeclaration(VariableDeclaration& node);
-        void FormatSequence(std::vector<Sp<SyntaxNode>>& params);
+        void FormatSequence(std::vector<SyntaxNode*>& params);
         void FormatBinaryExpression(Expression& expr, BinaryExpression& parent, bool is_right);
-        bool HasCallExpression(const Sp<SyntaxNode>&);
+        bool HasCallExpression(SyntaxNode* node);
         bool ExpressionNeedsParenthesis(Expression& node, BinaryExpression& parent, bool is_right);
 
     public:

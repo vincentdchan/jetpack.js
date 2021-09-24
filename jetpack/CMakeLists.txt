@@ -27,6 +27,8 @@ set(SOURCE_FILES
         src/utils/Common.cpp
         src/utils/JetFlags.h
         src/utils/MemoryViewOwner.h
+        src/utils/Alloc.h
+        src/utils/Alloc.cpp
         src/tokenizer/Token.h
         src/tokenizer/Token.cpp
         src/tokenizer/Location.h
@@ -77,6 +79,7 @@ set(SOURCE_FILES
         src/sourcemap/SourceMapDecoder.cpp
         src/codegen/NodeTraverser.h
         src/codegen/NodeTraverser.cpp
+        src/codegen/AutoNodeTraverser.h
         src/codegen/AutoNodeTraverser.cpp
         src/codegen/CodeGenConfig.h
         src/codegen/CodeGen.h

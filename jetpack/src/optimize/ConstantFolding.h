@@ -5,13 +5,14 @@
 #pragma once
 
 #include "parser/SyntaxNodes.h"
+#include "parser/AstContext.h"
 
 namespace jetpack {
 
     class ContantFolding {
     public:
 
-        static Sp<Expression> TryBinaryExpression(const Sp<BinaryExpression>& binary);
+        static Expression* TryBinaryExpression(AstContext& ctx, BinaryExpression* binary);
 
     };
 
