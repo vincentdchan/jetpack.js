@@ -8,11 +8,12 @@
 #include "utils/Common.h"
 #include "tokenizer/Scanner.h"
 #include "parser/Config.h"
+#include "parser/AstContext.h"
 #include "SyntaxNodes.h"
 
 namespace jetpack::parser {
 
-    class ParserContext final {
+    class ParserContext {
     public:
         struct Marker {
             Scanner::Cursor cursor;
@@ -27,6 +28,8 @@ namespace jetpack::parser {
 
         ParserContext& operator=(const ParserContext& ps) = delete;
         ParserContext& operator=(ParserContext&& ps) = delete;
+
+        AstContext               ast_context_;
 
         Config                   config_;
         Token                    lookahead_;

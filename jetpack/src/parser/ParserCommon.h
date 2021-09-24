@@ -23,9 +23,9 @@ namespace jetpack::parser {
     class NodeCreatedEventEmitter {
     public:
 
-        using Callback = std::function<void(const Sp<T>&)>;
+        using Callback = std::function<void(T*)>;
 
-        inline void Emit(const Sp<T>& obj) {
+        inline void Emit(T* obj) {
             for (auto& fun : callbacks) {
                 fun(obj);
             }
@@ -43,9 +43,9 @@ namespace jetpack::parser {
     class NodeCreatedEventEmitterRet {
     public:
 
-        using Callback = std::function<RetT(const Sp<T>&)>;
+        using Callback = std::function<RetT(T*)>;
 
-        inline RetT Emit(const Sp<T>& obj) {
+        inline RetT Emit(T* obj) {
             return callback(obj);
         }
 
@@ -61,7 +61,7 @@ namespace jetpack::parser {
     public:
         struct FormalParameterOptions {
             bool simple = true;
-            std::vector<Sp<SyntaxNode>> params;
+            std::vector<SyntaxNode*> params;
             HashSet<std::string> param_set;
             std::optional<Token> stricted;
             std::optional<Token> first_restricted;
@@ -166,15 +166,14 @@ namespace jetpack::parser {
 
     protected:
         template<typename T, typename ...Args>
-        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
+        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, T*>::type
         Alloc(Args && ...args) {
-            T* ptr = new T(std::forward<Args>(args)...);
-            return Sp<T>(ptr);
+            return ctx->ast_context_.Alloc<T, Args...>(std::forward<Args>(args)...);
         }
 
         template<typename T>
-        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, Sp<T>>::type
-        Finalize(const ParserContext::Marker& marker, const Sp<T>& from) {
+        typename std::enable_if<std::is_base_of<SyntaxNode, T>::value, T*>::type
+        Finalize(const ParserContext::Marker& marker, T* from) {
             from->range = std::make_pair(marker.cursor.u8, LastMarker().cursor.u8);
 
             from->location.fileId = ctx->fileIndex;
@@ -191,6 +190,8 @@ namespace jetpack::parser {
 
             return from;
         }
+
+        std::unique_ptr<LeftValueScope> left_scope_;
 
         std::shared_ptr<ParserContext> ctx;
 

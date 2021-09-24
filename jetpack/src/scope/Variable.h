@@ -45,7 +45,7 @@ namespace jetpack {
          */
         std::string external_name;
 
-        std::vector<std::shared_ptr<Identifier>> identifiers;
+        std::vector<Identifier*> identifiers;
 
     };
 

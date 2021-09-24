@@ -168,11 +168,11 @@ namespace jetpack {
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
 
-        void RenameExternalImports(const Sp<ModuleFile>& mf, const Sp<ImportDeclaration>& import_decl);
+        void RenameExternalImports(const Sp<ModuleFile>& mf, ImportDeclaration* import_decl);
 
         void HandleImportDeclaration(const Sp<ModuleFile>& mf,
-                                     Sp<ImportDeclaration>& import_decl,
-                                     std::vector<Sp<VariableDeclaration>>& result);
+                                     ImportDeclaration* import_decl,
+                                     std::vector<VariableDeclaration*>& result);
 
         bool IsExternalImportModulePath(const std::string& path);
 
@@ -185,6 +185,8 @@ namespace jetpack {
         std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
 
         GlobalImportHandler global_import_handler_;
+
+        AstContext module_ast_ctx_;
 
         Sp<UniqueNameGenerator> name_generator;
 

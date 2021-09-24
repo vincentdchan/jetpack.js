@@ -75,7 +75,7 @@ namespace jetpack {
 
         std::mutex logger_mutex;
 
-        void InsertByList(std::vector<std::shared_ptr<Identifier>> list);
+        void InsertByList(std::vector<Identifier*> list);
 
     };
 

@@ -79,6 +79,7 @@ set(SOURCE_FILES
         src/sourcemap/SourceMapDecoder.cpp
         src/codegen/NodeTraverser.h
         src/codegen/NodeTraverser.cpp
+        src/codegen/AutoNodeTraverser.h
         src/codegen/AutoNodeTraverser.cpp
         src/codegen/CodeGenConfig.h
         src/codegen/CodeGen.h

@@ -30,7 +30,7 @@ namespace jetpack {
     public:
         std::string export_name;
         std::string local_name;
-        std::optional<std::shared_ptr<ExportDefaultDeclaration>> default_export_ast;
+        std::optional<ExportDefaultDeclaration*> default_export_ast;
 
     };
 
@@ -72,9 +72,9 @@ namespace jetpack {
 
         ExportManager& operator=(const ExportManager) = delete;
 
-        EC ResolveAllDecl(const std::shared_ptr<ExportAllDeclaration>&);
-        EC ResolveDefaultDecl(const std::shared_ptr<ExportDefaultDeclaration>&);
-        EC ResolveNamedDecl(const std::shared_ptr<ExportNamedDeclaration>&);
+        EC ResolveAllDecl(ExportAllDeclaration* decl);
+        EC ResolveDefaultDecl(ExportDefaultDeclaration* decl);
+        EC ResolveNamedDecl(ExportNamedDeclaration* decl);
 
         void AddLocalExport(const std::shared_ptr<LocalExportInfo>& info);
 

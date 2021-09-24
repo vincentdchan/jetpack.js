@@ -11,7 +11,7 @@ namespace jetpack::parser {
     ParserCommon(std::move(state)) {
     }
 
-    Sp<TSTypeAliasDeclaration> TypeScriptParser::ParseTypeAliasDeclaration() {
+    TSTypeAliasDeclaration* TypeScriptParser::ParseTypeAliasDeclaration() {
         auto start_marker = CreateStartMarker();
 
         if (!MatchContextualKeyword("type")) {
@@ -36,12 +36,12 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TSType> TypeScriptParser::ParseType() {
+    TSType* TypeScriptParser::ParseType() {
         // TODO:
         return ParseNonConditionalType();
     }
 
-    Sp<TSType> TypeScriptParser::ParseNonConditionalType() {
+    TSType* TypeScriptParser::ParseNonConditionalType() {
         if (IsStartOfFunctionType()) {
             return ParseFunctionType();
         }
@@ -51,7 +51,7 @@ namespace jetpack::parser {
         return ParseUnionTypeOrHigher();
     }
 
-    Sp<TSFunctionType> TypeScriptParser::ParseFunctionType() {
+    TSFunctionType* TypeScriptParser::ParseFunctionType() {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<TSFunctionType>();
@@ -61,7 +61,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TSConstructorType> TypeScriptParser::ParseConstructorType() {
+    TSConstructorType* TypeScriptParser::ParseConstructorType() {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<TSConstructorType>();
@@ -69,7 +69,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TSThisType> TypeScriptParser::ParseThisType() {
+    TSThisType* TypeScriptParser::ParseThisType() {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::K_This);
@@ -78,7 +78,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TSLiteralType> TypeScriptParser::ParseLiteralTypeNode() {
+    TSLiteralType* TypeScriptParser::ParseLiteralTypeNode() {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<TSLiteralType>();
@@ -90,12 +90,12 @@ namespace jetpack::parser {
         return false;
     }
 
-    Sp<TSType> TypeScriptParser::ParseUnionTypeOrHigher() {
+    TSType* TypeScriptParser::ParseUnionTypeOrHigher() {
         ThrowUnexpectedToken(ctx->lookahead_);
         return nullptr;
     }
 
-    Sp<TSTypeParameterDeclaration> TypeScriptParser::ParseTypeParameterDeclaration() {
+    TSTypeParameterDeclaration* TypeScriptParser::ParseTypeParameterDeclaration() {
         ThrowUnexpectedToken(ctx->lookahead_);
         return nullptr;
     }

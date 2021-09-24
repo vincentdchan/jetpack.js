@@ -39,11 +39,11 @@ namespace jetpack {
         ImportManager& operator=(const ImportManager&) = delete;
 
         HashMap<std::string, ImportIdentifierInfo> id_map;
-        std::vector<Sp<CallExpression>> require_calls;
+        std::vector<CallExpression*> require_calls;
 
-        EC ResolveImportDecl(const std::shared_ptr<ImportDeclaration>&);
+        EC ResolveImportDecl(ImportDeclaration* decl);
 
-        EC ResolveRequireCallExpr(const std::shared_ptr<CallExpression>&);
+        EC ResolveRequireCallExpr(CallExpression* call);
 
     };
 

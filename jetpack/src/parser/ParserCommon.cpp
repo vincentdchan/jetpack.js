@@ -12,6 +12,7 @@ namespace jetpack::parser {
 
     ParserCommon::ParserCommon(std::shared_ptr<ParserContext> state)
     : ctx(std::move(state)) {
+        left_scope_ = std::make_unique<LeftValueScope>(ctx->ast_context_);
     }
 
     void ParserCommon::TolerateError(const std::string &message) {

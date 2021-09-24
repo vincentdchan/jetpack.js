@@ -206,13 +206,13 @@ namespace jetpack {
         }
     }
 
-    bool CodeGen::HasCallExpression(const Sp<SyntaxNode>& node) {
+    bool CodeGen::HasCallExpression(SyntaxNode* node) {
         HasCallExpressionTraverser traverser;
         traverser.TraverseNode(node);
         return traverser.has_call;
     }
 
-    void CodeGen::FormatSequence(std::vector<Sp<SyntaxNode>> &params) {
+    void CodeGen::FormatSequence(std::vector<SyntaxNode*> &params) {
         Write("(");
         for (std::size_t i = 0; i < params.size(); i++) {
             TraverseNode(*params[i]);
@@ -466,7 +466,7 @@ namespace jetpack {
         if (node.init.has_value()) {
             auto init = *node.init;
             if (init->type == SyntaxNodeType::VariableDeclaration) {
-                auto decl = std::dynamic_pointer_cast<VariableDeclaration>(init);
+                auto decl = dynamic_cast<VariableDeclaration*>(init);
                 FormatVariableDeclaration(*decl);
             } else {
                 TraverseNode(*init);
@@ -487,7 +487,7 @@ namespace jetpack {
     void CodeGen::Traverse(ForInStatement& node) {
         Write(config_.minify ? "for(" : "for (");
         if (node.left->type == SyntaxNodeType::VariableDeclaration) {
-            auto decl = std::dynamic_pointer_cast<VariableDeclaration>(node.left);
+            auto decl = dynamic_cast<VariableDeclaration*>(node.left);
             FormatVariableDeclaration(*decl);
         } else {
             TraverseNode(*node.left);
@@ -501,7 +501,7 @@ namespace jetpack {
     void CodeGen::Traverse(ForOfStatement & node) {
         Write(config_.minify ? "for(" : "for (");
         if (node.left->type == SyntaxNodeType::VariableDeclaration) {
-            auto decl = dynamic_pointer_cast<VariableDeclaration>(node.left);
+            auto decl = dynamic_cast<VariableDeclaration*>(node.left);
             FormatVariableDeclaration(*decl);
         } else {
             TraverseNode(*node.left);
@@ -619,11 +619,11 @@ namespace jetpack {
                     Write(config_.minify ? "," : ", ");
                 }
                 if (spec->type == SyntaxNodeType::ImportDefaultSpecifier) {
-                    auto default_ = dynamic_pointer_cast<ImportDefaultSpecifier>(spec);
+                    auto default_ = dynamic_cast<ImportDefaultSpecifier*>(spec);
                     Write(default_->local->name, *default_);
                     i++;
                 } else if (spec->type == SyntaxNodeType::ImportNamespaceSpecifier) {
-                    auto namespace_ = dynamic_pointer_cast<ImportNamespaceSpecifier>(spec);
+                    auto namespace_ = dynamic_cast<ImportNamespaceSpecifier*>(spec);
                     std::string temp = "* as " + namespace_->local->name;
                     Write(temp, *namespace_);
                     i++;
@@ -635,7 +635,7 @@ namespace jetpack {
                 Write(config_.minify ? "{" : "{ ");
                 while (true) {
                     auto spec = node.specifiers[i];
-                    auto import_ = dynamic_pointer_cast<ImportSpecifier>(spec);
+                    auto import_ = dynamic_cast<ImportSpecifier*>(spec);
                     Write(import_->imported->name, *spec);
                     if (import_->imported->name != import_->local->name) {
                         std::string temp = " as " + import_->local->name;
@@ -720,7 +720,7 @@ namespace jetpack {
         }
 
         if (node.key.has_value() && node.value.has_value()) {
-            auto fun_expr = std::dynamic_pointer_cast<FunctionExpression>(*node.value);
+            auto fun_expr = dynamic_cast<FunctionExpression*>(*node.value);
             if (!fun_expr) {
                 return;
             }
@@ -753,7 +753,7 @@ namespace jetpack {
         auto& params = node.params;
         if (!params.empty()) {
             if (params.size() == 1 && params[0]->type == SyntaxNodeType::Identifier) {
-                auto id = dynamic_pointer_cast<Identifier>(params[0]);
+                auto id = dynamic_cast<Identifier*>(params[0]);
                 Write(id->name, *id);
             } else {
                 FormatSequence(params);
@@ -764,7 +764,7 @@ namespace jetpack {
         Write(config_.minify ? "=>" : " => ");
         if (node.body->type == SyntaxNodeType::ObjectExpression) {
             Write("(");
-            Sp<ObjectExpression> oe = dynamic_pointer_cast<ObjectExpression>(node.body);
+            auto oe = dynamic_cast<ObjectExpression*>(node.body);
             this->Traverse(*oe);
             Write(")");
         } else {
@@ -855,7 +855,7 @@ namespace jetpack {
                 Write("get ");
                 TraverseNode(*node.key);
                 if (!node.value.has_value()) return;
-                auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node.value);
+                auto fun = dynamic_cast<FunctionExpression*>(*node.value);
                 if (fun == nullptr) return;
 
                 FormatSequence(fun->params);
@@ -870,7 +870,7 @@ namespace jetpack {
                 Write("set ");
                 TraverseNode(*node.key);
                 if (!node.value.has_value()) return;
-                auto fun = std::dynamic_pointer_cast<FunctionExpression>(*node.value);
+                auto fun = dynamic_cast<FunctionExpression*>(*node.value);
                 if (fun == nullptr) return;
 
                 FormatSequence(fun->params);
@@ -886,8 +886,8 @@ namespace jetpack {
                 if (node.value.has_value()
                     && node.key->type == SyntaxNodeType::Identifier
                     && (*node.value)->type == SyntaxNodeType::Identifier) {
-                    auto key_id = std::dynamic_pointer_cast<Identifier>(node.key);
-                    auto val_id = std::dynamic_pointer_cast<Identifier>(*node.value);
+                    auto key_id = dynamic_cast<Identifier*>(node.key);
+                    auto val_id = dynamic_cast<Identifier*>(*node.value);
                     shorthand = key_id->name == val_id->name;
                 }
                 if (!shorthand) {
@@ -911,7 +911,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(SequenceExpression& node) {
-        std::vector<Sp<SyntaxNode>> nodes;
+        std::vector<SyntaxNode*> nodes;
         for (auto& i : node.expressions) {
             nodes.push_back(i);
         }

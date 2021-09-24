@@ -22,7 +22,7 @@ namespace jetpack {
     }
 
     Scope::PVar
-    Scope::CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) {
+    Scope::CreateVariable(Identifier* var_id, VarKind kind) {
         Scope* target_scope = this;
 
         if (kind == VarKind::Var) {
@@ -64,7 +64,7 @@ namespace jetpack {
      *
      * Do this after parsing.
      */
-    void Scope::ResolveAllSymbols(std::vector<std::shared_ptr<Identifier>>* unresolve_collector) {
+    void Scope::ResolveAllSymbols(std::vector<Identifier*>* unresolve_collector) {
         for (auto iter = unresolved_id.begin(); iter != unresolved_id.end();) {
             auto var = RecursivelyFindVariable((*iter)->name);
             if (var != nullptr) {
@@ -116,11 +116,9 @@ namespace jetpack {
         parent->children.push_back(this);
     }
 
-    LeftValueScope LeftValueScope::default_;
-
-    ModuleScope::ModuleScope(ModuleType mt) : Scope(ScopeType::Module), module_type_(mt) {
+    ModuleScope::ModuleScope(ModuleType mt, AstContext& ctx): Scope(ScopeType::Module, ctx), module_type_(mt) {
         if (mt == ModuleType::CommonJs) {
-            auto moduleId = MakeId("exports");
+            auto moduleId = MakeId(ctx, "exports");
             const auto& var = this->CreateVariable(moduleId, VarKind::Var);
             var->predefined = true;
         }

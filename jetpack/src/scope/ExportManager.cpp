@@ -29,7 +29,7 @@ namespace jetpack {
 
     }
 
-    ExportManager::EC ExportManager::ResolveAllDecl(const std::shared_ptr<ExportAllDeclaration>& decl) {
+    ExportManager::EC ExportManager::ResolveAllDecl(ExportAllDeclaration* decl) {
         ExternalExportInfo info;
         info.relative_path = decl->source->str_;
         info.is_export_all = true;
@@ -38,7 +38,7 @@ namespace jetpack {
         return EC::Ok;
     }
 
-    ExportManager::EC ExportManager::ResolveDefaultDecl(const std::shared_ptr<ExportDefaultDeclaration>& decl) {
+    ExportManager::EC ExportManager::ResolveDefaultDecl(ExportDefaultDeclaration* decl) {
         auto info = std::make_shared<LocalExportInfo>();
         info->export_name = "default";
         info->default_export_ast = { decl };
@@ -47,7 +47,7 @@ namespace jetpack {
         return EC::Ok;
     }
 
-    ExportManager::EC ExportManager::ResolveNamedDecl(const std::shared_ptr<ExportNamedDeclaration>& decl) {
+    ExportManager::EC ExportManager::ResolveNamedDecl(ExportNamedDeclaration* decl) {
         if (decl->source.has_value()) { // external export
             ExternalExportInfo info;
             info.relative_path = (*decl->source)->str_;
@@ -67,7 +67,7 @@ namespace jetpack {
         if (decl->declaration.has_value()) {
             switch ((*decl->declaration)->type) {
                 case SyntaxNodeType::FunctionDeclaration: {
-                    auto fun_decl = std::dynamic_pointer_cast<FunctionDeclaration>(*decl->declaration);
+                    auto fun_decl = dynamic_cast<FunctionDeclaration*>(*decl->declaration);
 
                     auto info = std::make_shared<LocalExportInfo>();
                     if (!fun_decl->id.has_value()) {
@@ -81,7 +81,7 @@ namespace jetpack {
                 }
 
                 case SyntaxNodeType::ClassDeclaration: {
-                    auto cls_decl = std::dynamic_pointer_cast<ClassDeclaration>(*decl->declaration);
+                    auto cls_decl = dynamic_cast<ClassDeclaration*>(*decl->declaration);
 
                     auto info = std::make_shared<LocalExportInfo>();
                     if (!cls_decl->id.has_value()) {
@@ -95,7 +95,7 @@ namespace jetpack {
                 }
 
                 case SyntaxNodeType::VariableDeclaration: {
-                    auto var_decl = std::dynamic_pointer_cast<VariableDeclaration>(*decl->declaration);
+                    auto var_decl = dynamic_cast<VariableDeclaration*>(*decl->declaration);
 
                     for (auto& spec : var_decl->declarations) {
                         auto info = std::make_shared<LocalExportInfo>();
@@ -103,7 +103,7 @@ namespace jetpack {
                         if (spec->id->type != SyntaxNodeType::Identifier) {
                             return EC::UnsupportExport;
                         }
-                        auto id = std::dynamic_pointer_cast<Identifier>(spec->id);
+                        auto id = dynamic_cast<Identifier*>(spec->id);
 
                         info->local_name = id->name;
                         info->export_name = info->local_name;

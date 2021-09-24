@@ -35,29 +35,29 @@ namespace jetpack::parser {
         };
     }
 
-    Sp<Pattern> Parser::ReinterpretExpressionAsPattern(const Sp<SyntaxNode> &expr) {
+    Pattern* Parser::ReinterpretExpressionAsPattern(SyntaxNode* expr) {
         switch (expr->type) {
             case SyntaxNodeType::Identifier:
-                return dynamic_pointer_cast<Identifier>(expr);
+                return dynamic_cast<Identifier*>(expr);
 
             case SyntaxNodeType::RestElement:
-                return dynamic_pointer_cast<RestElement>(expr);
+                return dynamic_cast<RestElement*>(expr);
 
             case SyntaxNodeType::MemberExpression:
-                return dynamic_pointer_cast<MemberExpression>(expr);
+                return dynamic_cast<MemberExpression*>(expr);
 
             case SyntaxNodeType::AssignmentPattern:
-                return dynamic_pointer_cast<AssignmentPattern>(expr);
+                return dynamic_cast<AssignmentPattern*>(expr);
 
             case SyntaxNodeType::SpreadElement: {
-                auto that = dynamic_pointer_cast<SpreadElement>(expr);
+                auto that = dynamic_cast<SpreadElement*>(expr);
                 auto node = Alloc<RestElement>();
                 node->argument = ReinterpretExpressionAsPattern(that->argument);
                 return node;
             }
 
             case SyntaxNodeType::ArrayExpression: {
-                auto that = dynamic_pointer_cast<ArrayExpression>(expr);
+                auto that = dynamic_cast<ArrayExpression*>(expr);
                 auto node = Alloc<ArrayPattern>();
                 for (auto& i : that->elements) {
                     if (i.has_value()) {
@@ -70,19 +70,19 @@ namespace jetpack::parser {
             }
 
             case SyntaxNodeType::ObjectExpression: {
-                auto that = dynamic_pointer_cast<ObjectExpression>(expr);
+                auto that = dynamic_cast<ObjectExpression*>(expr);
                 auto node = Alloc<ObjectPattern>();
                 for (auto& i : that->properties) {
                     if (i->type == SyntaxNodeType::SpreadElement) {
                         node->properties.push_back(ReinterpretExpressionAsPattern(i));
                     } else {
-                        auto prop = dynamic_pointer_cast<Property>(i);
+                        auto prop = dynamic_cast<Property*>(i);
                         auto new_prop = Alloc<Property>();
                         new_prop->key = prop->key;
                         if (prop->value) {
                             new_prop->value = ReinterpretExpressionAsPattern(*prop->value);
                         }
-                        node->properties.push_back(move(new_prop));
+                        node->properties.push_back(new_prop);
                     }
                 }
 
@@ -90,7 +90,7 @@ namespace jetpack::parser {
             }
 
             case SyntaxNodeType::AssignmentExpression: {
-                auto that = dynamic_pointer_cast<AssignmentExpression>(expr);
+                auto that = dynamic_cast<AssignmentExpression*>(expr);
                 auto node = Alloc<AssignmentPattern>();
                 node->right = that->right;
                 node->left = ReinterpretExpressionAsPattern(that->left);
@@ -103,8 +103,8 @@ namespace jetpack::parser {
         }
     }
 
-    std::optional<ParserCommon::FormalParameterOptions> Parser::ReinterpretAsCoverFormalsList(const Sp<SyntaxNode> &expr) {
-        std::vector<Sp<SyntaxNode>> params;
+    std::optional<ParserCommon::FormalParameterOptions> Parser::ReinterpretAsCoverFormalsList(SyntaxNode* expr) {
+        std::vector<SyntaxNode*> params;
         FormalParameterOptions options;
 
         bool async_arrow = false;
@@ -113,7 +113,7 @@ namespace jetpack::parser {
                 break;
 
             case SyntaxNodeType::ArrowParameterPlaceHolder: {
-                auto node = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr);
+                auto node = dynamic_cast<ArrowParameterPlaceHolder*>(expr);
                 params = node->params;
                 async_arrow = node->async;
                 break;
@@ -128,9 +128,9 @@ namespace jetpack::parser {
 
         for (auto& param : params) {
             if (param->type == SyntaxNodeType::AssignmentPattern) {
-                auto node = dynamic_pointer_cast<AssignmentPattern>(param);
+                auto node = dynamic_cast<AssignmentPattern*>(param);
                 if (node->right->type == SyntaxNodeType::YieldExpression) {
-                    auto right = dynamic_pointer_cast<YieldExpression>(node->right);
+                    auto right = dynamic_cast<YieldExpression*>(node->right);
                     if (right->argument) {
                         ThrowUnexpectedToken(ctx->lookahead_);
                     }
@@ -139,7 +139,7 @@ namespace jetpack::parser {
                     node->right = new_right;
                 }
             } else if (async_arrow && param->type == SyntaxNodeType::Identifier) {
-                auto id = dynamic_pointer_cast<Identifier>(param);
+                auto id = dynamic_cast<Identifier*>(param);
                 if (id->name == "await") {
                     ThrowUnexpectedToken(ctx->lookahead_);
                 }
@@ -167,25 +167,25 @@ namespace jetpack::parser {
     }
 
     void Parser::CheckPatternParam(parser::ParserCommon::FormalParameterOptions &options,
-                                   const Sp<SyntaxNode> &param) {
+                                   SyntaxNode* param) {
         switch (param->type) {
             case SyntaxNodeType::Identifier: {
-                auto id = dynamic_pointer_cast<Identifier>(param);
+                auto id = dynamic_cast<Identifier*>(param);
                 ValidateParam(options, Token(), id->name);
                 break;
             }
             case SyntaxNodeType::RestElement: {
-                auto rest_element = dynamic_pointer_cast<RestElement>(param);
+                auto rest_element = dynamic_cast<RestElement*>(param);
                 CheckPatternParam(options, rest_element->argument);
                 break;
             }
             case SyntaxNodeType::AssignmentPattern: {
-                auto assignment = dynamic_pointer_cast<AssignmentPattern>(param);
+                auto assignment = dynamic_cast<AssignmentPattern*>(param);
                 CheckPatternParam(options, assignment->left);
                 break;
             }
             case SyntaxNodeType::ArrayPattern: {
-                auto pattern = dynamic_pointer_cast<ArrayPattern>(param);
+                auto pattern = dynamic_cast<ArrayPattern*>(param);
                 for (auto& i : pattern->elements) {
                     if (i.has_value()) {
                         CheckPatternParam(options, *i);
@@ -194,13 +194,13 @@ namespace jetpack::parser {
                 break;
             }
             case SyntaxNodeType::ObjectPattern: {
-                auto pattern = dynamic_pointer_cast<ObjectPattern>(param);
+                auto pattern = dynamic_cast<ObjectPattern*>(param);
                 for (auto& prop : pattern->properties) {
                     if (prop->type == SyntaxNodeType::RestElement) {
-                        auto rest = dynamic_pointer_cast<RestElement>(prop);
+                        auto rest = dynamic_cast<RestElement*>(prop);
                         CheckPatternParam(options, rest);
                     } else {
-                        auto property = dynamic_pointer_cast<Property>(prop);
+                        auto property = dynamic_cast<Property*>(prop);
                         if (property->value.has_value()) {
                             CheckPatternParam(options, *property->value);
                         }
@@ -317,7 +317,7 @@ namespace jetpack::parser {
 
     void Parser::ParseFormalParameter(Scope& scope, parser::Parser::FormalParameterOptions &option) {
         std::vector<Token> params;
-        Sp<SyntaxNode> param;
+        SyntaxNode* param = nullptr;
         if (Match(JsTokenType::Spread)) {
             param = ParseRestElement(scope, params);
         } else {
@@ -329,7 +329,7 @@ namespace jetpack::parser {
         }
 
         option.simple &= param->type == SyntaxNodeType::Identifier;
-        option.params.push_back(move(param));
+        option.params.push_back(param);
     }
 
     void Parser::ValidateParam(parser::ParserCommon::FormalParameterOptions &options, const Token &param,
@@ -363,7 +363,7 @@ namespace jetpack::parser {
         options.param_set.insert(key);
     }
 
-    Sp<Expression> Parser::ParsePrimaryExpression(Scope& scope) {
+    Expression* Parser::ParsePrimaryExpression(Scope& scope) {
         auto& config = ctx->config_;
 
         if (config.jsx && Match(JsTokenType::LessThan)) {
@@ -512,7 +512,7 @@ namespace jetpack::parser {
         return nullptr;
     }
 
-    Sp<SpreadElement> Parser::ParseSpreadElement(Scope& scope) {
+    SpreadElement* Parser::ParseSpreadElement(Scope& scope) {
         auto marker = CreateStartMarker();
 
         Expect(JsTokenType::Spread);
@@ -525,7 +525,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Property> Parser::ParseObjectProperty(Scope& scope, bool &has_proto) {
+    Property* Parser::ParseObjectProperty(Scope& scope, bool &has_proto) {
         auto marker = CreateStartMarker();
         Token token = ctx->lookahead_;
         VarKind kind = VarKind::Invalid;
@@ -534,8 +534,8 @@ namespace jetpack::parser {
         bool shorthand = false;
         bool is_async = false;
 
-        optional<Sp<SyntaxNode>> key;
-        optional<Sp<SyntaxNode>> value;
+        optional<SyntaxNode*> key;
+        optional<SyntaxNode*> value;
 
         if (token.type == JsTokenType::Identifier) {
             auto id = token.value;
@@ -634,7 +634,7 @@ namespace jetpack::parser {
         return node;
     }
 
-    Sp<SyntaxNode> Parser::ParseObjectPropertyKey(Scope& scope) {
+    SyntaxNode* Parser::ParseObjectPropertyKey(Scope& scope) {
         auto marker = CreateStartMarker();
         Token token = NextToken();
 
@@ -696,20 +696,20 @@ namespace jetpack::parser {
         return nullptr;
     }
 
-    Sp<Expression> Parser::ParseObjectInitializer(Scope& scope) {
+    Expression* Parser::ParseObjectInitializer(Scope& scope) {
         auto marker = CreateStartMarker();
 
         Expect(JsTokenType::LeftBracket);
         auto node = Alloc<ObjectExpression>();
         bool has_proto = false;
         while (!Match(JsTokenType::RightBracket)) {
-            Sp<SyntaxNode> prop;
+            SyntaxNode* prop = nullptr;
             if (Match(JsTokenType::Spread)) {
                 prop = ParseSpreadElement(scope);
             } else {
                 prop = ParseObjectProperty(scope, has_proto);
             }
-            node->properties.push_back(std::move(prop));
+            node->properties.push_back(prop);
             if (!Match(JsTokenType::RightBracket)) {
                 ExpectCommaSeparator();
             }
@@ -719,10 +719,10 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParseFunctionExpression(Scope& parent_scope) {
+    FunctionExpression* Parser::ParseFunctionExpression(Scope& parent_scope) {
         auto marker = CreateStartMarker();
 
-        auto fun_scope = std::make_unique<Scope>(ScopeType::Function);
+        auto fun_scope = std::make_unique<Scope>(ScopeType::Function, ctx->ast_context_);
         fun_scope->SetParent(&parent_scope);
         auto& scope = *fun_scope.get();
 
@@ -734,7 +734,7 @@ namespace jetpack::parser {
         bool is_generator = is_async ? false : Match(JsTokenType::Mul);
         if (is_generator) NextToken();
 
-        optional<Sp<Identifier>> id;
+        optional<Identifier*> id;
         optional<Token> first_restricted;
 
         bool prev_allow_await = ctx->await_;
@@ -810,7 +810,7 @@ namespace jetpack::parser {
         }
     }
 
-    Sp<Identifier> Parser::ParseIdentifierName() {
+    Identifier* Parser::ParseIdentifierName() {
         auto marker = CreateStartMarker();
         auto node = Alloc<Identifier>();
         Token token = NextToken();
@@ -822,13 +822,13 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseNewExpression(Scope& scope) {
+    Expression* Parser::ParseNewExpression(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
-        Sp<Identifier> id = ParseIdentifierName();
+        auto id = ParseIdentifierName();
         Assert(id->name == "new", "New expression must start with `new`");
 
-        Sp<Expression> expr;
+        Expression* expr = nullptr;
 
         if (Match(JsTokenType::Dot)) {
             NextToken();
@@ -864,7 +864,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, expr);
     }
 
-    Sp<YieldExpression> Parser::ParseYieldExpression(Scope& scope) {
+    YieldExpression* Parser::ParseYieldExpression(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Yield);
 
@@ -885,11 +885,11 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseArguments(Scope& scope) {
-        std::vector<Sp<SyntaxNode>> result;
+    std::vector<SyntaxNode*> Parser::ParseArguments(Scope& scope) {
+        std::vector<SyntaxNode*> result;
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
-            Sp<SyntaxNode> expr;
+            SyntaxNode* expr = nullptr;
             while (true) {
                 if (Match(JsTokenType::Spread)) {
                     expr = ParseSpreadElement(scope);
@@ -912,18 +912,18 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<Import> Parser::ParseImportCall() {
+    Import* Parser::ParseImportCall() {
         auto marker = CreateStartMarker();
         auto node = Alloc<Import>();
         Expect(JsTokenType::K_Import);
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseDirective(Scope& scope) {
+    Statement* Parser::ParseDirective(Scope& scope) {
         auto token = ctx->lookahead_;
 
         auto marker = CreateStartMarker();
-        Sp<Expression> expr = ParseExpression(scope);
+        auto expr = ParseExpression(scope);
         std::string directive;
         if (expr->type == SyntaxNodeType::Literal) {
             directive = token.value.substr(1, token.value.size() - 1);
@@ -942,22 +942,22 @@ namespace jetpack::parser {
         }
     }
 
-    Sp<Expression> Parser::ParseExpression(Scope& scope) {
+    Expression* Parser::ParseExpression(Scope& scope) {
         auto start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
-        Sp<Expression> expr = IsolateCoverGrammar<Expression>([this, &scope] {
+        auto expr = IsolateCoverGrammar<Expression>([this, &scope] {
             return ParseAssignmentExpression(scope);
         });
 
         if (Match(JsTokenType::Comma)) {
-            std::vector<Sp<Expression>> expressions;
+            std::vector<Expression*> expressions;
             expressions.push_back(expr);
             while (ctx->lookahead_.type != JsTokenType::EOF_) {
                 if (!Match(JsTokenType::Comma)) {
                     break;
                 }
                 NextToken();
-                Sp<Expression> node = IsolateCoverGrammar<Expression>([this, &scope] {
+                auto node = IsolateCoverGrammar<Expression>([this, &scope] {
                     return ParseAssignmentExpression(scope);
                 });
                 expressions.push_back(node);
@@ -971,10 +971,10 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<BlockStatement> Parser::ParseFunctionSourceElements(Scope& scope) {
+    BlockStatement* Parser::ParseFunctionSourceElements(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
-        vector<Sp<SyntaxNode>> body = ParseDirectivePrologues(scope);
+        vector<SyntaxNode*> body = ParseDirectivePrologues(scope);
         Expect(JsTokenType::LeftBracket);
 
         auto prev_label_set = move(ctx->label_set_);
@@ -992,7 +992,7 @@ namespace jetpack::parser {
                 break;
             }
 
-            Sp<SyntaxNode> temp = ParseStatementListItem(scope);
+            SyntaxNode* temp = ParseStatementListItem(scope);
             body.push_back(move(temp));
         }
 
@@ -1009,9 +1009,9 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseDirectivePrologues(Scope& scope) {
+    std::vector<SyntaxNode*> Parser::ParseDirectivePrologues(Scope& scope) {
         optional<Token> first_restrict;
-        std::vector<Sp<SyntaxNode>> result;
+        std::vector<SyntaxNode*> result;
 
         Token token;
         while (true) {
@@ -1020,12 +1020,12 @@ namespace jetpack::parser {
                 break;
             }
 
-            Sp<Statement> statement = ParseDirective(scope);
+            Statement* statement = ParseDirective(scope);
             result.push_back(statement);
             if (statement->type != SyntaxNodeType::Directive) {
                 break;
             }
-            auto directive_ = reinterpret_cast<Directive*>(statement.get());
+            auto directive_ = reinterpret_cast<Directive*>(statement);
 
             if (directive_->directive == "use strict") {
                 ctx->strict_ = true;
@@ -1045,7 +1045,7 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<ClassBody> Parser::ParseClassBody(Scope& scope) {
+    ClassBody* Parser::ParseClassBody(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ClassBody>();
 
@@ -1054,10 +1054,10 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<ClassDeclaration> Parser::ParseClassDeclaration(Scope& parent_scope, bool identifier_is_optional) {
+    ClassDeclaration* Parser::ParseClassDeclaration(Scope& parent_scope, bool identifier_is_optional) {
         auto marker = CreateStartMarker();
 
-        auto cls_scope = std::make_unique<Scope>(ScopeType::Class);
+        auto cls_scope = std::make_unique<Scope>(ScopeType::Class, ctx->ast_context_);
         cls_scope->SetParent(&parent_scope);
         auto& scope = *cls_scope;
 
@@ -1065,8 +1065,7 @@ namespace jetpack::parser {
         ctx->strict_ = true;
         Expect(JsTokenType::K_Class);
 
-        auto node = Alloc<ClassDeclaration>();
-        node->scope = move(cls_scope);
+        auto node = Alloc<ClassDeclaration>(std::move(cls_scope));
         if (identifier_is_optional && (ctx->lookahead_.type != JsTokenType::Identifier)) {
             // nothing
         } else {
@@ -1082,7 +1081,7 @@ namespace jetpack::parser {
                 ThrowUnexpectedToken(Token());
                 return nullptr;
             }
-            node->super_class = dynamic_pointer_cast<Identifier>(temp);
+            node->super_class = dynamic_cast<Identifier*>(temp);
         }
         node->body = ParseClassBody(scope);
         ctx->strict_ = prev_strict;
@@ -1090,15 +1089,14 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<ClassExpression> Parser::ParseClassExpression(Scope& parent_scope) {
+    ClassExpression* Parser::ParseClassExpression(Scope& parent_scope) {
         auto marker = CreateStartMarker();
 
-        auto cls_scope = std::make_unique<Scope>(ScopeType::Class);
+        auto cls_scope = std::make_unique<Scope>(ScopeType::Class, ctx->ast_context_);
         cls_scope->SetParent(&parent_scope);
         auto& scope = *cls_scope;
 
-        auto node = Alloc<ClassExpression>();
-        node->scope = move(cls_scope);
+        auto node = Alloc<ClassExpression>(std::move(cls_scope));
 
         bool prev_strict = ctx->strict_;
         ctx->strict_ = true;
@@ -1117,7 +1115,7 @@ namespace jetpack::parser {
                 ThrowUnexpectedToken(Token());
                 return nullptr;
             }
-            node->super_class = dynamic_pointer_cast<Identifier>(temp);
+            node->super_class = dynamic_cast<Identifier*>(temp);
         }
 
         node->body = ParseClassBody(scope);
@@ -1126,7 +1124,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseLeftHandSideExpressionAllowCall(Scope& scope) {
+    Expression* Parser::ParseLeftHandSideExpressionAllowCall(Scope& scope) {
         Token start_token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
         bool maybe_async = MatchContextualKeyword("async");
@@ -1134,7 +1132,7 @@ namespace jetpack::parser {
         bool prev_allow_in = ctx->allow_in_;
         ctx->allow_in_ = true;
 
-        Sp<Expression> expr;
+        Expression* expr = nullptr;
         if (Match(JsTokenType::K_Super) && ctx->in_function_body_) {
             auto node = Alloc<Super>();
             auto marker = CreateStartMarker();
@@ -1191,9 +1189,9 @@ namespace jetpack::parser {
                     placeholder->async = true;
                     expr = move(placeholder);
                 } else if (ctx->config_.common_js) {
-                    auto new_call = CheckRequireCall(scope, std::dynamic_pointer_cast<CallExpression>(expr));
+                    auto new_call = CheckRequireCall(scope, dynamic_cast<CallExpression*>(expr));
                     if (new_call.has_value()) {
-                        return std::dynamic_pointer_cast<Expression>(*new_call);
+                        return dynamic_cast<Expression*>(*new_call);
                     }
                 }
             } else if (Match(JsTokenType::LeftBrace)) {
@@ -1222,10 +1220,10 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseArrayInitializer(Scope& scope) {
+    Expression* Parser::ParseArrayInitializer(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ArrayExpression>();
-        Sp<SyntaxNode> element;
+        SyntaxNode* element = nullptr;
 
         Expect(JsTokenType::LeftBrace);
         while (!Match(JsTokenType::RightBrace)) {
@@ -1255,16 +1253,16 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Module> Parser::ParseModule() {
+    Module* Parser::ParseModule() {
         ctx->strict_ = true;
         ctx->is_module_ = true;
         auto marker = CreateStartMarker();
-        Sp<Module> node;
+        Module* node = nullptr;
         if (ctx->is_common_js_) {
-            node = make_shared<Module>(ModuleScope::ModuleType::CommonJs);
+            node = Alloc<Module>(std::make_unique<ModuleScope>(ModuleScope::ModuleType::CommonJs, ctx->ast_context_));
             node->source_type = "commonjs";
         } else {
-            node = make_shared<Module>(ModuleScope::ModuleType::EsModule);
+            node = Alloc<Module>(std::make_unique<ModuleScope>(ModuleScope::ModuleType::EsModule, ctx->ast_context_));
             node->source_type = "module";
         }
         node->body = ParseDirectivePrologues(*node->scope.get());
@@ -1280,9 +1278,9 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Script> Parser::ParseScript() {
+    Script* Parser::ParseScript() {
         auto start_marker = CreateStartMarker();
-        auto node = Alloc<Script>();
+        auto node = Alloc<Script>(std::make_unique<Scope>(ScopeType::Global, ctx->ast_context_));
         node->body = ParseDirectivePrologues(*node->scope);
         node->source_type = "script";
         while (ctx->lookahead_.type != JsTokenType::EOF_) {
@@ -1297,7 +1295,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SwitchCase> Parser::ParseSwitchCase(Scope& scope) {
+    SwitchCase* Parser::ParseSwitchCase(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<SwitchCase>();
 
@@ -1314,14 +1312,14 @@ namespace jetpack::parser {
             if (Match(JsTokenType::RightBracket) || Match(JsTokenType::K_Default) || Match(JsTokenType::K_Case)) {
                 break;
             }
-            Sp<Statement> con = ParseStatementListItem(scope);
-            node->consequent.push_back(std::move(con));
+            Statement* con = ParseStatementListItem(scope);
+            node->consequent.push_back(con);
         }
 
         return Finalize(marker, node);
     }
 
-    Sp<IfStatement> Parser::ParseIfStatement(Scope& scope) {
+    IfStatement* Parser::ParseIfStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<IfStatement>();
 
@@ -1345,15 +1343,14 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseIfClause(Scope& scope) {
+    Statement* Parser::ParseIfClause(Scope& scope) {
         if (ctx->strict_ && Match(JsTokenType::K_Function)) {
             TolerateError(ParseMessages::StrictFunction);
         }
         return ParseStatement(scope);
     }
 
-    Sp<Statement> Parser::ParseStatement(Scope& scope) {
-
+    Statement* Parser::ParseStatement(Scope& scope) {
         if (IsPunctuatorToken(ctx->lookahead_.type)) {
             switch (ctx->lookahead_.type) {
                 case JsTokenType::LeftBracket:
@@ -1441,7 +1438,7 @@ namespace jetpack::parser {
         }
     }
 
-    Sp<ExpressionStatement> Parser::ParseExpressionStatement(Scope& scope) {
+    ExpressionStatement* Parser::ParseExpressionStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<ExpressionStatement>();
 
@@ -1451,11 +1448,11 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseBlock(Scope& parent_scope, bool new_scope) {
+    BlockStatement* Parser::ParseBlock(Scope& parent_scope, bool new_scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<BlockStatement>();
         if (new_scope) {
-            auto new_scope_ins = std::make_unique<Scope>();
+            auto new_scope_ins = std::make_unique<Scope>(ctx->ast_context_);
             new_scope_ins->type = ScopeType::Block;
             new_scope_ins->SetParent(&parent_scope);
             node->scope = { std::move(new_scope_ins) };
@@ -1466,30 +1463,30 @@ namespace jetpack::parser {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SyntaxNode> stmt;
+            SyntaxNode* stmt = nullptr;
             if (new_scope) {
                 stmt = ParseStatementListItem(**node->scope);
             } else {
                 stmt = ParseStatementListItem(parent_scope);
             }
-            node->body.push_back(std::move(stmt));
+            node->body.push_back(stmt);
         }
         Expect(JsTokenType::RightBracket);
 
         return Finalize(marker, node);
     }
 
-    Sp<EmptyStatement> Parser::ParseEmptyStatement() {
+    EmptyStatement* Parser::ParseEmptyStatement() {
         auto node = Alloc<EmptyStatement>();
         auto marker = CreateStartMarker();
         Expect(JsTokenType::Semicolon);
         return Finalize(marker, node);
     }
 
-    Sp<FunctionDeclaration> Parser::ParseFunctionDeclaration(Scope& parent_scope, bool identifier_is_optional) {
+    FunctionDeclaration* Parser::ParseFunctionDeclaration(Scope& parent_scope, bool identifier_is_optional) {
         auto marker = CreateStartMarker();
 
-        auto fun_scope = std::make_unique<Scope>(ScopeType::Function);
+        auto fun_scope = std::make_unique<Scope>(ScopeType::Function, ctx->ast_context_);
         fun_scope->SetParent(&parent_scope);
         auto& scope = *fun_scope;
 
@@ -1505,7 +1502,7 @@ namespace jetpack::parser {
             NextToken();
         }
 
-        optional<Sp<Identifier>> id;
+        optional<Identifier*> id;
         optional<Token> first_restricted;
         string message;
 
@@ -1560,35 +1557,33 @@ namespace jetpack::parser {
         ctx->allow_yield_ = prev_allow_yield;
 
         if (is_async) {
-            auto node = Alloc<FunctionDeclaration>();
+            auto node = Alloc<FunctionDeclaration>(move(fun_scope));
             node->id = id;
             node->params = move(options.params);
-            node->body = move(body);
+            node->body = body;
             node->async = true;
-            node->scope = move(fun_scope);
             return Finalize(marker, node);
         } else {
-            auto node = Alloc<FunctionDeclaration>();
+            auto node = Alloc<FunctionDeclaration>(move(fun_scope));
             node->id = id;
             node->generator = is_generator;
             node->params = move(options.params);
-            node->body = move(body);
+            node->body = body;
             node->async = false;
-            node->scope = move(fun_scope);
 
             return Finalize(marker, node);
         }
     }
 
-    Sp<Statement> Parser::ParseLabelledStatement(Scope& scope) {
+    Statement* Parser::ParseLabelledStatement(Scope& scope) {
         auto start_marker = CreateStartMarker();
-        Sp<Expression> expr = ParseExpression(scope);
+        Expression* expr = ParseExpression(scope);
 
-        Sp<Statement> statement;
+        Statement* statement = nullptr;
         if ((expr->type == SyntaxNodeType::Identifier) && Match(JsTokenType::Colon)) {
             NextToken();
 
-            auto id = dynamic_pointer_cast<Identifier>(expr);
+            auto id = dynamic_cast<Identifier*>(expr);
             std::string key = "$" + id->name;
 
             if (ctx->label_set_->find(key) != ctx->label_set_->end()) {
@@ -1596,7 +1591,7 @@ namespace jetpack::parser {
             }
             ctx->label_set_->insert(key);
 
-            Sp<Statement> body;
+            Statement* body = nullptr;
             if (Match(JsTokenType::K_Class)) {
                 TolerateUnexpectedToken(ctx->lookahead_);
                 body = ParseClassDeclaration(scope, false);
@@ -1608,7 +1603,7 @@ namespace jetpack::parser {
                 } else if (declaration->generator) {
                     TolerateUnexpectedToken(token, ParseMessages::GeneratorInLegacyContext);
                 }
-                body = move(declaration);
+                body = declaration;
             } else {
                 body = ParseStatement(scope);
             }
@@ -1617,25 +1612,24 @@ namespace jetpack::parser {
             node->label = id;
             node->body = body;
 
-            statement = move(node);
+            statement = node;
         } else {
             ConsumeSemicolon();
             auto node = Alloc<ExpressionStatement>();
             node->expression = expr;
-            statement = move(node);
+            statement = node;
         }
         return Finalize(start_marker, statement);
     }
 
-    Sp<BreakStatement> Parser::ParseBreakStatement() {
-
+    BreakStatement* Parser::ParseBreakStatement() {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Break);
 
-        std::optional<Sp<Identifier>> label;
+        std::optional<Identifier*> label;
         if (ctx->lookahead_.type == JsTokenType::Identifier && !ctx->has_line_terminator_) {
-            Scope scope;
-            Sp<Identifier> id = ParseVariableIdentifier(scope, VarKind::Invalid);
+            Scope scope(ctx->ast_context_);
+            Identifier* id = ParseVariableIdentifier(scope, VarKind::Invalid);
 
             std::string key = "$" + id->name;
             if (auto& label_set = *ctx->label_set_; label_set.find(key) == label_set.end()) {
@@ -1656,13 +1650,13 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<ContinueStatement> Parser::ParseContinueStatement() {
+    ContinueStatement* Parser::ParseContinueStatement() {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Continue);
         auto node = Alloc<ContinueStatement>();
 
         if (ctx->lookahead_.type == JsTokenType::Identifier && !ctx->has_line_terminator_) {
-            Scope scope;
+            Scope scope(ctx->ast_context_);
             auto id = ParseVariableIdentifier(scope, VarKind::Invalid);
             node->label = id;
 
@@ -1682,7 +1676,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<DebuggerStatement> Parser::ParseDebuggerStatement() {
+    DebuggerStatement* Parser::ParseDebuggerStatement() {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Debugger);
         ConsumeSemicolon();
@@ -1690,7 +1684,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<DoWhileStatement> Parser::ParseDoWhileStatement(Scope& scope) {
+    DoWhileStatement* Parser::ParseDoWhileStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<DoWhileStatement>();
         Expect(JsTokenType::K_Do);
@@ -1716,17 +1710,17 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseForStatement(Scope& parent_scope) {
+    Statement* Parser::ParseForStatement(Scope& parent_scope) {
         bool for_in = true;
 
-        std::optional<Sp<SyntaxNode>> init;
-        std::optional<Sp<Expression>> test;
-        std::optional<Sp<Expression>> update;
-        Sp<SyntaxNode> left;
-        Sp<SyntaxNode> right;
+        std::optional<SyntaxNode*> init;
+        std::optional<Expression*> test;
+        std::optional<Expression*> update;
+        SyntaxNode* left = nullptr;
+        SyntaxNode* right = nullptr;
         auto marker = CreateStartMarker();
 
-        auto for_scope = std::make_unique<Scope>(ScopeType::For);
+        auto for_scope = std::make_unique<Scope>(ScopeType::For, ctx->ast_context_);
         for_scope->SetParent(&parent_scope);
         auto& scope = *for_scope;
 
@@ -1860,13 +1854,13 @@ namespace jetpack::parser {
                     for_in = false;
                 } else {
                     if (Match(JsTokenType::Comma)) {
-                        std::vector<Sp<Expression>> init_seq;
+                        std::vector<Expression*> init_seq;
                         Assert(init.has_value() && (*init)->IsExpression(), "init should be an expression");
-                        init_seq.push_back(dynamic_pointer_cast<Expression>(*init));
+                        init_seq.push_back(dynamic_cast<Expression*>(*init));
 
                         while (Match(JsTokenType::Comma)) {
                             NextToken();
-                            Sp<Expression> node = IsolateCoverGrammar<Expression>([this, &scope] {
+                            auto node = IsolateCoverGrammar<Expression>([this, &scope] {
                                 return ParseAssignmentExpression(scope);
                             });
                             init_seq.push_back(node);
@@ -1891,7 +1885,7 @@ namespace jetpack::parser {
             }
         }
 
-        Sp<Statement> body;
+        Statement* body = nullptr;
         if (!Match(JsTokenType::RightParen) && ctx->config_.tolerant) {
             TolerateUnexpectedToken(NextToken());
             auto node = Alloc<EmptyStatement>();
@@ -1908,32 +1902,29 @@ namespace jetpack::parser {
         }
 
         if (!left) {
-            auto node = Alloc<ForStatement>();
+            auto node = Alloc<ForStatement>(std::move(for_scope));
             node->init = init;
             node->test = test;
             node->update = update;
             node->body = body;
-            node->scope = move(for_scope);
             return Finalize(marker, node);
         } else if (for_in) {
-            auto node = Alloc<ForInStatement>();
+            auto node = Alloc<ForInStatement>(std::move(for_scope));
             node->left = left;
             node->right = right;
             node->body = body;
-            node->scope = move(for_scope);
             return Finalize(marker, node);
         } else {
-            auto node = Alloc<ForOfStatement>();
+            auto node = Alloc<ForOfStatement>(std::move(for_scope));
             node->left = left;
             node->right = right;
             node->body = body;
-            node->scope = move(for_scope);
             return Finalize(marker, node);
         }
 
     }
 
-    Sp<ReturnStatement> Parser::ParseReturnStatement(Scope& scope) {
+    ReturnStatement* Parser::ParseReturnStatement(Scope& scope) {
         if (!ctx->in_function_body_) {
             TolerateError(ParseMessages::IllegalReturn);
         }
@@ -1956,16 +1947,15 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<SwitchStatement> Parser::ParseSwitchStatement(Scope& parent_scope) {
+    SwitchStatement* Parser::ParseSwitchStatement(Scope& parent_scope) {
         auto marker = CreateStartMarker();
 
-        auto switch_scope = std::make_unique<Scope>(ScopeType::Switch);
+        auto switch_scope = std::make_unique<Scope>(ScopeType::Switch, ctx->ast_context_);
         switch_scope->SetParent(&parent_scope);
         auto& scope = *switch_scope;
 
         Expect(JsTokenType::K_Switch);
-        auto node = Alloc<SwitchStatement>();
-        node->scope = move(switch_scope);
+        auto node = Alloc<SwitchStatement>(std::move(switch_scope));
 
         Expect(JsTokenType::LeftParen);
         node->discrimiant = ParseExpression(scope);
@@ -1980,7 +1970,7 @@ namespace jetpack::parser {
             if (Match(JsTokenType::RightBracket)) {
                 break;
             }
-            Sp<SwitchCase> clause = ParseSwitchCase(scope);
+            SwitchCase* clause = ParseSwitchCase(scope);
             if (!clause->test) {
                 if (default_found) {
                     ThrowError(ParseMessages::MultipleDefaultsInSwitch);
@@ -1997,7 +1987,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<ThrowStatement> Parser::ParseThrowStatement(Scope& scope) {
+    ThrowStatement* Parser::ParseThrowStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Throw);
 
@@ -2013,7 +2003,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<TryStatement> Parser::ParseTryStatement(Scope& scope) {
+    TryStatement* Parser::ParseTryStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Try);
         auto node = Alloc<TryStatement>();
@@ -2029,10 +2019,10 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<CatchClause> Parser::ParseCatchClause(Scope& parent_scope) {
+    CatchClause* Parser::ParseCatchClause(Scope& parent_scope) {
         auto marker = CreateStartMarker();
 
-        auto catch_scope = std::make_unique<Scope>(ScopeType::Catch);
+        auto catch_scope = std::make_unique<Scope>(ScopeType::Catch, ctx->ast_context_);
         catch_scope->SetParent(&parent_scope);
         auto& scope = *catch_scope;
 
@@ -2060,7 +2050,7 @@ namespace jetpack::parser {
         }
 
         if (ctx->strict_ && node->param->type == SyntaxNodeType::Identifier) {
-            auto id = dynamic_pointer_cast<Identifier>(node->param);
+            auto id = dynamic_cast<Identifier*>(node->param);
             if (ctx->scanner_->IsRestrictedWord(id->name)) {
                 TolerateError(ParseMessages::StrictCatchVariable);
             }
@@ -2072,12 +2062,12 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParseFinallyClause(Scope& scope) {
+    BlockStatement* Parser::ParseFinallyClause(Scope& scope) {
         Expect(JsTokenType::K_Finally);
         return ParseBlock(scope, true);
     }
 
-    Sp<VariableDeclaration> Parser::ParseVariableStatement(Scope& scope) {
+    VariableDeclaration* Parser::ParseVariableStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         Expect(JsTokenType::K_Var);
 
@@ -2089,41 +2079,43 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<VariableDeclarator> Parser::ParseVariableDeclaration(Scope& parent_scope, bool in_for) {
+    VariableDeclarator* Parser::ParseVariableDeclaration(Scope& parent_scope, bool in_for) {
         auto marker = CreateStartMarker();
-        auto node = Alloc<VariableDeclarator>();
+        auto node = Alloc<VariableDeclarator>(std::make_unique<Scope>(ctx->ast_context_));
         node->scope->SetParent(&parent_scope);
 
         vector<Token> params;
-        Sp<SyntaxNode> id = ParsePattern(parent_scope, params, VarKind::Var);
+        auto id = ParsePattern(parent_scope, params, VarKind::Var);
 
         if (ctx->strict_ && id->type == SyntaxNodeType::Identifier) {
-            auto identifier = dynamic_pointer_cast<Identifier>(id);
+            auto identifier = dynamic_cast<Identifier*>(id);
             if (ctx->scanner_->IsRestrictedWord(identifier->name)) {
                 TolerateError(ParseMessages::StrictVarName);
             }
         }
 
-        optional<Sp<Expression>> init;
+        optional<Expression*> init;
         if (Match(JsTokenType::Assign)) {
             NextToken();
-            init = IsolateCoverGrammar<Expression>([this, &scope = *node->scope] {
-                return ParseAssignmentExpression(scope);
-            });
+            init = {
+                IsolateCoverGrammar<Expression>([this, &scope = *node->scope] {
+                    return ParseAssignmentExpression(scope);
+                })
+            };
         } else if (id->type != SyntaxNodeType::Identifier && !in_for) {
             Expect(JsTokenType::Assign);
         }
 
-        node->id = move(id);
+        node->id = id;
         node->init = init;
 
         return Finalize(marker, node);
     }
 
-    std::vector<Sp<VariableDeclarator>> Parser::ParseVariableDeclarationList(
+    std::vector<VariableDeclarator*> Parser::ParseVariableDeclarationList(
             Scope& scope, bool in_for) {
 
-        std::vector<Sp<VariableDeclarator>> list;
+        std::vector<VariableDeclarator*> list;
         list.push_back(ParseVariableDeclaration(scope, in_for));
         while (Match(JsTokenType::Comma)) {
             NextToken();
@@ -2133,7 +2125,7 @@ namespace jetpack::parser {
         return list;
     }
 
-    Sp<WhileStatement> Parser::ParseWhileStatement(Scope& scope) {
+    WhileStatement* Parser::ParseWhileStatement(Scope& scope) {
         auto marker = CreateStartMarker();
         auto node = Alloc<WhileStatement>();
 
@@ -2156,7 +2148,7 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<WithStatement> Parser::ParseWithStatement(Scope& scope) {
+    WithStatement* Parser::ParseWithStatement(Scope& scope) {
         if (ctx->strict_) {
             TolerateError(ParseMessages::StrictModeWith);
         }
@@ -2181,14 +2173,14 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<VariableDeclarator> Parser::ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for) {
+    VariableDeclarator* Parser::ParseLexicalBinding(Scope& scope, VarKind kind, bool &in_for) {
         auto start_marker = CreateStartMarker();
-        auto node = Alloc<VariableDeclarator>();
+        auto node = Alloc<VariableDeclarator>(std::make_unique<Scope>(ctx->ast_context_));
         std::vector<Token> params;
         node->id = ParsePattern(scope, params, kind);
 
         if (ctx->strict_ && node->id->type == SyntaxNodeType::Identifier) {
-            auto id = dynamic_pointer_cast<Identifier>(node->id);
+            auto id = dynamic_cast<Identifier*>(node->id);
             if (ctx->scanner_->IsRestrictedWord(id->name)) {
                 TolerateError(ParseMessages::StrictVarName);
             }
@@ -2215,8 +2207,8 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<VariableDeclarator>> Parser::ParseBindingList(Scope& scope, VarKind kind, bool& in_for) {
-        std::vector<Sp<VariableDeclarator>> list;
+    std::vector<VariableDeclarator*> Parser::ParseBindingList(Scope& scope, VarKind kind, bool& in_for) {
+        std::vector<VariableDeclarator*> list;
         list.push_back(ParseLexicalBinding(scope, kind, in_for));
 
         while (Match(JsTokenType::Comma)) {
@@ -2227,7 +2219,7 @@ namespace jetpack::parser {
         return list;
     }
 
-    Sp<RestElement> Parser::ParseRestElement(Scope& scope, std::vector<Token> &params) {
+    RestElement* Parser::ParseRestElement(Scope& scope, std::vector<Token> &params) {
         auto marker = CreateStartMarker();
         auto node = Alloc<RestElement>();
 
@@ -2245,8 +2237,8 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Statement> Parser::ParseStatementListItem(Scope& scope) {
-        Sp<Statement> statement;
+    Statement* Parser::ParseStatementListItem(Scope& scope) {
+        Statement* statement = nullptr;
         ctx->is_assignment_target_ = true;
         ctx->is_binding_element_ = true;
 
@@ -2289,11 +2281,11 @@ namespace jetpack::parser {
         return statement;
     }
 
-    Sp<ExportSpecifier> Parser::ParseExportSpecifier(Scope& scope) {
+    ExportSpecifier* Parser::ParseExportSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         auto local = ParseIdentifierName();
-        auto exported = std::make_shared<Identifier>();
+        auto exported = Alloc<Identifier>();
         (*exported) = (*local);
 
         scope.AddUnresolvedId(local);
@@ -2304,12 +2296,12 @@ namespace jetpack::parser {
         }
 
         auto node = Alloc<ExportSpecifier>();
-        node->local = std::move(local);
-        node->exported = std::move(exported);
+        node->local = local;
+        node->exported = exported;
         return Finalize(start_marker, node);
     }
 
-    Sp<Declaration> Parser::ParseExportDeclaration(Scope& scope) {
+    Declaration* Parser::ParseExportDeclaration(Scope& scope) {
         auto module_scope = scope.CastToModule();
         Assert(module_scope, "scope should be module scope");
 
@@ -2320,7 +2312,7 @@ namespace jetpack::parser {
         auto start_marker = CreateStartMarker();
         Expect(JsTokenType::K_Export);
 
-        Sp<Declaration> export_decl;
+        Declaration* export_decl = nullptr;
         if (Match(JsTokenType::K_Default)) {
             NextToken();
             if (Match(JsTokenType::K_Function)) {
@@ -2355,7 +2347,7 @@ namespace jetpack::parser {
                 if (MatchContextualKeyword("from")) {
                     ThrowError(ParseMessages::UnexpectedToken, ctx->lookahead_.value);
                 }
-                Sp<SyntaxNode> decl;
+                SyntaxNode* decl = nullptr;
                 if (Match(JsTokenType::LeftBracket)) {
                     decl = ParseObjectInitializer(scope);
                 } else if (Match(JsTokenType::LeftBrace)) {
@@ -2365,7 +2357,7 @@ namespace jetpack::parser {
                 }
                 ConsumeSemicolon();
                 auto node = Alloc<ExportDefaultDeclaration>();
-                node->declaration = move(decl);
+                node->declaration = decl;
 
                 Assert(module_scope->export_manager.ResolveDefaultDecl(node) == ExportManager::Ok,
                        "resolve export failed");
@@ -2468,15 +2460,15 @@ namespace jetpack::parser {
     /**
      * check for require('')
      */
-    std::optional<Sp<SyntaxNode>> Parser::CheckRequireCall(Scope& scope, const Sp<CallExpression> &call) {
+    std::optional<SyntaxNode*> Parser::CheckRequireCall(Scope& scope, CallExpression* call) {
         if (call->callee->type == SyntaxNodeType::Identifier) {
-            auto id = std::dynamic_pointer_cast<Identifier>(call->callee);
+            auto id = dynamic_cast<Identifier*>(call->callee);
             if (!(id->name == "require")) {
                 return std::nullopt;
             }
             if (call->arguments.size() == 1 && call->arguments[0]->type == SyntaxNodeType::Literal) {
                 // very likely
-                auto lit = std::dynamic_pointer_cast<Literal>(call->arguments[0]);
+                auto lit = dynamic_cast<Literal*>(call->arguments[0]);
                 if (lit->ty != Literal::Ty::String) {
                     return std::nullopt;
                 }
@@ -2494,8 +2486,8 @@ namespace jetpack::parser {
         return std::nullopt;
     }
 
-    Sp<Expression> Parser::ParseAssignmentExpression(Scope& scope) {
-        Sp<Expression> expr;
+    Expression* Parser::ParseAssignmentExpression(Scope& scope) {
+        Expression* expr = nullptr;
 
         if (!ctx->allow_yield_ && Match(JsTokenType::K_Yield)) {
             expr = ParseYieldExpression(scope);
@@ -2510,14 +2502,13 @@ namespace jetpack::parser {
                             token.value == "async"
             ) {
                 if (ctx->lookahead_.type == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {
-                    Sp<SyntaxNode> arg = ParsePrimaryExpression(scope);
+                    SyntaxNode* arg = ParsePrimaryExpression(scope);
                     arg = ReinterpretExpressionAsPattern(arg);
 
                     auto node = Alloc<ArrowParameterPlaceHolder>();
                     node->params.push_back(arg);
                     node->async = true;
-                    expr = move(node);
-
+                    expr = node;
                 }
             }
 
@@ -2526,7 +2517,7 @@ namespace jetpack::parser {
                 ctx->is_assignment_target_ = false;
                 ctx->is_binding_element_ = false;
                 bool is_async = false;
-                if (auto placeholder = dynamic_pointer_cast<ArrowParameterPlaceHolder>(expr); placeholder) {
+                if (auto placeholder = dynamic_cast<ArrowParameterPlaceHolder*>(expr); placeholder) {
                     is_async = placeholder->async;
                 }
 
@@ -2547,7 +2538,7 @@ namespace jetpack::parser {
 
                     auto marker = CreateStartMarker();
                     Expect(JsTokenType::Arrow);
-                    Sp<SyntaxNode> body;
+                    SyntaxNode* body = nullptr;
 
                     if (Match(JsTokenType::LeftBracket)) {
                         bool prev_allow_in = ctx->allow_in_;
@@ -2571,14 +2562,14 @@ namespace jetpack::parser {
                     }
 
                     if (is_async) {
-                        auto node = Alloc<ArrowFunctionExpression>();
+                        auto node = Alloc<ArrowFunctionExpression>(std::make_unique<Scope>(ctx->ast_context_));
                         node->params = list->params;
                         node->body = body;
                         node->expression = expression;
                         node->async = true;
                         expr = Finalize(marker, node);
                     } else {
-                        auto node = Alloc<ArrowFunctionExpression>();
+                        auto node = Alloc<ArrowFunctionExpression>(std::make_unique<Scope>(ctx->ast_context_));
                         node->params = list->params;
                         node->body = body;
                         node->expression = expression;
@@ -2598,7 +2589,7 @@ namespace jetpack::parser {
                     }
 
                     if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
-                        auto id = dynamic_pointer_cast<Identifier>(expr);
+                        auto id = dynamic_cast<Identifier*>(expr);
                         if (ctx->scanner_->IsRestrictedWord(id->name)) {
                             TolerateUnexpectedToken(token, ParseMessages::StrictLHSAssignment);
                         }
@@ -2632,10 +2623,10 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseConditionalExpression(Scope& scope) {
+    Expression* Parser::ParseConditionalExpression(Scope& scope) {
         auto marker = CreateStartMarker();
 
-        Sp<Expression> expr = InheritCoverGrammar<Expression>([this, &scope] {
+        auto expr = InheritCoverGrammar<Expression>([this, &scope] {
             return ParseBinaryExpression(scope);
         });
 
@@ -2666,7 +2657,7 @@ namespace jetpack::parser {
         return Finalize(marker, expr);
     }
 
-    Sp<Expression> Parser::ParseBinaryExpression(Scope& scope) {
+    Expression* Parser::ParseBinaryExpression(Scope& scope) {
         Token start_token = ctx->lookahead_;
 
         auto expr = InheritCoverGrammar<Expression>([this, &scope] {
@@ -2684,8 +2675,8 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseBinaryExpression(Scope &scope,
-                                                 const Sp<Expression>& left,
+    Expression* Parser::ParseBinaryExpression(Scope &scope,
+                                                 Expression* left,
                                                  const Token &left_tk) {
         auto marker = CreateStartMarker();
 
@@ -2711,7 +2702,7 @@ namespace jetpack::parser {
                 std::string_view tokenView = TokenTypeToLiteral(left_tk.type);
                 binary->operator_ = std::string(tokenView.data(), tokenView.size());
                 if (ctx->config_.constant_folding) {
-                    expr = ContantFolding::TryBinaryExpression(binary);
+                    expr = ContantFolding::TryBinaryExpression(ctx->ast_context_, binary);
                 } else {
                     expr = binary;
                 }
@@ -2725,7 +2716,7 @@ namespace jetpack::parser {
                 binary->right = expr;
 
                 if (ctx->config_.constant_folding) {
-                    expr = Finalize(marker, ContantFolding::TryBinaryExpression(binary));
+                    expr = Finalize(marker, ContantFolding::TryBinaryExpression(ctx->ast_context_, binary));
                 } else {
                     expr = Finalize(marker, binary);
                 }
@@ -2741,10 +2732,10 @@ namespace jetpack::parser {
         return nullptr;
     }
 
-    Sp<Expression> Parser::ParseExponentiationExpression(Scope& scope) {
+    Expression* Parser::ParseExponentiationExpression(Scope& scope) {
         auto start = CreateStartMarker();
 
-        Sp<Expression> expr = InheritCoverGrammar<Expression>([this, &scope] {
+        Expression* expr = InheritCoverGrammar<Expression>([this, &scope] {
             return ParseUnaryExpression(scope);
         });
 
@@ -2766,8 +2757,8 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseUnaryExpression(Scope& scope) {
-        Sp<Expression> expr;
+    Expression* Parser::ParseUnaryExpression(Scope& scope) {
+        Expression* expr = nullptr;
 
         if (
             Match(JsTokenType::Plus) || Match(JsTokenType::Minus) || Match(JsTokenType::Wave) || Match(JsTokenType::Not) ||
@@ -2799,7 +2790,7 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<AwaitExpression> Parser::ParseAwaitExpression(Scope& scope) {
+    AwaitExpression* Parser::ParseAwaitExpression(Scope& scope) {
         auto marker = CreateStartMarker();
         NextToken();
         auto node = Alloc<AwaitExpression>();
@@ -2807,8 +2798,8 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<Expression> Parser::ParseUpdateExpression(Scope& scope) {
-        Sp<Expression> expr;
+    Expression* Parser::ParseUpdateExpression(Scope& scope) {
+        Expression* expr = nullptr;
         auto start_marker = CreateStartMarker();
 
         if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
@@ -2818,7 +2809,7 @@ namespace jetpack::parser {
                 return ParseUnaryExpression(scope);
             });
             if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
-                auto id = dynamic_pointer_cast<Identifier>(expr);
+                auto id = dynamic_cast<Identifier*>(expr);
                 if (ctx->scanner_->IsRestrictedWord(id->name)) {
                     TolerateError(ParseMessages::StrictLHSPrefix);
                 }
@@ -2840,7 +2831,7 @@ namespace jetpack::parser {
             if (!ctx->has_line_terminator_ && IsPunctuatorToken(ctx->lookahead_.type)) {
                 if (Match(JsTokenType::Increase) || Match(JsTokenType::Decrease)) {
                     if (ctx->strict_ && expr->type == SyntaxNodeType::Identifier) {
-                        auto id = dynamic_pointer_cast<Identifier>(expr);
+                        auto id = dynamic_cast<Identifier*>(expr);
                         if (ctx->scanner_->IsRestrictedWord(id->name)) {
                             TolerateError(ParseMessages::StrictLHSPostfix);
                         }
@@ -2863,11 +2854,11 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Expression> Parser::ParseLeftHandSideExpression(Scope& scope) {
+    Expression* Parser::ParseLeftHandSideExpression(Scope& scope) {
         Assert(ctx->allow_in_, "callee of new expression always allow in keyword.");
 
         auto start_marker = CreateStartMarker();
-        Sp<Expression> expr;
+        Expression* expr = nullptr;
         if (Match(JsTokenType::K_Super) && ctx->in_function_body_) {
             expr = ParseSuper();
         } else {
@@ -2915,7 +2906,7 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<Super> Parser::ParseSuper() {
+    Super* Parser::ParseSuper() {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::K_Super);
@@ -2928,7 +2919,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportDeclaration> Parser::ParseImportDeclaration(Scope& scope) {
+    ImportDeclaration* Parser::ParseImportDeclaration(Scope& scope) {
         auto module_scope = scope.CastToModule();
         Assert(module_scope, "import specifier is not in module scope");
 
@@ -2939,8 +2930,8 @@ namespace jetpack::parser {
         auto start_marker = CreateStartMarker();
         Expect(JsTokenType::K_Import);
 
-        Sp<Literal> src;
-        std::vector<Sp<SyntaxNode>> specifiers;
+        Literal* src = nullptr;
+        std::vector<SyntaxNode*> specifiers;
 
         if (ctx->lookahead_.type == JsTokenType::StringLiteral) {
             src = ParseModuleSpecifier();
@@ -2952,7 +2943,7 @@ namespace jetpack::parser {
                 specifiers.push_back(ParseImportNamespaceSpecifier(scope));
             } else if (IsIdentifierName(ctx->lookahead_) && !Match(JsTokenType::K_Default)) {
                 auto default_ = ParseImportDefaultSpecifier(scope);
-                specifiers.push_back(move(default_));
+                specifiers.push_back(default_);
 
                 if (Match(JsTokenType::Comma)) {
                     NextToken();
@@ -2985,7 +2976,7 @@ namespace jetpack::parser {
 
         auto node = Alloc<ImportDeclaration>();
         node->specifiers = move(specifiers);
-        node->source = move(src);
+        node->source = src;
 
         {
             auto finalized_node = Finalize(start_marker, node);
@@ -3002,9 +2993,9 @@ namespace jetpack::parser {
         }
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseNamedImports(Scope& scope) {
+    std::vector<SyntaxNode*> Parser::ParseNamedImports(Scope& scope) {
         Expect(JsTokenType::LeftBracket);
-        std::vector<Sp<SyntaxNode>> specifiers;
+        std::vector<SyntaxNode*> specifiers;
         while (!Match(JsTokenType::RightBracket)) {
             specifiers.push_back(ParseImportSpecifier(scope));
             if (!Match(JsTokenType::RightBracket)) {
@@ -3016,14 +3007,14 @@ namespace jetpack::parser {
         return specifiers;
     }
 
-    Sp<ImportSpecifier> Parser::ParseImportSpecifier(Scope& scope) {
+    ImportSpecifier* Parser::ParseImportSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
-        Sp<Identifier> imported;
-        Sp<Identifier> local;
+        Identifier* imported = nullptr;
+        Identifier* local = nullptr;
         if (ctx->lookahead_.type == JsTokenType::Identifier) {
-            imported = ParseVariableIdentifier(LeftValueScope::default_, VarKind::Invalid);
-            local = std::make_shared<Identifier>();
+            imported = ParseVariableIdentifier(*left_scope_, VarKind::Invalid);
+            local = Alloc<Identifier>();
             (*local) = (*imported);
             if (MatchContextualKeyword("as")) {
                 NextToken();
@@ -3032,7 +3023,7 @@ namespace jetpack::parser {
             scope.CreateVariable(local, VarKind::Var);
         } else {  // maybe keywords
             imported = ParseIdentifierName();
-            local = std::make_shared<Identifier>();
+            local = Alloc<Identifier>();
             (*local) = (*imported);
             if (MatchContextualKeyword("as")) {
                 NextToken();
@@ -3049,7 +3040,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Literal> Parser::ParseModuleSpecifier() {
+    Literal* Parser::ParseModuleSpecifier() {
         auto start_marker = CreateStartMarker();
 
         if (ctx->lookahead_.type != JsTokenType::StringLiteral) {
@@ -3064,7 +3055,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportDefaultSpecifier> Parser::ParseImportDefaultSpecifier(Scope& scope) {
+    ImportDefaultSpecifier* Parser::ParseImportDefaultSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto local = ParseIdentifierName();
         auto node = Alloc<ImportDefaultSpecifier>();
@@ -3073,7 +3064,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ImportNamespaceSpecifier> Parser::ParseImportNamespaceSpecifier(Scope& scope) {
+    ImportNamespaceSpecifier* Parser::ParseImportNamespaceSpecifier(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::Mul);
@@ -3084,13 +3075,13 @@ namespace jetpack::parser {
         auto local = ParseIdentifierName();
 
         auto node = Alloc<ImportNamespaceSpecifier>();
-        node->local = move(local);
+        node->local = local;
 
         scope.CreateVariable(node->local, VarKind::Var);
         return Finalize(start_marker, node);
     }
 
-    Sp<Declaration> Parser::ParseLexicalDeclaration(Scope& scope, bool &in_for) {
+    Declaration* Parser::ParseLexicalDeclaration(Scope& scope, bool &in_for) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<VariableDeclaration>();
         Token next = NextToken();
@@ -3108,7 +3099,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Identifier> Parser::ParseVariableIdentifier(Scope& scope, VarKind kind) {
+    Identifier* Parser::ParseVariableIdentifier(Scope& scope, VarKind kind) {
         auto marker = CreateStartMarker();
 
         Token token = NextToken();
@@ -3132,8 +3123,8 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    Sp<SyntaxNode> Parser::ParsePattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
-        Sp<SyntaxNode> pattern;
+    SyntaxNode* Parser::ParsePattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
+        SyntaxNode* pattern = nullptr;
 
         if (Match(JsTokenType::LeftBrace)) {
             pattern = ParseArrayPattern(scope, params, kind);
@@ -3150,7 +3141,7 @@ namespace jetpack::parser {
         return pattern;
     }
 
-    Sp<SyntaxNode> Parser::ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    SyntaxNode* Parser::ParsePatternWithDefault(Scope& scope, std::vector<Token> &params, VarKind kind) {
         Token start_token_ = ctx->lookahead_;
 
         auto pattern = ParsePattern(scope, params, kind);
@@ -3163,15 +3154,15 @@ namespace jetpack::parser {
             });
             ctx->allow_yield_ = prev_allow_yield;
             auto node = Alloc<AssignmentPattern>();
-            node->left = move(pattern);
-            node->right = move(right);
+            node->left = pattern;
+            node->right = right;
             pattern = node;
         }
 
         return pattern;
     }
 
-    Sp<RestElement> Parser::ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    RestElement* Parser::ParseBindingRestElement(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::Spread);
@@ -3181,11 +3172,11 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<ArrayPattern> Parser::ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    ArrayPattern* Parser::ParseArrayPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         Expect(JsTokenType::LeftBrace);
-        std::vector<optional<Sp<SyntaxNode>>> elements;
+        std::vector<optional<SyntaxNode*>> elements;
         while (!Match(JsTokenType::RightBrace)) {
             if (Match(JsTokenType::Comma)) {
                 NextToken();
@@ -3209,7 +3200,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<Property> Parser::ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    Property* Parser::ParsePropertyPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<Property>();
@@ -3219,7 +3210,7 @@ namespace jetpack::parser {
 
         if (ctx->lookahead_.type == JsTokenType::Identifier) {
             Token keyToken = ctx->lookahead_;
-            node->key = ParseVariableIdentifier(LeftValueScope::default_, kind);
+            node->key = ParseVariableIdentifier(*left_scope_, kind);
 
             auto id_ = Alloc<Identifier>();
             id_->name = keyToken.value;
@@ -3231,8 +3222,8 @@ namespace jetpack::parser {
                 NextToken();
                 auto expr = ParseAssignmentExpression(scope);
                 auto assign = Alloc<AssignmentPattern>();
-                assign->left = move(init);
-                assign->right = move(expr);
+                assign->left = init;
+                assign->right = expr;
                 node->value = Finalize(StartNode(keyToken), assign);
             } else if (!Match(JsTokenType::Colon)) {  // shorthand!
                 params.push_back(keyToken);
@@ -3240,7 +3231,7 @@ namespace jetpack::parser {
                 scope.CreateVariable(init, kind);
 
                 node->shorthand = true;
-                node->value = move(init);
+                node->value = init;
             } else {
                 Expect(JsTokenType::Colon);
                 node->value = ParsePatternWithDefault(scope, params, kind);
@@ -3255,7 +3246,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<RestElement> Parser::ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    RestElement* Parser::ParseRestProperty(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
         Expect(JsTokenType::Spread);
         auto arg = ParsePattern(scope, params, VarKind::Invalid);
@@ -3266,13 +3257,13 @@ namespace jetpack::parser {
             ThrowError(ParseMessages::PropertyAfterRestProperty);
         }
         auto node = Alloc<RestElement>();
-        node->argument = move(arg);
+        node->argument = arg;
         return Finalize(start_marker, node);
     }
 
-    Sp<ObjectPattern> Parser::ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
+    ObjectPattern* Parser::ParseObjectPattern(Scope& scope, std::vector<Token> &params, VarKind kind) {
         auto start_marker = CreateStartMarker();
-        std::vector<Sp<SyntaxNode>> props;
+        std::vector<SyntaxNode*> props;
 
         Expect(JsTokenType::LeftBracket);
         while (!Match(JsTokenType::RightBracket)) {
@@ -3293,15 +3284,15 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> Parser::ParseAsyncArgument(Scope& scope) {
+    SyntaxNode* Parser::ParseAsyncArgument(Scope& scope) {
         auto arg = ParseAssignmentExpression(scope);
         ctx->first_cover_initialized_name_error_.reset();
         return arg;
     }
 
-    std::vector<Sp<SyntaxNode>> Parser::ParseAsyncArguments(Scope& scope) {
+    std::vector<SyntaxNode*> Parser::ParseAsyncArguments(Scope& scope) {
         Expect(JsTokenType::LeftParen);
-        std::vector<Sp<SyntaxNode>> result;
+        std::vector<SyntaxNode*> result;
         if (!Match(JsTokenType::RightParen)) {
             while (true) {
                 if (Match(JsTokenType::Spread)) {
@@ -3325,8 +3316,8 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<Expression> Parser::ParseGroupExpression(Scope& scope) {
-        Sp<Expression> expr;
+    Expression* Parser::ParseGroupExpression(Scope& scope) {
+        Expression* expr = nullptr;
 
         Expect(JsTokenType::LeftParen);
         if (Match(JsTokenType::RightParen)) {
@@ -3336,7 +3327,7 @@ namespace jetpack::parser {
             }
             auto node = Alloc<ArrowParameterPlaceHolder>();
             node->async = false;
-            expr = move(node);
+            expr = node;
         } else {
             auto start_token = ctx->lookahead_;
 
@@ -3350,7 +3341,7 @@ namespace jetpack::parser {
                 auto node = Alloc<ArrowParameterPlaceHolder>();
                 node->params.push_back(move(expr));
                 node->async = false;
-                expr = move(node);
+                expr = node;
             } else {
                 bool arrow = false;
                 ctx->is_binding_element_ = true;
@@ -3360,7 +3351,7 @@ namespace jetpack::parser {
                 });
 
                 if (Match(JsTokenType::Comma)) {
-                    std::vector<Sp<Expression>> expressions;
+                    std::vector<Expression*> expressions;
 
                     ctx->is_assignment_target_ = false;
                     expressions.push_back(expr);
@@ -3380,7 +3371,7 @@ namespace jetpack::parser {
                                 node->params.push_back(i);
                             }
                             node->async = false;
-                            expr = move(node);
+                            expr = node;
                         } else if (Match(JsTokenType::Spread)) {
                             if (!ctx->is_binding_element_) {
                                 ThrowUnexpectedToken(ctx->lookahead_);
@@ -3400,7 +3391,7 @@ namespace jetpack::parser {
                                 node->params.push_back(i);
                             }
                             node->async = false;
-                            expr = move(node);
+                            expr = node;
                         } else {
                             expressions.push_back(InheritCoverGrammar<Expression>([this, &scope] {
                                 return ParseAssignmentExpression(scope);
@@ -3421,12 +3412,12 @@ namespace jetpack::parser {
                 if (!arrow) {
                     Expect(JsTokenType::RightParen);
                     if (Match(JsTokenType::Arrow)) {
-                        if (expr->type == SyntaxNodeType::Identifier && dynamic_pointer_cast<Identifier>(expr)->name == "yield") {
+                        if (expr->type == SyntaxNodeType::Identifier && dynamic_cast<Identifier*>(expr)->name == "yield") {
                             arrow = true;
                             auto node = Alloc<ArrowParameterPlaceHolder>();
-                            node->params.push_back(move(expr));
+                            node->params.push_back(expr);
                             node->async = false;
-                            expr = move(node);
+                            expr = node;
                         }
 
                         if (!arrow) {
@@ -3435,7 +3426,7 @@ namespace jetpack::parser {
                             }
 
                             if (expr->type == SyntaxNodeType::SequenceExpression) {
-                                auto node = dynamic_pointer_cast<SequenceExpression>(expr);
+                                auto node = dynamic_cast<SequenceExpression*>(expr);
                                 for (auto& i : node->expressions) {
                                     ReinterpretExpressionAsPattern(i);
                                 }
@@ -3446,7 +3437,7 @@ namespace jetpack::parser {
                             auto placeholder = Alloc<ArrowParameterPlaceHolder>();
 
                             if (expr->type == SyntaxNodeType::SequenceExpression) {
-                                auto seq = dynamic_pointer_cast<SequenceExpression>(expr);
+                                auto seq = dynamic_cast<SequenceExpression*>(expr);
                                 for (auto& i : seq->expressions) {
                                     placeholder->params.push_back(i);
                                 }
@@ -3454,7 +3445,7 @@ namespace jetpack::parser {
                                 placeholder->params.push_back(expr);
                             }
 
-                            expr = move(placeholder);
+                            expr = placeholder;
                         }
                     }
 
@@ -3466,7 +3457,7 @@ namespace jetpack::parser {
         return expr;
     }
 
-    Sp<TemplateElement> Parser::ParseTemplateHead() {
+    TemplateElement* Parser::ParseTemplateHead() {
         Assert(ctx->lookahead_.head, "Template literal must start with a template head");
         auto start_marker = CreateStartMarker();
         Token token = NextToken();
@@ -3479,7 +3470,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TemplateElement> Parser::ParseTemplateElement() {
+    TemplateElement* Parser::ParseTemplateElement() {
         if (ctx->lookahead_.type != JsTokenType::Template) {
             ThrowUnexpectedToken(ctx->lookahead_);
         }
@@ -3495,11 +3486,11 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<TemplateLiteral> Parser::ParseTemplateLiteral(Scope& scope) {
+    TemplateLiteral* Parser::ParseTemplateLiteral(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<TemplateLiteral>();
 
-        Sp<TemplateElement> quasi = ParseTemplateHead();
+        auto quasi = ParseTemplateHead();
         node->quasis.push_back(quasi);
         while (!quasi->tail) {
             node->expressions.push_back(ParseExpression(scope));
@@ -3510,12 +3501,12 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<MethodDefinition> Parser::ParseClassElement(Scope& scope, bool &has_ctor) {
+    MethodDefinition* Parser::ParseClassElement(Scope& scope, bool &has_ctor) {
         Token token = ctx->lookahead_;
         auto start_marker = CreateStartMarker();
 
-        optional<Sp<SyntaxNode>> key;
-        optional<Sp<Expression>> value;
+        optional<SyntaxNode*> key;
+        optional<Expression*> value;
         bool computed = false;
         bool method = false;
         bool is_static = false;
@@ -3527,7 +3518,7 @@ namespace jetpack::parser {
         } else {
             computed = Match(JsTokenType::LeftBrace);
             key = ParseObjectPropertyKey(scope);
-            auto id = dynamic_pointer_cast<Identifier>(*key);
+            auto id = dynamic_cast<Identifier*>(*key);
             if (id && id->name == "static" && (QualifiedPropertyName(ctx->lookahead_) || Match(JsTokenType::Mul))) {
                 token = ctx->lookahead_;
                 is_static = true;
@@ -3611,16 +3602,16 @@ namespace jetpack::parser {
         }
 
         auto node = Alloc<MethodDefinition>();
-        node->key = move(key);
+        node->key = key;
         node->computed = computed;
-        node->value = move(value);
+        node->value = value;
         node->kind = kind;
         node->static_ = is_static;
         return Finalize(start_marker, node);
     }
 
-    std::vector<Sp<MethodDefinition>> Parser::ParseClassElementList(Scope& scope) {
-        std::vector<Sp<MethodDefinition>> body;
+    std::vector<MethodDefinition*> Parser::ParseClassElementList(Scope& scope) {
+        std::vector<MethodDefinition*> body;
         bool has_ctor = false;
 
         Expect(JsTokenType::LeftBracket);
@@ -3636,7 +3627,7 @@ namespace jetpack::parser {
         return body;
     }
 
-    Sp<FunctionExpression> Parser::ParseGetterMethod(Scope& scope) {
+    FunctionExpression* Parser::ParseGetterMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3656,7 +3647,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParseSetterMethod(Scope& scope) {
+    FunctionExpression* Parser::ParseSetterMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3676,7 +3667,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<BlockStatement> Parser::ParsePropertyMethod(Scope& scope, parser::ParserCommon::FormalParameterOptions &options) {
+    BlockStatement* Parser::ParsePropertyMethod(Scope& scope, parser::ParserCommon::FormalParameterOptions &options) {
         ctx->is_assignment_target_ = false;
         ctx->is_binding_element_ = false;
 
@@ -3699,7 +3690,7 @@ namespace jetpack::parser {
         return body;
     }
 
-    Sp<FunctionExpression> Parser::ParseGeneratorMethod(Scope& scope) {
+    FunctionExpression* Parser::ParseGeneratorMethod(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3713,12 +3704,12 @@ namespace jetpack::parser {
         ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
-        node->body = move(method);
+        node->body = method;
 
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParsePropertyMethodFunction(Scope& scope) {
+    FunctionExpression* Parser::ParsePropertyMethodFunction(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3730,12 +3721,12 @@ namespace jetpack::parser {
         ctx->allow_yield_ = prev_allow_yield;
 
         node->params = params.params;
-        node->body = move(method);
+        node->body = method;
 
         return Finalize(start_marker, node);
     }
 
-    Sp<FunctionExpression> Parser::ParsePropertyMethodAsyncFunction(Scope& scope) {
+    FunctionExpression* Parser::ParsePropertyMethodAsyncFunction(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<FunctionExpression>();
 
@@ -3750,7 +3741,7 @@ namespace jetpack::parser {
         ctx->await_ = prev_await;
 
         node->params = params.params;
-        node->body = move(method);
+        node->body = method;
         node->async = true;
 
         return Finalize(start_marker, node);
@@ -3776,12 +3767,12 @@ namespace jetpack::parser {
         return false;
     }
 
-    bool Parser::IsPropertyKey(const Sp<SyntaxNode> &key, const std::string &name) {
+    bool Parser::IsPropertyKey(SyntaxNode* key, const std::string &name) {
         if (key->type == SyntaxNodeType::Identifier) {
-            return dynamic_pointer_cast<Identifier>(key)->name == name;
+            return dynamic_cast<Identifier*>(key)->name == name;
         }
         if (key->type == SyntaxNodeType::Literal) {
-            auto lit = dynamic_pointer_cast<Literal>(key);
+            auto lit = dynamic_cast<Literal*>(key);
             return lit->ty == Literal::Ty::String && lit->str_ == name;
         }
         return false;

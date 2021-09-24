@@ -8,6 +8,7 @@
 #include <list>
 #include <memory>
 
+#include "parser/AstContext.h"
 #include "Variable.h"
 #include "ImportManager.h"
 #include "ExportManager.h"
@@ -46,14 +47,14 @@ namespace jetpack {
     public:
         using PVar = std::shared_ptr<Variable>;
 
-        Scope() = default;
+        Scope(AstContext& ctx): ctx_(ctx) {}
         Scope(const Scope&) = delete;
         Scope(Scope&&) = delete;
 
         Scope& operator=(const Scope&) = delete;
         Scope& operator=(Scope&&) = delete;
 
-        explicit Scope(ScopeType t) : type(t) {
+        explicit Scope(ScopeType t, AstContext& ctx): type(t), ctx_(ctx) {
         }
 
         ScopeType type = ScopeType::Invalid;
@@ -66,9 +67,9 @@ namespace jetpack {
 
         virtual PVar RecursivelyFindVariable(const std::string& var_name);
 
-        virtual PVar CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind);
+        virtual PVar CreateVariable(Identifier* var_id, VarKind kind);
 
-        virtual void AddUnresolvedId(const std::shared_ptr<Identifier>& id) {
+        virtual void AddUnresolvedId(Identifier* id) {
             unresolved_id.push_back(id);
         }
 
@@ -98,7 +99,7 @@ namespace jetpack {
         /**
          * @param unresolve_collector collect unresolved ids
          */
-        void ResolveAllSymbols(std::vector<std::shared_ptr<Identifier>>* unresolve_collector);
+        void ResolveAllSymbols(std::vector<Identifier*>* unresolve_collector);
 
         virtual bool BatchRenameSymbols(const std::vector<std::tuple<std::string, std::string>>& changeset);
 
@@ -109,12 +110,13 @@ namespace jetpack {
         std::vector<Scope*> children;
 
     protected:
+        AstContext& ctx_;
         Scope* parent = nullptr;
 
         /**
          * log identifier when parsing
          */
-        std::list<Sp<Identifier>> unresolved_id;
+        std::list<Identifier*> unresolved_id;
 
     };
 
@@ -123,13 +125,13 @@ namespace jetpack {
      */
     class LeftValueScope : public Scope {
     public:
-        static LeftValueScope default_;
+        LeftValueScope(AstContext& ctx): Scope(ctx) {}
 
-        PVar CreateVariable(const std::shared_ptr<Identifier>& var_id, VarKind kind) override {
+        PVar CreateVariable(Identifier* var_id, VarKind kind) override {
             return nullptr;
         }
 
-        void AddUnresolvedId(const std::shared_ptr<Identifier>& id) override {}
+        void AddUnresolvedId(Identifier* id) override {}
 
     };
 
@@ -145,7 +147,7 @@ namespace jetpack {
             CommonJs,
         };
 
-        ModuleScope(ModuleType mt);
+        ModuleScope(ModuleType mt, AstContext& ctx);
 
         bool BatchRenameSymbols(const ChangeSet& changeset) override;
 
@@ -164,7 +166,7 @@ namespace jetpack {
 
     class VariableExistsError : public std::exception {
     public:
-        std::shared_ptr<Identifier> exist_var;
+        Identifier* exist_var;
         std::string name;
 
     };

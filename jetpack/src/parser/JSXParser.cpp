@@ -15,18 +15,18 @@ namespace jetpack::parser {
     : ParserCommon(ctx), parent_(parent)  {
     }
 
-    std::string JSXParser::GetQualifiedElementName(const Sp<SyntaxNode> &node) {
+    std::string JSXParser::GetQualifiedElementName(SyntaxNode* node) {
         std::string qualified_name;
 
         switch (node->type) {
             case SyntaxNodeType::JSXIdentifier: {
-                auto id = dynamic_pointer_cast<JSXIdentifier>(node);
+                auto id = dynamic_cast<JSXIdentifier*>(node);
                 qualified_name = id->name;
                 break;
             }
 
             case SyntaxNodeType::JSXNamespacedName: {
-                auto ns = dynamic_pointer_cast<JSXNamespacedName>(node);
+                auto ns = dynamic_cast<JSXNamespacedName*>(node);
                 qualified_name += GetQualifiedElementName(ns->namespace_);
                 qualified_name += ":";
                 qualified_name += GetQualifiedElementName(ns->name);
@@ -34,7 +34,7 @@ namespace jetpack::parser {
             }
 
             case SyntaxNodeType::JSXMemberExpression: {
-                auto expr = dynamic_pointer_cast<JSXMemberExpression>(node);
+                auto expr = dynamic_cast<JSXMemberExpression*>(node);
                 qualified_name += GetQualifiedElementName(expr->object);
                 qualified_name += ".";
                 qualified_name += GetQualifiedElementName(expr->property);
@@ -49,7 +49,7 @@ namespace jetpack::parser {
         return qualified_name;
     }
 
-    Sp<Expression> JSXParser::ParseJSXRoot(Scope& scope) {
+    Expression* JSXParser::ParseJSXRoot(Scope& scope) {
         StartJSX();
         auto elem = ParseJSXElement(scope);
         FinishJSX();
@@ -60,19 +60,19 @@ namespace jetpack::parser {
         return elem;
     }
 
-    inline Sp<Identifier> MakeId(const std::string& content) {
-        auto id = std::make_shared<Identifier>();
+    inline Identifier* MakeId(AstContext& ctx, const std::string& content) {
+        auto id = ctx.Alloc<Identifier>();
         id->name = content;
         return id;
     }
 
-    Sp<Expression> JSXParser::TranspileJSX(Scope& scope, const Sp<JSXElement>& jsx) {
-        auto result = std::make_shared<CallExpression>();
+    Expression* JSXParser::TranspileJSX(Scope& scope, JSXElement* jsx) {
+        auto result = Alloc<CallExpression>();
 
-        auto left = std::make_shared<MemberExpression>();
-        auto id = MakeId("React");
+        auto left = Alloc<MemberExpression>();
+        auto id = MakeId(ctx->ast_context_, "React");
         left->object = id;
-        left->property = MakeId("createElement");
+        left->property = MakeId(ctx->ast_context_, "createElement");
 
         scope.AddUnresolvedId(id);
 
@@ -80,11 +80,11 @@ namespace jetpack::parser {
 
         bool has_added_lit = false;
         if (jsx->opening_element->name->type == SyntaxNodeType::JSXIdentifier) {
-            auto jsx_id = std::dynamic_pointer_cast<JSXIdentifier>(jsx->opening_element->name);
+            auto jsx_id = dynamic_cast<JSXIdentifier*>(jsx->opening_element->name);
             if (!jsx_id->name.empty()) {
                 char16_t ch = jsx_id->name.at(0);
                 if (ch >= u'a' && ch <= u'z') {
-                    auto new_lit = std::make_shared<Literal>();
+                    auto new_lit = Alloc<Literal>();
                     new_lit->str_ = jsx_id->name;
                     new_lit->raw = "\"" + jsx_id->name + "\"";
 
@@ -100,33 +100,33 @@ namespace jetpack::parser {
         }
 
         if (!jsx->opening_element->attributes.empty()) {
-            auto obj_expr = std::make_shared<ObjectExpression>();
+            auto obj_expr = Alloc<ObjectExpression>();
             for (auto& attrib : jsx->opening_element->attributes) {
                 switch (attrib->type) {
                     case SyntaxNodeType::JSXAttribute: {
-                        auto named_attr = std::dynamic_pointer_cast<JSXAttribute>(attrib);
-                        auto jsx_name = std::dynamic_pointer_cast<JSXIdentifier>(named_attr->name);
+                        auto named_attr = dynamic_cast<JSXAttribute*>(attrib);
+                        auto jsx_name = dynamic_cast<JSXIdentifier*>(named_attr->name);
 
-                        auto prop = std::make_shared<Property>();
-                        prop->key = MakeId(jsx_name->name);
+                        auto prop = Alloc<Property>();
+                        prop->key = MakeId(ctx->ast_context_, jsx_name->name);
 
                         if (named_attr->value.has_value()) {
                             auto value = *named_attr->value;
                             switch (value->type) {
                                 case SyntaxNodeType::JSXElement: {
-                                    auto jsx_elem = std::dynamic_pointer_cast<JSXElement>(value);
+                                    auto jsx_elem = dynamic_cast<JSXElement*>(value);
                                     prop->value = TranspileJSX(scope, jsx_elem);
                                     break;
                                 }
 
                                 case SyntaxNodeType::Literal: {
-                                    auto lit = std::dynamic_pointer_cast<Literal>(value);
+                                    auto lit = dynamic_cast<Literal*>(value);
                                     prop->value = lit;
                                     break;
                                 }
 
                                 case SyntaxNodeType::JSXExpressionContainer: {
-                                    auto expr_container = std::dynamic_pointer_cast<JSXExpressionContainer>(value);
+                                    auto expr_container = dynamic_cast<JSXExpressionContainer*>(value);
                                     prop->value = expr_container->expression;
                                     break;
                                 }
@@ -137,21 +137,21 @@ namespace jetpack::parser {
                             }
 
                         } else {
-                            auto bool_lit = std::make_shared<Literal>();
+                            auto bool_lit = Alloc<Literal>();
                             bool_lit->ty = Literal::Ty::Boolean;
                             bool_lit->raw = "true";
                             bool_lit->str_ = "true";
-                            prop->value = std::move(bool_lit);
+                            prop->value = bool_lit;
                         }
 
-                        obj_expr->properties.push_back(std::move(prop));
+                        obj_expr->properties.push_back(prop);
                         break;
                     }
 
                     case SyntaxNodeType::JSXSpreadAttribute: {
-                        auto spread_attr = std::dynamic_pointer_cast<JSXSpreadAttribute>(attrib);
+                        auto spread_attr = dynamic_cast<JSXSpreadAttribute*>(attrib);
 
-                        auto spread_element = std::make_shared<SpreadElement>();
+                        auto spread_element = Alloc<SpreadElement>();
 
                         spread_element->argument = spread_attr->argument;
 
@@ -164,14 +164,14 @@ namespace jetpack::parser {
 
                 }
             }
-            result->arguments.push_back(std::move(obj_expr));
+            result->arguments.push_back(obj_expr);
         } else {
             if (!jsx->children.empty()) {
-                auto null_lit = std::make_shared<Literal>();
+                auto null_lit = Alloc<Literal>();
                 null_lit->ty = Literal::Ty::Null;
                 null_lit->str_ = "null";
                 null_lit->raw = "null";
-                result->arguments.push_back(std::move(null_lit));
+                result->arguments.push_back(null_lit);
             }
         }
 
@@ -183,33 +183,33 @@ namespace jetpack::parser {
         return result;
     }
 
-    std::vector<Sp<SyntaxNode>>
+    std::vector<SyntaxNode*>
     JSXParser::TranspileJSXChildren(Scope& scope,
-                                    const std::vector<Sp<SyntaxNode>> &children) {
-        std::vector<Sp<SyntaxNode>> result;
+                                    const std::vector<SyntaxNode*> &children) {
+        std::vector<SyntaxNode*> result;
 
         for (auto& child : children) {
             switch (child->type) {
                 case SyntaxNodeType::JSXText: {
-                    auto text = std::dynamic_pointer_cast<JSXText>(child);
+                    auto text = dynamic_cast<JSXText*>(child);
 
-                    auto str_lit = std::make_shared<Literal>();
+                    auto str_lit = Alloc<Literal>();
                     str_lit->ty = Literal::Ty::String;
                     str_lit->str_ = text->value;
                     str_lit->raw = "\"" + text->raw + "\"";
 
-                    result.push_back(std::move(str_lit));
+                    result.push_back(str_lit);
                     break;
                 }
 
                 case SyntaxNodeType::JSXElement: {
-                    auto child_elem = std::dynamic_pointer_cast<JSXElement>(child);
+                    auto child_elem = dynamic_cast<JSXElement*>(child);
                     result.push_back(TranspileJSX(scope, child_elem));
                     break;
                 }
 
                 case SyntaxNodeType::JSXExpressionContainer: {
-                    auto expr = std::dynamic_pointer_cast<JSXExpressionContainer>(child);
+                    auto expr = dynamic_cast<JSXExpressionContainer*>(child);
                     result.push_back(expr->expression);
                     break;
                 }
@@ -224,7 +224,7 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<JSXElement> JSXParser::ParseJSXElement(Scope& scope) {
+    JSXElement* JSXParser::ParseJSXElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         auto node = Alloc<JSXElement>();
@@ -245,7 +245,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXOpeningElement> JSXParser::ParseJSXOpeningElement(Scope& scope) {
+    JSXOpeningElement* JSXParser::ParseJSXOpeningElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LessThan);
@@ -261,22 +261,22 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXElementName(Scope& scope) {
+    SyntaxNode* JSXParser::ParseJSXElementName(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto element_name = ParseJSXIdentifier();
 
         if (JSXMatch(JsTokenType::Colon)) {
             JSXExpect(JsTokenType::Colon);
             auto node = Alloc<JSXNamespacedName>();
-            node->namespace_ = move(element_name);
+            node->namespace_ = element_name;
             node->name = ParseJSXIdentifier();
             return Finalize(start_marker, node);
         } else if (JSXMatch(JsTokenType::Dot)) {
-            Sp<SyntaxNode> object = std::move(element_name);
+            SyntaxNode* object = element_name;
             while (JSXMatch(JsTokenType::Dot)) {
                 JSXExpect(JsTokenType::Dot);
                 auto node = Alloc<JSXMemberExpression>();
-                node->object = std::move(object);
+                node->object = object;
                 node->property = ParseJSXIdentifier();
                 object = Finalize(start_marker, node);
             }
@@ -286,8 +286,8 @@ namespace jetpack::parser {
         return element_name;
     }
 
-    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXAttributes(Scope& scope) {
-        std::vector<Sp<SyntaxNode>> result;
+    std::vector<SyntaxNode*> JSXParser::ParseJSXAttributes(Scope& scope) {
+        std::vector<SyntaxNode*> result;
 
         while (!JSXMatch(JsTokenType::Div) && !JSXMatch(JsTokenType::GreaterThan)) {
             if (JSXMatch(JsTokenType::LeftBracket)) {
@@ -312,11 +312,11 @@ namespace jetpack::parser {
             auto element = ParseJSXBoundaryElement(scope);
 
             if (element->type == SyntaxNodeType::JSXOpeningElement) {
-                auto opening = dynamic_pointer_cast<JSXOpeningElement>(element);
+                auto opening = dynamic_cast<JSXOpeningElement*>(element);
                 if (opening->self_closing) {
                     auto child = Alloc<JSXElement>();
-                    child->opening_element = move(opening);
-                    el->children_.emplace_back(move(child));
+                    child->opening_element = opening;
+                    el->children_.emplace_back(child);
                 } else {
                     el_stack.push(el);
                     el = std::shared_ptr<MetaJSXElement>(new MetaJSXElement{
@@ -327,7 +327,7 @@ namespace jetpack::parser {
                     });
                 }
             } else if (element->type == SyntaxNodeType::JSXClosingElement) {
-                auto closing = dynamic_pointer_cast<JSXClosingElement>(element);
+                auto closing = dynamic_cast<JSXClosingElement*>(element);
                 el->closing_ = { closing };
                 auto open = GetQualifiedElementName(el->opening_->name);
                 auto close = GetQualifiedElementName(closing->name);
@@ -352,7 +352,7 @@ namespace jetpack::parser {
         return el;
     }
 
-    Sp<JSXIdentifier> JSXParser::ParseJSXIdentifier() {
+    JSXIdentifier* JSXParser::ParseJSXIdentifier() {
         auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
         if (token.type != JsTokenType::Identifier) {
@@ -363,7 +363,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, id);
     }
 
-    Sp<JSXSpreadAttribute> JSXParser::ParseJSXSpreadAttribute(Scope& scope) {
+    JSXSpreadAttribute* JSXParser::ParseJSXSpreadAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
         JSXExpect(JsTokenType::LeftBracket);
         JSXExpect(JsTokenType::Spread);
@@ -377,7 +377,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXAttribute> JSXParser::ParseJSXNameValueAttribute(Scope& scope) {
+    JSXAttribute* JSXParser::ParseJSXNameValueAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
         auto node = Alloc<JSXAttribute>();
         node->name = ParseJSXAttributeName();
@@ -390,14 +390,14 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXAttributeName() {
+    SyntaxNode* JSXParser::ParseJSXAttributeName() {
         auto start_marker = CreateStartMarker();
 
         auto id = ParseJSXIdentifier();
         if (JSXMatch(JsTokenType::Colon)) {
             JSXExpect(JsTokenType::Colon);
             auto node = Alloc<JSXNamespacedName>();
-            node->namespace_ = std::move(id);
+            node->namespace_ = id;
             node->name = ParseJSXIdentifier();
             return Finalize(start_marker, node);
         }
@@ -405,7 +405,7 @@ namespace jetpack::parser {
         return id;
     }
 
-    Sp<Literal> JSXParser::ParseJSXStringLiteralAttribute() {
+    Literal* JSXParser::ParseJSXStringLiteralAttribute() {
         auto start_marker = CreateStartMarker();
         auto token = NextJSXToken();
         if (token.type != JsTokenType::StringLiteral) {
@@ -419,7 +419,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionAttribute(Scope& scope) {
+    JSXExpressionContainer* JSXParser::ParseJSXExpressionAttribute(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LeftBracket);
@@ -437,7 +437,7 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXAttributeValue(Scope& scope) {
+    SyntaxNode* JSXParser::ParseJSXAttributeValue(Scope& scope) {
         if (JSXMatch(JsTokenType::LeftBracket)) {
             return ParseJSXExpressionAttribute(scope);
         } else if (JSXMatch(JsTokenType::LessThan)) {
@@ -447,8 +447,8 @@ namespace jetpack::parser {
         }
     }
 
-    std::vector<Sp<SyntaxNode>> JSXParser::ParseJSXChildren(Scope& scope) {
-        std::vector<Sp<SyntaxNode>> result;
+    std::vector<SyntaxNode*> JSXParser::ParseJSXChildren(Scope& scope) {
+        std::vector<SyntaxNode*> result;
 
         while (!ctx->scanner_->IsEnd()) {
             auto start_marker = CreateStartMarker();
@@ -470,7 +470,7 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<JSXExpressionContainer> JSXParser::ParseJSXExpressionContainer(Scope& scope) {
+    JSXExpressionContainer* JSXParser::ParseJSXExpressionContainer(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LeftBracket);
@@ -807,7 +807,7 @@ namespace jetpack::parser {
         return result;
     }
 
-    Sp<SyntaxNode> JSXParser::ParseJSXBoundaryElement(Scope& scope) {
+    SyntaxNode* JSXParser::ParseJSXBoundaryElement(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
         JSXExpect(JsTokenType::LessThan);

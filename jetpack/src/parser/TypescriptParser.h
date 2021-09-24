@@ -18,23 +18,23 @@ namespace jetpack::parser {
         TypeScriptParser& operator=(const TypeScriptParser& tsParser) = delete;
         TypeScriptParser& operator=(TypeScriptParser&&) = delete;
 
-        Sp<TSTypeAliasDeclaration> ParseTypeAliasDeclaration();
+        TSTypeAliasDeclaration* ParseTypeAliasDeclaration();
 
-        Sp<TSTypeParameterDeclaration> ParseTypeParameterDeclaration();
+        TSTypeParameterDeclaration* ParseTypeParameterDeclaration();
 
-        Sp<TSType> ParseType();
+        TSType* ParseType();
 
-        Sp<TSType> ParseNonConditionalType();
+        TSType* ParseNonConditionalType();
 
-        Sp<TSThisType> ParseThisType();
+        TSThisType* ParseThisType();
 
-        Sp<TSFunctionType> ParseFunctionType();
+        TSFunctionType* ParseFunctionType();
 
-        Sp<TSConstructorType> ParseConstructorType();
+        TSConstructorType* ParseConstructorType();
 
-        Sp<TSType> ParseUnionTypeOrHigher();
+        TSType* ParseUnionTypeOrHigher();
 
-        Sp<TSLiteralType> ParseLiteralTypeNode();
+        TSLiteralType* ParseLiteralTypeNode();
 
     private:
         bool IsStartOfFunctionType();

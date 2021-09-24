@@ -212,7 +212,7 @@ namespace jetpack {
         return result;
     }
 
-    void UnresolvedNameCollector::InsertByList(std::vector<std::shared_ptr<Identifier>> list) {
+    void UnresolvedNameCollector::InsertByList(std::vector<Identifier*> list) {
         std::lock_guard<std::mutex> lk(logger_mutex);
         for (auto& id : list){
             used_name.insert(id->name);
