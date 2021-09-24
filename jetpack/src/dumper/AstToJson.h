@@ -24,7 +24,7 @@ namespace jetpack::dumper {
     class AstToJson {
     public:
 
-        static void DumpBaseInfo(json& result, const Sp<SyntaxNode>& node) {
+        static void DumpBaseInfo(json& result, SyntaxNode* node) {
             result["start"] = node->range.first;
             result["end"] = node->range.second;
 
@@ -43,716 +43,716 @@ namespace jetpack::dumper {
             result["loc"] = loc;
         }
 
-        static json Dump(const Sp<SyntaxNode>& node) {
+        static json Dump(SyntaxNode* node) {
             switch (node->type) {
 
                 case SyntaxNodeType::ArrayExpression: {
-                    auto child = std::dynamic_pointer_cast<ArrayExpression>(node);
+                    auto child = dynamic_cast<ArrayExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ArrayPattern: {
-                    auto child = std::dynamic_pointer_cast<ArrayPattern>(node);
+                    auto child = dynamic_cast<ArrayPattern*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ArrowFunctionExpression: {
-                    auto child = std::dynamic_pointer_cast<ArrowFunctionExpression>(node);
+                    auto child = dynamic_cast<ArrowFunctionExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::AssignmentExpression: {
-                    auto child = std::dynamic_pointer_cast<AssignmentExpression>(node);
+                    auto child = dynamic_cast<AssignmentExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::AssignmentPattern: {
-                    auto child = std::dynamic_pointer_cast<AssignmentPattern>(node);
+                    auto child = dynamic_cast<AssignmentPattern*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::AwaitExpression: {
-                    auto child = std::dynamic_pointer_cast<AwaitExpression>(node);
+                    auto child = dynamic_cast<AwaitExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::BinaryExpression: {
-                    auto child = std::dynamic_pointer_cast<BinaryExpression>(node);
+                    auto child = dynamic_cast<BinaryExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::BlockStatement: {
-                    auto child = std::dynamic_pointer_cast<BlockStatement>(node);
+                    auto child = dynamic_cast<BlockStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::BreakStatement: {
-                    auto child = std::dynamic_pointer_cast<BreakStatement>(node);
+                    auto child = dynamic_cast<BreakStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::CallExpression: {
-                    auto child = std::dynamic_pointer_cast<CallExpression>(node);
+                    auto child = dynamic_cast<CallExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::CatchClause: {
-                    auto child = std::dynamic_pointer_cast<CatchClause>(node);
+                    auto child = dynamic_cast<CatchClause*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ClassBody: {
-                    auto child = std::dynamic_pointer_cast<ClassBody>(node);
+                    auto child = dynamic_cast<ClassBody*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ClassDeclaration: {
-                    auto child = std::dynamic_pointer_cast<ClassDeclaration>(node);
+                    auto child = dynamic_cast<ClassDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ClassExpression: {
-                    auto child = std::dynamic_pointer_cast<ClassExpression>(node);
+                    auto child = dynamic_cast<ClassExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ConditionalExpression: {
-                    auto child = std::dynamic_pointer_cast<ConditionalExpression>(node);
+                    auto child = dynamic_cast<ConditionalExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ContinueStatement: {
-                    auto child = std::dynamic_pointer_cast<ContinueStatement>(node);
+                    auto child = dynamic_cast<ContinueStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::DebuggerStatement: {
-                    auto child = std::dynamic_pointer_cast<DebuggerStatement>(node);
+                    auto child = dynamic_cast<DebuggerStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Directive: {
-                    auto child = std::dynamic_pointer_cast<Directive>(node);
+                    auto child = dynamic_cast<Directive*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::DoWhileStatement: {
-                    auto child = std::dynamic_pointer_cast<DoWhileStatement>(node);
+                    auto child = dynamic_cast<DoWhileStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::EmptyStatement: {
-                    auto child = std::dynamic_pointer_cast<EmptyStatement>(node);
+                    auto child = dynamic_cast<EmptyStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ExportAllDeclaration: {
-                    auto child = std::dynamic_pointer_cast<ExportAllDeclaration>(node);
+                    auto child = dynamic_cast<ExportAllDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ExportDefaultDeclaration: {
-                    auto child = std::dynamic_pointer_cast<ExportDefaultDeclaration>(node);
+                    auto child = dynamic_cast<ExportDefaultDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ExportNamedDeclaration: {
-                    auto child = std::dynamic_pointer_cast<ExportNamedDeclaration>(node);
+                    auto child = dynamic_cast<ExportNamedDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ExportSpecifier: {
-                    auto child = std::dynamic_pointer_cast<ExportSpecifier>(node);
+                    auto child = dynamic_cast<ExportSpecifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ExpressionStatement: {
-                    auto child = std::dynamic_pointer_cast<ExpressionStatement>(node);
+                    auto child = dynamic_cast<ExpressionStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ForInStatement: {
-                    auto child = std::dynamic_pointer_cast<ForInStatement>(node);
+                    auto child = dynamic_cast<ForInStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ForOfStatement: {
-                    auto child = std::dynamic_pointer_cast<ForOfStatement>(node);
+                    auto child = dynamic_cast<ForOfStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ForStatement: {
-                    auto child = std::dynamic_pointer_cast<ForStatement>(node);
+                    auto child = dynamic_cast<ForStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::FunctionDeclaration: {
-                    auto child = std::dynamic_pointer_cast<FunctionDeclaration>(node);
+                    auto child = dynamic_cast<FunctionDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::FunctionExpression: {
-                    auto child = std::dynamic_pointer_cast<FunctionExpression>(node);
+                    auto child = dynamic_cast<FunctionExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Identifier: {
-                    auto child = std::dynamic_pointer_cast<Identifier>(node);
+                    auto child = dynamic_cast<Identifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::IfStatement: {
-                    auto child = std::dynamic_pointer_cast<IfStatement>(node);
+                    auto child = dynamic_cast<IfStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Import: {
-                    auto child = std::dynamic_pointer_cast<Import>(node);
+                    auto child = dynamic_cast<Import*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ImportDeclaration: {
-                    auto child = std::dynamic_pointer_cast<ImportDeclaration>(node);
+                    auto child = dynamic_cast<ImportDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ImportDefaultSpecifier: {
-                    auto child = std::dynamic_pointer_cast<ImportDefaultSpecifier>(node);
+                    auto child = dynamic_cast<ImportDefaultSpecifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ImportNamespaceSpecifier: {
-                    auto child = std::dynamic_pointer_cast<ImportNamespaceSpecifier>(node);
+                    auto child = dynamic_cast<ImportNamespaceSpecifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ImportSpecifier: {
-                    auto child = std::dynamic_pointer_cast<ImportSpecifier>(node);
+                    auto child = dynamic_cast<ImportSpecifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::LabeledStatement: {
-                    auto child = std::dynamic_pointer_cast<LabeledStatement>(node);
+                    auto child = dynamic_cast<LabeledStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Literal: {
-                    auto child = std::dynamic_pointer_cast<Literal>(node);
+                    auto child = dynamic_cast<Literal*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::MetaProperty: {
-                    auto child = std::dynamic_pointer_cast<MetaProperty>(node);
+                    auto child = dynamic_cast<MetaProperty*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::MethodDefinition: {
-                    auto child = std::dynamic_pointer_cast<MethodDefinition>(node);
+                    auto child = dynamic_cast<MethodDefinition*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Module: {
-                    auto child = std::dynamic_pointer_cast<Module>(node);
+                    auto child = dynamic_cast<Module*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::NewExpression: {
-                    auto child = std::dynamic_pointer_cast<NewExpression>(node);
+                    auto child = dynamic_cast<NewExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ObjectExpression: {
-                    auto child = std::dynamic_pointer_cast<ObjectExpression>(node);
+                    auto child = dynamic_cast<ObjectExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ObjectPattern: {
-                    auto child = std::dynamic_pointer_cast<ObjectPattern>(node);
+                    auto child = dynamic_cast<ObjectPattern*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Property: {
-                    auto child = std::dynamic_pointer_cast<Property>(node);
+                    auto child = dynamic_cast<Property*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::RegexLiteral: {
-                    auto child = std::dynamic_pointer_cast<RegexLiteral>(node);
+                    auto child = dynamic_cast<RegexLiteral*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::RestElement: {
-                    auto child = std::dynamic_pointer_cast<RestElement>(node);
+                    auto child = dynamic_cast<RestElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ReturnStatement: {
-                    auto child = std::dynamic_pointer_cast<ReturnStatement>(node);
+                    auto child = dynamic_cast<ReturnStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Script: {
-                    auto child = std::dynamic_pointer_cast<Script>(node);
+                    auto child = dynamic_cast<Script*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::SequenceExpression: {
-                    auto child = std::dynamic_pointer_cast<SequenceExpression>(node);
+                    auto child = dynamic_cast<SequenceExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::SpreadElement: {
-                    auto child = std::dynamic_pointer_cast<SpreadElement>(node);
+                    auto child = dynamic_cast<SpreadElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::MemberExpression: {
-                    auto child = std::dynamic_pointer_cast<MemberExpression>(node);
+                    auto child = dynamic_cast<MemberExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::Super: {
-                    auto child = std::dynamic_pointer_cast<Super>(node);
+                    auto child = dynamic_cast<Super*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::SwitchCase: {
-                    auto child = std::dynamic_pointer_cast<SwitchCase>(node);
+                    auto child = dynamic_cast<SwitchCase*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::SwitchStatement: {
-                    auto child = std::dynamic_pointer_cast<SwitchStatement>(node);
+                    auto child = dynamic_cast<SwitchStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TaggedTemplateExpression: {
-                    auto child = std::dynamic_pointer_cast<TaggedTemplateExpression>(node);
+                    auto child = dynamic_cast<TaggedTemplateExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TemplateElement: {
-                    auto child = std::dynamic_pointer_cast<TemplateElement>(node);
+                    auto child = dynamic_cast<TemplateElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TemplateLiteral: {
-                    auto child = std::dynamic_pointer_cast<TemplateLiteral>(node);
+                    auto child = dynamic_cast<TemplateLiteral*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ThisExpression: {
-                    auto child = std::dynamic_pointer_cast<ThisExpression>(node);
+                    auto child = dynamic_cast<ThisExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ThrowStatement: {
-                    auto child = std::dynamic_pointer_cast<ThrowStatement>(node);
+                    auto child = dynamic_cast<ThrowStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TryStatement: {
-                    auto child = std::dynamic_pointer_cast<TryStatement>(node);
+                    auto child = dynamic_cast<TryStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::UnaryExpression: {
-                    auto child = std::dynamic_pointer_cast<UnaryExpression>(node);
+                    auto child = dynamic_cast<UnaryExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::UpdateExpression: {
-                    auto child = std::dynamic_pointer_cast<UpdateExpression>(node);
+                    auto child = dynamic_cast<UpdateExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::VariableDeclaration: {
-                    auto child = std::dynamic_pointer_cast<VariableDeclaration>(node);
+                    auto child = dynamic_cast<VariableDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::VariableDeclarator: {
-                    auto child = std::dynamic_pointer_cast<VariableDeclarator>(node);
+                    auto child = dynamic_cast<VariableDeclarator*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::WhileStatement: {
-                    auto child = std::dynamic_pointer_cast<WhileStatement>(node);
+                    auto child = dynamic_cast<WhileStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::WithStatement: {
-                    auto child = std::dynamic_pointer_cast<WithStatement>(node);
+                    auto child = dynamic_cast<WithStatement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::YieldExpression: {
-                    auto child = std::dynamic_pointer_cast<YieldExpression>(node);
+                    auto child = dynamic_cast<YieldExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::ArrowParameterPlaceHolder: {
-                    auto child = std::dynamic_pointer_cast<ArrowParameterPlaceHolder>(node);
+                    auto child = dynamic_cast<ArrowParameterPlaceHolder*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXClosingElement: {
-                    auto child = std::dynamic_pointer_cast<JSXClosingElement>(node);
+                    auto child = dynamic_cast<JSXClosingElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXElement: {
-                    auto child = std::dynamic_pointer_cast<JSXElement>(node);
+                    auto child = dynamic_cast<JSXElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXEmptyExpression: {
-                    auto child = std::dynamic_pointer_cast<JSXEmptyExpression>(node);
+                    auto child = dynamic_cast<JSXEmptyExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXExpressionContainer: {
-                    auto child = std::dynamic_pointer_cast<JSXExpressionContainer>(node);
+                    auto child = dynamic_cast<JSXExpressionContainer*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXIdentifier: {
-                    auto child = std::dynamic_pointer_cast<JSXIdentifier>(node);
+                    auto child = dynamic_cast<JSXIdentifier*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXMemberExpression: {
-                    auto child = std::dynamic_pointer_cast<JSXMemberExpression>(node);
+                    auto child = dynamic_cast<JSXMemberExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXAttribute: {
-                    auto child = std::dynamic_pointer_cast<JSXAttribute>(node);
+                    auto child = dynamic_cast<JSXAttribute*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXNamespacedName: {
-                    auto child = std::dynamic_pointer_cast<JSXNamespacedName>(node);
+                    auto child = dynamic_cast<JSXNamespacedName*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXOpeningElement: {
-                    auto child = std::dynamic_pointer_cast<JSXOpeningElement>(node);
+                    auto child = dynamic_cast<JSXOpeningElement*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXSpreadAttribute: {
-                    auto child = std::dynamic_pointer_cast<JSXSpreadAttribute>(node);
+                    auto child = dynamic_cast<JSXSpreadAttribute*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::JSXText: {
-                    auto child = std::dynamic_pointer_cast<JSXText>(node);
+                    auto child = dynamic_cast<JSXText*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSParameterProperty: {
-                    auto child = std::dynamic_pointer_cast<TSParameterProperty>(node);
+                    auto child = dynamic_cast<TSParameterProperty*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSDeclareFunction: {
-                    auto child = std::dynamic_pointer_cast<TSDeclareFunction>(node);
+                    auto child = dynamic_cast<TSDeclareFunction*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSDeclareMethod: {
-                    auto child = std::dynamic_pointer_cast<TSDeclareMethod>(node);
+                    auto child = dynamic_cast<TSDeclareMethod*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSQualifiedName: {
-                    auto child = std::dynamic_pointer_cast<TSQualifiedName>(node);
+                    auto child = dynamic_cast<TSQualifiedName*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSCallSignatureDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSCallSignatureDeclaration>(node);
+                    auto child = dynamic_cast<TSCallSignatureDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSConstructSignatureDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSConstructSignatureDeclaration>(node);
+                    auto child = dynamic_cast<TSConstructSignatureDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSPropertySignature: {
-                    auto child = std::dynamic_pointer_cast<TSPropertySignature>(node);
+                    auto child = dynamic_cast<TSPropertySignature*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSMethodSignature: {
-                    auto child = std::dynamic_pointer_cast<TSMethodSignature>(node);
+                    auto child = dynamic_cast<TSMethodSignature*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSIndexSignature: {
-                    auto child = std::dynamic_pointer_cast<TSIndexSignature>(node);
+                    auto child = dynamic_cast<TSIndexSignature*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSAnyKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSAnyKeyword>(node);
+                    auto child = dynamic_cast<TSAnyKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSBooleanKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSBooleanKeyword>(node);
+                    auto child = dynamic_cast<TSBooleanKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSBigIntKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSBigIntKeyword>(node);
+                    auto child = dynamic_cast<TSBigIntKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSNeverKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSNeverKeyword>(node);
+                    auto child = dynamic_cast<TSNeverKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSNullKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSNullKeyword>(node);
+                    auto child = dynamic_cast<TSNullKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSNumberKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSNumberKeyword>(node);
+                    auto child = dynamic_cast<TSNumberKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSObjectKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSObjectKeyword>(node);
+                    auto child = dynamic_cast<TSObjectKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSStringKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSStringKeyword>(node);
+                    auto child = dynamic_cast<TSStringKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSSymbolKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSSymbolKeyword>(node);
+                    auto child = dynamic_cast<TSSymbolKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSUndefinedKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSUndefinedKeyword>(node);
+                    auto child = dynamic_cast<TSUndefinedKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSUnknownKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSUnknownKeyword>(node);
+                    auto child = dynamic_cast<TSUnknownKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSVoidKeyword: {
-                    auto child = std::dynamic_pointer_cast<TSVoidKeyword>(node);
+                    auto child = dynamic_cast<TSVoidKeyword*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSThisType: {
-                    auto child = std::dynamic_pointer_cast<TSThisType>(node);
+                    auto child = dynamic_cast<TSThisType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSFunctionType: {
-                    auto child = std::dynamic_pointer_cast<TSFunctionType>(node);
+                    auto child = dynamic_cast<TSFunctionType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSConstructorType: {
-                    auto child = std::dynamic_pointer_cast<TSConstructorType>(node);
+                    auto child = dynamic_cast<TSConstructorType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeReference: {
-                    auto child = std::dynamic_pointer_cast<TSTypeReference>(node);
+                    auto child = dynamic_cast<TSTypeReference*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypePredicate: {
-                    auto child = std::dynamic_pointer_cast<TSTypePredicate>(node);
+                    auto child = dynamic_cast<TSTypePredicate*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeQuery: {
-                    auto child = std::dynamic_pointer_cast<TSTypeQuery>(node);
+                    auto child = dynamic_cast<TSTypeQuery*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeLiteral: {
-                    auto child = std::dynamic_pointer_cast<TSTypeLiteral>(node);
+                    auto child = dynamic_cast<TSTypeLiteral*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSArrayType: {
-                    auto child = std::dynamic_pointer_cast<TSArrayType>(node);
+                    auto child = dynamic_cast<TSArrayType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTupleType: {
-                    auto child = std::dynamic_pointer_cast<TSTupleType>(node);
+                    auto child = dynamic_cast<TSTupleType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSOptionalType: {
-                    auto child = std::dynamic_pointer_cast<TSOptionalType>(node);
+                    auto child = dynamic_cast<TSOptionalType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSRestType: {
-                    auto child = std::dynamic_pointer_cast<TSRestType>(node);
+                    auto child = dynamic_cast<TSRestType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSUnionType: {
-                    auto child = std::dynamic_pointer_cast<TSUnionType>(node);
+                    auto child = dynamic_cast<TSUnionType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSIntersectionType: {
-                    auto child = std::dynamic_pointer_cast<TSIntersectionType>(node);
+                    auto child = dynamic_cast<TSIntersectionType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSConditionalType: {
-                    auto child = std::dynamic_pointer_cast<TSConditionalType>(node);
+                    auto child = dynamic_cast<TSConditionalType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSInferType: {
-                    auto child = std::dynamic_pointer_cast<TSInferType>(node);
+                    auto child = dynamic_cast<TSInferType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSParenthesizedType: {
-                    auto child = std::dynamic_pointer_cast<TSParenthesizedType>(node);
+                    auto child = dynamic_cast<TSParenthesizedType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeOperator: {
-                    auto child = std::dynamic_pointer_cast<TSTypeOperator>(node);
+                    auto child = dynamic_cast<TSTypeOperator*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSIndexedAccessType: {
-                    auto child = std::dynamic_pointer_cast<TSIndexedAccessType>(node);
+                    auto child = dynamic_cast<TSIndexedAccessType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSMappedType: {
-                    auto child = std::dynamic_pointer_cast<TSMappedType>(node);
+                    auto child = dynamic_cast<TSMappedType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSLiteralType: {
-                    auto child = std::dynamic_pointer_cast<TSLiteralType>(node);
+                    auto child = dynamic_cast<TSLiteralType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSExpressionWithTypeArguments: {
-                    auto child = std::dynamic_pointer_cast<TSExpressionWithTypeArguments>(node);
+                    auto child = dynamic_cast<TSExpressionWithTypeArguments*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSInterfaceDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSInterfaceDeclaration>(node);
+                    auto child = dynamic_cast<TSInterfaceDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSInterfaceBody: {
-                    auto child = std::dynamic_pointer_cast<TSInterfaceBody>(node);
+                    auto child = dynamic_cast<TSInterfaceBody*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeAliasDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSTypeAliasDeclaration>(node);
+                    auto child = dynamic_cast<TSTypeAliasDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSAsExpression: {
-                    auto child = std::dynamic_pointer_cast<TSAsExpression>(node);
+                    auto child = dynamic_cast<TSAsExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeAssertion: {
-                    auto child = std::dynamic_pointer_cast<TSTypeAssertion>(node);
+                    auto child = dynamic_cast<TSTypeAssertion*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSEnumDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSEnumDeclaration>(node);
+                    auto child = dynamic_cast<TSEnumDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSEnumMember: {
-                    auto child = std::dynamic_pointer_cast<TSEnumMember>(node);
+                    auto child = dynamic_cast<TSEnumMember*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSModuleDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSModuleDeclaration>(node);
+                    auto child = dynamic_cast<TSModuleDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSModuleBlock: {
-                    auto child = std::dynamic_pointer_cast<TSModuleBlock>(node);
+                    auto child = dynamic_cast<TSModuleBlock*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSImportType: {
-                    auto child = std::dynamic_pointer_cast<TSImportType>(node);
+                    auto child = dynamic_cast<TSImportType*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSImportEqualsDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSImportEqualsDeclaration>(node);
+                    auto child = dynamic_cast<TSImportEqualsDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSExternalModuleReference: {
-                    auto child = std::dynamic_pointer_cast<TSExternalModuleReference>(node);
+                    auto child = dynamic_cast<TSExternalModuleReference*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSNonNullExpression: {
-                    auto child = std::dynamic_pointer_cast<TSNonNullExpression>(node);
+                    auto child = dynamic_cast<TSNonNullExpression*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSExportAssignment: {
-                    auto child = std::dynamic_pointer_cast<TSExportAssignment>(node);
+                    auto child = dynamic_cast<TSExportAssignment*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSNamespaceExportDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSNamespaceExportDeclaration>(node);
+                    auto child = dynamic_cast<TSNamespaceExportDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeAnnotation: {
-                    auto child = std::dynamic_pointer_cast<TSTypeAnnotation>(node);
+                    auto child = dynamic_cast<TSTypeAnnotation*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeParameterInstantiation: {
-                    auto child = std::dynamic_pointer_cast<TSTypeParameterInstantiation>(node);
+                    auto child = dynamic_cast<TSTypeParameterInstantiation*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeParameterDeclaration: {
-                    auto child = std::dynamic_pointer_cast<TSTypeParameterDeclaration>(node);
+                    auto child = dynamic_cast<TSTypeParameterDeclaration*>(node);
                     return Dump(child);
                 }
 
                 case SyntaxNodeType::TSTypeParameter: {
-                    auto child = std::dynamic_pointer_cast<TSTypeParameter>(node);
+                    auto child = dynamic_cast<TSTypeParameter*>(node);
                     return Dump(child);
                 }
 
@@ -762,7 +762,7 @@ namespace jetpack::dumper {
             }
         }
 
-        static json Dump(const Sp<ArrayExpression>& node) {
+        static json Dump(ArrayExpression* node) {
             json result = json::object();
             result["type"] = "ArrayExpression";
             DumpBaseInfo(result, node);
@@ -780,7 +780,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ArrayPattern>& node) {
+        static json Dump(ArrayPattern* node) {
             json result = json::object();
             result["type"] = "ArrayPattern";
             DumpBaseInfo(result, node);
@@ -798,7 +798,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ArrowFunctionExpression>& node) {
+        static json Dump(ArrowFunctionExpression* node) {
             json result = json::object();
             result["type"] = "ArrowFunctionExpression";
             DumpBaseInfo(result, node);
@@ -819,7 +819,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<AssignmentExpression>& node) {
+        static json Dump(AssignmentExpression* node) {
             json result = json::object();
             result["type"] = "AssignmentExpression";
             DumpBaseInfo(result, node);
@@ -830,7 +830,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<AssignmentPattern>& node) {
+        static json Dump(AssignmentPattern* node) {
             json result = json::object();
             result["type"] = "AssignmentPattern";
             DumpBaseInfo(result, node);
@@ -840,7 +840,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<AwaitExpression>& node) {
+        static json Dump(AwaitExpression* node) {
             json result = json::object();
             result["type"] = "AwaitExpression";
             DumpBaseInfo(result, node);
@@ -849,7 +849,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<BinaryExpression>& node) {
+        static json Dump(BinaryExpression* node) {
             json result = json::object();
             result["type"] = "BinaryExpression";
             DumpBaseInfo(result, node);
@@ -860,7 +860,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<BlockStatement>& node) {
+        static json Dump(BlockStatement* node) {
             json result = json::object();
             result["type"] = "BlockStatement";
             DumpBaseInfo(result, node);
@@ -874,7 +874,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<BreakStatement>& node) {
+        static json Dump(BreakStatement* node) {
             json result = json::object();
             result["type"] = "BreakStatement";
             DumpBaseInfo(result, node);
@@ -885,7 +885,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<CallExpression>& node) {
+        static json Dump(CallExpression* node) {
             json result = json::object();
             result["type"] = "CallExpression";
             DumpBaseInfo(result, node);
@@ -900,7 +900,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<CatchClause>& node) {
+        static json Dump(CatchClause* node) {
             json result = json::object();
             result["type"] = "CatchClause";
             DumpBaseInfo(result, node);
@@ -910,7 +910,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ClassBody>& node) {
+        static json Dump(ClassBody* node) {
             json result = json::object();
             result["type"] = "ClassBody";
             DumpBaseInfo(result, node);
@@ -924,7 +924,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ClassDeclaration>& node) {
+        static json Dump(ClassDeclaration* node) {
             json result = json::object();
             result["type"] = "ClassDeclaration";
             DumpBaseInfo(result, node);
@@ -939,7 +939,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ClassExpression>& node) {
+        static json Dump(ClassExpression* node) {
             json result = json::object();
             result["type"] = "ClassExpression";
             DumpBaseInfo(result, node);
@@ -956,7 +956,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ConditionalExpression>& node) {
+        static json Dump(ConditionalExpression* node) {
             json result = json::object();
             result["type"] = "ConditionalExpression";
             DumpBaseInfo(result, node);
@@ -967,7 +967,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ContinueStatement>& node) {
+        static json Dump(ContinueStatement* node) {
             json result = json::object();
             result["type"] = "ContinueStatement";
             DumpBaseInfo(result, node);
@@ -978,7 +978,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<DebuggerStatement>& node) {
+        static json Dump(DebuggerStatement* node) {
             json result = json::object();
             result["type"] = "DebuggerStatement";
             DumpBaseInfo(result, node);
@@ -986,7 +986,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Directive>& node) {
+        static json Dump(Directive* node) {
             json result = json::object();
             result["type"] = "Directive";
             DumpBaseInfo(result, node);
@@ -996,7 +996,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<DoWhileStatement>& node) {
+        static json Dump(DoWhileStatement* node) {
             json result = json::object();
             result["type"] = "DoWhileStatement";
             DumpBaseInfo(result, node);
@@ -1006,7 +1006,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<EmptyStatement>& node) {
+        static json Dump(EmptyStatement* node) {
             json result = json::object();
             result["type"] = "EmptyStatement";
             DumpBaseInfo(result, node);
@@ -1014,7 +1014,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ExportAllDeclaration>& node) {
+        static json Dump(ExportAllDeclaration* node) {
             json result = json::object();
             result["type"] = "ExportAllDeclaration";
             DumpBaseInfo(result, node);
@@ -1023,7 +1023,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ExportDefaultDeclaration>& node) {
+        static json Dump(ExportDefaultDeclaration* node) {
             json result = json::object();
             result["type"] = "ExportDefaultDeclaration";
             DumpBaseInfo(result, node);
@@ -1032,7 +1032,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ExportNamedDeclaration>& node) {
+        static json Dump(ExportNamedDeclaration* node) {
             json result = json::object();
             result["type"] = "ExportNamedDeclaration";
             DumpBaseInfo(result, node);
@@ -1052,7 +1052,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ExportSpecifier>& node) {
+        static json Dump(ExportSpecifier* node) {
             json result = json::object();
             result["type"] = "ExportSpecifier";
             DumpBaseInfo(result, node);
@@ -1062,7 +1062,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ExpressionStatement>& node) {
+        static json Dump(ExpressionStatement* node) {
             json result = json::object();
             result["type"] = "ExpressionStatement";
             DumpBaseInfo(result, node);
@@ -1071,7 +1071,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ForInStatement>& node) {
+        static json Dump(ForInStatement* node) {
             json result = json::object();
             result["type"] = "ForInStatement";
             DumpBaseInfo(result, node);
@@ -1083,7 +1083,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ForOfStatement>& node) {
+        static json Dump(ForOfStatement* node) {
             json result = json::object();
             result["type"] = "ForOfStatement";
             DumpBaseInfo(result, node);
@@ -1094,7 +1094,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ForStatement>& node) {
+        static json Dump(ForStatement* node) {
             json result = json::object();
             result["type"] = "ForStatement";
             DumpBaseInfo(result, node);
@@ -1112,7 +1112,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<FunctionDeclaration>& node) {
+        static json Dump(FunctionDeclaration* node) {
             json result = json::object();
             result["type"] = "FunctionDeclaration";
             DumpBaseInfo(result, node);
@@ -1133,7 +1133,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<FunctionExpression>& node) {
+        static json Dump(FunctionExpression* node) {
             json result = json::object();
             result["type"] = "FunctionExpression";
             DumpBaseInfo(result, node);
@@ -1154,7 +1154,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Identifier>& node) {
+        static json Dump(Identifier* node) {
             json result = json::object();
             result["type"] = "Identifier";
             DumpBaseInfo(result, node);
@@ -1163,7 +1163,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<IfStatement>& node) {
+        static json Dump(IfStatement* node) {
             json result = json::object();
             result["type"] = "IfStatement";
             DumpBaseInfo(result, node);
@@ -1176,7 +1176,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Import>& node) {
+        static json Dump(Import* node) {
             json result = json::object();
             result["type"] = "Import";
             DumpBaseInfo(result, node);
@@ -1184,7 +1184,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ImportDeclaration>& node) {
+        static json Dump(ImportDeclaration* node) {
             json result = json::object();
             result["type"] = "ImportDeclaration";
             DumpBaseInfo(result, node);
@@ -1199,7 +1199,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ImportDefaultSpecifier>& node) {
+        static json Dump(ImportDefaultSpecifier* node) {
             json result = json::object();
             result["type"] = "ImportDefaultSpecifier";
             DumpBaseInfo(result, node);
@@ -1208,7 +1208,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ImportNamespaceSpecifier>& node) {
+        static json Dump(ImportNamespaceSpecifier* node) {
             json result = json::object();
             result["type"] = "ImportNamespaceSpecifier";
             DumpBaseInfo(result, node);
@@ -1217,7 +1217,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ImportSpecifier>& node) {
+        static json Dump(ImportSpecifier* node) {
             json result = json::object();
             result["type"] = "ImportSpecifier";
             DumpBaseInfo(result, node);
@@ -1227,7 +1227,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<LabeledStatement>& node) {
+        static json Dump(LabeledStatement* node) {
             json result = json::object();
             result["type"] = "LabeledStatement";
             DumpBaseInfo(result, node);
@@ -1237,7 +1237,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Literal>& node) {
+        static json Dump(Literal* node) {
             json result = json::object();
             result["type"] = "Literal";
             DumpBaseInfo(result, node);
@@ -1265,7 +1265,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<MetaProperty>& node) {
+        static json Dump(MetaProperty* node) {
             json result = json::object();
             result["type"] = "MetaProperty";
             DumpBaseInfo(result, node);
@@ -1275,7 +1275,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<MethodDefinition>& node) {
+        static json Dump(MethodDefinition* node) {
             json result = json::object();
             result["type"] = "MethodDefinition";
             DumpBaseInfo(result, node);
@@ -1292,7 +1292,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Module>& node) {
+        static json Dump(Module* node) {
             json result = json::object();
             result["type"] = "Module";
             DumpBaseInfo(result, node);
@@ -1309,7 +1309,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<NewExpression>& node) {
+        static json Dump(NewExpression* node) {
             json result = json::object();
             result["type"] = "NewExpression";
             DumpBaseInfo(result, node);
@@ -1324,7 +1324,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ObjectExpression>& node) {
+        static json Dump(ObjectExpression* node) {
             json result = json::object();
             result["type"] = "ObjectExpression";
             DumpBaseInfo(result, node);
@@ -1338,7 +1338,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ObjectPattern>& node) {
+        static json Dump(ObjectPattern* node) {
             json result = json::object();
             result["type"] = "ObjectPattern";
             DumpBaseInfo(result, node);
@@ -1352,7 +1352,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Property>& node) {
+        static json Dump(Property* node) {
             json result = json::object();
             result["type"] = "Property";
             DumpBaseInfo(result, node);
@@ -1368,7 +1368,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<RegexLiteral>& node) {
+        static json Dump(RegexLiteral* node) {
             json result = json::object();
             result["type"] = "RegexLiteral";
             DumpBaseInfo(result, node);
@@ -1378,7 +1378,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<RestElement>& node) {
+        static json Dump(RestElement* node) {
             json result = json::object();
             result["type"] = "RestElement";
             DumpBaseInfo(result, node);
@@ -1387,7 +1387,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ReturnStatement>& node) {
+        static json Dump(ReturnStatement* node) {
             json result = json::object();
             result["type"] = "ReturnStatement";
             DumpBaseInfo(result, node);
@@ -1398,7 +1398,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Script>& node) {
+        static json Dump(Script* node) {
             json result = json::object();
             result["type"] = "Script";
             DumpBaseInfo(result, node);
@@ -1415,7 +1415,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<SequenceExpression>& node) {
+        static json Dump(SequenceExpression* node) {
             json result = json::object();
             result["type"] = "SequenceExpression";
             DumpBaseInfo(result, node);
@@ -1429,7 +1429,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<SpreadElement>& node) {
+        static json Dump(SpreadElement* node) {
             json result = json::object();
             result["type"] = "SpreadElement";
             DumpBaseInfo(result, node);
@@ -1438,7 +1438,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<MemberExpression>& node) {
+        static json Dump(MemberExpression* node) {
             json result = json::object();
             result["type"] = "MemberExpression";
             DumpBaseInfo(result, node);
@@ -1449,7 +1449,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<Super>& node) {
+        static json Dump(Super* node) {
             json result = json::object();
             result["type"] = "Super";
             DumpBaseInfo(result, node);
@@ -1457,7 +1457,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<SwitchCase>& node) {
+        static json Dump(SwitchCase* node) {
             json result = json::object();
             result["type"] = "SwitchCase";
             DumpBaseInfo(result, node);
@@ -1474,7 +1474,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<SwitchStatement>& node) {
+        static json Dump(SwitchStatement* node) {
             json result = json::object();
             result["type"] = "SwitchStatement";
             DumpBaseInfo(result, node);
@@ -1489,7 +1489,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TaggedTemplateExpression>& node) {
+        static json Dump(TaggedTemplateExpression* node) {
             json result = json::object();
             result["type"] = "TaggedTemplateExpression";
             DumpBaseInfo(result, node);
@@ -1499,7 +1499,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TemplateElement>& node) {
+        static json Dump(TemplateElement* node) {
             json result = json::object();
             result["type"] = "TemplateElement";
             DumpBaseInfo(result, node);
@@ -1510,7 +1510,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TemplateLiteral>& node) {
+        static json Dump(TemplateLiteral* node) {
             json result = json::object();
             result["type"] = "TemplateLiteral";
             DumpBaseInfo(result, node);
@@ -1530,7 +1530,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ThisExpression>& node) {
+        static json Dump(ThisExpression* node) {
             json result = json::object();
             result["type"] = "ThisExpression";
             DumpBaseInfo(result, node);
@@ -1538,7 +1538,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ThrowStatement>& node) {
+        static json Dump(ThrowStatement* node) {
             json result = json::object();
             result["type"] = "ThrowStatement";
             DumpBaseInfo(result, node);
@@ -1547,7 +1547,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TryStatement>& node) {
+        static json Dump(TryStatement* node) {
             json result = json::object();
             result["type"] = "TryStatement";
             DumpBaseInfo(result, node);
@@ -1562,7 +1562,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<UnaryExpression>& node) {
+        static json Dump(UnaryExpression* node) {
             json result = json::object();
             result["type"] = "UnaryExpression";
             DumpBaseInfo(result, node);
@@ -1573,7 +1573,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<UpdateExpression>& node) {
+        static json Dump(UpdateExpression* node) {
             json result = json::object();
             result["type"] = "UpdateExpression";
             DumpBaseInfo(result, node);
@@ -1584,7 +1584,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<VariableDeclaration>& node) {
+        static json Dump(VariableDeclaration* node) {
             json result = json::object();
             result["type"] = "VariableDeclaration";
             DumpBaseInfo(result, node);
@@ -1599,7 +1599,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<VariableDeclarator>& node) {
+        static json Dump(VariableDeclarator* node) {
             json result = json::object();
             result["type"] = "VariableDeclarator";
             DumpBaseInfo(result, node);
@@ -1611,7 +1611,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<WhileStatement>& node) {
+        static json Dump(WhileStatement* node) {
             json result = json::object();
             result["type"] = "WhileStatement";
             DumpBaseInfo(result, node);
@@ -1621,7 +1621,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<WithStatement>& node) {
+        static json Dump(WithStatement* node) {
             json result = json::object();
             result["type"] = "WithStatement";
             DumpBaseInfo(result, node);
@@ -1631,7 +1631,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<YieldExpression>& node) {
+        static json Dump(YieldExpression* node) {
             json result = json::object();
             result["type"] = "YieldExpression";
             DumpBaseInfo(result, node);
@@ -1643,7 +1643,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<ArrowParameterPlaceHolder>& node) {
+        static json Dump(ArrowParameterPlaceHolder* node) {
             json result = json::object();
             result["type"] = "ArrowParameterPlaceHolder";
             DumpBaseInfo(result, node);
@@ -1658,7 +1658,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXClosingElement>& node) {
+        static json Dump(JSXClosingElement* node) {
             json result = json::object();
             result["type"] = "JSXClosingElement";
             DumpBaseInfo(result, node);
@@ -1667,7 +1667,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXElement>& node) {
+        static json Dump(JSXElement* node) {
             json result = json::object();
             result["type"] = "JSXElement";
             DumpBaseInfo(result, node);
@@ -1685,7 +1685,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXEmptyExpression>& node) {
+        static json Dump(JSXEmptyExpression* node) {
             json result = json::object();
             result["type"] = "JSXEmptyExpression";
             DumpBaseInfo(result, node);
@@ -1693,7 +1693,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXExpressionContainer>& node) {
+        static json Dump(JSXExpressionContainer* node) {
             json result = json::object();
             result["type"] = "JSXExpressionContainer";
             DumpBaseInfo(result, node);
@@ -1702,7 +1702,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXIdentifier>& node) {
+        static json Dump(JSXIdentifier* node) {
             json result = json::object();
             result["type"] = "JSXIdentifier";
             DumpBaseInfo(result, node);
@@ -1711,7 +1711,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXMemberExpression>& node) {
+        static json Dump(JSXMemberExpression* node) {
             json result = json::object();
             result["type"] = "JSXMemberExpression";
             DumpBaseInfo(result, node);
@@ -1721,7 +1721,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXAttribute>& node) {
+        static json Dump(JSXAttribute* node) {
             json result = json::object();
             result["type"] = "JSXAttribute";
             DumpBaseInfo(result, node);
@@ -1733,7 +1733,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXNamespacedName>& node) {
+        static json Dump(JSXNamespacedName* node) {
             json result = json::object();
             result["type"] = "JSXNamespacedName";
             DumpBaseInfo(result, node);
@@ -1743,7 +1743,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXOpeningElement>& node) {
+        static json Dump(JSXOpeningElement* node) {
             json result = json::object();
             result["type"] = "JSXOpeningElement";
             DumpBaseInfo(result, node);
@@ -1759,7 +1759,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXSpreadAttribute>& node) {
+        static json Dump(JSXSpreadAttribute* node) {
             json result = json::object();
             result["type"] = "JSXSpreadAttribute";
             DumpBaseInfo(result, node);
@@ -1768,7 +1768,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<JSXText>& node) {
+        static json Dump(JSXText* node) {
             json result = json::object();
             result["type"] = "JSXText";
             DumpBaseInfo(result, node);
@@ -1778,7 +1778,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSParameterProperty>& node) {
+        static json Dump(TSParameterProperty* node) {
             json result = json::object();
             result["type"] = "TSParameterProperty";
             DumpBaseInfo(result, node);
@@ -1788,7 +1788,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSDeclareFunction>& node) {
+        static json Dump(TSDeclareFunction* node) {
             json result = json::object();
             result["type"] = "TSDeclareFunction";
             DumpBaseInfo(result, node);
@@ -1799,7 +1799,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSDeclareMethod>& node) {
+        static json Dump(TSDeclareMethod* node) {
             json result = json::object();
             result["type"] = "TSDeclareMethod";
             DumpBaseInfo(result, node);
@@ -1807,7 +1807,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSQualifiedName>& node) {
+        static json Dump(TSQualifiedName* node) {
             json result = json::object();
             result["type"] = "TSQualifiedName";
             DumpBaseInfo(result, node);
@@ -1815,7 +1815,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSCallSignatureDeclaration>& node) {
+        static json Dump(TSCallSignatureDeclaration* node) {
             json result = json::object();
             result["type"] = "TSCallSignatureDeclaration";
             DumpBaseInfo(result, node);
@@ -1823,7 +1823,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSConstructSignatureDeclaration>& node) {
+        static json Dump(TSConstructSignatureDeclaration* node) {
             json result = json::object();
             result["type"] = "TSConstructSignatureDeclaration";
             DumpBaseInfo(result, node);
@@ -1831,7 +1831,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSPropertySignature>& node) {
+        static json Dump(TSPropertySignature* node) {
             json result = json::object();
             result["type"] = "TSPropertySignature";
             DumpBaseInfo(result, node);
@@ -1839,7 +1839,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSMethodSignature>& node) {
+        static json Dump(TSMethodSignature* node) {
             json result = json::object();
             result["type"] = "TSMethodSignature";
             DumpBaseInfo(result, node);
@@ -1847,7 +1847,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSIndexSignature>& node) {
+        static json Dump(TSIndexSignature* node) {
             json result = json::object();
             result["type"] = "TSIndexSignature";
             DumpBaseInfo(result, node);
@@ -1855,7 +1855,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSAnyKeyword>& node) {
+        static json Dump(TSAnyKeyword* node) {
             json result = json::object();
             result["type"] = "TSAnyKeyword";
             DumpBaseInfo(result, node);
@@ -1863,7 +1863,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSBooleanKeyword>& node) {
+        static json Dump(TSBooleanKeyword* node) {
             json result = json::object();
             result["type"] = "TSBooleanKeyword";
             DumpBaseInfo(result, node);
@@ -1871,7 +1871,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSBigIntKeyword>& node) {
+        static json Dump(TSBigIntKeyword* node) {
             json result = json::object();
             result["type"] = "TSBigIntKeyword";
             DumpBaseInfo(result, node);
@@ -1879,7 +1879,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSNeverKeyword>& node) {
+        static json Dump(TSNeverKeyword* node) {
             json result = json::object();
             result["type"] = "TSNeverKeyword";
             DumpBaseInfo(result, node);
@@ -1887,7 +1887,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSNullKeyword>& node) {
+        static json Dump(TSNullKeyword* node) {
             json result = json::object();
             result["type"] = "TSNullKeyword";
             DumpBaseInfo(result, node);
@@ -1895,7 +1895,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSNumberKeyword>& node) {
+        static json Dump(TSNumberKeyword* node) {
             json result = json::object();
             result["type"] = "TSNumberKeyword";
             DumpBaseInfo(result, node);
@@ -1903,7 +1903,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSObjectKeyword>& node) {
+        static json Dump(TSObjectKeyword* node) {
             json result = json::object();
             result["type"] = "TSObjectKeyword";
             DumpBaseInfo(result, node);
@@ -1911,7 +1911,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSStringKeyword>& node) {
+        static json Dump(TSStringKeyword* node) {
             json result = json::object();
             result["type"] = "TSStringKeyword";
             DumpBaseInfo(result, node);
@@ -1919,7 +1919,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSSymbolKeyword>& node) {
+        static json Dump(TSSymbolKeyword* node) {
             json result = json::object();
             result["type"] = "TSSymbolKeyword";
             DumpBaseInfo(result, node);
@@ -1927,7 +1927,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSUndefinedKeyword>& node) {
+        static json Dump(TSUndefinedKeyword* node) {
             json result = json::object();
             result["type"] = "TSUndefinedKeyword";
             DumpBaseInfo(result, node);
@@ -1935,7 +1935,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSUnknownKeyword>& node) {
+        static json Dump(TSUnknownKeyword* node) {
             json result = json::object();
             result["type"] = "TSUnknownKeyword";
             DumpBaseInfo(result, node);
@@ -1943,7 +1943,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSVoidKeyword>& node) {
+        static json Dump(TSVoidKeyword* node) {
             json result = json::object();
             result["type"] = "TSVoidKeyword";
             DumpBaseInfo(result, node);
@@ -1951,7 +1951,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSThisType>& node) {
+        static json Dump(TSThisType* node) {
             json result = json::object();
             result["type"] = "TSThisType";
             DumpBaseInfo(result, node);
@@ -1959,7 +1959,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSFunctionType>& node) {
+        static json Dump(TSFunctionType* node) {
             json result = json::object();
             result["type"] = "TSFunctionType";
             DumpBaseInfo(result, node);
@@ -1967,7 +1967,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSConstructorType>& node) {
+        static json Dump(TSConstructorType* node) {
             json result = json::object();
             result["type"] = "TSConstructorType";
             DumpBaseInfo(result, node);
@@ -1975,7 +1975,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeReference>& node) {
+        static json Dump(TSTypeReference* node) {
             json result = json::object();
             result["type"] = "TSTypeReference";
             DumpBaseInfo(result, node);
@@ -1983,7 +1983,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypePredicate>& node) {
+        static json Dump(TSTypePredicate* node) {
             json result = json::object();
             result["type"] = "TSTypePredicate";
             DumpBaseInfo(result, node);
@@ -1991,7 +1991,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeQuery>& node) {
+        static json Dump(TSTypeQuery* node) {
             json result = json::object();
             result["type"] = "TSTypeQuery";
             DumpBaseInfo(result, node);
@@ -1999,7 +1999,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeLiteral>& node) {
+        static json Dump(TSTypeLiteral* node) {
             json result = json::object();
             result["type"] = "TSTypeLiteral";
             DumpBaseInfo(result, node);
@@ -2007,7 +2007,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSArrayType>& node) {
+        static json Dump(TSArrayType* node) {
             json result = json::object();
             result["type"] = "TSArrayType";
             DumpBaseInfo(result, node);
@@ -2015,7 +2015,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTupleType>& node) {
+        static json Dump(TSTupleType* node) {
             json result = json::object();
             result["type"] = "TSTupleType";
             DumpBaseInfo(result, node);
@@ -2023,7 +2023,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSOptionalType>& node) {
+        static json Dump(TSOptionalType* node) {
             json result = json::object();
             result["type"] = "TSOptionalType";
             DumpBaseInfo(result, node);
@@ -2031,7 +2031,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSRestType>& node) {
+        static json Dump(TSRestType* node) {
             json result = json::object();
             result["type"] = "TSRestType";
             DumpBaseInfo(result, node);
@@ -2039,7 +2039,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSUnionType>& node) {
+        static json Dump(TSUnionType* node) {
             json result = json::object();
             result["type"] = "TSUnionType";
             DumpBaseInfo(result, node);
@@ -2047,7 +2047,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSIntersectionType>& node) {
+        static json Dump(TSIntersectionType* node) {
             json result = json::object();
             result["type"] = "TSIntersectionType";
             DumpBaseInfo(result, node);
@@ -2055,7 +2055,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSConditionalType>& node) {
+        static json Dump(TSConditionalType* node) {
             json result = json::object();
             result["type"] = "TSConditionalType";
             DumpBaseInfo(result, node);
@@ -2063,7 +2063,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSInferType>& node) {
+        static json Dump(TSInferType* node) {
             json result = json::object();
             result["type"] = "TSInferType";
             DumpBaseInfo(result, node);
@@ -2071,7 +2071,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSParenthesizedType>& node) {
+        static json Dump(TSParenthesizedType* node) {
             json result = json::object();
             result["type"] = "TSParenthesizedType";
             DumpBaseInfo(result, node);
@@ -2079,7 +2079,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeOperator>& node) {
+        static json Dump(TSTypeOperator* node) {
             json result = json::object();
             result["type"] = "TSTypeOperator";
             DumpBaseInfo(result, node);
@@ -2087,7 +2087,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSIndexedAccessType>& node) {
+        static json Dump(TSIndexedAccessType* node) {
             json result = json::object();
             result["type"] = "TSIndexedAccessType";
             DumpBaseInfo(result, node);
@@ -2095,7 +2095,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSMappedType>& node) {
+        static json Dump(TSMappedType* node) {
             json result = json::object();
             result["type"] = "TSMappedType";
             DumpBaseInfo(result, node);
@@ -2103,7 +2103,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSLiteralType>& node) {
+        static json Dump(TSLiteralType* node) {
             json result = json::object();
             result["type"] = "TSLiteralType";
             DumpBaseInfo(result, node);
@@ -2111,7 +2111,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSExpressionWithTypeArguments>& node) {
+        static json Dump(TSExpressionWithTypeArguments* node) {
             json result = json::object();
             result["type"] = "TSExpressionWithTypeArguments";
             DumpBaseInfo(result, node);
@@ -2119,7 +2119,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSInterfaceDeclaration>& node) {
+        static json Dump(TSInterfaceDeclaration* node) {
             json result = json::object();
             result["type"] = "TSInterfaceDeclaration";
             DumpBaseInfo(result, node);
@@ -2127,7 +2127,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSInterfaceBody>& node) {
+        static json Dump(TSInterfaceBody* node) {
             json result = json::object();
             result["type"] = "TSInterfaceBody";
             DumpBaseInfo(result, node);
@@ -2135,7 +2135,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeAliasDeclaration>& node) {
+        static json Dump(TSTypeAliasDeclaration* node) {
             json result = json::object();
             result["type"] = "TSTypeAliasDeclaration";
             DumpBaseInfo(result, node);
@@ -2148,7 +2148,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSAsExpression>& node) {
+        static json Dump(TSAsExpression* node) {
             json result = json::object();
             result["type"] = "TSAsExpression";
             DumpBaseInfo(result, node);
@@ -2156,7 +2156,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeAssertion>& node) {
+        static json Dump(TSTypeAssertion* node) {
             json result = json::object();
             result["type"] = "TSTypeAssertion";
             DumpBaseInfo(result, node);
@@ -2164,7 +2164,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSEnumDeclaration>& node) {
+        static json Dump(TSEnumDeclaration* node) {
             json result = json::object();
             result["type"] = "TSEnumDeclaration";
             DumpBaseInfo(result, node);
@@ -2172,7 +2172,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSEnumMember>& node) {
+        static json Dump(TSEnumMember* node) {
             json result = json::object();
             result["type"] = "TSEnumMember";
             DumpBaseInfo(result, node);
@@ -2180,7 +2180,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSModuleDeclaration>& node) {
+        static json Dump(TSModuleDeclaration* node) {
             json result = json::object();
             result["type"] = "TSModuleDeclaration";
             DumpBaseInfo(result, node);
@@ -2188,7 +2188,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSModuleBlock>& node) {
+        static json Dump(TSModuleBlock* node) {
             json result = json::object();
             result["type"] = "TSModuleBlock";
             DumpBaseInfo(result, node);
@@ -2196,7 +2196,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSImportType>& node) {
+        static json Dump(TSImportType* node) {
             json result = json::object();
             result["type"] = "TSImportType";
             DumpBaseInfo(result, node);
@@ -2204,7 +2204,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSImportEqualsDeclaration>& node) {
+        static json Dump(TSImportEqualsDeclaration* node) {
             json result = json::object();
             result["type"] = "TSImportEqualsDeclaration";
             DumpBaseInfo(result, node);
@@ -2212,7 +2212,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSExternalModuleReference>& node) {
+        static json Dump(TSExternalModuleReference* node) {
             json result = json::object();
             result["type"] = "TSExternalModuleReference";
             DumpBaseInfo(result, node);
@@ -2220,7 +2220,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSNonNullExpression>& node) {
+        static json Dump(TSNonNullExpression* node) {
             json result = json::object();
             result["type"] = "TSNonNullExpression";
             DumpBaseInfo(result, node);
@@ -2228,7 +2228,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSExportAssignment>& node) {
+        static json Dump(TSExportAssignment* node) {
             json result = json::object();
             result["type"] = "TSExportAssignment";
             DumpBaseInfo(result, node);
@@ -2236,7 +2236,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSNamespaceExportDeclaration>& node) {
+        static json Dump(TSNamespaceExportDeclaration* node) {
             json result = json::object();
             result["type"] = "TSNamespaceExportDeclaration";
             DumpBaseInfo(result, node);
@@ -2244,7 +2244,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeAnnotation>& node) {
+        static json Dump(TSTypeAnnotation* node) {
             json result = json::object();
             result["type"] = "TSTypeAnnotation";
             DumpBaseInfo(result, node);
@@ -2252,7 +2252,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeParameterInstantiation>& node) {
+        static json Dump(TSTypeParameterInstantiation* node) {
             json result = json::object();
             result["type"] = "TSTypeParameterInstantiation";
             DumpBaseInfo(result, node);
@@ -2260,7 +2260,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeParameterDeclaration>& node) {
+        static json Dump(TSTypeParameterDeclaration* node) {
             json result = json::object();
             result["type"] = "TSTypeParameterDeclaration";
             DumpBaseInfo(result, node);
@@ -2268,7 +2268,7 @@ namespace jetpack::dumper {
             return result;
         }
 
-        static json Dump(const Sp<TSTypeParameter>& node) {
+        static json Dump(TSTypeParameter* node) {
             json result = json::object();
             result["type"] = "TSTypeParameter";
             DumpBaseInfo(result, node);

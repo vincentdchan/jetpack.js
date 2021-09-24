@@ -1,6 +1,7 @@
 #include <cassert>
 #include <climits>
 #include <cstdio>
+#include <cstdlib>
 #include "Alloc.h"
 
 #if DEBUG

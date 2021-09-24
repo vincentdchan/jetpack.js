@@ -68,8 +68,8 @@ JpResult *parse_to_ast(const char *str, uint32_t flags) {
     parser::Config config = parser::Config::Default();
     config.jsx = !!(flags & JSX_FLAG);
     config.constant_folding = !!(flags & CONSTANT_FOLDING_FLAG);
-    auto ctx = std::make_shared<parser::ParserContext>(-1, str, config);
-    parser::Parser parser(ctx);
+    AstContext ctx;
+    parser::Parser parser(ctx, str, config);
 
     auto mod = parser.ParseModule();
     auto json = jetpack::dumper::AstToJson::Dump(mod);
