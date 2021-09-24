@@ -12,14 +12,12 @@
 using namespace jetpack;
 using namespace jetpack::parser;
 
-inline Sp<Module> ParseString(std::string_view src) {
-    Config config = Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, src, config);
-    Parser parser(ctx);
+inline Module* ParseString(AstContext& ctx, std::string_view src) {
+    Parser parser(ctx, src, Config::Default());
     return parser.ParseModule();
 }
 
-inline std::string GenCode(Sp<Module>& mod) {
+inline std::string GenCode(Module* mod) {
     CodeGenConfig code_gen_config;
     CodeGen codegen(code_gen_config, nullptr);
     codegen.Traverse(*mod);
@@ -30,8 +28,8 @@ TEST(Scope, Collect) {
     auto content = "var name = 3;";
 
     Config config = Config::Default();
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
 
     auto mod = parser.ParseModule();
     mod->scope->ResolveAllSymbols(nullptr);
@@ -41,7 +39,8 @@ TEST(Scope, Collect) {
 }
 
 TEST(Scope, Rename) {
-    auto mod = ParseString("var name = 3;\n");
+    AstContext ctx;
+    auto mod = ParseString(ctx, "var name = 3;\n");
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -55,7 +54,8 @@ TEST(Scope, Rename) {
 }
 
 TEST(Scope, RenameImportNamespace) {
-    auto mod = ParseString("import * as name from 'main';\n");
+    AstContext ctx;
+    auto mod = ParseString(ctx, "import * as name from 'main';\n");
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -79,7 +79,8 @@ TEST(Scope, RenameFunction1) {
                            "  console.log(new_name);\n"
                            "}\n";
 
-    auto mod = ParseString(std::move(src));
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -102,7 +103,8 @@ TEST(Scope, RenameFunction2) {
                            "  console.log(name);\n"
                            "}\n";
 
-    auto mod = ParseString(std::move(src));
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -123,7 +125,8 @@ TEST(Scope, RenameFunction3) {
                            "  console.log(name);\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -138,7 +141,8 @@ TEST(Scope, RenameObjectPattern) {
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -153,7 +157,8 @@ TEST(Scope, RenameObjectPattern2) {
 
     std::string expected = "var { name: other } = obj;\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -168,7 +173,8 @@ TEST(Scope, RenameObjectPattern3) {
 
     std::string expected = "var { name: renamed } = obj;\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -193,7 +199,8 @@ TEST(Scope, Cls) {
                            "  }\n"
                            "}\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -208,7 +215,8 @@ TEST(Scope, RenameImport) {
 
     std::string expected = "import { name as renamed } from 'main';\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -225,7 +233,8 @@ TEST(Scope, RenameImport3) {
                "\n"
                "export default a + 3 + b + fun();";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -233,10 +242,10 @@ TEST(Scope, RenameImport3) {
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_GT(mod->body.size(), 0);
-    auto import_decl = std::dynamic_pointer_cast<ImportDeclaration>(mod->body[0]);
+    auto import_decl = dynamic_cast<ImportDeclaration*>(mod->body[0]);
     EXPECT_NE(import_decl, nullptr);
 
-    auto first_spec = std::dynamic_pointer_cast<ImportSpecifier>(import_decl->specifiers[0]);
+    auto first_spec = dynamic_cast<ImportSpecifier*>(import_decl->specifiers[0]);
     EXPECT_NE(import_decl, nullptr);
 
     EXPECT_EQ(first_spec->local->name, "p");
@@ -247,7 +256,8 @@ TEST(Scope, RenameImportDefault) {
 
     std::string expected = "import Angular from 'react';\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -264,7 +274,8 @@ TEST(Scope, RenameImport2) {
     std::string expected = "import { cc as renamed } from 'main';\n"
                            "console.log(renamed);\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -281,7 +292,8 @@ TEST(Scope, RenameExport1) {
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as foo };\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;
@@ -298,7 +310,8 @@ TEST(Scope, RenameExport2) {
     std::string expected = "const renamed = 3;\n"
                            "export { renamed as name };\n";
 
-    auto mod = ParseString(src);
+    AstContext ctx;
+    auto mod = ParseString(ctx, src);
     mod->scope->ResolveAllSymbols(nullptr);
 
     ModuleScope::ChangeSet changeset;

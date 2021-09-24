@@ -68,6 +68,8 @@ namespace jetpack::parser {
             std::string message;
         };
 
+        ParserCommon(AstContext& ctx, std::string_view src, const Config& config);
+        ParserCommon(AstContext& ctx, Sp<StringWithMapping> src, const Config& config);
         ParserCommon(std::shared_ptr<ParserContext> state);
         ParserCommon(const ParserCommon&) = delete;
         ParserCommon(ParserCommon&&) = delete;
@@ -158,6 +160,10 @@ namespace jetpack::parser {
                     ctx->last_marker_.column
                 );
             }
+        }
+
+        inline Sp<ParserContext> Context() const {
+            return ctx;
         }
 
     private:

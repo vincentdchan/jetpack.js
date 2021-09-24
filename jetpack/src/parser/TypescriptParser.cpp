@@ -7,8 +7,8 @@
 
 namespace jetpack::parser {
 
-    TypeScriptParser::TypeScriptParser(std::shared_ptr<ParserContext> state):
-    ParserCommon(std::move(state)) {
+    TypeScriptParser::TypeScriptParser(Parser& parser, std::shared_ptr<ParserContext> state):
+    ParserCommon(std::move(state)), parser_(parser) {
     }
 
     TSTypeAliasDeclaration* TypeScriptParser::ParseTypeAliasDeclaration() {
@@ -22,8 +22,7 @@ namespace jetpack::parser {
 
         auto node = Alloc<TSTypeAliasDeclaration>();
 
-        Parser parser(ctx);
-        node->id = parser.ParseIdentifierName();
+        node->id = parser_.ParseIdentifierName();
 
         if (Match(JsTokenType::LessThan)) {
             node->type_parameters = { ParseTypeParameterDeclaration() };

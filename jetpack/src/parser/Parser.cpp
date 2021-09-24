@@ -11,27 +11,35 @@
 namespace jetpack::parser {
     using namespace std;
 
-    Parser::Parser(Sp<ParserContext> state):
-    ParserCommon(std::move(state)) {
+    Parser::Parser(AstContext& ctx, std::string_view src, const Config& config):
+            ParserCommon(ctx, src, config) {
+        Init();
+    }
 
+    Parser::Parser(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config):
+            ParserCommon(ast_ctx, std::move(src), config) {
+        Init();
+    }
+
+    void Parser::Init() {
         ctx->start_marker_ = ParserContext::Marker {
-            0,
-            ctx->scanner_->LineNumber(),
-            0,
+                0,
+                ctx->scanner_->LineNumber(),
+                0,
         };
 
         ctx->last_marker_ = ParserContext::Marker {
-            0,
-            ctx->scanner_->LineNumber(),
-            0,
+                0,
+                ctx->scanner_->LineNumber(),
+                0,
         };
 
         NextToken();
 
         ctx->last_marker_ = ParserContext::Marker {
-            ctx->scanner_->Index(),
-            ctx->scanner_->LineNumber(),
-            ctx->scanner_->Column(),
+                ctx->scanner_->Index(),
+                ctx->scanner_->LineNumber(),
+                ctx->scanner_->Column(),
         };
     }
 

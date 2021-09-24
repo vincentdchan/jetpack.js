@@ -20,8 +20,8 @@ inline std::string ParseAndCodeGen(std::string_view content) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
 
     auto mod = parser.ParseModule();
 
@@ -38,10 +38,10 @@ TEST(CommonJS, HookParser) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
     bool is_called = false;
-    parser.require_call_created_listener.On([&is_called](const Sp<CallExpression>& expr) {
+    parser.require_call_created_listener.On([&is_called](CallExpression* expr) {
         is_called = true;
         return expr;
     });
@@ -57,14 +57,14 @@ TEST(CommonJS, AddModuleVariable) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
-    ctx->is_common_js_ = true;
 
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
+    parser.Context()->is_common_js_ = true;
     auto mod = parser.ParseModule();
     ModuleScope* module_scope = mod->scope->CastToModule();
 
-    std::vector<Sp<Identifier>> unresolved_ids;
+    std::vector<Identifier*> unresolved_ids;
     module_scope->ResolveAllSymbols(&unresolved_ids);
     EXPECT_EQ(unresolved_ids.size(), 1);  // has a 'console'
 
@@ -78,16 +78,16 @@ TEST(CommonJS, CodeGen) {
     Config config = Config::Default();
     config.jsx = true;
     config.transpile_jsx = true;
-    auto ctx = std::make_shared<ParserContext>(-1, content, config);
-    ctx->is_common_js_ = true;
 
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
+    parser.Context()->is_common_js_ = true;
     auto mod = parser.ParseModule();
-    WrapModuleWithCommonJsTemplate(mod, "require_foo", "__commonJS");
+    WrapModuleWithCommonJsTemplate(ctx, *mod, "require_foo", "__commonJS");
 
     ModuleScope* module_scope = mod->scope->CastToModule();
 
-    std::vector<Sp<Identifier>> unresolved_ids;
+    std::vector<Identifier*> unresolved_ids;
     module_scope->ResolveAllSymbols(&unresolved_ids);
 
     std::vector<std::tuple<std::string, std::string>> renames {

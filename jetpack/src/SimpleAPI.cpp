@@ -123,8 +123,8 @@ namespace jetpack::simple_api {
     }
 
     std::string ParseAndCodeGen(std::string_view content, const jetpack::parser::Config& config, const CodeGenConfig& code_gen_config) {
-        auto ctx = std::make_shared<jetpack::parser::ParserContext>(-1, content, config);
-        jetpack::parser::Parser parser(ctx);
+        jetpack::AstContext ast_context;
+        jetpack::parser::Parser parser(ast_context, content, config);
 
         auto mod = parser.ParseModule();
         mod->scope->ResolveAllSymbols(nullptr);

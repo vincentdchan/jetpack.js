@@ -7,12 +7,12 @@
 namespace jetpack::parser {
     using namespace std;
 
-    ParserContext::ParserContext(int32_t fileId, std::string_view src, const Config& config):
-        ParserContext(fileId, std::make_shared<StringWithMapping>(std::make_unique<RawMemoryViewOwner>(src)), config) {
+    ParserContext::ParserContext(AstContext& ast_ctx, std::string_view src, const Config& config):
+        ParserContext(ast_ctx, std::make_shared<StringWithMapping>(std::make_unique<RawMemoryViewOwner>(src)), config) {
     }
 
-    ParserContext::ParserContext(int32_t fileId, Sp<StringWithMapping> src, const Config &config):
-        fileIndex(fileId), config_(config){
+    ParserContext::ParserContext(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config):
+        ast_context_(ast_ctx), config_(config) {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
         source_ = std::move(src);

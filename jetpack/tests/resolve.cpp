@@ -36,8 +36,9 @@ inline std::string ReplaceDefault(std::string_view src) {
     mod->module_resolver = resolver;
 
     Config config = Config::Default();
-    auto ctx = std::make_shared<ParserContext>(mod->id(), src, config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, src, config);
+    parser.Context()->SetFileIndex(mod->id());
 
     mod->ast = parser.ParseModule();
     resolver->ReplaceExports(mod);

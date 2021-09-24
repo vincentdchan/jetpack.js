@@ -129,12 +129,13 @@ namespace jetpack {
             return;
         }
 
-        mf->parser_ctx = std::make_shared<ParserContext>(mf->id(), mf->src_content, config);
+        Parser parser(mf->ast_context, mf->src_content, config);
+        auto ctx = parser.Context();
+        ctx->SetFileIndex(mf->id());
 
         if (mf->IsCommonJS()) {
-            mf->parser_ctx->is_common_js_ = true;
+            ctx->is_common_js_ = true;
         }
-        Parser parser(mf->parser_ctx);
 
         parser.import_decl_created_listener.On([this, &config, &mf] (ImportDeclaration* import_decl) {
             const auto& u8path = import_decl->source->str_;
@@ -167,8 +168,8 @@ namespace jetpack {
                         LocationAddOptions(LocationImported | LocationIsCommonJS),
                         u8path
                         );
-                auto new_call = mf->parser_ctx->ast_context_.Alloc<CallExpression>();
-                new_call->callee = MakeId(mf->parser_ctx->ast_context_, SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
+                auto new_call = mf->ast_context.Alloc<CallExpression>();
+                new_call->callee = MakeId(mf->ast_context, SourceLocation(-2, Position(), Position()), child_mod->cjs_call_name);
                 return { new_call };
             });
         }
@@ -529,7 +530,7 @@ namespace jetpack {
 
             if (mod->IsCommonJS()) {
                 WrapModuleWithCommonJsTemplate(
-                        mod->parser_ctx->ast_context_,
+                        mod->ast_context,
                         *mod->ast,
                         mod->cjs_call_name,
                         "__commonJS");

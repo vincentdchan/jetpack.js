@@ -8,9 +8,11 @@
 
 namespace jetpack::parser {
 
+    class Parser;
+
     class TypeScriptParser: private ParserCommon {
     public:
-        TypeScriptParser(std::shared_ptr<ParserContext> state);
+        TypeScriptParser(Parser& parser, std::shared_ptr<ParserContext> state);
 
         TypeScriptParser(const TypeScriptParser& tsParser) = delete;
         TypeScriptParser(TypeScriptParser&& tsParser) = delete;
@@ -37,6 +39,7 @@ namespace jetpack::parser {
         TSLiteralType* ParseLiteralTypeNode();
 
     private:
+        Parser& parser_;
         bool IsStartOfFunctionType();
 
     };

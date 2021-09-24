@@ -15,8 +15,8 @@ using namespace jetpack::parser;
 inline std::string CF_ParseAndCodeGen(std::string_view content) {
     Config config = Config::Default();
     config.constant_folding = true;
-    auto ctx = std::make_shared<ParserContext>(-1, std::move(content), config);
-    Parser parser(ctx);
+    AstContext ctx;
+    Parser parser(ctx, content, config);
 
     auto mod = parser.ParseModule();
 

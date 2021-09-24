@@ -48,7 +48,7 @@ namespace jetpack {
         auto lambda = ctx.Alloc<ArrowFunctionExpression>(std::make_unique<Scope>(ctx));
         auto block = ctx.Alloc<BlockStatement>();
         // TODO: maybe copy the nodes with context
-        block->body = module.body;
+        block->body = std::move(module.body);
         lambda->body = block;
         for (const auto& var : module.scope->CastToModule()->own_variables) {
             if (var.second->predefined) {

@@ -59,7 +59,7 @@ namespace jetpack {
 
         Weak<ModuleResolver> module_resolver;
 
-        Sp<parser::ParserContext> parser_ctx;
+        AstContext ast_context;
 
         Module* ast;
 
