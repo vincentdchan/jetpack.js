@@ -119,6 +119,7 @@ endif()
 
 if(JETPACK_BUILD_TESTS)
     add_executable(jetpack-test
+            tests/memory.cpp
             tests/sourcemap.cpp
             tests/scope.cpp
             tests/resolve.cpp
