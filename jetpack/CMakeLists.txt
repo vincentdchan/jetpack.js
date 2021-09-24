@@ -27,6 +27,8 @@ set(SOURCE_FILES
         src/utils/Common.cpp
         src/utils/JetFlags.h
         src/utils/MemoryViewOwner.h
+        src/utils/Alloc.h
+        src/utils/Alloc.cpp
         src/tokenizer/Token.h
         src/tokenizer/Token.cpp
         src/tokenizer/Location.h
