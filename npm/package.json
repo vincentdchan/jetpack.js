@@ -1,6 +1,6 @@
 {
   "name": "jetpp",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "main": "index.js",
   "author": "Vincent Chan",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "bundler"
   ],
   "bin": {
-    "jetpp": "./cli.js"
+    "jetpp": "./bin/jetpack-cli.exe"
   },
   "scripts": {
     "install": "node scripts/download_lib.js",

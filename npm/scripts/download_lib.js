@@ -5,7 +5,7 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 
-const version = '0.2.3';
+const version = '0.3.0';
 
 const platform = os.platform();
 const arch = os.arch();
@@ -16,9 +16,10 @@ const libsName = [
   'jetpp.node',
 ];
 
-if (platform === 'darwin') {
-  libsName.push('libjetpackd.dylib');
-  libsName.push('libjemalloc.2.dylib');
+if (platform === 'win32') {
+  libsName.push('jetpack-cli.exe');
+} else {
+  libsName.push('jetpack-cli');
 }
 
 function getDownloadPath(name) {
@@ -122,7 +123,23 @@ async function main() {
 }
 
 function copyNodeToDest(nodeFilePath, name) {
-  fs.copyFileSync(nodeFilePath, path.join(__dirname, '..', name));
+  if (nodeFilePath.endsWith('jetpack-cli') || nodeFilePath.endsWith('jetpack-cli.exe')) {
+    const binPath = path.join(__dirname, '..', 'bin');
+    try {
+      fs.rmdirSync(binPath, { recursive: true });
+    } catch {}
+
+    fs.mkdirSync(binPath);
+
+    const targetPath = path.join(__dirname, '..', 'bin', 'jetpack-cli.exe');
+    fs.copyFileSync(nodeFilePath, targetPath);
+
+    if (platform !== 'win32') {
+      fs.chmodSync(targetPath, 0755);
+    }
+  } else {
+    fs.copyFileSync(nodeFilePath, path.join(__dirname, '..', name));
+  }
 }
 
 main();
