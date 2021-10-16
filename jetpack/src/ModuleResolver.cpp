@@ -74,7 +74,7 @@ namespace jetpack {
 
         auto basePath = basePathOverride.empty() ? FindPathOfPackageJson(absolutePath) : basePathOverride;
         if (unlikely(!basePath.has_value())) {
-            throw ModuleResolveException(absolutePath, "can not find package.json");
+            basePath = { utils::GetRunningDir() };
         }
 
         // push file provider

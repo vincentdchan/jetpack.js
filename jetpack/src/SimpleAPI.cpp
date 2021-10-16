@@ -202,7 +202,7 @@ namespace jetpack::simple_api {
             }
 
             if (result[OPT_SOURCEMAP].count()) {
-                flags |= JetpackFlag::Library;
+                flags |= JetpackFlag::Sourcemap;
             }
 
             if (result[OPT_PROFILE].count()) {
