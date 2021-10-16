@@ -146,24 +146,3 @@ if(JETPACK_BUILD_TESTS)
             -DJETPACK_BUILD_DIR="${TEST_BUILD_DIR}"
     )
 endif()
-
-if (UNIX AND NOT EMSCRIPTEN)
-    add_definitions(-DJETPACK_HAS_JEMALLOC)
-    include_directories("../third_party/jemalloc/include")
-
-    if (APPLE)
-        execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-        message("ARCH: ${MACHINE_ARCH}")
-
-        target_link_libraries(jetpack-test ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.a)
-        target_link_libraries(jetpackd ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/mac/${MACHINE_ARCH}/libjemalloc.2.${DYLIB_SUFFIX})
-
-    else()
-
-	message("linux jemalloc")
-        SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -pthread)
-        target_link_libraries(jetpack-test -ldl ${PROJECT_SOURCE_DIR}/../third_party/jemalloc/lib/linux/libjemalloc_pic.a)
-
-    endif()
-
-endif()
