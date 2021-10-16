@@ -125,6 +125,7 @@ namespace jetpack {
                                    Sp<ModuleFile> mf) {
         WorkerError error;
         if (!mf->GetSource(error)) {
+            std::lock_guard<std::mutex> guard(error_mutex_);
             worker_errors_.push_back(error);
             return;
         }
