@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <parser/ParserContext.h>
+#include <ThreadPool.h>
 #include "sourcemap/SourceMapGenerator.h"
 #include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
@@ -27,7 +28,8 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     CodeGen codegen(codegenConfig, mod->mapping_collector_);
     codegen.Traverse(*mod->ast);
 
-    sourceMapGenerator.Finalize();
+    ThreadPool pool(1);
+    sourceMapGenerator.Finalize(pool);
 
     if (print) {
         std::cout << "gen: " << std::endl << sourceMapGenerator.ToPrettyString() << std::endl;

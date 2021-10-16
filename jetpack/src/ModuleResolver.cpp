@@ -484,7 +484,7 @@ namespace jetpack {
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
-            sourcemapGenerator->Finalize();
+            sourcemapGenerator->Finalize(*thread_pool_);
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
 

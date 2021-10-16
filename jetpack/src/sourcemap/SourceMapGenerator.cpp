@@ -149,7 +149,7 @@ namespace jetpack {
         return index;
     }
 
-    void SourceMapGenerator::Finalize() {
+    void SourceMapGenerator::Finalize(ThreadPool& thread_pool) {
         for (const auto& collector : collectors_) {
             FinalizeCollector(*collector);
         }
@@ -157,7 +157,7 @@ namespace jetpack {
         benchmark::BenchMarker b(benchmark::BENCH_FINALIZE_SOURCEMAP);
 
         FinalizeSources();
-        FinalizeSourcesContent();
+        FinalizeSourcesContent(thread_pool);
 
         b.Submit();
 
@@ -183,7 +183,14 @@ namespace jetpack {
         ss << "  ]," << std::endl;
     }
 
-    void SourceMapGenerator::FinalizeSourcesContent() {
+    void SourceMapGenerator::FinalizeSourcesContent(ThreadPool& thread_pool) {
+        std::vector<std::future<std::string>> escaped_contents;
+        for (auto& module : sources_) {
+            escaped_contents.push_back(thread_pool.enqueue([module]() -> std::string {
+                return EscapeJSONString(module->src_content->Data());
+            }));
+        }
+
         if (sources_.empty()) {
             ss << R"(  "sourcesContent": [],)" << std::endl;
             return;
@@ -191,8 +198,8 @@ namespace jetpack {
         ss << R"(  "sourcesContent": [)" << std::endl;
 
         uint32_t counter = 0;
-        for (auto& module : sources_) {
-            ss << "    \"" << EscapeJSONString(module->src_content->Data()) << "\"";
+        for (auto& content_fut : escaped_contents) {
+            ss << "    \"" << content_fut.get() << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
