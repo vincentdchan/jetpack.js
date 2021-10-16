@@ -66,12 +66,13 @@ namespace jetpack {
         absolutePath.Join(resolvedPath);
         auto absPathStr = absolutePath.ToString();
 
-        auto result = std::make_unique<io::MappedFileMemory>();
-        io::IOError err = result->Open(absPathStr);
+        std::string content;
+        io::IOError err = io::ReadFileToStdString(absPathStr, content);
         if (err != io::IOError::Ok) {
             WorkerError error = { absPathStr, std::string(io::IOErrorToString(err)) };
             throw ResolveException(error);
         }
+        auto result = std::make_unique<StringMemoryOwner>(std::move(content));
         return result;
     }
 
