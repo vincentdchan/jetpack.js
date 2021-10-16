@@ -13,4 +13,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         "../third_party/ThreadPool"
         )
 
+set(CLI_LIBS "")
+
+if (UNIX)
+    set(CLI_LIBS "-lpthread")
+endif()
+
 target_link_libraries(${PROJECT_NAME} PRIVATE jetpack ${CLI_LIBS})
