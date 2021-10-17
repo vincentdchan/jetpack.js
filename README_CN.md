@@ -8,8 +8,6 @@
 `jetpack.js` 是一个超级快的 ECMAScript 打包和压缩工具，用 C++ 写成。
 
 - [特性](#特性)
-    - [Parser](#parser)
-    - [Bundler](#bundler)
 - [安装](#Installation)
 - [使用](#usage)
 - [WebAssembly 用户](#WebAssembly-用户)
@@ -17,19 +15,12 @@
 
 # 特性
 
-## Parser
-
 - 可以独立运行，可以作为 Node.js 模块
 - 使用 C++ 实现，拥有极佳性能
 - 完整支持 ECMAScript 2017([ECMA-262 8th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
-- 支持输出 JSON [语法树](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
 - 支持 [JSX](https://facebook.github.io/jsx/)， 一种 [React](https://facebook.github.io/react/) 的语法
 - 支持语法节点信息
 - 友好的错误提示
-
-## Bundler
-
-- 模块解析
 - 打包成一个文件
 - Scope hoisting
 - 常量折叠
@@ -39,26 +30,26 @@
 # 安装
 
 ```
-npm install -g jetpackpp
+npm install -g jetpp
 ```
 
 Or
 
 ```
-yarn global add jetpackpp
+yarn global add jetpp
 ```
 
 # 使用
 
 Use command line to bundle a js module.
 ```shell script
-jetpack main.js --out bundle.js
+jetpp main.js --out bundle.js
 ```
 
 Help command:
 
 ```shell script
-$ jetpackpp --help
+$ jetpp --help
 
 Jetpack command line
 Usage:
@@ -108,10 +99,8 @@ async function main(code) {
 - WebAssembly
 
 # 构建依赖
-- jemalloc 5.2.1
 - cxxopts
 - fmt
 - nlohmann_json
 - robin-hood-hashing 3.11.1
-- xxHash
 - boost(头文件) 1.76

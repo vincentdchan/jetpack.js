@@ -8,8 +8,6 @@
 `jetpack.js` is an extremely fast js bundler and minifier written in C++.
 
 - [Features](#Features)
-  - [Parser](#parser)
-  - [Bundler](#bundler)
 - [Installation](#Installation)
 - [Usage](#usage)
 - [WebAssembly User](#webAssembly-user)
@@ -17,19 +15,10 @@
 
 # Features
 
-## Parser
-
-- Can be used standalone
 - Implemented in C++ with excellent performance
 - Full support for ECMAScript 2017([ECMA-262 8th Edition](http://www.ecma-international.org/publications/standards/Ecma-262.htm))
-- JSON output of sensible [syntax tree](https://github.com/estree/estree/blob/master/es5.md) format as standardized by [ESTree project](https://github.com/estree/estree)
 - Experimental support for [JSX](https://facebook.github.io/jsx/), a syntax extension for [React](https://facebook.github.io/react/)
-- Syntax node location (index-based and line-column)
 - Friendly error message
-
-## Bundler
-
-- Module resolution.
 - Bundle a ES project into a single file.
 - Scope hoisting.
 - Constant folding.
@@ -37,18 +26,6 @@
 - Sourcemap generation
 
 # Installation & Usage
-
-## Binary Distribution
-
-Download the binary from the [release](https://github.com/vincentdchan/jetpack.js/releases) page.
-
-Usage:
-
-```shell
-jetpack-cli --help
-```
-
-## Node.js CLI
 
 ```
 npm install -g jetpp
@@ -120,15 +97,13 @@ async function main(code) {
 
 - macOS x64/arm64
 - Windows 64bit
-- Linux 64bit
+- Linux 64bit/arm64
 - WebAssembly
 
 # Build Dependencies
 
-- jemalloc 5.2.1
 - cxxopts
 - fmt
 - nlohmann_json
 - robin-hood-hashing 3.11.1
-- xxHash
 - boost(Header-only) 1.76
