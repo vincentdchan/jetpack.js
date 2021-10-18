@@ -232,7 +232,7 @@ namespace jetpack {
 
     bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col) {
         if (unlikely(fileId < 0)) {
-            J_ASSERT(fileId != -1);
+//            J_ASSERT(fileId != -1);
             return true;
         }
         if (mappings.length() > 0 && mappings[mappings.length() - 1] != ';' && mappings[mappings.length() - 1] != ',') {

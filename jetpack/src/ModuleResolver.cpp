@@ -60,28 +60,30 @@ namespace jetpack {
         std::cerr << "Error: " << error_content << std::endl;
     }
 
-    void ModuleResolver::BeginFromEntry(const parser::Config& config, const std::string& targetPath, const std::string& basePathOverride) {
-        std::string absolutePath;
-        if (targetPath.empty()) {
+    void ModuleResolver::BeginFromEntry(const parser::Config& config, const std::string& target_path, const std::string& base_path_override) {
+        std::string absolute_path;
+        if (target_path.empty()) {
             return;
-        } else if (targetPath[0] == Path::PATH_DIV) {
-            absolutePath = targetPath;
+        } else if (target_path[0] == Path::PATH_DIV) {
+            absolute_path = target_path;
         } else {
             Path p(utils::GetRunningDir());
-            p.Join(targetPath);
-            absolutePath = p.ToString();
+            p.Join(target_path);
+            absolute_path = p.ToString();
         }
 
-        auto basePath = basePathOverride.empty() ? FindPathOfPackageJson(absolutePath) : basePathOverride;
-        if (unlikely(!basePath.has_value())) {
-            basePath = { utils::GetRunningDir() };
+        auto base_path = base_path_override.empty() ? FindPathOfPackageJson(absolute_path) : base_path_override;
+        if (unlikely(!base_path.has_value())) {
+            Path p(absolute_path);
+            p.Pop();
+            base_path = { p.ToString() };
         }
 
         // push file provider
-        auto fileProvider = std::make_shared<FileModuleProvider>(*basePath);
+        auto fileProvider = std::make_shared<FileModuleProvider>(*base_path);
         providers_.push_back(fileProvider);
 
-        pBeginFromEntry(fileProvider, config, absolutePath.substr(basePath->size() + 1));
+        pBeginFromEntry(fileProvider, config, absolute_path.substr(base_path->size() + 1));
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::Config& config,
@@ -209,7 +211,6 @@ namespace jetpack {
         childMod->provider = matchResult.first;
         childMod->module_resolver = shared_from_this();
         if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
-            std::lock_guard<std::mutex> guard(main_lock_);
             childMod->SetIsCommonJS(true);
             auto name = name_generator->Next("jp_require");
             if (name.has_value()) {
@@ -437,9 +438,6 @@ namespace jetpack {
      * 4. generate final export declaration
      */
     void ModuleResolver::CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path) {
-        enqueued_files_count_ = 0;
-        finished_files_count_ = 0;
-
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
@@ -560,16 +558,18 @@ namespace jetpack {
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
+        std::vector<std::future<void>> futures;
         for (auto& tuple : modules_table_.pathToModule) {
-            EnqueueOne([this, mod = tuple.second, &collection] {
+            futures.push_back(thread_pool_->enqueue([this, mod = tuple.second, &collection] {
                 mod->RenameInnerScopes(collection);
                 FinishOne();
-            });
+            }));
         }
-        std::unique_lock<std::mutex> lk(main_lock_);
-        main_cv_.wait(lk, [this] {
-            return finished_files_count_ >= enqueued_files_count_;
-        });
+
+        for (auto& fut : futures) {
+            fut.get();
+        }
+
         {
             auto errors = worker_errors_.synchronize();
             if (!errors->empty()) {

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <robin_hood.h>
 #include <parser/SyntaxNodes.h>
+#include <boost/thread/synchronized_value.hpp>
 
 namespace jetpack {
 
@@ -30,6 +31,7 @@ namespace jetpack {
         UniqueNameGeneratorWithUsedName();
 
         HashSet<std::string> used_name;
+        static std::mutex used_name_mutex_;
 
         bool IsJsKeyword(const std::string& name);
 
