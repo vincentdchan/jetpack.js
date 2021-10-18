@@ -3,9 +3,7 @@ project(jetpack-wasm)
 
 if (EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    add_executable(${PROJECT_NAME}
-            main.cpp
-            )
+    add_executable(${PROJECT_NAME} main.cpp)
     target_include_directories(${PROJECT_NAME} PRIVATE
             "../esparser/src"
             "../jetpack/src/"
@@ -19,7 +17,7 @@ if (EMSCRIPTEN)
             "-s ALLOW_MEMORY_GROWTH=1 \
             -s LLD_REPORT_UNDEFINED=1 \
             -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\", \"allocateUTF8\", \"UTF8ToString\"]' \
-            -s EXPORTED_FUNCTIONS='[\"_parse_and_codegen\",\"_parse_to_ast\"]' \
+            -s EXPORTED_FUNCTIONS='[\"_jetpack_parse_and_codegen\",\"_jetpack_parse_to_ast\", \"_jetpack_free_string\", \"_jetpack_error_message\"]' \
             -s EXPORT_ES6=1 \
             -s ENVIRONMENT='web'")
 

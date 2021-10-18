@@ -7,38 +7,50 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
-#include "parser/Config.h"
-#include "codegen/CodeGenConfig.h"
-#include "utils/JetFlags.h"
+//#include "parser/Config.h"
+//#include "codegen/CodeGenConfig.h"
 
-enum class JetpackFlag {
-    Jsx = 0x1,
-    ConstantFolding = 0x2,
-    Minify = 0x100,
-    TraceFile = 0x10000,
-    Sourcemap = 0x20000,
-    Library = 0x40000,
-    Profile = 0x1000000,
-    ProfileMalloc = 0x2000000,
-};
+typedef enum {
+    JETPACK_JSX = 0x1,
+    JETPACK_CONSTANT_FOLDING = 0x2,
+    JETPACK_MINIFY = 0x100,
+    JETPACK_TRACE_FILE = 0x10000,
+    JETPACK_SOURCEMAP = 0x20000,
+    JETPACK_LIBRARY = 0x40000,
+    JETPACK_PROFILE = 0x1000000,
+} JetpackFlag;
+
+#ifdef __cplusplus
+
+#include "utils/JetFlags.h"
 
 JET_DECLARE_FLAGS(JetpackFlags, JetpackFlag)
 
-namespace jetpack { namespace simple_api {
+extern "C" {
 
-    int AnalyzeModule(const std::string& path,
-                      JetpackFlags flags,
-                      const std::string& base_path="");
+#endif
 
-    int BundleModule(const std::string& path,
-                     const std::string& out_path,
-                     JetpackFlags flags,
-                     const std::string& base_path="");
+int jetpack_analyze_module(const char* path,
+          int flags,
+          const char* base_path);  // <-- optional
 
-    std::string ParseAndCodeGen(std::string_view content,
-                                const jetpack::parser::Config& config,
-                                const jetpack::CodeGenConfig& code_gen_config);
+int jetpack_bundle_module(const char* path,
+         const char* out_path,
+         int flags,
+         const char* base_path);  // <-- optional
 
-    int HandleCommandLine(int argc, char** argv);
+int jetpack_handle_command_line(int argc, char** argv);
 
-}}
+char* jetpack_parse_and_codegen(const char* content, int flags);
+
+char* jetpack_parse_to_ast(const char* str, int flags);
+
+void jetpack_free_string(char* data);
+
+char* jetpack_error_message();
+
+#ifdef __cplusplus
+
+}  // extern "C"
+
+#endif

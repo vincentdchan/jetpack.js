@@ -7,5 +7,5 @@
 
 TEST(SimpleAPI, FileNotExist) {
     JetpackFlags flags;
-    EXPECT_NE(jetpack::simple_api::BundleModule("wonderful", "ok", flags), 0);
+    EXPECT_NE(jetpack_bundle_module("wonderful", "ok", static_cast<int>(flags), nullptr), 0);
 }

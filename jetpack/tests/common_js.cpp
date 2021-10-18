@@ -119,8 +119,8 @@ TEST(CommonJS, Complex) {
     std::cout << "output dir: " << outputPath.ToString() << std::endl;
 
     JetpackFlags flags;
-    flags |= JetpackFlag::Jsx;
-    flags |= JetpackFlag::Sourcemap;
-    flags |= JetpackFlag::TraceFile;
-    EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
+    flags |= JETPACK_JSX;
+    flags |= JETPACK_SOURCEMAP;
+    flags |= JETPACK_TRACE_FILE;
+    EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), outputPath.ToString().c_str(), static_cast<int>(flags), nullptr), 0);
 }

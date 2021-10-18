@@ -131,10 +131,11 @@ TEST(SourceMap, Complex) {
     std::cout << "output dir: " << outputPath.ToString() << std::endl;
 
     JetpackFlags flags;
-    flags |= JetpackFlag::Jsx;
-    flags |= JetpackFlag::Sourcemap;
-    flags |= JetpackFlag::TraceFile;
-    EXPECT_EQ(simple_api::BundleModule(entryPath, outputPath.ToString(), flags), 0);
+    flags |= JETPACK_JSX;
+    flags |= JETPACK_SOURCEMAP;
+    flags |= JETPACK_TRACE_FILE;
+    std::string output_str = outputPath.ToString();
+    EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), output_str.c_str(), static_cast<int>(flags), nullptr), 0);
 
     std::string sourcemapContent;
     EXPECT_EQ(io::ReadFileToStdString(outputPath.ToString() + ".map", sourcemapContent), io::IOError::Ok);
