@@ -5,5 +5,5 @@
 #include "SimpleAPI.h"
 
 int main(int argc, char** argv) {
-    return jetpack::simple_api::HandleCommandLine(argc, argv);
+    return jetpack_handle_command_line(argc, argv);
 }

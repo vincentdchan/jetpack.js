@@ -15,17 +15,16 @@ export default function() {
         let result = 0;
         try {
           const flags = JSX_FLAG | CONSTANT_FOLDING_FLAG | MINIFY_FLAG;
-          result = myMoudle._parse_and_codegen(cSource, flags);
-          const errorCode = myMoudle.HEAP32[result >> 2];
-          if (errorCode !== 0) {
-            const msg = myMoudle.UTF8ToString(result + 4);
+          result = myMoudle._jetpack_parse_and_codegen(cSource, flags);
+          if (result === 0) {
+            const msg = myMoudle.UTF8ToString(myMoudle._jetpack_error_message());
             throw new Error(msg);
           }
-          return myMoudle.UTF8ToString(result + 4);
+          return myMoudle.UTF8ToString(result);
         } finally {
           myMoudle._free(cSource);
           if (result !== 0) {
-            myMoudle._free(result);
+            myMoudle._jetpack_free_string(result);
           }
         }
       },
@@ -35,17 +34,16 @@ export default function() {
         let result = 0;
         try {
           const flags = JSX_FLAG | CONSTANT_FOLDING_FLAG;
-          result = myMoudle._parse_to_ast(cSource, flags);
-          const errorCode = myMoudle.HEAP32[result >> 2];
-          if (errorCode !== 0) {
-            const msg = myMoudle.UTF8ToString(result + 4);
+          result = myMoudle._jetpack_parse_to_ast(cSource, flags);
+          if (result === 0) {
+            const msg = myMoudle.UTF8ToString(myMoudle._jetpack_error_message());
             throw new Error(msg);
           }
-          return myMoudle.UTF8ToString(result + 4);
+          return myMoudle.UTF8ToString(result);
         } finally {
           myMoudle._free(cSource);
           if (result !== 0) {
-            myMoudle._free(result);
+            myMoudle._jetpack_free_string(result);
           }
         }
 
