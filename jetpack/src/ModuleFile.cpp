@@ -50,8 +50,7 @@ namespace jetpack {
     bool ModuleFile::GetSource(WorkerError& error) {
         J_ASSERT(provider);
         try {
-            auto result = provider->ResolveWillThrow(*this, Path());
-            src_content = std::make_shared<StringWithMapping>(std::move(result));
+            src_content = provider->ResolveWillThrow(*this, Path());
         } catch (ResolveException& exc) {
             error = exc.error;
             return false;

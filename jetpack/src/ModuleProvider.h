@@ -27,7 +27,7 @@ namespace jetpack {
     public:
         virtual std::optional<std::string> Match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) = 0;
 
         ~ModuleProvider() noexcept = default;
 
@@ -39,7 +39,7 @@ namespace jetpack {
 
         std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
-        Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) override;
+        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) override;
 
     private:
         std::string base_path_;
@@ -61,7 +61,7 @@ namespace jetpack {
 
         std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
-        Up<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string &path) override;
+        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string &path) override;
 
     private:
         std::string token_;

@@ -27,7 +27,7 @@ namespace jetpack::parser {
         friend class TypeScriptParser;
 
         Parser(AstContext& ast_ctx, std::string_view src, const Config& config);
-        Parser(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config);
+        Parser(AstContext& ast_ctx, Sp<MemoryViewOwner> src, const Config &config);
 
     private:
         void Init();

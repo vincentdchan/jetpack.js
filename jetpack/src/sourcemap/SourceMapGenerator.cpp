@@ -187,7 +187,7 @@ namespace jetpack {
         std::vector<std::future<std::string>> escaped_contents;
         for (auto& module : sources_) {
             escaped_contents.push_back(thread_pool.enqueue([module]() -> std::string {
-                return EscapeJSONString(module->src_content->Data());
+                return EscapeJSONString(module->src_content->View());
             }));
         }
 
