@@ -43,8 +43,8 @@ namespace jetpack {
 
     static const char* PackageJsonName = "package.json";
 
-    ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
-    : file_path(path), error_content(content) {
+    ModuleResolveException::ModuleResolveException(std::string path, std::string content)
+    : file_path(std::move(path)), error_content(std::move(content)) {
 
     }
 

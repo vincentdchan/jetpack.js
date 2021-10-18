@@ -32,7 +32,7 @@ namespace jetpack {
         std::string file_path;
         std::string error_content;
 
-        ModuleResolveException(const std::string& path, const std::string& content);
+        ModuleResolveException(std::string path, std::string content);
 
         virtual void PrintToStdErr();
 

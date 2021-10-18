@@ -70,6 +70,8 @@ set(SOURCE_FILES
         src/JetpackFlags.h
         src/SimpleAPI.h
         src/SimpleAPI.cpp
+        src/ModuleCompositor.h
+        src/ModuleCompositor.cpp
         src/sourcemap/MappingCollector.h
         src/sourcemap/MappingCollector.cpp
         src/sourcemap/SourceMapGenerator.h
