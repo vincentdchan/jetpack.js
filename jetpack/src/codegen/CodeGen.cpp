@@ -11,7 +11,8 @@
 
 using namespace std;
 
-#define S_COMMA (config_.minify ? "," : ", ")
+#define IS_MINIFY (flags_.testFlag(JETPACK_MINIFY))
+#define S_COMMA (IS_MINIFY ? "," : ", ")
 
 namespace jetpack {
 
@@ -58,9 +59,16 @@ namespace jetpack {
     }
 
     CodeGen::CodeGen(
-            const CodeGenConfig& config,
+            JetpackFlags flags,
             Sp<MappingCollector> mc):
-            config_(config), mappingCollector(std::move(mc)) {}
+            flags_(flags), mappingCollector(std::move(mc)) {}
+
+    CodeGenResult CodeGen::CodeGenModule(Module &node, JetpackFlags flags,
+                                         Sp<MappingCollector> sourcemap_generator) {
+        CodeGen inst(flags, std::move(sourcemap_generator));
+        inst.Traverse(node);
+        return inst.GetResult();
+    }
 
     void CodeGen::AddSnippet(const std::string &content) {
         std::vector<std::string> lines;
@@ -87,17 +95,17 @@ namespace jetpack {
         if (likely(mappingCollector)) {
             mappingCollector->EndLine();
         }
-        if (!config_.minify) {
-            output += config_.line_end;
+        if (!IS_MINIFY) {
+            output += line_end_;
             state_.line++;
             state_.column = 0;
         }
     }
 
     void CodeGen::WriteIndent() {
-        if (config_.minify) return;
+        if (IS_MINIFY) return;
         for (std::uint32_t i = 0; i < state_.indent_level; i++) {
-            Write(config_.indent);
+            Write(indent_);
         }
     }
 
@@ -303,7 +311,7 @@ namespace jetpack {
         state_.indent_level++;
 
         if (!node.body.empty()) {
-            if (!config_.minify) {
+            if (!IS_MINIFY) {
                 WriteLineEnd();
             }
             for (auto& elem : node.body) {
@@ -339,12 +347,12 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(IfStatement& node) {
-        Write(config_.minify ? "if(" : "if (");
+        Write(IS_MINIFY ? "if(" : "if (");
         TraverseNode(*node.test);
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.consequent);
         if (node.alternate.has_value()) {
-//            Write(config_.minify ? "else" : " else ");
+//            Write(IS_MINIFY ? "else" : " else ");
             Write(" else ");
             TraverseNode(**node.alternate);
         }
@@ -375,16 +383,16 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(WithStatement& node) {
-        Write(config_.minify ? "with(" : "with (");
+        Write(IS_MINIFY ? "with(" : "with (");
         TraverseNode(*node.object);
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.body);
     }
 
     void CodeGen::Traverse(SwitchStatement& node) {
-        Write(config_.minify ? "switch(" : "switch (");
+        Write(IS_MINIFY ? "switch(" : "switch (");
         TraverseNode(*node.discrimiant);
-        Write(config_.minify ? "){" : ") {");
+        Write(IS_MINIFY ? "){" : ") {");
         WriteLineEnd();
         state_.indent_level++;
 
@@ -429,40 +437,40 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(TryStatement& node) {
-        Write(config_.minify ? "try" : "try ");
+        Write(IS_MINIFY ? "try" : "try ");
         TraverseNode(*node.block);
 
         if (node.handler.has_value()) {
             auto handler = *node.handler;
-            Write(config_.minify ? "catch(" : " catch (");
+            Write(IS_MINIFY ? "catch(" : " catch (");
             TraverseNode(*handler->param);
             Write(")");
             TraverseNode(*handler->body);
         }
 
         if (node.finalizer.has_value()) {
-            Write(config_.minify ? "finally" : " finally ");
+            Write(IS_MINIFY ? "finally" : " finally ");
             TraverseNode(**node.finalizer);
         }
     }
 
     void CodeGen::Traverse(WhileStatement& node) {
-        Write(config_.minify ? "while(" : "while (");
+        Write(IS_MINIFY ? "while(" : "while (");
         TraverseNode(*node.test);
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.body);
     }
 
     void CodeGen::Traverse(DoWhileStatement& node) {
-        Write(config_.minify ? "do" : "do ");
+        Write(IS_MINIFY ? "do" : "do ");
         TraverseNode(*node.body);
-        Write(config_.minify ? "while(" : " while (");
+        Write(IS_MINIFY ? "while(" : " while (");
         TraverseNode(*node.test);
         Write(");");
     }
 
     void CodeGen::Traverse(ForStatement& node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(IS_MINIFY ? "for(" : "for (");
         if (node.init.has_value()) {
             auto init = *node.init;
             if (init->type == SyntaxNodeType::VariableDeclaration) {
@@ -472,20 +480,20 @@ namespace jetpack {
                 TraverseNode(*init);
             }
         }
-        Write(config_.minify ? ";" : "; ");
+        Write(IS_MINIFY ? ";" : "; ");
         if (node.test.has_value()) {
             TraverseNode(**node.test);
         }
-        Write(config_.minify ? ";" : "; ");
+        Write(IS_MINIFY ? ";" : "; ");
         if (node.update.has_value()) {
             TraverseNode(**node.update);
         }
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.body);
     }
 
     void CodeGen::Traverse(ForInStatement& node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(IS_MINIFY ? "for(" : "for (");
         if (node.left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_cast<VariableDeclaration*>(node.left);
             FormatVariableDeclaration(*decl);
@@ -494,12 +502,12 @@ namespace jetpack {
         }
         Write(" in ");
         TraverseNode(*node.right);
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.body);
     }
 
     void CodeGen::Traverse(ForOfStatement & node) {
-        Write(config_.minify ? "for(" : "for (");
+        Write(IS_MINIFY ? "for(" : "for (");
         if (node.left->type == SyntaxNodeType::VariableDeclaration) {
             auto decl = dynamic_cast<VariableDeclaration*>(node.left);
             FormatVariableDeclaration(*decl);
@@ -508,7 +516,7 @@ namespace jetpack {
         }
         Write(" of ");
         TraverseNode(*node.right);
-        Write(config_.minify ? ")" : ") ");
+        Write(IS_MINIFY ? ")" : ") ");
         TraverseNode(*node.body);
     }
 
@@ -533,7 +541,7 @@ namespace jetpack {
         }
 
         FormatSequence(node.params);
-        if (!config_.minify) {
+        if (!IS_MINIFY) {
             Write(" ");
         }
         TraverseNode(*node.body);
@@ -556,7 +564,7 @@ namespace jetpack {
         }
 
         FormatSequence(node.params);
-        if (!config_.minify) {
+        if (!IS_MINIFY) {
             Write(" ");
         }
         TraverseNode(*node.body);
@@ -570,7 +578,7 @@ namespace jetpack {
     void CodeGen::Traverse(VariableDeclarator& node) {
         TraverseNode(*node.id);
         if (node.init.has_value()) {
-            Write(config_.minify ? "=" : " = ");
+            Write(IS_MINIFY ? "=" : " = ");
             TraverseNode(**node.init);
         }
     }
@@ -584,7 +592,7 @@ namespace jetpack {
         if (node.super_class.has_value()) {
             Write("extends ");
             TraverseNode(**node.super_class);
-            if (!config_.minify) {
+            if (!IS_MINIFY) {
                 Write(" ");
             }
         }
@@ -616,7 +624,7 @@ namespace jetpack {
         if (node.specifiers.size() > 0) {
             for (auto& spec : node.specifiers) {
                 if (i > 0) {
-                    Write(config_.minify ? "," : ", ");
+                    Write(IS_MINIFY ? "," : ", ");
                 }
                 if (spec->type == SyntaxNodeType::ImportDefaultSpecifier) {
                     auto default_ = dynamic_cast<ImportDefaultSpecifier*>(spec);
@@ -632,7 +640,7 @@ namespace jetpack {
                 }
             }
             if (i < node.specifiers.size()) {
-                Write(config_.minify ? "{" : "{ ");
+                Write(IS_MINIFY ? "{" : "{ ");
                 while (true) {
                     auto spec = node.specifiers[i];
                     auto import_ = dynamic_cast<ImportSpecifier*>(spec);
@@ -647,7 +655,7 @@ namespace jetpack {
                         break;
                     }
                 }
-                Write(config_.minify ? "}" : " }");
+                Write(IS_MINIFY ? "}" : " }");
             }
             Write(" from ");
         }
@@ -670,7 +678,7 @@ namespace jetpack {
         if (node.declaration.has_value()) {
             TraverseNode(**node.declaration);
         } else {
-            Write(config_.minify ? "{" : "{ ");
+            Write(IS_MINIFY ? "{" : "{ ");
             if (node.specifiers.size() > 0) {
                 std::uint32_t i = 0;
                 for (auto& spec : node.specifiers) {
@@ -686,7 +694,7 @@ namespace jetpack {
                     }
                 }
             }
-            Write(config_.minify ? "}" : " }");
+            Write(IS_MINIFY ? "}" : " }");
             if (node.source.has_value()) {
                 Write(" from ");
                 this->Traverse(**node.source);
@@ -739,7 +747,7 @@ namespace jetpack {
                 TraverseNode(**node.key);
             }
             FormatSequence(fun_expr->params);
-            if (!config_.minify) {
+            if (!IS_MINIFY) {
                 Write(" ");
             }
             TraverseNode(*fun_expr->body);
@@ -761,7 +769,7 @@ namespace jetpack {
         } else {
             Write("()");
         }
-        Write(config_.minify ? "=>" : " => ");
+        Write(IS_MINIFY ? "=>" : " => ");
         if (node.body->type == SyntaxNodeType::ObjectExpression) {
             Write("(");
             auto oe = dynamic_cast<ObjectExpression*>(node.body);
@@ -831,7 +839,7 @@ namespace jetpack {
         Write("{");
         if (!node.properties.empty()) {
             WriteLineEnd();
-            std::string comma = "," + config_.line_end;
+            std::string comma = "," + line_end_;
             std::size_t i = 0;
             while (true) {
                 auto prop = node.properties[i];
@@ -859,7 +867,7 @@ namespace jetpack {
                 if (fun == nullptr) return;
 
                 FormatSequence(fun->params);
-                if (!config_.minify) {
+                if (!IS_MINIFY) {
                     Write(" ");
                 }
                 TraverseNode(*fun->body);
@@ -874,7 +882,7 @@ namespace jetpack {
                 if (fun == nullptr) return;
 
                 FormatSequence(fun->params);
-                if (!config_.minify) {
+                if (!IS_MINIFY) {
                     Write(" ");
                 }
                 TraverseNode(*fun->body);
@@ -901,7 +909,7 @@ namespace jetpack {
                 }
                 if (node.value.has_value()) {
                     if (!shorthand) {
-                        Write(config_.minify ? ":" : ": ");
+                        Write(IS_MINIFY ? ":" : ": ");
                     }
                     TraverseNode(**node.value);
                 }
@@ -942,7 +950,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(AssignmentExpression& node) {
         TraverseNode(*node.left);
-        if (config_.minify) {
+        if (IS_MINIFY) {
             Write(node.operator_);
         } else {
             Write(std::string(" ") + node.operator_ + " ");
@@ -952,7 +960,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(AssignmentPattern& node) {
         TraverseNode(*node.left);
-        Write(config_.minify ? "=" : " = ");
+        Write(IS_MINIFY ? "=" : " = ");
         TraverseNode(*node.right);
     }
 
@@ -962,7 +970,7 @@ namespace jetpack {
             Write("(");
         }
         FormatBinaryExpression(*node.left, node, false);
-        if (config_.minify && node.operator_ != "in" && node.operator_ != "instanceof") {
+        if (IS_MINIFY && node.operator_ != "in" && node.operator_ != "instanceof") {
             Write(node.operator_);
         } else {
             Write(" " + node.operator_ + " ");
@@ -983,9 +991,9 @@ namespace jetpack {
             TraverseNode(*node.test);
             Write(")");
         }
-        Write(config_.minify ? "?" : " ? ");
+        Write(IS_MINIFY ? "?" : " ? ");
         TraverseNode(*node.consequent);
-        Write(config_.minify ? ":" : " : ");
+        Write(IS_MINIFY ? ":" : " : ");
         TraverseNode(*node.alternate);
     }
 
@@ -1037,7 +1045,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(Identifier& node) {
-        if (config_.minify && node.name == "undefined") {
+        if (IS_MINIFY && node.name == "undefined") {
             Write("void 0");
         } else {
             Write(node.name, node);
@@ -1045,7 +1053,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(Literal& lit) {
-        if (config_.minify && lit.ty == Literal::Ty::Boolean) {
+        if (IS_MINIFY && lit.ty == Literal::Ty::Boolean) {
             if (lit.raw == "true") {
                 Write("!0");
             } else {
@@ -1071,7 +1079,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(ObjectPattern& node) {
-        Write(config_.minify ? "{" : "{ ");
+        Write(IS_MINIFY ? "{" : "{ ");
         for (std::size_t i = 0; ;) {
             TraverseNode(*node.properties[i]);
             if (++i < node.properties.size()) {
@@ -1080,7 +1088,7 @@ namespace jetpack {
                 break;
             }
         }
-        Write(config_.minify ? "}" : " }");
+        Write(IS_MINIFY ? "}" : " }");
     }
 
     void CodeGen::SortComments(std::vector<Sp<Comment>> comments) {

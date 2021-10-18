@@ -43,11 +43,8 @@ inline std::string ReplaceDefault(std::string_view src) {
     mod->ast = parser.ParseModule();
     resolver->ReplaceExports(mod);
 
-    CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(*mod->ast);
-
-    return codegen.GetResult().content;
+    auto result = CodeGen::CodeGenModule(*mod->ast);
+    return result.content;
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
@@ -121,7 +118,6 @@ TEST(ModuleResolver, SingleMemoryFile) {
     bool minify = true;
 
     auto resolver = std::make_shared<ModuleResolver>();
-    CodeGenConfig codegen_config;
     parser::Config parser_config = parser::Config::Default();
 
     if (jsx) {
@@ -131,8 +127,6 @@ TEST(ModuleResolver, SingleMemoryFile) {
 
     if (minify) {
         parser_config.constant_folding = true;
-        codegen_config.minify = true;
-        codegen_config.comments = false;
         resolver->SetNameGenerator(MinifyNameGenerator::Make());
     }
 
@@ -146,7 +140,8 @@ TEST(ModuleResolver, SingleMemoryFile) {
     resolver->RenameAllRootLevelVariable();
 
     auto entry_mod = resolver->GetEntryModule();
-    CodeGen codegen(codegen_config);
+    JetpackFlags flags = JETPACK_MINIFY;
+    CodeGen codegen(flags);
     codegen.Traverse(*entry_mod->ast);
 
     std::cout << codegen.GetResult().content << std::endl;

@@ -25,9 +25,8 @@ inline std::string ParseAndCodeGen(std::string_view content) {
 
     auto mod = parser.ParseModule();
 
-    CodeGenConfig code_gen_config;
-    code_gen_config.minify = false;
-    CodeGen codegen(code_gen_config, nullptr);
+    JetpackFlags flags = JETPACK_COMMENTS;
+    CodeGen codegen(flags, nullptr);
     codegen.Traverse(*mod);
     return codegen.GetResult().content;
 }
@@ -95,10 +94,8 @@ TEST(CommonJS, CodeGen) {
     };
     module_scope->BatchRenameSymbols(renames);
 
-    CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(*mod);
-    const auto& output = codegen.GetResult().content;
+    auto result = CodeGen::CodeGenModule(*mod);
+    const auto& output = result.content;
     EXPECT_EQ(output, "let require_foo = __commonJS(a => {\n"
                       "  a.name = function() {\n"
                       "    console.log('name');\n"

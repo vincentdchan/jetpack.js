@@ -13,8 +13,8 @@
 #include "AutoNodeTraverser.h"
 #include "utils/string/UString.h"
 #include "utils/Common.h"
-#include "codegen/CodeGenConfig.h"
 #include "sourcemap/MappingCollector.h"
+#include "JetpackFlags.h"
 
 namespace jetpack {
 
@@ -50,8 +50,10 @@ namespace jetpack {
 
     public:
         explicit CodeGen(
-                 const CodeGenConfig& config,
+                 JetpackFlags flags,
                  Sp<MappingCollector> sourceMapGenerator = nullptr);
+
+        static CodeGenResult CodeGenModule(Module& node, JetpackFlags flags = JETPACK_COMMENTS, Sp<MappingCollector> sourcemap_generator = nullptr);
 
         [[nodiscard]]
         inline CodeGenResult GetResult() const {
@@ -158,9 +160,8 @@ namespace jetpack {
         }
 
     private:
-
         inline void WriteCommentBefore(SyntaxNode& node) {
-            if (!config_.comments) return;
+            if (!flags_.testFlag(JETPACK_COMMENTS)) return;
 
             WriteTopCommentBefore_(node);
         }
@@ -170,7 +171,9 @@ namespace jetpack {
         std::deque<Sp<Comment>> ordered_comments_;
         void SortComments(std::vector<Sp<Comment>> comments);
 
-        CodeGenConfig config_;
+        JetpackFlags flags_;
+        std::string  indent_ = "  ";
+        std::string  line_end_ = "\n";
 
         State state_;
 

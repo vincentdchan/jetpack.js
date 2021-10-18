@@ -437,11 +437,11 @@ namespace jetpack {
      * 3. replace all import declarations
      * 4. generate final export declaration
      */
-    void ModuleResolver::CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path) {
+    void ModuleResolver::CodeGenAllModules(JetpackFlags flags, const std::string& out_path) {
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
-        if (config.minify) {
+        if (flags.testFlag(JETPACK_MINIFY)) {
             benchmark::BenchMarker benchMinify(benchmark::BENCH_MINIFY);
             RenameAllInnerScopes();
             benchMinify.Submit();
@@ -454,18 +454,18 @@ namespace jetpack {
         ClearAllVisitedMark();
         TraverseRenameAllImports(entry_module);
 
-        DumpAllResult(config, final_export_vars, out_path);
+        DumpAllResult(flags, final_export_vars, out_path);
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGenConfig& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
+    void ModuleResolver::DumpAllResult(JetpackFlags flags, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
         auto mappingCollector = std::make_shared<MappingCollector>();
 
         benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
         auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
 
         // codegen all result begin
-        CodeGen codegen(config, mappingCollector);
+        CodeGen codegen(flags, mappingCollector);
         sourcemapGenerator->AddCollector(mappingCollector);
 
         global_import_handler_.GenCode(codegen);
@@ -486,7 +486,7 @@ namespace jetpack {
         codegenMarker.Submit();
 
         std::future<bool> srcFut;
-        if (config.sourcemap) {
+        if (flags.testFlag(JETPACK_SOURCEMAP)) {
             sourcemapGenerator->Finalize(*thread_pool_);
             srcFut = DumpSourceMap(outPath, sourcemapGenerator);
         }
@@ -496,7 +496,7 @@ namespace jetpack {
         J_ASSERT(err == io::IOError::Ok);
         writeMarker.Submit();
 
-        if (config.sourcemap) {
+        if (flags.testFlag(JETPACK_SOURCEMAP)) {
             if (unlikely(!srcFut.get())) {   // wait to finished
                 std::cerr << "dump source map failed: " << outPath << std::endl;
             }

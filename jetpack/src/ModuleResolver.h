@@ -93,7 +93,7 @@ namespace jetpack {
 
         void PrintErrors(const Vec<WorkerError>& errors);
 
-        void CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path);
+        void CodeGenAllModules(JetpackFlags flags, const std::string& out_path);
 
         void RenameAllInnerScopes();
 
@@ -149,7 +149,7 @@ namespace jetpack {
                                     LocationAddOptions flags,
                                     const std::string& path);
 
-        void DumpAllResult(const CodeGenConfig& config,
+        void DumpAllResult(JetpackFlags flags,
                            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
 

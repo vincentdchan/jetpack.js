@@ -24,8 +24,8 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     SourceMapGenerator sourceMapGenerator(resolver, "memory0");
 
     auto mod = resolver->GetEntryModule();
-    CodeGenConfig codegenConfig;
-    CodeGen codegen(codegenConfig, mod->mapping_collector_);
+    JetpackFlags flags = JETPACK_COMMENTS;
+    CodeGen codegen(flags, mod->mapping_collector_);
     codegen.Traverse(*mod->ast);
 
     ThreadPool pool(1);

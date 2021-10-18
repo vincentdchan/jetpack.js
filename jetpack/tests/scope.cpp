@@ -18,10 +18,8 @@ inline Module* ParseString(AstContext& ctx, std::string_view src) {
 }
 
 inline std::string GenCode(Module* mod) {
-    CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(*mod);
-    return codegen.GetResult().content;
+    auto result = CodeGen::CodeGenModule(*mod);
+    return result.content;
 }
 
 TEST(Scope, Collect) {

@@ -67,6 +67,7 @@ set(SOURCE_FILES
         src/GlobalImportHandler.h
         src/GlobalImportHandler.cpp
         src/Error.h
+        src/JetpackFlags.h
         src/SimpleAPI.h
         src/SimpleAPI.cpp
         src/sourcemap/MappingCollector.h
@@ -79,7 +80,6 @@ set(SOURCE_FILES
         src/codegen/NodeTraverser.cpp
         src/codegen/AutoNodeTraverser.h
         src/codegen/AutoNodeTraverser.cpp
-        src/codegen/CodeGenConfig.h
         src/codegen/CodeGen.h
         src/codegen/CodeGen.cpp)
 

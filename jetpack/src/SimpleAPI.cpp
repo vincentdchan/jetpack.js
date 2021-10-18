@@ -88,7 +88,6 @@ int jetpack_bundle_module(const char *path, const char *out_path, int flags, con
 
     try {
         auto resolver = std::shared_ptr<ModuleResolver>(new ModuleResolver, [](void *) {});
-        CodeGenConfig codegen_config;
         parser::Config parser_config = parser::Config::Default();
 
         if (flags & JETPACK_JSX) {
@@ -98,16 +97,12 @@ int jetpack_bundle_module(const char *path, const char *out_path, int flags, con
 
         if (flags & JETPACK_MINIFY) {
             parser_config.constant_folding = true;
-            codegen_config.minify = true;
-            codegen_config.comments = false;
             resolver->SetNameGenerator(MinifyNameGenerator::Make());
         }
 
-        codegen_config.sourcemap = !!(flags & JETPACK_SOURCEMAP);
-
         resolver->SetTraceFile(!!(flags & JETPACK_TRACE_FILE));
         resolver->BeginFromEntry(parser_config, path, base_path);
-        resolver->CodeGenAllModules(codegen_config, out_path);
+        resolver->CodeGenAllModules(JetpackFlags(flags), out_path);
 
         std::cout << "Finished." << std::endl;
         std::cout << "Totally " << resolver->ModCount() << " file(s) in " << jetpack::time::GetCurrentMs() - start
@@ -128,12 +123,9 @@ char* jetpack_parse_and_codegen_will_throw(const char* content, int flags) {
     error_buffer[0] = 0;
 
     parser::Config config = parser::Config::Default();
-    CodeGenConfig code_gen_config;
 
     config.jsx = !!(flags & JETPACK_JSX);
     config.constant_folding = !!(flags & JETPACK_CONSTANT_FOLDING);
-
-    code_gen_config.minify = !!(flags & JETPACK_MINIFY);
 
     AstContext ast_context;
     parser::Parser parser(ast_context, content, config);
@@ -141,7 +133,7 @@ char* jetpack_parse_and_codegen_will_throw(const char* content, int flags) {
     auto mod = parser.ParseModule();
     mod->scope->ResolveAllSymbols(nullptr);
 
-    if (code_gen_config.minify) {
+    if (flags & JETPACK_MINIFY) {
         std::vector<Scope::PVar> variables;
         for (auto &tuple : mod->scope->own_variables) {
             variables.push_back(tuple.second);
@@ -173,9 +165,7 @@ char* jetpack_parse_and_codegen_will_throw(const char* content, int flags) {
         mod->scope->BatchRenameSymbols(rename_vec);
     }
 
-    CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(*mod);
-    auto result = codegen.GetResult();
+    auto result = CodeGen::CodeGenModule(*mod, JetpackFlags(flags));
     char* str_result = reinterpret_cast<char*>(::malloc(result.content.size() + 1));
     ::memcpy(str_result, result.content.c_str(), result.content.size());
     str_result[result.content.size()] = 0;
@@ -270,6 +260,8 @@ int jetpack_handle_command_line(int argc, char **argv) {
 
         if (result[OPT_MINIFY].count()) {
             flags |= JETPACK_MINIFY;
+        } else {
+            flags |= JETPACK_COMMENTS;
         }
 
         if (result[OPT_JSX].count()) {

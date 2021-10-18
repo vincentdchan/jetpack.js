@@ -22,10 +22,8 @@ inline std::string ParseJSXAndCodeGen(std::string_view content) {
 
     auto mod = parser.ParseModule();
 
-    CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
-    codegen.Traverse(*mod);
-    return codegen.GetResult().content;
+    auto result = CodeGen::CodeGenModule(*mod);
+    return result.content;
 }
 
 TEST(JSX, TranspileSimple1) {
