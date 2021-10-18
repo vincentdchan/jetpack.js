@@ -2,8 +2,7 @@
 // Created by Duzhong Chen on 2021/3/31.
 //
 
-#ifndef ROCKET_BUNDLE_PROFILE_H
-#define ROCKET_BUNDLE_PROFILE_H
+#pragma
 
 #include "utils/JetTime.h"
 
@@ -40,5 +39,3 @@ namespace jetpack::benchmark {
     };
 
 }
-
-#endif //ROCKET_BUNDLE_PROFILE_H

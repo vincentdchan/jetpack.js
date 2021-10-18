@@ -13,7 +13,7 @@ namespace jetpack {
 
     class ResolveException : public std::exception {
     public:
-        ResolveException(WorkerError e): error(std::move(e)) {}
+        explicit ResolveException(WorkerError e): error(std::move(e)) {}
 
         WorkerError error;
 
@@ -27,7 +27,7 @@ namespace jetpack {
     public:
         virtual std::optional<std::string> Match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolved_path) = 0;
 
         ~ModuleProvider() noexcept = default;
 
@@ -35,11 +35,11 @@ namespace jetpack {
 
     class FileModuleProvider : public ModuleProvider {
     public:
-        explicit FileModuleProvider(const std::string& base_path): base_path_(base_path) {}
+        explicit FileModuleProvider(std::string base_path): base_path_(std::move(base_path)) {}
 
         std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
-        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) override;
+        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolved_path) override;
 
     private:
         std::string base_path_;
@@ -56,8 +56,8 @@ namespace jetpack {
 
     class MemoryModuleProvider : public ModuleProvider {
     public:
-        explicit inline MemoryModuleProvider(const std::string& token, const std::string& content):
-        token_(token), content_(content) {}
+        explicit inline MemoryModuleProvider(std::string token, std::string content):
+        token_(std::move(token)), content_(std::move(content)) {}
 
         std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
 
