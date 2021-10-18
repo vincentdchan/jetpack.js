@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
+#include <boost/thread/synchronized_value.hpp>
 #include <condition_variable>
 #include <vector>
 #include <memory>
@@ -90,7 +91,7 @@ namespace jetpack {
 
         void PrintStatistic();
 
-        void PrintErrors();
+        void PrintErrors(const Vec<WorkerError>& errors);
 
         void CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path);
 
@@ -198,8 +199,7 @@ namespace jetpack {
 
         Vec<Sp<ModuleProvider>> providers_;
 
-        Vec<WorkerError> worker_errors_;
-        std::mutex error_mutex_;
+        boost::synchronized_value<Vec<WorkerError>> worker_errors_;
 
         int32_t enqueued_files_count_ = 0;
         int32_t finished_files_count_ = 0;
