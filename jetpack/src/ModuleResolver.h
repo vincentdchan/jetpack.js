@@ -98,7 +98,7 @@ namespace jetpack {
         void RenameAllInnerScopes();
 
         inline void ClearAllVisitedMark() {
-            for (auto& tuple : modules_table_.pathToModule) {
+            for (auto& tuple : modules_table_.path_to_module) {
                 tuple.second->visited_mark = false;
             }
         }
@@ -113,7 +113,7 @@ namespace jetpack {
 
         // nullable!
         inline Sp<ModuleFile> findModuleById(int32_t id) {
-            return modules_table_.findModuleById(id);
+            return modules_table_.FindModuleById(id);
         }
 
         std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
