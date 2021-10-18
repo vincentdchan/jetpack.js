@@ -15,9 +15,10 @@ namespace jetpack {
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-    Scanner::Scanner(const Sp<StringWithMapping>& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
+    Scanner::Scanner(const Sp<MemoryViewOwner>& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
             source_(source), error_handler_(std::move(error_handler)) {
 
+        u16_mapping_.resize(source_->View().size(), 0);
     }
 
     Scanner::ScannerState Scanner::SaveState() {
@@ -80,7 +81,7 @@ namespace jetpack {
                 };
                 auto comment = new Comment {
                         false,
-                        std::string(source_->Data().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
+                        std::string(source_->View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                         make_pair(start, cursor_.u8 - 1),
                         loc
                 };
@@ -103,7 +104,7 @@ namespace jetpack {
         loc.end = Position {line_number_, cursor_.u16 - line_start_ };
         auto comment = new Comment {
                 false,
-                std::string(source_->Data().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
+                std::string(source_->View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -142,7 +143,7 @@ namespace jetpack {
                     };
                     auto comment = new Comment {
                             true,
-                            std::string(source_->Data().substr(start + 2, cursor_.u8 - start - 4)),
+                            std::string(source_->View().substr(start + 2, cursor_.u8 - start - 4)),
                             make_pair(start, cursor_.u8),
                             loc,
                     };
@@ -162,7 +163,7 @@ namespace jetpack {
         };
         auto comment = new Comment {
                 true,
-                std::string(source_->Data().substr(start + 2, cursor_.u8 - start - 2)),
+                std::string(source_->View().substr(start + 2, cursor_.u8 - start - 2)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -209,7 +210,7 @@ namespace jetpack {
                         break;
                     }
                 } else if (ch == '<' && !is_module_) { // U+003C is '<'
-                    if (source_->Data().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
+                    if (source_->View().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
                         PlusCursor(4); // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
@@ -231,7 +232,7 @@ namespace jetpack {
         char32_t result = PeekUtf32(&len);
         if (result != 0) {
             for (uint32_t i = 0; i < len; i++) {
-                source_->mapping_[cursor_.u8 + i] = cursor_.u16;
+                u16_mapping_[cursor_.u8 + i] = cursor_.u16;
             }
             cursor_.u8 += len;
             cursor_.u16 += std::max<uint32_t>(len / 2, 1);
@@ -242,9 +243,9 @@ namespace jetpack {
     char32_t Scanner::PeekUtf32(uint32_t* len) {
         uint32_t pre_saved_index = cursor_.u8;
         char32_t code = ReadCodepointFromUtf8(
-                reinterpret_cast<const uint8_t *>(source_->Data().data()),
+                reinterpret_cast<const uint8_t *>(source_->View().data()),
                 &pre_saved_index,
-                source_->Data().size());
+                source_->View().size());
         if (len != nullptr) {
             *len = pre_saved_index - cursor_.u8;
         }
@@ -254,7 +255,7 @@ namespace jetpack {
     char Scanner::NextChar() {
         char ch = Peek();
         J_ASSERT((ch & 0x80) == 0);
-        source_->mapping_[cursor_.u8] = cursor_.u16;
+        u16_mapping_[cursor_.u8] = cursor_.u16;
         cursor_.u8++;
         cursor_.u16++;
         return ch;
@@ -428,7 +429,7 @@ namespace jetpack {
             }
         }
 
-        result.append(source_->Data().substr(start.u8, cursor_.u8 - start.u8));
+        result.append(source_->View().substr(start.u8, cursor_.u8 - start.u8));
         return result;
     }
 
@@ -518,7 +519,7 @@ namespace jetpack {
         Token tok;
 
         std::string id;
-        if (source_->Data().at(start.u8) == '\\') {
+        if (source_->View().at(start.u8) == '\\') {
             id = GetComplexIdentifier();
         } else {
             id = GetIdentifier(start_char_len);
@@ -924,7 +925,7 @@ namespace jetpack {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
         for (uint32_t i = cursor_.u8 + 1; i < Length(); ++i) {
-            char ch = source_->Data().at(i);
+            char ch = source_->View().at(i);
             if (ch == '8' || ch == '9') {
                 return false;
             }
@@ -1245,7 +1246,7 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_->Data().substr(start.u8 + 1, cursor_.u8 - rawOffset);
+        tok.value = source_->View().substr(start.u8 + 1, cursor_.u8 - rawOffset);
         tok.lineNumber = line_number_;
         tok.lineStart = line_start_;
         tok.range = make_pair(start.u8, cursor_.u8);

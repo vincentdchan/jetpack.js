@@ -69,7 +69,7 @@ namespace jetpack::parser {
         };
 
         ParserCommon(AstContext& ctx, std::string_view src, const Config& config);
-        ParserCommon(AstContext& ctx, Sp<StringWithMapping> src, const Config& config);
+        ParserCommon(AstContext& ctx, Sp<MemoryViewOwner> src, const Config& config);
         ParserCommon(std::shared_ptr<ParserContext> state);
         ParserCommon(const ParserCommon&) = delete;
         ParserCommon(ParserCommon&&) = delete;
@@ -84,7 +84,7 @@ namespace jetpack::parser {
         Token NextRegexToken();
 
         inline std::string_view GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source()->Data().substr
+            return ctx->scanner_->Source()->View().substr
             (token.range.first, token.range.second - token.range.first);
         }
 

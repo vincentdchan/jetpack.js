@@ -22,7 +22,7 @@ namespace jetpack::parser {
         };
 
         ParserContext(AstContext& ast_ctx, std::string_view src, const Config& config);
-        ParserContext(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config& config);
+        ParserContext(AstContext& ast_ctx, Sp<MemoryViewOwner> src, const Config& config);
         ParserContext(const ParserContext& ps) = delete;
         ParserContext(ParserContext&& ps) = delete;
 
@@ -40,7 +40,7 @@ namespace jetpack::parser {
         std::unique_ptr<Scanner> scanner_;
 
         Sp<ParseErrorHandler>    error_handler_;
-        Sp<StringWithMapping>    source_;
+        Sp<MemoryViewOwner>      source_;
         bool                     has_line_terminator_;
 
         std::stack<Token>        tokens_;

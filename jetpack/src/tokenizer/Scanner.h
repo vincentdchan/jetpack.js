@@ -8,15 +8,15 @@
 #include <stack>
 #include "parser/ParseErrorHandler.h"
 #include "utils/Common.h"
+#include "utils/MemoryViewOwner.h"
 #include "Token.h"
-#include "StringWithMapping.h"
 #include "Comment.h"
 
 namespace jetpack {
 
     class Scanner {
     public:
-        Scanner(const Sp<StringWithMapping>& source, Sp<parser::ParseErrorHandler> error_handler);
+        Scanner(const Sp<MemoryViewOwner>& source, Sp<parser::ParseErrorHandler> error_handler);
         Scanner(const Scanner&) = delete;
         Scanner(Scanner&&) = delete;
 
@@ -43,7 +43,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline int32_t Length() const {
-            return source_->size();
+            return source_->View().size();
         }
 
         ScannerState SaveState();
@@ -87,7 +87,7 @@ namespace jetpack {
         }
 
         inline std::string_view View(uint32_t start, uint32_t end) {
-            return source_->Data().substr(start, end - start);
+            return source_->View().substr(start, end - start);
         }
 
         std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
@@ -120,12 +120,12 @@ namespace jetpack {
 
         [[nodiscard]]
         inline char CharAt(uint32_t index) const {
-            if (unlikely(index >= source_->size())) return u'\0';
-            return source_->Data().at(index);
+            if (unlikely(index >= u16_mapping_.size())) return u'\0';
+            return source_->View().at(index);
         }
 
         [[nodiscard]]
-        Sp<StringWithMapping> Source() const {
+        Sp<MemoryViewOwner> Source() const {
             return source_;
         }
 
@@ -156,8 +156,11 @@ namespace jetpack {
         uint32_t line_number_ = 1u;
         uint32_t line_start_ = 0u;  // u16 index
 
+        // utf8 index -> u16 index
+        std::vector<uint32_t> u16_mapping_;
+
         Sp<parser::ParseErrorHandler> error_handler_;
-        Sp<StringWithMapping> source_;
+        Sp<MemoryViewOwner> source_;
         bool is_module_ = false;
 
         void PlusCursor(uint32_t n);

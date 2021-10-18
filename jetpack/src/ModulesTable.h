@@ -17,26 +17,26 @@ namespace jetpack {
         /**
          * absolute path -> module
          */
-        HashMap<std::string, Sp<ModuleFile>> pathToModule;
+        HashMap<std::string, Sp<ModuleFile>> path_to_module;
 
-        HashMap<int32_t, Sp<ModuleFile>>     idToModule;
+        HashMap<int32_t, Sp<ModuleFile>>     id_to_module;
 
-        inline void insert(const Sp<ModuleFile>& mf) {
+        inline void Insert(const Sp<ModuleFile>& mf) {
             std::lock_guard guard(m);
-            insertWithoutLock(mf);
+            InsertWithoutLock(mf);
         }
 
-        Sp<ModuleFile> createNewIfNotExists(const std::string& path, bool& isNew);
+        Sp<ModuleFile> CreateNewIfNotExists(const std::string& path, bool& isNew);
 
         // nullable!
-        Sp<ModuleFile> findModuleById(int32_t id);
+        Sp<ModuleFile> FindModuleById(int32_t id);
 
         int32_t ModCount() const;
 
     private:
         std::mutex m;
 
-        void insertWithoutLock(const Sp<ModuleFile>& mf);
+        void InsertWithoutLock(const Sp<ModuleFile>& mf);
 
     };
 

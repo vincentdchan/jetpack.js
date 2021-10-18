@@ -15,7 +15,7 @@ namespace jetpack::parser {
         left_scope_ = std::make_unique<LeftValueScope>(ctx->ast_context_);
     }
 
-    ParserCommon::ParserCommon(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config) {
+    ParserCommon::ParserCommon(AstContext& ast_ctx, Sp<MemoryViewOwner> src, const Config &config) {
         ctx = std::make_shared<ParserContext>(ast_ctx, src, config);
         left_scope_ = std::make_unique<LeftValueScope>(ctx->ast_context_);
     }

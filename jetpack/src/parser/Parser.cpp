@@ -16,7 +16,7 @@ namespace jetpack::parser {
         Init();
     }
 
-    Parser::Parser(AstContext& ast_ctx, Sp<StringWithMapping> src, const Config &config):
+    Parser::Parser(AstContext& ast_ctx, Sp<MemoryViewOwner> src, const Config &config):
             ParserCommon(ast_ctx, std::move(src), config) {
         Init();
     }

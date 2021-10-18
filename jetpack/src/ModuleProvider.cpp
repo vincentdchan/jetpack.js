@@ -57,7 +57,7 @@ namespace jetpack {
         return { jsPath.substr(base_path_.size() + 1) };
     }
 
-    Up<MemoryViewOwner> FileModuleProvider::ResolveWillThrow(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
+    Sp<MemoryViewOwner> FileModuleProvider::ResolveWillThrow(const jetpack::ModuleFile &mf, const std::string &resolvedPath) {
 
         // resolvedPath should not be a absolute path
         J_ASSERT(resolvedPath.at(0) != Path::PATH_DIV);
@@ -72,7 +72,7 @@ namespace jetpack {
             WorkerError error = { absPathStr, std::string(io::IOErrorToString(err)) };
             throw ResolveException(error);
         }
-        auto result = std::make_unique<StringMemoryOwner>(std::move(content));
+        auto result = std::make_shared<StringMemoryOwner>(std::move(content));
         return result;
     }
 
@@ -83,8 +83,8 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    Up<MemoryViewOwner> MemoryModuleProvider::ResolveWillThrow(const ModuleFile &mf, const std::string &path) {
-        return std::make_unique<StringMemoryOwner>(content_);
+    Sp<MemoryViewOwner> MemoryModuleProvider::ResolveWillThrow(const ModuleFile &mf, const std::string &path) {
+        return std::make_shared<StringMemoryOwner>(content_);
     }
 
 }

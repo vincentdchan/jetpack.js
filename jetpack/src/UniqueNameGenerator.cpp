@@ -78,6 +78,7 @@ namespace jetpack {
         }
     }
 
+    std::mutex UniqueNameGeneratorWithUsedName::used_name_mutex_;
     std::once_flag UniqueNameGeneratorWithUsedName::init_once_;
     HashSet<std::string> UniqueNameGeneratorWithUsedName::long_keywords_set;
 
@@ -89,6 +90,7 @@ namespace jetpack {
 
     std::optional<std::string>
     ReadableNameGenerator::Next(const std::string &original_name) {
+        std::lock_guard<std::mutex> guard(used_name_mutex_);
         if (!IsNameUsed(original_name)) {  // not exist
             used_name.insert(original_name);
             return std::nullopt;
