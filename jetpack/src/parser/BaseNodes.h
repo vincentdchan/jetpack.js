@@ -4,6 +4,8 @@
 #pragma once
 
 #include <memory>
+#include <cstddef>
+#include <vector>
 #include "NodeTypes.h"
 #include "utils/Common.h"
 #include "macros.h"
@@ -13,6 +15,24 @@
 typedef double JS_Number;
 
 namespace jetpack {
+
+    template <typename T>
+    class Slice {
+    public:
+        constexpr Slice(T* data, size_t len): data_(data), size_(len) {}
+
+        constexpr T* begin() { return data_; }
+        constexpr T* end() { return data_ + size_; }
+
+        constexpr T* data() { return data_; }
+        constexpr const T* data() const { return data_; }
+        constexpr size_t size() const { return size_; }
+
+    private:
+        T* data_;
+        size_t size_;
+
+    };
 
     enum class TSAccessibility {
         Private,
@@ -27,6 +47,7 @@ namespace jetpack {
 
         std::pair<std::uint32_t, std::uint32_t> range;
         SourceLocation location;
+        SyntaxNode*    next = nullptr;
 
         virtual bool IsPattern() const { return false; }
         virtual bool IsDeclaration() const { return false; }
@@ -42,6 +63,81 @@ namespace jetpack {
         }
 
     };
+
+    template<typename T, typename = typename std::enable_if<std::is_base_of<SyntaxNode, T>::value>::type>
+    class NodeList {
+    public:
+        constexpr NodeList() = default;
+        constexpr NodeList(const NodeList& that):
+            begin_(that.begin_), end_(that.end_), len_(that.len_) {}
+
+        constexpr NodeList& operator=(const NodeList& that) {
+            begin_ = that.begin_;
+            end_ = that.end_;
+            len_ = that.len_;
+            return *this;
+        }
+
+        struct Iter {
+        public:
+            constexpr Iter() {}
+            constexpr Iter(T* node): node_(node) {}
+
+            constexpr bool operator!=(const Iter& that) {
+                return node_ != that.node_;
+            }
+
+            T* operator*() {
+                return node_;
+            }
+
+            Iter& operator++() {
+                node_ = node_->next;
+                return *this;
+            }
+
+        private:
+            T* node_ = nullptr;
+
+        };
+
+        constexpr Iter begin() const { return Iter(begin_); }
+        constexpr Iter end() const { return Iter(); }
+        constexpr size_t size() { return len_; }
+        constexpr bool empty() { return len_ == 0; }
+
+        inline void push_back(T* child) {
+            child->next = nullptr;
+            if (len_ == 0) {
+                begin_ = end_ = child;
+                len_ = 1;
+            } else {
+                end_->next = child;
+                end_ = child;
+                len_++;
+            }
+        }
+
+        constexpr void clear() {
+            begin_ = end_ = nullptr;
+            len_ = 0;
+        }
+
+        inline std::vector<T*> to_vec() const {
+            std::vector<T*> result;
+            for (auto child : *this) {
+                result.push_back(child);
+            }
+            return result;
+        }
+
+    private:
+        T* begin_ = nullptr;
+        T* end_ = nullptr;
+        size_t len_ = 0;
+
+    };
+
 
     class TSType: virtual public SyntaxNode {
     public:

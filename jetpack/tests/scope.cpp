@@ -242,7 +242,7 @@ TEST(Scope, RenameImport3) {
     EXPECT_TRUE(mod->scope->BatchRenameSymbols(changeset));
 
     EXPECT_GT(mod->body.size(), 0);
-    auto import_decl = dynamic_cast<ImportDeclaration*>(mod->body[0]);
+    auto import_decl = dynamic_cast<ImportDeclaration*>(*mod->body.begin());
     EXPECT_NE(import_decl, nullptr);
 
     auto first_spec = dynamic_cast<ImportSpecifier*>(import_decl->specifiers[0]);

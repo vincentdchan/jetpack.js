@@ -44,7 +44,7 @@ namespace jetpack {
                     TraverseNode(*child->id);
                 }
 
-                for (auto& i : child->params) {
+                for (auto i : child->params) {
                     TraverseNode(i);
                 }
                 TraverseNode(child->body);
@@ -96,7 +96,7 @@ namespace jetpack {
                 auto child = dynamic_cast<BlockStatement*>(node);
                 if (!this->TraverseBefore(child)) return;
 
-                for (auto& i : child->body) {
+                for (auto i : child->body) {
                     TraverseNode(i);
                 }
 
@@ -120,7 +120,7 @@ namespace jetpack {
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->callee);
 
-                for (auto& i : child->arguments) {
+                for (auto i : child->arguments) {
                     TraverseNode(i);
                 }
 
@@ -341,7 +341,7 @@ namespace jetpack {
                     TraverseNode(*child->id);
                 }
 
-                for (auto& i : child->params) {
+                for (auto i : child->params) {
                     TraverseNode(i);
                 }
                 TraverseNode(child->body);
@@ -357,7 +357,7 @@ namespace jetpack {
                     TraverseNode(*child->id);
                 }
 
-                for (auto& i : child->params) {
+                for (auto i : child->params) {
                     TraverseNode(i);
                 }
                 TraverseNode(child->body);
@@ -482,7 +482,7 @@ namespace jetpack {
                 auto child = dynamic_cast<Module*>(node);
                 if (!this->TraverseBefore(child)) return;
 
-                for (auto& i : child->body) {
+                for (auto i : child->body) {
                     TraverseNode(i);
                 }
 
@@ -495,7 +495,7 @@ namespace jetpack {
                 if (!this->TraverseBefore(child)) return;
                 TraverseNode(child->callee);
 
-                for (auto& i : child->arguments) {
+                for (auto i : child->arguments) {
                     TraverseNode(i);
                 }
 
@@ -571,7 +571,7 @@ namespace jetpack {
                 auto child = dynamic_cast<Script*>(node);
                 if (!this->TraverseBefore(child)) return;
 
-                for (auto& i : child->body) {
+                for (auto i : child->body) {
                     TraverseNode(i);
                 }
 
@@ -789,7 +789,7 @@ namespace jetpack {
                 auto child = dynamic_cast<ArrowParameterPlaceHolder*>(node);
                 if (!this->TraverseBefore(child)) return;
 
-                for (auto& i : child->params) {
+                for (auto i : child->params) {
                     TraverseNode(i);
                 }
 

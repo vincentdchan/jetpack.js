@@ -176,9 +176,9 @@ namespace jetpack::parser {
         }
 
         auto children = TranspileJSXChildren(scope, jsx->children);
-        result->arguments.insert(std::end(result->arguments),
-                                 std::begin(children),
-                                 std::end(children));
+        for (auto child : children) {
+            result->arguments.push_back(child);
+        }
 
         return result;
     }

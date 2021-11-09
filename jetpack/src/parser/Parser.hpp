@@ -108,7 +108,7 @@ namespace jetpack::parser {
 
         Expression* ParseGroupExpression(Scope& scope);
 
-        std::vector<SyntaxNode*> ParseArguments(Scope& scope);
+        NodeList<SyntaxNode> ParseArguments(Scope& scope);
 
         Identifier* ParseIdentifierName();
 
@@ -116,7 +116,7 @@ namespace jetpack::parser {
 
         SyntaxNode* ParseAsyncArgument(Scope& scope);
 
-        std::vector<SyntaxNode*> ParseAsyncArguments(Scope& scope);
+        NodeList<SyntaxNode> ParseAsyncArguments(Scope& scope);
 
         Import* ParseImportCall();
 
@@ -235,7 +235,7 @@ namespace jetpack::parser {
 
         Statement* ParseDirective(Scope& scope);
 
-        std::vector<SyntaxNode*> ParseDirectivePrologues(Scope& scope);
+        NodeList<SyntaxNode> ParseDirectivePrologues(Scope& scope);
 
         FunctionExpression* ParseGetterMethod(Scope& scope);
 

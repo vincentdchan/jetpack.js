@@ -212,13 +212,15 @@ namespace jetpack {
         return traverser.has_call;
     }
 
-    void CodeGen::FormatSequence(std::vector<SyntaxNode*> &params) {
+    void CodeGen::FormatSequence(NodeList<SyntaxNode> &params) {
         Write("(");
-        for (std::size_t i = 0; i < params.size(); i++) {
-            TraverseNode(*params[i]);
+        size_t i = 0;
+        for (auto param : params) {
+            TraverseNode(*param);
             if (i < params.size() - 1) {
                 Write(S_COMMA);
             }
+            i++;
         }
         Write(")");
     }
@@ -258,7 +260,7 @@ namespace jetpack {
     void CodeGen::Traverse(Script& node) {
         SortComments(node.comments);
 
-        for (auto& stmt : node.body) {
+        for (auto stmt : node.body) {
             WriteIndent();
             TraverseNode(*stmt);
             WriteLineEnd();
@@ -272,7 +274,7 @@ namespace jetpack {
         auto module_scope = node.scope->CastToModule();
         SortComments(node.comments);
 
-        for (auto& stmt : node.body) {
+        for (auto stmt : node.body) {
             WriteIndent();
             TraverseNode(*stmt);
             WriteLineEnd();
@@ -306,7 +308,7 @@ namespace jetpack {
             if (!config_.minify) {
                 WriteLineEnd();
             }
-            for (auto& elem : node.body) {
+            for (auto elem : node.body) {
                 WriteCommentBefore(*elem);
 
                 WriteIndent();
@@ -752,8 +754,8 @@ namespace jetpack {
         }
         auto& params = node.params;
         if (!params.empty()) {
-            if (params.size() == 1 && params[0]->type == SyntaxNodeType::Identifier) {
-                auto id = dynamic_cast<Identifier*>(params[0]);
+            if (params.size() == 1 && (*params.begin())->type == SyntaxNodeType::Identifier) {
+                auto id = dynamic_cast<Identifier*>(*params.begin());
                 Write(id->name, *id);
             } else {
                 FormatSequence(params);
@@ -911,7 +913,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(SequenceExpression& node) {
-        std::vector<SyntaxNode*> nodes;
+        NodeList<SyntaxNode> nodes;
         for (auto& i : node.expressions) {
             nodes.push_back(i);
         }

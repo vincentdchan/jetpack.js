@@ -61,7 +61,7 @@ namespace jetpack::parser {
     public:
         struct FormalParameterOptions {
             bool simple = true;
-            std::vector<SyntaxNode*> params;
+            NodeList<SyntaxNode> params;
             HashSet<std::string> param_set;
             std::optional<Token> stricted;
             std::optional<Token> first_restricted;

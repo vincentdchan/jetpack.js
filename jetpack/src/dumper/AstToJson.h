@@ -807,7 +807,7 @@ namespace jetpack::dumper {
             }
             json array_params = json::array();
 
-              for (auto& i : node->params) {
+              for (auto i : node->params) {
                   array_params.push_back(Dump(i));
               }
             result["params"] = std::move(array_params);
@@ -866,7 +866,7 @@ namespace jetpack::dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-              for (auto& i : node->body) {
+              for (auto i : node->body) {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
@@ -892,7 +892,7 @@ namespace jetpack::dumper {
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
 
-              for (auto& i : node->arguments) {
+              for (auto i : node->arguments) {
                   array_arguments.push_back(Dump(i));
               }
             result["arguments"] = std::move(array_arguments);
@@ -1121,7 +1121,7 @@ namespace jetpack::dumper {
             }
             json array_params = json::array();
 
-              for (auto& i : node->params) {
+              for (auto i : node->params) {
                   array_params.push_back(Dump(i));
               }
             result["params"] = std::move(array_params);
@@ -1142,7 +1142,7 @@ namespace jetpack::dumper {
             }
             json array_params = json::array();
 
-              for (auto& i : node->params) {
+              for (auto i : node->params) {
                   array_params.push_back(Dump(i));
               }
             result["params"] = std::move(array_params);
@@ -1298,7 +1298,7 @@ namespace jetpack::dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-              for (auto& i : node->body) {
+              for (auto i : node->body) {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
@@ -1316,7 +1316,7 @@ namespace jetpack::dumper {
             result["callee"] = Dump(node->callee);
             json array_arguments = json::array();
 
-              for (auto& i : node->arguments) {
+              for (auto i : node->arguments) {
                   array_arguments.push_back(Dump(i));
               }
             result["arguments"] = std::move(array_arguments);
@@ -1404,7 +1404,7 @@ namespace jetpack::dumper {
             DumpBaseInfo(result, node);
             json array_body = json::array();
 
-              for (auto& i : node->body) {
+              for (auto i : node->body) {
                   array_body.push_back(Dump(i));
               }
             result["body"] = std::move(array_body);
@@ -1649,7 +1649,7 @@ namespace jetpack::dumper {
             DumpBaseInfo(result, node);
             json array_params = json::array();
 
-              for (auto& i : node->params) {
+              for (auto i : node->params) {
                   array_params.push_back(Dump(i));
               }
             result["params"] = std::move(array_params);

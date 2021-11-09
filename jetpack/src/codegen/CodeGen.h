@@ -88,7 +88,7 @@ namespace jetpack {
         static int ExpressionPrecedence(SyntaxNode& node);
 
         void FormatVariableDeclaration(VariableDeclaration& node);
-        void FormatSequence(std::vector<SyntaxNode*>& params);
+        void FormatSequence(NodeList<SyntaxNode>& params);
         void FormatBinaryExpression(Expression& expr, BinaryExpression& parent, bool is_right);
         bool HasCallExpression(SyntaxNode* node);
         bool ExpressionNeedsParenthesis(Expression& node, BinaryExpression& parent, bool is_right);

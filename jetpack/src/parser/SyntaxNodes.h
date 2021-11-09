@@ -34,7 +34,7 @@ namespace jetpack {
         ArrowFunctionExpression(std::unique_ptr<Scope> s);
 
         std::optional<Identifier*> id;
-        std::vector<SyntaxNode*> params;
+        NodeList<SyntaxNode> params;
         SyntaxNode* body;
         bool generator = false;
         bool expression = false;
@@ -88,7 +88,7 @@ namespace jetpack {
     public:
         BlockStatement();
 
-        std::vector<SyntaxNode*> body;
+        NodeList<SyntaxNode> body;
 
         std::optional<std::unique_ptr<Scope>> scope;
 
@@ -107,7 +107,7 @@ namespace jetpack {
         CallExpression();
 
         Expression* callee;
-        std::vector<SyntaxNode*> arguments;
+        NodeList<SyntaxNode> arguments;
 
     };
 
@@ -290,7 +290,7 @@ namespace jetpack {
         FunctionDeclaration(std::unique_ptr<Scope> s);
 
         std::optional<Identifier*> id;
-        std::vector<SyntaxNode*> params;
+        NodeList<SyntaxNode> params;
         BlockStatement* body;
         bool generator = false;
         bool expression = false;
@@ -305,7 +305,7 @@ namespace jetpack {
         FunctionExpression();
 
         std::optional<Identifier*> id;
-        std::vector<SyntaxNode*> params;
+        NodeList<SyntaxNode> params;
         BlockStatement* body;
         bool generator = false;
         bool expression = false;
@@ -434,7 +434,7 @@ namespace jetpack {
     public:
         Module(std::unique_ptr<ModuleScope> s);
 
-        std::vector<SyntaxNode*> body;
+        NodeList<SyntaxNode> body;
         std::string source_type;
         std::vector<Sp<Comment>> comments;
 
@@ -447,7 +447,7 @@ namespace jetpack {
         NewExpression();
 
         Expression* callee;
-        std::vector<SyntaxNode*> arguments;
+        NodeList<SyntaxNode> arguments;
 
     };
 
@@ -509,7 +509,7 @@ namespace jetpack {
     public:
         Script(std::unique_ptr<Scope> s);
 
-        std::vector<SyntaxNode*> body;
+        NodeList<SyntaxNode> body;
         std::string source_type;
         std::vector<Sp<Comment>> comments;
 
@@ -696,7 +696,7 @@ namespace jetpack {
     public:
         ArrowParameterPlaceHolder();
 
-        std::vector<SyntaxNode*> params;
+        NodeList<SyntaxNode> params;
         bool async = false;
 
         bool IsAsync() const override { return async; }

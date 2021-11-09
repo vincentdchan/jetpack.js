@@ -112,7 +112,7 @@ namespace jetpack::parser {
     }
 
     std::optional<ParserCommon::FormalParameterOptions> Parser::ReinterpretAsCoverFormalsList(SyntaxNode* expr) {
-        std::vector<SyntaxNode*> params;
+        NodeList<SyntaxNode> params;
         FormalParameterOptions options;
 
         bool async_arrow = false;
@@ -134,7 +134,7 @@ namespace jetpack::parser {
 
         options.simple = true;
 
-        for (auto& param : params) {
+        for (auto param : params) {
             if (param->type == SyntaxNodeType::AssignmentPattern) {
                 auto node = dynamic_cast<AssignmentPattern*>(param);
                 if (node->right->type == SyntaxNodeType::YieldExpression) {
@@ -156,7 +156,7 @@ namespace jetpack::parser {
         }
 
         if (ctx->strict_ || !ctx->allow_yield_) {
-            for (auto& param : params) {
+            for (auto param : params) {
                 if (param->type == SyntaxNodeType::YieldExpression) {
                     ThrowUnexpectedToken(ctx->lookahead_);
                 }
@@ -170,7 +170,7 @@ namespace jetpack::parser {
             ThrowUnexpectedToken(token, options.message);
         }
 
-        options.params = move(params);
+        options.params = params;
         return options;
     }
 
@@ -801,8 +801,8 @@ namespace jetpack::parser {
         if (is_async) {
             auto node = Alloc<FunctionExpression>();
             node->id = id;
-            node->params = move(formal.params);
-            node->body = move(body);
+            node->params = formal.params;
+            node->body = body;
             node->async = true;
             node->scope = move(fun_scope);
             return Finalize(marker, node);
@@ -893,8 +893,8 @@ namespace jetpack::parser {
         return Finalize(marker, node);
     }
 
-    std::vector<SyntaxNode*> Parser::ParseArguments(Scope& scope) {
-        std::vector<SyntaxNode*> result;
+    NodeList<SyntaxNode> Parser::ParseArguments(Scope& scope) {
+        NodeList<SyntaxNode> result;
         Expect(JsTokenType::LeftParen);
         if (!Match(JsTokenType::RightParen)) {
             SyntaxNode* expr = nullptr;
@@ -982,7 +982,7 @@ namespace jetpack::parser {
     BlockStatement* Parser::ParseFunctionSourceElements(Scope& scope) {
         auto start_marker = CreateStartMarker();
 
-        vector<SyntaxNode*> body = ParseDirectivePrologues(scope);
+        NodeList<SyntaxNode> body = ParseDirectivePrologues(scope);
         Expect(JsTokenType::LeftBracket);
 
         auto prev_label_set = move(ctx->label_set_);
@@ -1017,9 +1017,9 @@ namespace jetpack::parser {
         return Finalize(start_marker, node);
     }
 
-    std::vector<SyntaxNode*> Parser::ParseDirectivePrologues(Scope& scope) {
+    NodeList<SyntaxNode> Parser::ParseDirectivePrologues(Scope& scope) {
         optional<Token> first_restrict;
-        std::vector<SyntaxNode*> result;
+        NodeList<SyntaxNode> result;
 
         Token token;
         while (true) {
@@ -1189,13 +1189,16 @@ namespace jetpack::parser {
                 node->callee = expr;
                 expr = Finalize(StartNode(start_token), node);
                 if (async_arrow && Match(JsTokenType::Arrow)) {
-                    for (std::size_t i = 0; i < node->arguments.size(); i++) {
-                        node->arguments[i] = ReinterpretExpressionAsPattern(node->arguments[i]);
+                    auto temp = node->arguments.to_vec();
+                    NodeList<SyntaxNode> patterns;
+                    for (auto child_expr : temp) {
+                        patterns.push_back(ReinterpretExpressionAsPattern(child_expr));
                     }
+                    node->arguments = patterns;
                     auto placeholder = Alloc<ArrowParameterPlaceHolder>();
                     placeholder->params = node->arguments;
                     placeholder->async = true;
-                    expr = move(placeholder);
+                    expr = placeholder;
                 } else if (ctx->config_.common_js) {
                     auto new_call = CheckRequireCall(scope, dynamic_cast<CallExpression*>(expr));
                     if (new_call.has_value()) {
@@ -1567,7 +1570,7 @@ namespace jetpack::parser {
         if (is_async) {
             auto node = Alloc<FunctionDeclaration>(move(fun_scope));
             node->id = id;
-            node->params = move(options.params);
+            node->params = options.params;
             node->body = body;
             node->async = true;
             return Finalize(marker, node);
@@ -2474,9 +2477,9 @@ namespace jetpack::parser {
             if (!(id->name == "require")) {
                 return std::nullopt;
             }
-            if (call->arguments.size() == 1 && call->arguments[0]->type == SyntaxNodeType::Literal) {
+            if (call->arguments.size() == 1 && (*call->arguments.begin())->type == SyntaxNodeType::Literal) {
                 // very likely
-                auto lit = dynamic_cast<Literal*>(call->arguments[0]);
+                auto lit = dynamic_cast<Literal*>(*call->arguments.begin());
                 if (lit->ty != Literal::Ty::String) {
                     return std::nullopt;
                 }
@@ -3298,9 +3301,9 @@ namespace jetpack::parser {
         return arg;
     }
 
-    std::vector<SyntaxNode*> Parser::ParseAsyncArguments(Scope& scope) {
+    NodeList<SyntaxNode> Parser::ParseAsyncArguments(Scope& scope) {
         Expect(JsTokenType::LeftParen);
-        std::vector<SyntaxNode*> result;
+        NodeList<SyntaxNode> result;
         if (!Match(JsTokenType::RightParen)) {
             while (true) {
                 if (Match(JsTokenType::Spread)) {
@@ -3665,7 +3668,7 @@ namespace jetpack::parser {
         auto options = ParseFormalParameters(scope);
         if (options.params.size() != 1) {
             TolerateError(ParseMessages::BadSetterArity);
-        } else if (options.params[0]->type == SyntaxNodeType::RestElement) {
+        } else if ((*options.params.begin())->type == SyntaxNodeType::RestElement) {
             TolerateError(ParseMessages::BadSetterRestParameter);
         }
         node->params = options.params;

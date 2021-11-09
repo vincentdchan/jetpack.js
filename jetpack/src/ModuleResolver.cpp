@@ -160,7 +160,7 @@ namespace jetpack {
         });
         if (config.common_js) {
             parser.require_call_created_listener.On([this, &config, &mf](CallExpression* call) -> std::optional<SyntaxNode*> {
-                auto lit = dynamic_cast<Literal*>(call->arguments[0]);
+                auto lit = dynamic_cast<Literal*>(*call->arguments.begin());
                 const auto& u8path = lit->str_;
                 if (NODE_JS_BUILTIN_MODULE.find(u8path) != NODE_JS_BUILTIN_MODULE.end()) {
                     return std::nullopt;
@@ -632,9 +632,10 @@ namespace jetpack {
      * Turn import and export statements into variable declarations
      */
     void ModuleResolver::ReplaceExports(const Sp<ModuleFile>& mf) {
-        std::vector<SyntaxNode*> new_body;
+        NodeList<SyntaxNode> new_body;
 
-        for (auto& stmt : mf->ast->body) {
+        auto temp_vec = mf->ast->body.to_vec();
+        for (auto stmt : temp_vec) {
             switch (stmt->type) {
 
                 /**
@@ -830,9 +831,10 @@ namespace jetpack {
     }
 
     void ModuleResolver::ReplaceImports(const Sp<jetpack::ModuleFile> &mf) {
-        std::vector<SyntaxNode*> new_body;
+        NodeList<SyntaxNode> new_body;
 
-        for (auto& stmt : mf->ast->body) {
+        auto temp_vec = mf->ast->body.to_vec();
+        for (auto stmt : temp_vec) {
             switch (stmt->type) {
                 case SyntaxNodeType::ImportDeclaration: {
                     auto import_decl = dynamic_cast<ImportDeclaration*>(stmt);
@@ -843,7 +845,9 @@ namespace jetpack {
 
                     std::vector<VariableDeclaration*> result;
                     HandleImportDeclaration(mf, import_decl, result);
-                    new_body.insert(std::end(new_body), std::begin(result), std::end(result));
+                    for (auto item : result) {
+                        new_body.push_back(item);
+                    }
                     continue;
                 }
 
