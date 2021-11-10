@@ -459,14 +459,14 @@ namespace jetpack {
 
     // final stage
     void ModuleResolver::DumpAllResult(const CodeGenConfig& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
-        auto mappingCollector = std::make_shared<MappingCollector>();
+        auto mapping_collector = std::make_shared<MappingCollector>();
 
-        benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
-        auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+        benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
+        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
 
         // codegen all result begin
-        CodeGen codegen(config, mappingCollector);
-        sourcemapGenerator->AddCollector(mappingCollector);
+        CodeGen codegen(config, mapping_collector);
+        sourcemap_generator->AddCollector(mapping_collector);
 
         global_import_handler_.GenCode(codegen);
 
@@ -474,7 +474,7 @@ namespace jetpack {
             codegen.AddSnippet(COMMON_JS_CODE);
         }
 
-        CodeGenModule(entry_module, codegen, *sourcemapGenerator);
+        CodeGenModule(entry_module, codegen, *sourcemap_generator);
         // codegen all result end
 
         if (!final_export_vars.empty()) {
@@ -482,19 +482,19 @@ namespace jetpack {
             codegen.Traverse(*final_export);
         }
 
-        const std::string finalResult = codegen.GetResult().content;
-        codegenMarker.Submit();
+        const std::string final_result = codegen.GetResult().content;
+        codegen_marker.Submit();
 
         std::future<bool> srcFut;
         if (config.sourcemap) {
-            sourcemapGenerator->Finalize(*thread_pool_);
-            srcFut = DumpSourceMap(outPath, sourcemapGenerator);
+            sourcemap_generator->Finalize(*thread_pool_);
+            srcFut = DumpSourceMap(outPath, sourcemap_generator);
         }
 
-        benchmark::BenchMarker writeMarker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(outPath, finalResult.c_str(), finalResult.size());
+        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
+        io::IOError err = io::WriteBufferToPath(outPath, final_result.c_str(), final_result.size());
         J_ASSERT(err == io::IOError::Ok);
-        writeMarker.Submit();
+        write_marker.Submit();
 
         if (config.sourcemap) {
             if (unlikely(!srcFut.get())) {   // wait to finished
