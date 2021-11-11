@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <algorithm>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <memory>
 #include <stack>
