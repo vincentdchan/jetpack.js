@@ -278,8 +278,10 @@ namespace jetpack {
 
     std::vector<std::tuple<Sp<ModuleFile>, std::string>> ModuleResolver::GetAllExportVars() {
         std::vector<std::tuple<Sp<ModuleFile>, std::string>> result;
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
 
-        TraverseModulePushExportVars(result, entry_module, nullptr);
+        TraverseModulePushExportVars(result, entry_module, visited_marks.data(), nullptr);
 
         return result;
     }
@@ -336,12 +338,15 @@ namespace jetpack {
      */
     void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                                                       const Sp<jetpack::ModuleFile>& mod,
+                                                      uint8_t* visited_marks,
                                                       HashSet<std::string>* white_list) {
 
-        if (mod->visited_mark) {
+        int32_t id = mod->id();
+        assert(id >= 0);
+        if (visited_marks[id] != 0) {
             return;
         }
-        mod->visited_mark = true;
+        visited_marks[id] = 1;
 
         // 1. handle all local exports
         for (auto& tuple : mod->GetExportManager().local_exports_name) {
@@ -377,13 +382,13 @@ namespace jetpack {
                 return;
             }
             if (info.is_export_all) {
-                TraverseModulePushExportVars(arr, iter->second, nullptr);
+                TraverseModulePushExportVars(arr, iter->second, visited_marks, nullptr);
             } else {
                 HashSet<std::string> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }
-                TraverseModulePushExportVars(arr, iter->second, &new_white_list);
+                TraverseModulePushExportVars(arr, iter->second, visited_marks, &new_white_list);
             }
         }
     }
@@ -452,8 +457,9 @@ namespace jetpack {
 
         RenameAllRootLevelVariable();
 
-        ClearAllVisitedMark();
-        TraverseRenameAllImports(entry_module);
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
+        TraverseRenameAllImports(entry_module, visited_marks.data());
 
         DumpAllResult(config, final_export_vars, out_path);
     }
@@ -505,20 +511,24 @@ namespace jetpack {
     }
 
     void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &root, CodeGen &codegen, SourceMapGenerator& sourcemap) {
-        ClearAllVisitedMark();
         std::stack<Sp<ModuleFile>> stack;
         std::stack<Sp<ModuleFile>> spare_stack;
+
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
 
         stack.push(root);
 
         while (!stack.empty()) {
             auto top = stack.top();
             stack.pop();
-            if (top->visited_mark) {
+            int32_t id = top->id();
+
+            if (visited_marks[id] != 0) {
                 continue;
             }
 
-            top->visited_mark = true;
+            visited_marks[id] = 1;
             spare_stack.push(top);
 
             for (auto& ref : top->ref_mods) {
@@ -555,7 +565,6 @@ namespace jetpack {
     }
 
     void ModuleResolver::RenameAllInnerScopes() {
-        ClearAllVisitedMark();
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
@@ -583,22 +592,25 @@ namespace jetpack {
     }
 
     void ModuleResolver::RenameAllRootLevelVariable() {
-        ClearAllVisitedMark();
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
 
         std::int32_t counter = 0;
-        RenameAllRootLevelVariableTraverser(entry_module, counter);
+        RenameAllRootLevelVariableTraverser(entry_module, visited_marks.data(), counter);
     }
 
     void ModuleResolver::RenameAllRootLevelVariableTraverser(const std::shared_ptr<ModuleFile> &mf,
+                                                             uint8_t* visited_marks,
                                                              std::int32_t& counter) {
-        if (mf->visited_mark) {
+        int32_t id = mf->id();
+        if (visited_marks[id] != 0) {
             return;
         }
-        mf->visited_mark = true;
+        visited_marks[id] = 1;
 
         for (auto& weak_child : mf->ref_mods) {
             auto child = weak_child.lock();
-            RenameAllRootLevelVariableTraverser(child, counter);
+            RenameAllRootLevelVariableTraverser(child, visited_marks, counter);
         }
 
         // do your own work
@@ -814,18 +826,19 @@ namespace jetpack {
             }
         }
 
-        mf->ast->body = std::move(new_body);
+        mf->ast->body = new_body;
     }
 
-    void ModuleResolver::TraverseRenameAllImports(const Sp<jetpack::ModuleFile> &mf) {
-        if (mf->visited_mark) {
+    void ModuleResolver::TraverseRenameAllImports(const Sp<jetpack::ModuleFile> &mf, uint8_t* visited_marks) {
+        int32_t id = mf->id();
+        if (visited_marks[id] != 0) {
             return;
         }
-        mf->visited_mark = true;
+        visited_marks[id] = 1;
 
         for (auto& weak_ptr : mf->ref_mods) {
             auto ptr = weak_ptr.lock();
-            TraverseRenameAllImports(ptr);
+            TraverseRenameAllImports(ptr, visited_marks);
         }
 
         ReplaceImports(mf);
@@ -1106,10 +1119,6 @@ namespace jetpack {
 
     Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>& export_names) {
         auto result = std::make_shared<ExportNamedDeclaration>();
-
-        for (auto& tuple : modules_table_.path_to_module) {
-            tuple.second->visited_mark = false;
-        }
 
         for (auto& tuple : export_names) {
             const std::string& export_name = std::get<1>(tuple);

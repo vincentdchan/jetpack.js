@@ -73,11 +73,6 @@ namespace jetpack {
         /**
          * For Postorder traversal
          */
-        bool visited_mark = false;
-
-        /**
-         * For Postorder traversal
-         */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
         Sp<MappingCollector> mapping_collector_;

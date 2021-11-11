@@ -97,12 +97,6 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        inline void ClearAllVisitedMark() {
-            for (auto& tuple : modules_table_.path_to_module) {
-                tuple.second->visited_mark = false;
-            }
-        }
-
         inline void SetNameGenerator(std::shared_ptr<UniqueNameGenerator> generator) {
             name_generator = std::move(generator);
         }
@@ -139,9 +133,11 @@ namespace jetpack {
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                 const Sp<ModuleFile>&,
+                uint8_t* visited_marks,
                 HashSet<std::string>* white_list);
 
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
+                                                 uint8_t* visited_marks,
                                                  std::int32_t& counter);
 
         Sp<ModuleFile> HandleNewLocationAdded(const parser::Config& config,
@@ -165,7 +161,7 @@ namespace jetpack {
         void EnqueueOne(std::function<void()> unit);
         void FinishOne();
 
-        void TraverseRenameAllImports(const Sp<ModuleFile>& mf);
+        void TraverseRenameAllImports(const Sp<ModuleFile>& mf, uint8_t* visited_marks);
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
 
