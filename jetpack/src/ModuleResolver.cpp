@@ -443,9 +443,9 @@ namespace jetpack {
 
         // distribute root level var name
         if (config.minify) {
-            benchmark::BenchMarker benchMinify(benchmark::BENCH_MINIFY);
+            benchmark::BenchMarker bench_minify(benchmark::BENCH_MINIFY);
             RenameAllInnerScopes();
-            benchMinify.Submit();
+            bench_minify.Submit();
         }
 
         global_import_handler_.GenAst(name_generator);  // global import
@@ -486,10 +486,10 @@ namespace jetpack {
         const std::string final_result = codegen.GetResult().content;
         codegen_marker.Submit();
 
-        std::future<bool> srcFut;
+        std::future<bool> src_fut;
         if (config.sourcemap) {
             sourcemap_generator->Finalize(*thread_pool_);
-            srcFut = DumpSourceMap(outPath, sourcemap_generator);
+            src_fut = DumpSourceMap(outPath, sourcemap_generator);
         }
 
         benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
@@ -498,7 +498,7 @@ namespace jetpack {
         write_marker.Submit();
 
         if (config.sourcemap) {
-            if (unlikely(!srcFut.get())) {   // wait to finished
+            if (unlikely(!src_fut.get())) {   // wait to finished
                 std::cerr << "dump source map failed: " << outPath << std::endl;
             }
         }
