@@ -60,7 +60,7 @@ namespace jetpack {
     CodeGen::CodeGen(
             const CodeGenConfig& config,
             Sp<MappingCollector> mc):
-            config_(config), mappingCollector(std::move(mc)) {}
+            config_(config), mapping_collector_(std::move(mc)) {}
 
     void CodeGen::AddSnippet(const std::string &content) {
         std::vector<std::string> lines;
@@ -77,15 +77,16 @@ namespace jetpack {
     }
 
     void CodeGen::Write(const std::string& str, SyntaxNode& node) {
-        if (likely(mappingCollector)) {
-            mappingCollector->AddMapping(str, node.location, state_.column);
+        const char* begin = output.c_str();
+        if (likely(mapping_collector_)) {
+            mapping_collector_->AddMapping(str, node.location, state_.column);
         }
         Write(str);
     }
 
     void CodeGen::WriteLineEnd() {
-        if (likely(mappingCollector)) {
-            mappingCollector->EndLine();
+        if (likely(mapping_collector_)) {
+            mapping_collector_->EndLine();
         }
         if (!config_.minify) {
             output += config_.line_end;

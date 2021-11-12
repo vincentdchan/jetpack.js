@@ -154,7 +154,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline Sp<MappingCollector> SourcemapCollector() {
-            return mappingCollector;
+            return mapping_collector_;
         }
 
     private:
@@ -175,7 +175,7 @@ namespace jetpack {
         State state_;
 
         // nullable
-        Sp<MappingCollector> mappingCollector;
+        Sp<MappingCollector> mapping_collector_;
 
         std::string output;
 
