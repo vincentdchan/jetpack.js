@@ -30,7 +30,7 @@ namespace jetpack {
     class CodeGenFragment {
     public:
         std::string content;
-        int32_t     line = 0;
+        int32_t     line = 1;
         int32_t     column = 0;
         std::vector<MappingItem> mapping_items;
 

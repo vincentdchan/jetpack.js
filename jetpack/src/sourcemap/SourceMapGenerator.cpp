@@ -149,10 +149,8 @@ namespace jetpack {
         return index;
     }
 
-    void SourceMapGenerator::Finalize(ThreadPool& thread_pool) {
-        for (const auto& collector : collectors_) {
-            FinalizeCollector(*collector);
-        }
+    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items, ThreadPool& thread_pool) {
+        FinalizeMapping(mapping_items);
 
         benchmark::BenchMarker b(benchmark::BENCH_FINALIZE_SOURCEMAP);
 
@@ -209,8 +207,8 @@ namespace jetpack {
         ss << "  ]," << std::endl;
     }
 
-    void SourceMapGenerator::FinalizeCollector(const MappingCollector& mappingCollector) {
-        for (const auto& item : mappingCollector.items_) {
+    void SourceMapGenerator::FinalizeMapping(Slice<const MappingItem> items) {
+        for (const auto& item : items) {
             AddEnoughLines(item.dist_line);
             bool ec = AddLocation(item.name, item.dist_column,
                                   item.origin.fileId, item.origin.start.line, item.origin.start.column

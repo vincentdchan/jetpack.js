@@ -9,6 +9,7 @@
 #include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
 #include "ModuleResolver.h"
+#include "ModuleCompositor.h"
 #include "SimpleAPI.h"
 #include "utils/Path.h"
 #include "utils/io/FileIO.h"
@@ -21,21 +22,27 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     Config config = Config::Default();
     resolver->BeginFromEntryString(config, content);
 
-    SourceMapGenerator sourceMapGenerator(resolver, "memory0");
+    SourceMapGenerator sourcemap_generator(resolver, "memory0");
+
+    auto fragment = std::make_shared<CodeGenFragment>();
+    MappingCollector mapping_collector(*fragment);
 
     auto mod = resolver->GetEntryModule();
-    CodeGenConfig codegenConfig;
-    CodeGen codegen(codegenConfig, mod->mapping_collector_);
+    CodeGenConfig codegen_config;
+    CodeGen codegen(codegen_config, &mapping_collector);
     codegen.Traverse(*mod->ast);
 
+    ModuleCompositor module_compositor(codegen_config);
+    module_compositor.Append(*fragment);
+
     ThreadPool pool(1);
-    sourceMapGenerator.Finalize(pool);
+    sourcemap_generator.Finalize(module_compositor.MappingItems(), pool);
 
     if (print) {
-        std::cout << "gen: " << std::endl << sourceMapGenerator.ToPrettyString() << std::endl;
+        std::cout << "gen: " << std::endl << sourcemap_generator.ToPrettyString() << std::endl;
     }
 
-    return sourceMapGenerator.ToPrettyString();
+    return sourcemap_generator.ToPrettyString();
 }
 
 static std::string encoding_vlq(const std::vector<int>& array) {

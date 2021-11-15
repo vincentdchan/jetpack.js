@@ -19,10 +19,10 @@ namespace jetpack {
      */
     class ModuleCompositor {
     public:
-        explicit ModuleCompositor(const CodeGenConfig& config, SourceMapGenerator& sg):
-        config_(config), sourcemap_generator_(sg) {}
+        explicit ModuleCompositor(const CodeGenConfig& config):
+        config_(config) {}
 
-        ModuleCompositor& append(const CodeGenFragment& fragment);
+        ModuleCompositor& Append(const CodeGenFragment& fragment);
 
         void AddSnippet(const std::string& content);
 
@@ -30,12 +30,16 @@ namespace jetpack {
 
         void WriteLineEnd();
 
-        inline void take(std::string& out) {
+        inline void Take(std::string& out) {
             result_.swap(out);
         }
 
+        constexpr Slice<const MappingItem> MappingItems() const {
+            return Slice(mapping_items_.data(), mapping_items_.size());
+        }
+
     private:
-        SourceMapGenerator& sourcemap_generator_;
+        std::vector<MappingItem> mapping_items_;
         const CodeGenConfig& config_;
         std::string result_;
         uint32_t line_ = 0;  // start from 0

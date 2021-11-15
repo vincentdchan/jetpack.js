@@ -30,25 +30,24 @@ namespace jetpack {
         }
     }
 
-    ModuleCompositor& ModuleCompositor::append(const CodeGenFragment& fragment) {
-        for (auto& item : fragment.mapping_items) {
-            if (item.dist_line == 1) {  // first line
-                item.dist_column += column_;
+    ModuleCompositor& ModuleCompositor::Append(const CodeGenFragment& fragment) {
+        for (const auto& item : fragment.mapping_items) {
+            auto item_copy = item;
+            if (item_copy.dist_line == 1) {  // first line
+                item_copy.dist_column += column_;
             }
-            item.dist_line += line_;
-        }
-//        sourcemap_generator_.AddCollector(mapping_collector);
-
-        for (uint32_t i = 0; i < content.length(); i++) {
-            if (unlikely(content.at(i) == '\n')) {
-                line_++;
-                column_ = 0;
-            } else {
-                column_++;
-            }
+            item_copy.dist_line += line_;
+            mapping_items_.push_back(item_copy);
         }
 
-        result_.append(content);
+        line_ += fragment.line - 1;
+        result_ += fragment.content;
+
+        if (fragment.line > 1) {
+            column_ = fragment.column;
+        } else {
+            column_ += fragment.column;
+        }
 
         return *this;
     }

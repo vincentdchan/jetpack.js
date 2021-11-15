@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <ThreadPool.h>
+#include "Slice.h"
 #include "utils/string/UString.h"
 #include "MappingCollector.h"
 #include "ModuleFile.h"
@@ -39,7 +40,7 @@ namespace jetpack {
         /**
          * Unify all collectors together
          */
-        void Finalize(ThreadPool& thread_pool);
+        void Finalize(Slice<const MappingItem> mapping_items, ThreadPool& thread_pool);
 
         std::string ToPrettyString();
 
@@ -62,7 +63,7 @@ namespace jetpack {
 
         void AddEnoughLines(int32_t target_line);
 
-        void FinalizeCollector(const MappingCollector& collector);
+        void FinalizeMapping(Slice<const MappingItem> items);
 
         void FinalizeSources();
 

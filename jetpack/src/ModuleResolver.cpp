@@ -474,7 +474,7 @@ namespace jetpack {
         benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
         auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
 
-        ModuleCompositor module_compositor(config, *sourcemap_generator);
+        ModuleCompositor module_compositor(config);
 
         // codegen all result begin
 //        sourcemap_generator->AddCollector(mapping_collector);
@@ -485,14 +485,23 @@ namespace jetpack {
             module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
+        std::vector<std::future<Sp<CodeGenFragment>>> fragments;
+        fragments.reserve(modules_table_.id_to_module.size());
+
         for (const auto& item : modules_table_.id_to_module) {
             auto module = item.second;
-            EnqueueOne([module, &config] {
+            auto fragment = thread_pool_->enqueue([&config, module] {
                 auto fragment = std::make_shared<CodeGenFragment>();
                 MappingCollector mapping_collector(*fragment);
                 CodeGen codegen(config, &mapping_collector);
-
+                codegen.Traverse(*module->ast);
+                return fragment;
             });
+            fragments.push_back(std::move(fragment));
+        }
+
+        for (auto& f : fragments) {
+            module_compositor.Append(*f.get());
         }
 
 //        CodeGenModule(entry_module, codegen, *sourcemap_generator);
@@ -500,12 +509,13 @@ namespace jetpack {
         CodeGenFinalExport(module_compositor);
 
         std::string final_result;
-        module_compositor.take(final_result);
+        module_compositor.Take(final_result);
         codegen_marker.Submit();
 
         std::future<bool> src_fut;
         if (config.sourcemap) {
-            sourcemap_generator->Finalize(*thread_pool_);
+            auto mapping_items = module_compositor.MappingItems();
+            sourcemap_generator->Finalize(mapping_items, *thread_pool_);
             src_fut = DumpSourceMap(out_path, sourcemap_generator);
         }
 

@@ -8,7 +8,7 @@ namespace jetpack {
 
     void MappingCollector::AddMapping(const std::string &name, const SourceLocation &origin, int32_t column) {
         MappingItem item(name, origin, dist_line_, column);
-        items_.push_back(item);
+        codegen_fragment_.mapping_items.push_back(std::move(item));
     }
 
 }
