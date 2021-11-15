@@ -14,7 +14,6 @@
 #include "utils/string/UString.h"
 #include "utils/Common.h"
 #include "codegen/CodeGenConfig.h"
-#include "sourcemap/MappingCollector.h"
 
 namespace jetpack {
 
@@ -25,6 +24,8 @@ namespace jetpack {
         std::string content;
 
     };
+
+    class MappingCollector;
 
     /**
      * Reference: https://github.com/davidbonnet/astring/blob/master/src/astring.js
@@ -51,7 +52,7 @@ namespace jetpack {
     public:
         explicit CodeGen(
                  const CodeGenConfig& config,
-                 Sp<MappingCollector> sourceMapGenerator = nullptr);
+                 MappingCollector* sourceMapGenerator = nullptr);
 
         [[nodiscard]]
         inline CodeGenResult GetResult() const {
@@ -61,8 +62,6 @@ namespace jetpack {
                     output,
             };
         }
-
-        void AddSnippet(const std::string& content);
 
     private:
         inline void Write(char ch) {
@@ -153,7 +152,7 @@ namespace jetpack {
         void Traverse(ObjectPattern& node) override;
 
         [[nodiscard]]
-        inline Sp<MappingCollector> SourcemapCollector() {
+        inline MappingCollector* SourcemapCollector() {
             return mapping_collector_;
         }
 
@@ -175,7 +174,7 @@ namespace jetpack {
         State state_;
 
         // nullable
-        Sp<MappingCollector> mapping_collector_;
+        MappingCollector* mapping_collector_;
 
         std::string output;
 

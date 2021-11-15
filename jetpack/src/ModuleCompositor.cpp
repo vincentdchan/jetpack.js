@@ -3,30 +3,52 @@
 //
 
 #include "ModuleCompositor.h"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace jetpack {
 
-    ModuleCompositor& ModuleCompositor::append(const std::string &content, const Sp<MappingCollector>& mapping_collector) {
-        if (likely(mapping_collector)) {
-            for (auto& item : mapping_collector->items_) {
-                if (item.dist_line == 1) {  // first line
-                    item.dist_column += column;
-                }
-                item.dist_line += line;
-            }
-            sourcemap_generator_.AddCollector(mapping_collector);
+    void ModuleCompositor::AddSnippet(const std::string &content) {
+        std::vector<std::string> lines;
+        boost::split(lines, content, boost::is_any_of("\n"), boost::token_compress_on);
+        for (const auto& line : lines) {
+            Write(line);
+            WriteLineEnd();
         }
+    }
+
+    void ModuleCompositor::Write(const std::string& content) {
+        result_ += content;
+        column_ += UTF16LenOfUtf8(content);
+    }
+
+    void ModuleCompositor::WriteLineEnd() {
+        if (!config_.minify) {
+            result_ += config_.line_end;
+            line_++;
+            column_ = 0;
+        }
+    }
+
+    ModuleCompositor& ModuleCompositor::append(const CodeGenFragment& fragment) {
+        for (auto& item : fragment.mapping_items) {
+            if (item.dist_line == 1) {  // first line
+                item.dist_column += column_;
+            }
+            item.dist_line += line_;
+        }
+//        sourcemap_generator_.AddCollector(mapping_collector);
 
         for (uint32_t i = 0; i < content.length(); i++) {
             if (unlikely(content.at(i) == '\n')) {
-                line++;
-                column = 0;
+                line_++;
+                column_ = 0;
             } else {
-                column++;
+                column_++;
             }
         }
 
-        result.append(content);
+        result_.append(content);
 
         return *this;
     }

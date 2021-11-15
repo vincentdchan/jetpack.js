@@ -10,7 +10,6 @@
 namespace jetpack {
 
     ModuleFile::ModuleFile(const std::string& path, int32_t id): path_(path), id_(id) {
-        mapping_collector_ = std::make_shared<MappingCollector>();
     }
 
     void ModuleFile::RenameInnerScopes(RenamerCollection& renamer) {

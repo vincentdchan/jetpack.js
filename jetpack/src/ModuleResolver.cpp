@@ -18,6 +18,7 @@
 #include "parser/ParserCommon.h"
 #include "parser/NodesMaker.h"
 #include "ModuleResolver.h"
+#include "ModuleCompositor.h"
 #include "Benchmark.h"
 
 static const char* COMMON_JS_CODE =
@@ -465,49 +466,71 @@ namespace jetpack {
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGenConfig& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
-        auto mapping_collector = std::make_shared<MappingCollector>();
+    void ModuleResolver::DumpAllResult(
+            const CodeGenConfig& config,
+            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
+            const std::string& out_path) {
 
         benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
-        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
+
+        ModuleCompositor module_compositor(config, *sourcemap_generator);
 
         // codegen all result begin
-        CodeGen codegen(config, mapping_collector);
-        sourcemap_generator->AddCollector(mapping_collector);
+//        sourcemap_generator->AddCollector(mapping_collector);
 
-        global_import_handler_.GenCode(codegen);
+        CodeGenGlobalImport(module_compositor);
 
         if (has_common_js_.load()) {
-            codegen.AddSnippet(COMMON_JS_CODE);
+            module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
-        CodeGenModule(entry_module, codegen, *sourcemap_generator);
+        for (const auto& item : modules_table_.id_to_module) {
+            auto module = item.second;
+            EnqueueOne([module, &config] {
+                auto fragment = std::make_shared<CodeGenFragment>();
+                MappingCollector mapping_collector(*fragment);
+                CodeGen codegen(config, &mapping_collector);
+
+            });
+        }
+
+//        CodeGenModule(entry_module, codegen, *sourcemap_generator);
         // codegen all result end
+        CodeGenFinalExport(module_compositor);
 
-        if (!final_export_vars.empty()) {
-            auto final_export = GenFinalExportDecl(final_export_vars);
-            codegen.Traverse(*final_export);
-        }
-
-        const std::string final_result = codegen.GetResult().content;
+        std::string final_result;
+        module_compositor.take(final_result);
         codegen_marker.Submit();
 
         std::future<bool> src_fut;
         if (config.sourcemap) {
             sourcemap_generator->Finalize(*thread_pool_);
-            src_fut = DumpSourceMap(outPath, sourcemap_generator);
+            src_fut = DumpSourceMap(out_path, sourcemap_generator);
         }
 
         benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(outPath, final_result.c_str(), final_result.size());
+        io::IOError err = io::WriteBufferToPath(out_path, final_result.c_str(), final_result.size());
         J_ASSERT(err == io::IOError::Ok);
         write_marker.Submit();
 
         if (config.sourcemap) {
             if (unlikely(!src_fut.get())) {   // wait to finished
-                std::cerr << "dump source map failed: " << outPath << std::endl;
+                std::cerr << "dump source map failed: " << out_path << std::endl;
             }
         }
+    }
+
+    void ModuleResolver::CodeGenGlobalImport(ModuleCompositor& mc) {
+//        global_import_handler_.GenCode(codegen);
+
+    }
+
+    void ModuleResolver::CodeGenFinalExport(ModuleCompositor& mc) {
+//        if (!final_export_vars.empty()) {
+//            auto final_export = GenFinalExportDecl(final_export_vars);
+//            codegen.Traverse(*final_export);
+//        }
     }
 
     void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &root, CodeGen &codegen, SourceMapGenerator& sourcemap) {

@@ -7,8 +7,8 @@
 #include <cinttypes>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
+#include "CodeGenFragment.h"
 #include "utils/Common.h"
-#include "tokenizer/Location.h"
 
 namespace jetpack {
     template<class Key, class T, class Ignore, class Allocator,
@@ -22,29 +22,17 @@ namespace jetpack {
     class SourceMapGenerator;
     class ModuleCompositor;
 
-    struct MappingItem {
-    public:
-        inline MappingItem(const std::string& n,
-                           const SourceLocation& loc,
-                           int32_t dL,
-                           int32_t dC) noexcept:
-                name(n), origin(loc),
-                dist_line(dL),
-                dist_column(dC) {}
-
-        std::string        name;
-        SourceLocation origin;
-        int32_t        dist_line   = -1;
-        int32_t        dist_column = -1;
-
-    };
-
     class MappingCollector {
     public:
-        MappingCollector() noexcept = default;
+        MappingCollector(CodeGenFragment& codegen_fragment):
+        codegen_fragment_(codegen_fragment) {}
 
         inline void push_back(const MappingItem& item) {
-            items_.push_back(item);
+            codegen_fragment_.mapping_items.push_back(item);
+        }
+
+        inline void push_back(MappingItem&& item) {
+            codegen_fragment_.mapping_items.push_back(std::move(item));
         }
 
         inline void EndLine() {
@@ -58,7 +46,7 @@ namespace jetpack {
 
     private:
         int32_t          dist_line_ = 1;
-        Vec<MappingItem> items_;
+        CodeGenFragment& codegen_fragment_;
 
     };
 

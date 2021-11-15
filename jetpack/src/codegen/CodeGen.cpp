@@ -4,10 +4,9 @@
 
 #include <iostream>
 #include <algorithm>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string.hpp>
 #include "CodeGen.h"
 #include "scope/Variable.h"
+#include "sourcemap/MappingCollector.h"
 
 using namespace std;
 
@@ -59,17 +58,8 @@ namespace jetpack {
 
     CodeGen::CodeGen(
             const CodeGenConfig& config,
-            Sp<MappingCollector> mc):
-            config_(config), mapping_collector_(std::move(mc)) {}
-
-    void CodeGen::AddSnippet(const std::string &content) {
-        std::vector<std::string> lines;
-        boost::split(lines, content, boost::is_any_of("\n"), boost::token_compress_on);
-        for (const auto& line : lines) {
-            Write(line);
-            WriteLineEnd();
-        }
-    }
+            MappingCollector* mc):
+            config_(config), mapping_collector_(mc) {}
 
     void CodeGen::Write(const std::string& str) {
         output += str;

@@ -27,6 +27,8 @@
 
 namespace jetpack {
 
+    class ModuleCompositor;
+
     class ModuleResolveException : std::exception {
     public:
         std::string file_path;
@@ -149,6 +151,9 @@ namespace jetpack {
                            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
                            const std::string& outPath);
 
+        void CodeGenGlobalImport(ModuleCompositor& mc);
+
+        void CodeGenFinalExport(ModuleCompositor& mc);
 
         void CodeGenModule(const Sp<ModuleFile>& mod, CodeGen& codegen, SourceMapGenerator& sourcemap);
 

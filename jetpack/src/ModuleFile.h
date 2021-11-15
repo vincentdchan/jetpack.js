@@ -75,8 +75,6 @@ namespace jetpack {
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
 
-        Sp<MappingCollector> mapping_collector_;
-
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);
 
