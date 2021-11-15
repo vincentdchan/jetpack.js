@@ -462,19 +462,20 @@ namespace jetpack {
         visited_marks.resize(modules_table_.ModCount(), 0);
         TraverseRenameAllImports(entry_module, visited_marks.data());
 
-        DumpAllResult(config, final_export_vars, out_path);
+        DumpAllResult(config, make_slice(final_export_vars), out_path);
     }
 
     // final stage
     void ModuleResolver::DumpAllResult(
             const CodeGenConfig& config,
-            const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
+            Slice<const ExportVariable> final_export_vars,
             const std::string& out_path) {
 
         benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
         auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
 
-        ModuleCompositor module_compositor(config);
+        CodeGenFragment final_fragment;
+        ModuleCompositor module_compositor(final_fragment, config);
 
         // codegen all result begin
 //        sourcemap_generator->AddCollector(mapping_collector);
@@ -485,42 +486,41 @@ namespace jetpack {
             module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
-        std::vector<std::future<Sp<CodeGenFragment>>> fragments;
+        std::vector<std::future<void>> fragments;
         fragments.reserve(modules_table_.id_to_module.size());
 
         for (const auto& item : modules_table_.id_to_module) {
             auto module = item.second;
-            auto fragment = thread_pool_->enqueue([&config, module] {
-                auto fragment = std::make_shared<CodeGenFragment>();
-                MappingCollector mapping_collector(*fragment);
-                CodeGen codegen(config, &mapping_collector);
+            auto fut = thread_pool_->enqueue([&config, module] {
+                CodeGen codegen(config, module->codegen_fragment);
                 codegen.Traverse(*module->ast);
-                return fragment;
             });
-            fragments.push_back(std::move(fragment));
+            fragments.push_back(std::move(fut));
         }
 
         for (auto& f : fragments) {
-            module_compositor.Append(*f.get());
+            f.wait();
         }
+
+        ConcatModules(entry_module, module_compositor);
 
 //        CodeGenModule(entry_module, codegen, *sourcemap_generator);
         // codegen all result end
-        CodeGenFinalExport(module_compositor);
+        CodeGenFinalExport(module_compositor, final_export_vars);
 
-        std::string final_result;
-        module_compositor.Take(final_result);
         codegen_marker.Submit();
 
         std::future<bool> src_fut;
         if (config.sourcemap) {
-            auto mapping_items = module_compositor.MappingItems();
-            sourcemap_generator->Finalize(mapping_items, *thread_pool_);
+            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items), *thread_pool_);
             src_fut = DumpSourceMap(out_path, sourcemap_generator);
         }
 
         benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(out_path, final_result.c_str(), final_result.size());
+        io::IOError err = io::WriteBufferToPath(
+                out_path,
+                final_fragment.content.c_str(),
+                final_fragment.content.size());
         J_ASSERT(err == io::IOError::Ok);
         write_marker.Submit();
 
@@ -532,25 +532,30 @@ namespace jetpack {
     }
 
     void ModuleResolver::CodeGenGlobalImport(ModuleCompositor& mc) {
-//        global_import_handler_.GenCode(codegen);
-
+        CodeGenFragment fragment;
+        CodeGen codegen(mc.Config(), fragment);
+        global_import_handler_.GenCode(codegen);
+        mc.Append(fragment);
     }
 
-    void ModuleResolver::CodeGenFinalExport(ModuleCompositor& mc) {
-//        if (!final_export_vars.empty()) {
-//            auto final_export = GenFinalExportDecl(final_export_vars);
-//            codegen.Traverse(*final_export);
-//        }
+    void ModuleResolver::CodeGenFinalExport(ModuleCompositor& mc, Slice<const ExportVariable> final_export_vars) {
+        if (!final_export_vars.empty()) {
+            auto final_export = GenFinalExportDecl(final_export_vars);
+            CodeGenFragment fragment;
+            CodeGen codegen(mc.Config(), fragment);
+            codegen.Traverse(*final_export);
+            mc.Append(fragment);
+        }
     }
 
-    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &root, CodeGen &codegen, SourceMapGenerator& sourcemap) {
-        std::stack<Sp<ModuleFile>> stack;
-        std::stack<Sp<ModuleFile>> spare_stack;
+    void ModuleResolver::ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc) {
+        std::stack<ModuleFile*> stack;
+        std::stack<ModuleFile*> spare_stack;
 
         std::vector<uint8_t> visited_marks;
         visited_marks.resize(modules_table_.ModCount(), 0);
 
-        stack.push(root);
+        stack.push(root.get());
 
         while (!stack.empty()) {
             auto top = stack.top();
@@ -569,12 +574,12 @@ namespace jetpack {
                 if (!child) {
                     continue;
                 }
-                stack.push(child);
+                stack.push(child.get());
             }
         }
 
         while (!spare_stack.empty()) {
-            const auto& mod = spare_stack.top();
+            auto mod = spare_stack.top();
 
             if (mod->IsCommonJS()) {
                 WrapModuleWithCommonJsTemplate(
@@ -583,7 +588,7 @@ namespace jetpack {
                         mod->cjs_call_name,
                         "__commonJS");
             }
-            codegen.Traverse(*mod->ast);
+            mc.Append(mod->codegen_fragment);
 
             spare_stack.pop();
         }
@@ -1150,7 +1155,7 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>& export_names) {
+    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(Slice<const ExportVariable> export_names) {
         auto result = std::make_shared<ExportNamedDeclaration>();
 
         for (auto& tuple : export_names) {

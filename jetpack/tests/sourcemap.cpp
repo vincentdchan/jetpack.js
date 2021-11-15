@@ -24,19 +24,21 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
 
     SourceMapGenerator sourcemap_generator(resolver, "memory0");
 
-    auto fragment = std::make_shared<CodeGenFragment>();
-    MappingCollector mapping_collector(*fragment);
-
-    auto mod = resolver->GetEntryModule();
     CodeGenConfig codegen_config;
-    CodeGen codegen(codegen_config, &mapping_collector);
-    codegen.Traverse(*mod->ast);
+    codegen_config.sourcemap = true;
+    CodeGenFragment final_fragment;
+    ModuleCompositor module_compositor(final_fragment, codegen_config);
 
-    ModuleCompositor module_compositor(codegen_config);
-    module_compositor.Append(*fragment);
+    {
+        CodeGenFragment fragment;
+        auto mod = resolver->GetEntryModule();
+        CodeGen codegen(codegen_config, fragment);
+        codegen.Traverse(*mod->ast);
+        module_compositor.Append(fragment);
+    }
 
     ThreadPool pool(1);
-    sourcemap_generator.Finalize(module_compositor.MappingItems(), pool);
+    sourcemap_generator.Finalize(make_slice(final_fragment.mapping_items), pool);
 
     if (print) {
         std::cout << "gen: " << std::endl << sourcemap_generator.ToPrettyString() << std::endl;

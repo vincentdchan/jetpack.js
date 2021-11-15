@@ -58,36 +58,35 @@ namespace jetpack {
 
     CodeGen::CodeGen(
             const CodeGenConfig& config,
-            MappingCollector* mc):
-            config_(config), mapping_collector_(mc) {}
+            CodeGenFragment& d):
+            config_(config), d_(d), mapping_collector_(d) {}
 
     void CodeGen::Write(const std::string& str) {
-        output += str;
-        state_.column += UTF16LenOfUtf8(str);
+        d_.content += str;
+        d_.column += UTF16LenOfUtf8(str);
     }
 
     void CodeGen::Write(const std::string& str, SyntaxNode& node) {
-        const char* begin = output.c_str();
-        if (likely(mapping_collector_)) {
-            mapping_collector_->AddMapping(str, node.location, state_.column);
+        if (config_.sourcemap) {
+            mapping_collector_.AddMapping(str, node.location, d_.column);
         }
         Write(str);
     }
 
     void CodeGen::WriteLineEnd() {
-        if (likely(mapping_collector_)) {
-            mapping_collector_->EndLine();
+        if (config_.sourcemap) {
+            mapping_collector_.EndLine();
         }
         if (!config_.minify) {
-            output += config_.line_end;
-            state_.line++;
-            state_.column = 0;
+            d_.content += config_.line_end;
+            d_.line++;
+            d_.column = 0;
         }
     }
 
     void CodeGen::WriteIndent() {
         if (config_.minify) return;
-        for (std::uint32_t i = 0; i < state_.indent_level; i++) {
+        for (std::uint32_t i = 0; i < indent_level_; i++) {
             Write(config_.indent);
         }
     }
@@ -293,7 +292,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(BlockStatement& node) {
         Write("{");
-        state_.indent_level++;
+        indent_level_++;
 
         if (!node.body.empty()) {
             if (!config_.minify) {
@@ -309,7 +308,7 @@ namespace jetpack {
             }
         }
 
-        state_.indent_level--;
+        indent_level_--;
         WriteIndentWith("}");
     }
 
@@ -379,7 +378,7 @@ namespace jetpack {
         TraverseNode(*node.discrimiant);
         Write(config_.minify ? "){" : ") {");
         WriteLineEnd();
-        state_.indent_level++;
+        indent_level_++;
 
         for (auto& case_ : node.cases) {
 
@@ -402,7 +401,7 @@ namespace jetpack {
 
         }
 
-        state_.indent_level--;
+        indent_level_--;
         WriteIndentWith("}");
     }
 
@@ -586,7 +585,7 @@ namespace jetpack {
 
     void CodeGen::Traverse(ClassBody& node) {
         Write("{");
-        state_.indent_level++;
+        indent_level_++;
 
         if (!node.body.empty()) {
             WriteLineEnd();
@@ -598,7 +597,7 @@ namespace jetpack {
             }
         }
 
-        state_.indent_level--;
+        indent_level_--;
         WriteIndentWith("}");
     }
 
@@ -820,7 +819,7 @@ namespace jetpack {
     }
 
     void CodeGen::Traverse(ObjectExpression& node) {
-        state_.indent_level++;
+        indent_level_++;
         Write("{");
         if (!node.properties.empty()) {
             WriteLineEnd();
@@ -838,7 +837,7 @@ namespace jetpack {
             }
             WriteLineEnd();
         }
-        state_.indent_level--;
+        indent_level_--;
         WriteIndentWith("}");
     }
 

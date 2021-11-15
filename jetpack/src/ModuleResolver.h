@@ -50,6 +50,8 @@ namespace jetpack {
 
     };
 
+    using ExportVariable = std::tuple<Sp<ModuleFile>, std::string>;
+
     /**
      * Parsing source file in different threads.
      * The error messages would be collected.
@@ -148,14 +150,16 @@ namespace jetpack {
                                     const std::string& path);
 
         void DumpAllResult(const CodeGenConfig& config,
-                           const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
+                           Slice<const ExportVariable> final_export_vars,
                            const std::string& outPath);
 
         void CodeGenGlobalImport(ModuleCompositor& mc);
 
-        void CodeGenFinalExport(ModuleCompositor& mc);
+        void CodeGenFinalExport(
+                ModuleCompositor& mc,
+                Slice<const ExportVariable> final_export_vars);
 
-        void CodeGenModule(const Sp<ModuleFile>& mod, CodeGen& codegen, SourceMapGenerator& sourcemap);
+        void ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
 
@@ -181,7 +185,7 @@ namespace jetpack {
         std::optional<Sp<LocalExportInfo>>
         FindLocalExportByPath(const std::string& path, const std::string& export_name, std::set<int32_t>& visited);
 
-        Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>&);
+        Sp<ExportNamedDeclaration> GenFinalExportDecl(Slice<const ExportVariable> export_names);
 
         // return nullable
         std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);

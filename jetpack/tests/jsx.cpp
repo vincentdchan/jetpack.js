@@ -7,6 +7,7 @@
 #include <parser/ParserContext.h>
 #include <iostream>
 
+#include "CodeGenFragment.h"
 #include "ModuleResolver.h"
 #include "codegen/CodeGen.h"
 
@@ -22,10 +23,11 @@ inline std::string ParseJSXAndCodeGen(std::string_view content) {
 
     auto mod = parser.ParseModule();
 
+    CodeGenFragment fragment;
     CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod);
-    return codegen.GetResult().content;
+    return fragment.content;
 }
 
 TEST(JSX, TranspileSimple1) {

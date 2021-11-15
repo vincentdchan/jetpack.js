@@ -8,6 +8,7 @@
 #include "parser/ParserContext.h"
 #include "parser/NodesMaker.h"
 #include "codegen/CodeGen.h"
+#include "CodeGenFragment.h"
 #include "SimpleAPI.h"
 #include "utils/Path.h"
 
@@ -25,11 +26,12 @@ inline std::string ParseAndCodeGen(std::string_view content) {
 
     auto mod = parser.ParseModule();
 
+    CodeGenFragment fragment;
     CodeGenConfig code_gen_config;
     code_gen_config.minify = false;
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod);
-    return codegen.GetResult().content;
+    return fragment.content;
 }
 
 TEST(CommonJS, HookParser) {
@@ -95,10 +97,11 @@ TEST(CommonJS, CodeGen) {
     };
     module_scope->BatchRenameSymbols(renames);
 
+    CodeGenFragment fragment;
     CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod);
-    const auto& output = codegen.GetResult().content;
+    const auto& output = fragment.content;
     EXPECT_EQ(output, "let require_foo = __commonJS(a => {\n"
                       "  a.name = function() {\n"
                       "    console.log('name');\n"

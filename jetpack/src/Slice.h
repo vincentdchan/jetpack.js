@@ -21,6 +21,8 @@ namespace jetpack {
         constexpr const T* data() const { return data_; }
         constexpr size_t size() const { return size_; }
 
+        constexpr bool empty() const { return size_ == 0; }
+
     private:
         T* data_;
         size_t size_;
@@ -29,6 +31,11 @@ namespace jetpack {
 
     inline Slice<const char> make_slice(const std::string& str) {
         return Slice(str.c_str(), str.size());
+    }
+
+    template <typename T>
+    inline Slice<const T> make_slice(const std::vector<T>& d) {
+        return Slice(d.data(), d.size());
     }
 
 #define STR(CONTENT) Slice<const char>(CONTENT, strlen(CONTENT))

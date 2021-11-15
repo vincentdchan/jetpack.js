@@ -44,10 +44,11 @@ inline std::string ReplaceDefault(std::string_view src) {
     resolver->ReplaceExports(mod);
 
     CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGenFragment fragment;
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod->ast);
 
-    return codegen.GetResult().content;
+    return fragment.content;
 }
 
 TEST(ModuleResolver, HandleExportDefault) {
@@ -146,10 +147,11 @@ TEST(ModuleResolver, SingleMemoryFile) {
     resolver->RenameAllRootLevelVariable();
 
     auto entry_mod = resolver->GetEntryModule();
-    CodeGen codegen(codegen_config);
+    CodeGenFragment fragment;
+    CodeGen codegen(codegen_config, fragment);
     codegen.Traverse(*entry_mod->ast);
 
-    std::cout << codegen.GetResult().content << std::endl;
+    std::cout << fragment.content << std::endl;
 }
 
 //TEST(ModuleResolver, HandleExportDefaultLiteral4) {

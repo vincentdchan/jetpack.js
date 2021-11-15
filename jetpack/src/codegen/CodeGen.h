@@ -11,33 +11,19 @@
 #include <deque>
 #include "NodeTraverser.h"
 #include "AutoNodeTraverser.h"
+#include "CodeGenFragment.h"
 #include "utils/string/UString.h"
 #include "utils/Common.h"
+#include "sourcemap/MappingCollector.h"
 #include "codegen/CodeGenConfig.h"
 
 namespace jetpack {
-
-    struct CodeGenResult {
-    public:
-        int32_t lines_count;
-        int32_t last_line_column;
-        std::string content;
-
-    };
-
-    class MappingCollector;
 
     /**
      * Reference: https://github.com/davidbonnet/astring/blob/master/src/astring.js
      */
     class CodeGen: public NodeTraverser {
     private:
-        struct State {
-            int32_t  line = 1;
-            int32_t  column = 0;
-            uint32_t indent_level = 0;
-        };
-
         class HasCallExpressionTraverser: public AutoNodeTraverser {
         public:
             bool has_call = false;
@@ -52,21 +38,12 @@ namespace jetpack {
     public:
         explicit CodeGen(
                  const CodeGenConfig& config,
-                 MappingCollector* sourceMapGenerator = nullptr);
-
-        [[nodiscard]]
-        inline CodeGenResult GetResult() const {
-            return {
-                    state_.line,
-                    state_.column,
-                    output,
-            };
-        }
+                 CodeGenFragment& d);
 
     private:
         inline void Write(char ch) {
-            output += ch;
-            state_.column += 1;
+            d_.content += ch;
+            d_.column += 1;
         }
 
         void Write(const std::string& str);
@@ -151,11 +128,11 @@ namespace jetpack {
         void Traverse(UpdateExpression& node) override;
         void Traverse(ObjectPattern& node) override;
 
-        [[nodiscard]]
-        inline MappingCollector* SourcemapCollector() {
-            return mapping_collector_;
-        }
-
+//        [[nodiscard]]
+//        inline MappingCollector* SourcemapCollector() {
+//            return &mapping_collector_;
+//        }
+//
     private:
 
         inline void WriteCommentBefore(SyntaxNode& node) {
@@ -171,12 +148,10 @@ namespace jetpack {
 
         CodeGenConfig config_;
 
-        State state_;
-
         // nullable
-        MappingCollector* mapping_collector_;
-
-        std::string output;
+        MappingCollector mapping_collector_;
+        CodeGenFragment& d_;
+        uint32_t indent_level_ = 0;
 
     };
 

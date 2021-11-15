@@ -18,15 +18,15 @@ namespace jetpack {
     }
 
     void ModuleCompositor::Write(const std::string& content) {
-        result_ += content;
-        column_ += UTF16LenOfUtf8(content);
+        d_.content += content;
+        d_.column += UTF16LenOfUtf8(content);
     }
 
     void ModuleCompositor::WriteLineEnd() {
         if (!config_.minify) {
-            result_ += config_.line_end;
-            line_++;
-            column_ = 0;
+            d_.content += config_.line_end;
+            d_.line++;
+            d_.column = 0;
         }
     }
 
@@ -34,19 +34,19 @@ namespace jetpack {
         for (const auto& item : fragment.mapping_items) {
             auto item_copy = item;
             if (item_copy.dist_line == 1) {  // first line
-                item_copy.dist_column += column_;
+                item_copy.dist_column += d_.column;
             }
-            item_copy.dist_line += line_;
-            mapping_items_.push_back(item_copy);
+            item_copy.dist_line += d_.line;
+            d_.mapping_items.push_back(item_copy);
         }
 
-        line_ += fragment.line - 1;
-        result_ += fragment.content;
+        d_.line += fragment.line - 1;
+        d_.content += fragment.content;
 
         if (fragment.line > 1) {
-            column_ = fragment.column;
+            d_.column = fragment.column;
         } else {
-            column_ += fragment.column;
+            d_.column += fragment.column;
         }
 
         return *this;

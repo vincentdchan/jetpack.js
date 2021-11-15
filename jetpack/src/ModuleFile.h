@@ -11,6 +11,7 @@
 #include "utils/string/UString.h"
 #include "utils/MemoryViewOwner.h"
 #include "codegen/CodeGen.h"
+#include "CodeGenFragment.h"
 #include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"
 #include "ResolveResult.h"
@@ -69,6 +70,8 @@ namespace jetpack {
         HashMap<std::string, std::string> resolved_map;
 
         Sp<MemoryViewOwner> src_content;
+
+        CodeGenFragment codegen_fragment;
 
         /**
          * For Postorder traversal
