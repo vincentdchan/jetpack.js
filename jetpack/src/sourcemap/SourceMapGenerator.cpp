@@ -152,12 +152,8 @@ namespace jetpack {
     void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items, ThreadPool& thread_pool) {
         FinalizeMapping(mapping_items);
 
-        benchmark::BenchMarker b(benchmark::BENCH_FINALIZE_SOURCEMAP);
-
         FinalizeSources();
         FinalizeSourcesContent(thread_pool);
-
-        b.Submit();
 
         ss << R"(  "mappings": ")" << EscapeJSONString(mappings) << "\"" << std::endl;
         ss << "}";

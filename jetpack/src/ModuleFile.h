@@ -58,8 +58,6 @@ namespace jetpack {
         // interface to provide content by contents;
         Sp<ModuleProvider> provider;
 
-        Weak<ModuleResolver> module_resolver;
-
         AstContext ast_context;
 
         Module* ast;

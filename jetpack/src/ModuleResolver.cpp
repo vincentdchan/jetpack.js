@@ -110,7 +110,6 @@ namespace jetpack {
         }
 
         entry_module->provider = rootProvider;
-        entry_module->module_resolver = weak_from_this();
 
         ParseFile(config, entry_module);
     }
@@ -211,7 +210,6 @@ namespace jetpack {
             return childMod;
         }
         childMod->provider = matchResult.first;
-        childMod->module_resolver = shared_from_this();
         if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
             childMod->SetIsCommonJS(true);
             auto name = name_generator->Next("jp_require");
@@ -501,19 +499,21 @@ namespace jetpack {
         for (auto& f : fragments) {
             f.wait();
         }
+        codegen_marker.Submit();
 
+        benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
         ConcatModules(entry_module, module_compositor);
 
-//        CodeGenModule(entry_module, codegen, *sourcemap_generator);
-        // codegen all result end
-        CodeGenFinalExport(module_compositor, final_export_vars);
 
-        codegen_marker.Submit();
+        CodeGenFinalExport(module_compositor, final_export_vars);
+        concat_marker.Submit();
 
         std::future<bool> src_fut;
         if (config.sourcemap) {
+            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
             sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items), *thread_pool_);
             src_fut = DumpSourceMap(out_path, sourcemap_generator);
+            sourcemap_marker.Submit();
         }
 
         benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);

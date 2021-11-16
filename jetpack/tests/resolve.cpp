@@ -33,7 +33,6 @@ TEST(MinifyNameGenerator, Next) {
 inline std::string ReplaceDefault(std::string_view src) {
     auto resolver = std::make_shared<ModuleResolver>();
     auto mod = std::make_shared<ModuleFile>("memory0", -1);
-    mod->module_resolver = resolver;
 
     Config config = Config::Default();
     AstContext ctx;
