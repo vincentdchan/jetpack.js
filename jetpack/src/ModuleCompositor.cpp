@@ -36,7 +36,7 @@ namespace jetpack {
             if (item_copy.dist_line == 1) {  // first line
                 item_copy.dist_column += d_.column;
             }
-            item_copy.dist_line += d_.line;
+            item_copy.dist_line += d_.line - 1;
             d_.mapping_items.push_back(item_copy);
         }
 
