@@ -11,6 +11,7 @@
 #include "utils/string/UString.h"
 #include "utils/MemoryViewOwner.h"
 #include "codegen/CodeGen.h"
+#include "CodeGenFragment.h"
 #include "sourcemap/MappingCollector.h"
 #include "UniqueNameGenerator.h"
 #include "ResolveResult.h"
@@ -57,8 +58,6 @@ namespace jetpack {
         // interface to provide content by contents;
         Sp<ModuleProvider> provider;
 
-        Weak<ModuleResolver> module_resolver;
-
         AstContext ast_context;
 
         Module* ast;
@@ -70,17 +69,12 @@ namespace jetpack {
 
         Sp<MemoryViewOwner> src_content;
 
-        /**
-         * For Postorder traversal
-         */
-        bool visited_mark = false;
+        CodeGenFragment codegen_fragment;
 
         /**
          * For Postorder traversal
          */
         std::vector<std::weak_ptr<ModuleFile>> ref_mods;
-
-        Sp<MappingCollector> mapping_collector_;
 
         void RenameInnerScopes(RenamerCollection& col);
         Sp<MinifyNameGenerator> RenameInnerScopes(Scope& scope, UnresolvedNameCollector* idLogger);

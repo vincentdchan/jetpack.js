@@ -21,9 +21,10 @@ inline std::string CF_ParseAndCodeGen(std::string_view content) {
     auto mod = parser.ParseModule();
 
     CodeGenConfig code_gen_config;
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGenFragment fragment;
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod);
-    return codegen.GetResult().content;
+    return fragment.content;
 }
 
 TEST(ConstantFolding, AddString1) {

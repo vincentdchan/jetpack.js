@@ -173,12 +173,12 @@ char* jetpack_parse_and_codegen_will_throw(const char* content, int flags) {
         mod->scope->BatchRenameSymbols(rename_vec);
     }
 
-    CodeGen codegen(code_gen_config, nullptr);
+    CodeGenFragment fragment;
+    CodeGen codegen(code_gen_config, fragment);
     codegen.Traverse(*mod);
-    auto result = codegen.GetResult();
-    char* str_result = reinterpret_cast<char*>(::malloc(result.content.size() + 1));
-    ::memcpy(str_result, result.content.c_str(), result.content.size());
-    str_result[result.content.size()] = 0;
+    char* str_result = reinterpret_cast<char*>(::malloc(fragment.content.size() + 1));
+    ::memcpy(str_result, fragment.content.c_str(), fragment.content.size());
+    str_result[fragment.content.size()] = 0;
     return str_result;
 }
 

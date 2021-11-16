@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <algorithm>
+#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <memory>
 #include <stack>
@@ -17,6 +18,7 @@
 #include "parser/ParserCommon.h"
 #include "parser/NodesMaker.h"
 #include "ModuleResolver.h"
+#include "ModuleCompositor.h"
 #include "Benchmark.h"
 
 static const char* COMMON_JS_CODE =
@@ -108,7 +110,6 @@ namespace jetpack {
         }
 
         entry_module->provider = rootProvider;
-        entry_module->module_resolver = weak_from_this();
 
         ParseFile(config, entry_module);
     }
@@ -209,7 +210,6 @@ namespace jetpack {
             return childMod;
         }
         childMod->provider = matchResult.first;
-        childMod->module_resolver = shared_from_this();
         if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
             childMod->SetIsCommonJS(true);
             auto name = name_generator->Next("jp_require");
@@ -277,8 +277,10 @@ namespace jetpack {
 
     std::vector<std::tuple<Sp<ModuleFile>, std::string>> ModuleResolver::GetAllExportVars() {
         std::vector<std::tuple<Sp<ModuleFile>, std::string>> result;
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
 
-        TraverseModulePushExportVars(result, entry_module, nullptr);
+        TraverseModulePushExportVars(result, entry_module, visited_marks.data(), nullptr);
 
         return result;
     }
@@ -335,12 +337,15 @@ namespace jetpack {
      */
     void ModuleResolver::TraverseModulePushExportVars(std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                                                       const Sp<jetpack::ModuleFile>& mod,
+                                                      uint8_t* visited_marks,
                                                       HashSet<std::string>* white_list) {
 
-        if (mod->visited_mark) {
+        int32_t id = mod->id();
+        assert(id >= 0);
+        if (visited_marks[id] != 0) {
             return;
         }
-        mod->visited_mark = true;
+        visited_marks[id] = 1;
 
         // 1. handle all local exports
         for (auto& tuple : mod->GetExportManager().local_exports_name) {
@@ -376,13 +381,13 @@ namespace jetpack {
                 return;
             }
             if (info.is_export_all) {
-                TraverseModulePushExportVars(arr, iter->second, nullptr);
+                TraverseModulePushExportVars(arr, iter->second, visited_marks, nullptr);
             } else {
                 HashSet<std::string> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }
-                TraverseModulePushExportVars(arr, iter->second, &new_white_list);
+                TraverseModulePushExportVars(arr, iter->second, visited_marks, &new_white_list);
             }
         }
     }
@@ -442,82 +447,126 @@ namespace jetpack {
 
         // distribute root level var name
         if (config.minify) {
-            benchmark::BenchMarker benchMinify(benchmark::BENCH_MINIFY);
+            benchmark::BenchMarker bench_minify(benchmark::BENCH_MINIFY);
             RenameAllInnerScopes();
-            benchMinify.Submit();
+            bench_minify.Submit();
         }
 
         global_import_handler_.GenAst(name_generator);  // global import
 
         RenameAllRootLevelVariable();
 
-        ClearAllVisitedMark();
-        TraverseRenameAllImports(entry_module);
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
+        TraverseRenameAllImports(entry_module, visited_marks.data());
 
-        DumpAllResult(config, final_export_vars, out_path);
+        DumpAllResult(config, make_slice(final_export_vars), out_path);
     }
 
     // final stage
-    void ModuleResolver::DumpAllResult(const CodeGenConfig& config, const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars, const std::string& outPath) {
-        auto mappingCollector = std::make_shared<MappingCollector>();
+    void ModuleResolver::DumpAllResult(
+            const CodeGenConfig& config,
+            Slice<const ExportVariable> final_export_vars,
+            const std::string& out_path) {
 
-        benchmark::BenchMarker codegenMarker(benchmark::BENCH_CODEGEN);
-        auto sourcemapGenerator = std::make_shared<SourceMapGenerator>(shared_from_this(), outPath);
+        benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
+        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
+
+        CodeGenFragment final_fragment;
+        ModuleCompositor module_compositor(final_fragment, config);
 
         // codegen all result begin
-        CodeGen codegen(config, mappingCollector);
-        sourcemapGenerator->AddCollector(mappingCollector);
+//        sourcemap_generator->AddCollector(mapping_collector);
 
-        global_import_handler_.GenCode(codegen);
+        CodeGenGlobalImport(module_compositor);
 
         if (has_common_js_.load()) {
-            codegen.AddSnippet(COMMON_JS_CODE);
+            module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
-        CodeGenModule(entry_module, codegen, *sourcemapGenerator);
-        // codegen all result end
+        std::vector<std::future<void>> fragments;
+        fragments.reserve(modules_table_.id_to_module.size());
 
-        if (!final_export_vars.empty()) {
-            auto final_export = GenFinalExportDecl(final_export_vars);
-            codegen.Traverse(*final_export);
+        for (const auto& item : modules_table_.id_to_module) {
+            auto module = item.second;
+            auto fut = thread_pool_->enqueue([&config, module] {
+                CodeGen codegen(config, module->codegen_fragment);
+                codegen.Traverse(*module->ast);
+            });
+            fragments.push_back(std::move(fut));
         }
 
-        const std::string finalResult = codegen.GetResult().content;
-        codegenMarker.Submit();
+        for (auto& f : fragments) {
+            f.wait();
+        }
+        codegen_marker.Submit();
 
-        std::future<bool> srcFut;
+        benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
+        ConcatModules(entry_module, module_compositor);
+
+
+        CodeGenFinalExport(module_compositor, final_export_vars);
+        concat_marker.Submit();
+
+        std::future<bool> src_fut;
         if (config.sourcemap) {
-            sourcemapGenerator->Finalize(*thread_pool_);
-            srcFut = DumpSourceMap(outPath, sourcemapGenerator);
+            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
+            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items), *thread_pool_);
+            src_fut = DumpSourceMap(out_path, sourcemap_generator);
+            sourcemap_marker.Submit();
         }
 
-        benchmark::BenchMarker writeMarker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(outPath, finalResult.c_str(), finalResult.size());
+        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
+        io::IOError err = io::WriteBufferToPath(
+                out_path,
+                final_fragment.content.c_str(),
+                final_fragment.content.size());
         J_ASSERT(err == io::IOError::Ok);
-        writeMarker.Submit();
+        write_marker.Submit();
 
         if (config.sourcemap) {
-            if (unlikely(!srcFut.get())) {   // wait to finished
-                std::cerr << "dump source map failed: " << outPath << std::endl;
+            if (unlikely(!src_fut.get())) {   // wait to finished
+                std::cerr << "dump source map failed: " << out_path << std::endl;
             }
         }
     }
 
-    void ModuleResolver::CodeGenModule(const Sp<ModuleFile> &root, CodeGen &codegen, SourceMapGenerator& sourcemap) {
-        ClearAllVisitedMark();
-        std::stack<Sp<ModuleFile>> stack;
-        std::stack<Sp<ModuleFile>> spare_stack;
+    void ModuleResolver::CodeGenGlobalImport(ModuleCompositor& mc) {
+        CodeGenFragment fragment;
+        CodeGen codegen(mc.Config(), fragment);
+        global_import_handler_.GenCode(codegen);
+        mc.Append(fragment);
+    }
 
-        stack.push(root);
+    void ModuleResolver::CodeGenFinalExport(ModuleCompositor& mc, Slice<const ExportVariable> final_export_vars) {
+        if (!final_export_vars.empty()) {
+            auto final_export = GenFinalExportDecl(final_export_vars);
+            CodeGenFragment fragment;
+            CodeGen codegen(mc.Config(), fragment);
+            codegen.Traverse(*final_export);
+            mc.Append(fragment);
+        }
+    }
+
+    void ModuleResolver::ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc) {
+        std::stack<ModuleFile*> stack;
+        std::stack<ModuleFile*> spare_stack;
+
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
+
+        stack.push(root.get());
 
         while (!stack.empty()) {
             auto top = stack.top();
             stack.pop();
-            if (top->visited_mark) {
+            int32_t id = top->id();
+
+            if (visited_marks[id] != 0) {
                 continue;
             }
 
-            top->visited_mark = true;
+            visited_marks[id] = 1;
             spare_stack.push(top);
 
             for (auto& ref : top->ref_mods) {
@@ -525,12 +574,12 @@ namespace jetpack {
                 if (!child) {
                     continue;
                 }
-                stack.push(child);
+                stack.push(child.get());
             }
         }
 
         while (!spare_stack.empty()) {
-            const auto& mod = spare_stack.top();
+            auto mod = spare_stack.top();
 
             if (mod->IsCommonJS()) {
                 WrapModuleWithCommonJsTemplate(
@@ -539,7 +588,7 @@ namespace jetpack {
                         mod->cjs_call_name,
                         "__commonJS");
             }
-            codegen.Traverse(*mod->ast);
+            mc.Append(mod->codegen_fragment);
 
             spare_stack.pop();
         }
@@ -554,7 +603,6 @@ namespace jetpack {
     }
 
     void ModuleResolver::RenameAllInnerScopes() {
-        ClearAllVisitedMark();
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
@@ -582,22 +630,25 @@ namespace jetpack {
     }
 
     void ModuleResolver::RenameAllRootLevelVariable() {
-        ClearAllVisitedMark();
+        std::vector<uint8_t> visited_marks;
+        visited_marks.resize(modules_table_.ModCount(), 0);
 
         std::int32_t counter = 0;
-        RenameAllRootLevelVariableTraverser(entry_module, counter);
+        RenameAllRootLevelVariableTraverser(entry_module, visited_marks.data(), counter);
     }
 
     void ModuleResolver::RenameAllRootLevelVariableTraverser(const std::shared_ptr<ModuleFile> &mf,
+                                                             uint8_t* visited_marks,
                                                              std::int32_t& counter) {
-        if (mf->visited_mark) {
+        int32_t id = mf->id();
+        if (visited_marks[id] != 0) {
             return;
         }
-        mf->visited_mark = true;
+        visited_marks[id] = 1;
 
         for (auto& weak_child : mf->ref_mods) {
             auto child = weak_child.lock();
-            RenameAllRootLevelVariableTraverser(child, counter);
+            RenameAllRootLevelVariableTraverser(child, visited_marks, counter);
         }
 
         // do your own work
@@ -813,18 +864,19 @@ namespace jetpack {
             }
         }
 
-        mf->ast->body = std::move(new_body);
+        mf->ast->body = new_body;
     }
 
-    void ModuleResolver::TraverseRenameAllImports(const Sp<jetpack::ModuleFile> &mf) {
-        if (mf->visited_mark) {
+    void ModuleResolver::TraverseRenameAllImports(const Sp<jetpack::ModuleFile> &mf, uint8_t* visited_marks) {
+        int32_t id = mf->id();
+        if (visited_marks[id] != 0) {
             return;
         }
-        mf->visited_mark = true;
+        visited_marks[id] = 1;
 
         for (auto& weak_ptr : mf->ref_mods) {
             auto ptr = weak_ptr.lock();
-            TraverseRenameAllImports(ptr);
+            TraverseRenameAllImports(ptr, visited_marks);
         }
 
         ReplaceImports(mf);
@@ -1103,12 +1155,8 @@ namespace jetpack {
         return std::nullopt;
     }
 
-    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>& export_names) {
+    Sp<ExportNamedDeclaration> ModuleResolver::GenFinalExportDecl(Slice<const ExportVariable> export_names) {
         auto result = std::make_shared<ExportNamedDeclaration>();
-
-        for (auto& tuple : modules_table_.path_to_module) {
-            tuple.second->visited_mark = false;
-        }
 
         for (auto& tuple : export_names) {
             const std::string& export_name = std::get<1>(tuple);

@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <vector>
 #include "utils/Alloc.h"
+#include "Slice.h"
 
 namespace jetpack {
     class SyntaxNode;
@@ -23,6 +24,13 @@ namespace jetpack {
             return result;
         }
 
+        inline Slice<char> AllocStr(size_t size) {
+            size_t alloc_size = size + 1;
+            char* str = reinterpret_cast<char*>(alloc_.Alloc(alloc_size));
+            str[size] = 0;
+            return Slice(str, size);
+        }
+
         ~AstContext() noexcept;
 
     private:
@@ -30,6 +38,5 @@ namespace jetpack {
         std::vector<SyntaxNode*> nodes_;
 
     };
-
 
 }

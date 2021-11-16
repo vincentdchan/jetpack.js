@@ -27,6 +27,8 @@
 
 namespace jetpack {
 
+    class ModuleCompositor;
+
     class ModuleResolveException : std::exception {
     public:
         std::string file_path;
@@ -47,6 +49,8 @@ namespace jetpack {
         void PrintToStdErr() override;
 
     };
+
+    using ExportVariable = std::tuple<Sp<ModuleFile>, std::string>;
 
     /**
      * Parsing source file in different threads.
@@ -97,12 +101,6 @@ namespace jetpack {
 
         void RenameAllInnerScopes();
 
-        inline void ClearAllVisitedMark() {
-            for (auto& tuple : modules_table_.path_to_module) {
-                tuple.second->visited_mark = false;
-            }
-        }
-
         inline void SetNameGenerator(std::shared_ptr<UniqueNameGenerator> generator) {
             name_generator = std::move(generator);
         }
@@ -139,9 +137,11 @@ namespace jetpack {
         void TraverseModulePushExportVars(
                 std::vector<std::tuple<Sp<ModuleFile>, std::string>>& arr,
                 const Sp<ModuleFile>&,
+                uint8_t* visited_marks,
                 HashSet<std::string>* white_list);
 
         void RenameAllRootLevelVariableTraverser(const Sp<ModuleFile>& mf,
+                                                 uint8_t* visited_marks,
                                                  std::int32_t& counter);
 
         Sp<ModuleFile> HandleNewLocationAdded(const parser::Config& config,
@@ -150,11 +150,16 @@ namespace jetpack {
                                     const std::string& path);
 
         void DumpAllResult(const CodeGenConfig& config,
-                           const Vec<std::tuple<Sp<ModuleFile>, std::string>>& final_export_vars,
+                           Slice<const ExportVariable> final_export_vars,
                            const std::string& outPath);
 
+        void CodeGenGlobalImport(ModuleCompositor& mc);
 
-        void CodeGenModule(const Sp<ModuleFile>& mod, CodeGen& codegen, SourceMapGenerator& sourcemap);
+        void CodeGenFinalExport(
+                ModuleCompositor& mc,
+                Slice<const ExportVariable> final_export_vars);
+
+        void ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc);
 
         std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
 
@@ -165,7 +170,7 @@ namespace jetpack {
         void EnqueueOne(std::function<void()> unit);
         void FinishOne();
 
-        void TraverseRenameAllImports(const Sp<ModuleFile>& mf);
+        void TraverseRenameAllImports(const Sp<ModuleFile>& mf, uint8_t* visited_marks);
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
 
@@ -180,7 +185,7 @@ namespace jetpack {
         std::optional<Sp<LocalExportInfo>>
         FindLocalExportByPath(const std::string& path, const std::string& export_name, std::set<int32_t>& visited);
 
-        Sp<ExportNamedDeclaration> GenFinalExportDecl(const std::vector<std::tuple<Sp<ModuleFile>, std::string>>&);
+        Sp<ExportNamedDeclaration> GenFinalExportDecl(Slice<const ExportVariable> export_names);
 
         // return nullable
         std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);

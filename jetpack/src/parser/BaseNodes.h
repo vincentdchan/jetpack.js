@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <vector>
 #include "NodeTypes.h"
+#include "Slice.h"
 #include "utils/Common.h"
 #include "macros.h"
 #include "tokenizer/Token.h"
@@ -15,24 +16,6 @@
 typedef double JS_Number;
 
 namespace jetpack {
-
-    template <typename T>
-    class Slice {
-    public:
-        constexpr Slice(T* data, size_t len): data_(data), size_(len) {}
-
-        constexpr T* begin() { return data_; }
-        constexpr T* end() { return data_ + size_; }
-
-        constexpr T* data() { return data_; }
-        constexpr const T* data() const { return data_; }
-        constexpr size_t size() const { return size_; }
-
-    private:
-        T* data_;
-        size_t size_;
-
-    };
 
     enum class TSAccessibility {
         Private,

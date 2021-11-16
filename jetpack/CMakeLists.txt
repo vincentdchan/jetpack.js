@@ -62,6 +62,10 @@ set(SOURCE_FILES
         src/ModulesTable.cpp
         src/ModuleResolver.h
         src/ModuleResolver.cpp
+        src/ModuleCompositor.h
+        src/ModuleCompositor.cpp
+        src/CodeGenFragment.h
+        src/CodeGenFragment.cpp
         src/UniqueNameGenerator.h
         src/UniqueNameGenerator.cpp
         src/GlobalImportHandler.h
