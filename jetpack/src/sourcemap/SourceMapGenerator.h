@@ -40,7 +40,7 @@ namespace jetpack {
         /**
          * Unify all collectors together
          */
-        void Finalize(Slice<const MappingItem> mapping_items, ThreadPool& thread_pool);
+        void Finalize(Slice<const MappingItem> mapping_items);
 
         std::string ToPrettyString();
 
@@ -67,7 +67,7 @@ namespace jetpack {
 
         void FinalizeSources();
 
-        void FinalizeSourcesContent(ThreadPool& thread_pool);
+        void FinalizeSourcesContent();
 
         bool AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col);
 

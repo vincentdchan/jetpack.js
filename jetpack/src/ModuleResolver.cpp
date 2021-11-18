@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <algorithm>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <memory>
 #include <stack>
@@ -186,6 +185,10 @@ namespace jetpack {
         mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
 
         id_logger_->InsertByList(unresolved_ids);
+
+        if (escape_file_) {
+            mf->escaped_content = EscapeJSONString(mf->src_content->View());
+        }
     }
 
     Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::Config &config,
@@ -504,16 +507,17 @@ namespace jetpack {
         benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
         ConcatModules(entry_module, module_compositor);
 
-
         CodeGenFinalExport(module_compositor, final_export_vars);
         concat_marker.Submit();
 
-        std::future<bool> src_fut;
+        std::future<void> src_fut;
         if (config.sourcemap) {
-            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
-            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items), *thread_pool_);
-            src_fut = DumpSourceMap(out_path, sourcemap_generator);
-            sourcemap_marker.Submit();
+            std::string map_path = out_path + ".map";
+            src_fut = module_compositor.DumpSourcemap(sourcemap_generator, map_path);
+//            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
+//            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items));
+//            src_fut = DumpSourceMap(out_path, sourcemap_generator);
+//            sourcemap_marker.Submit();
         }
 
         benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
@@ -525,9 +529,7 @@ namespace jetpack {
         write_marker.Submit();
 
         if (config.sourcemap) {
-            if (unlikely(!src_fut.get())) {   // wait to finished
-                std::cerr << "dump source map failed: " << out_path << std::endl;
-            }
+            src_fut.get();
         }
     }
 

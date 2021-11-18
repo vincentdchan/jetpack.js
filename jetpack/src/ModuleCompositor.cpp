@@ -2,9 +2,10 @@
 // Created by Duzhong Chen on 2021/3/30.
 //
 
-#include "ModuleCompositor.h"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
+#include "ModuleCompositor.h"
+#include "Benchmark.h"
 
 namespace jetpack {
 
@@ -31,14 +32,18 @@ namespace jetpack {
     }
 
     ModuleCompositor& ModuleCompositor::Append(const CodeGenFragment& fragment) {
-        for (const auto& item : fragment.mapping_items) {
-            auto item_copy = item;
-            if (item_copy.dist_line == 1) {  // first line
-                item_copy.dist_column += d_.column;
+        const auto copy_column = d_.column;
+        const auto copy_line = d_.line;
+        thread_pool_.enqueue([this, fragment, copy_column, copy_line] {
+            for (const auto& item : fragment.mapping_items) {
+                auto item_copy = item;
+                if (item_copy.dist_line == 1) {  // first line
+                    item_copy.dist_column += copy_column;
+                }
+                item_copy.dist_line += copy_line - 1;
+                d_.mapping_items.push_back(item_copy);
             }
-            item_copy.dist_line += d_.line - 1;
-            d_.mapping_items.push_back(item_copy);
-        }
+        });
 
         d_.line += fragment.line - 1;
         d_.content += fragment.content;
@@ -50,6 +55,15 @@ namespace jetpack {
         }
 
         return *this;
+    }
+
+    std::future<void> ModuleCompositor::DumpSourcemap(Sp<SourceMapGenerator> sg, std::string path) {
+        return thread_pool_.enqueue([this, sg, path] {
+            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
+            sg->Finalize(make_slice(d_.mapping_items));
+            sourcemap_marker.Submit();
+            sg->DumpFile(path);
+        });
     }
 
 }

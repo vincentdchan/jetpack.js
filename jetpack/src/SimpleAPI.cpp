@@ -105,6 +105,7 @@ int jetpack_bundle_module(const char *path, const char *out_path, int flags, con
 
         codegen_config.sourcemap = !!(flags & JETPACK_SOURCEMAP);
 
+        resolver->SetEscapeFile(!!(flags & JETPACK_SOURCEMAP));
         resolver->SetTraceFile(!!(flags & JETPACK_TRACE_FILE));
         resolver->BeginFromEntry(parser_config, path, base_path);
         resolver->CodeGenAllModules(codegen_config, out_path);

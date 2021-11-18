@@ -166,6 +166,10 @@ namespace jetpack {
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
 
+        inline void SetEscapeFile(bool v) {
+            escape_file_ = v;
+        }
+
     private:
         void EnqueueOne(std::function<void()> unit);
         void FinishOne();
@@ -215,6 +219,7 @@ namespace jetpack {
         std::condition_variable main_cv_;
 
         bool trace_file = true;
+        bool escape_file_ = false;
 
     };
 

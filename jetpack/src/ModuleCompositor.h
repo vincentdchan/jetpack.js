@@ -20,7 +20,7 @@ namespace jetpack {
     class ModuleCompositor {
     public:
         explicit ModuleCompositor(CodeGenFragment& d, const CodeGenConfig& config):
-        d_(d), config_(config) {}
+        thread_pool_(1), d_(d), config_(config) {}
 
         ModuleCompositor& Append(const CodeGenFragment& fragment);
 
@@ -30,11 +30,14 @@ namespace jetpack {
 
         void WriteLineEnd();
 
+        std::future<void> DumpSourcemap(Sp<SourceMapGenerator> sg, std::string path);
+
         inline const CodeGenConfig& Config() const {
             return config_;
         }
 
     private:
+        ThreadPool thread_pool_;
         CodeGenFragment& d_;
         const CodeGenConfig& config_;
 

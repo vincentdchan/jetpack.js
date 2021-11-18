@@ -149,11 +149,11 @@ namespace jetpack {
         return index;
     }
 
-    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items, ThreadPool& thread_pool) {
+    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
         FinalizeMapping(mapping_items);
 
         FinalizeSources();
-        FinalizeSourcesContent(thread_pool);
+        FinalizeSourcesContent();
 
         ss << R"(  "mappings": ")" << EscapeJSONString(mappings) << "\"" << std::endl;
         ss << "}";
@@ -177,14 +177,7 @@ namespace jetpack {
         ss << "  ]," << std::endl;
     }
 
-    void SourceMapGenerator::FinalizeSourcesContent(ThreadPool& thread_pool) {
-        std::vector<std::future<std::string>> escaped_contents;
-        for (auto& module : sources_) {
-            escaped_contents.push_back(thread_pool.enqueue([module]() -> std::string {
-                return EscapeJSONString(module->src_content->View());
-            }));
-        }
-
+    void SourceMapGenerator::FinalizeSourcesContent() {
         if (sources_.empty()) {
             ss << R"(  "sourcesContent": [],)" << std::endl;
             return;
@@ -192,8 +185,8 @@ namespace jetpack {
         ss << R"(  "sourcesContent": [)" << std::endl;
 
         uint32_t counter = 0;
-        for (auto& content_fut : escaped_contents) {
-            ss << "    \"" << content_fut.get() << "\"";
+        for (auto& module : sources_) {
+            ss << "    \"" << module->escaped_content << "\"";
             if (counter++ < sources_.size() - 1) {
                 ss << ",";
             }
