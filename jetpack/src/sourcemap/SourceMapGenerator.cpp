@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <fmt/format.h>
 #include "utils/JetJSON.h"
 #include "utils/io/FileIO.h"
 #include "Benchmark.h"
@@ -116,11 +117,11 @@ namespace jetpack {
             const std::shared_ptr<ModuleResolver>& resolver,
             const std::string& filename
     ): module_resolver_(resolver) {
-        ss << "{" << std::endl;
-        ss << R"(  "version": 3,)" << std::endl;
-        ss << R"(  "file": ")" << EscapeJSONString(filename) << "\"," << std::endl;
-        ss << R"(  "sourceRoot": "",)" << std::endl;
-        ss << R"(  "names": [],)" << std::endl;
+        content_ += "{\n";
+        content_ += R"(  "version": 3,\n)";
+        content_ += fmt::format(R"(  "file": "{}",\n)", EscapeJSONString(filename));
+        content_ += R"(  "sourceRoot": "",\n)";
+        content_ += R"(  "names": [],\n)";
     }
 
     void SourceMapGenerator::AddSource(const Sp<ModuleFile>& moduleFile) {
@@ -155,45 +156,45 @@ namespace jetpack {
         FinalizeSources();
         FinalizeSourcesContent();
 
-        ss << R"(  "mappings": ")" << EscapeJSONString(mappings) << "\"" << std::endl;
-        ss << "}";
+        content_ += fmt::format(R"(  "mappings": "{}"\n)", EscapeJSONString(mappings));
+        content_ += "}";
     }
 
     void SourceMapGenerator::FinalizeSources() {
         if (sources_.empty()) {
-            ss << R"(  "sources": [],)" << std::endl;
+            content_ += R"(  "sources": [],\n)";
             return;
         }
 
-        ss << R"(  "sources": [)" << std::endl;
+        content_ += R"(  "sources": [\n)";
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << EscapeJSONString(module->Path()) << "\"";
+            content_ += fmt::format("    \"{}\"", EscapeJSONString(module->Path()));
             if (counter++ < sources_.size() - 1) {
-                ss << ",";
+                content_ += ",";
             }
-            ss << std::endl;
+            content_ += "\n";
         }
-        ss << "  ]," << std::endl;
+        content_ += "  ],\n";
     }
 
     void SourceMapGenerator::FinalizeSourcesContent() {
         if (sources_.empty()) {
-            ss << R"(  "sourcesContent": [],)" << std::endl;
+            content_ += R"(  "sourcesContent": [],\n)";
             return;
         }
-        ss << R"(  "sourcesContent": [)" << std::endl;
+        content_ += R"(  "sourcesContent": [\n)";
 
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            ss << "    \"" << module->escaped_content << "\"";
+            content_ += fmt::format("    \"{}\"", module->escaped_content);
             if (counter++ < sources_.size() - 1) {
-                ss << ",";
+                content_ += ",";
             }
-            ss << std::endl;
+            content_ += "\n";
         }
 
-        ss << "  ]," << std::endl;
+        content_ += "  ],\n";
     }
 
     void SourceMapGenerator::FinalizeMapping(Slice<const MappingItem> items) {
@@ -243,17 +244,17 @@ namespace jetpack {
         return true;
     }
 
-    std::string SourceMapGenerator::ToPrettyString() {
-        return ss.str();
+    std::string_view SourceMapGenerator::ToPrettyString() {
+        return content_;
     }
 
     bool SourceMapGenerator::DumpFile(const std::string &path, bool pretty) {
-        benchmark::BenchMarker sm(benchmark::BENCH_DUMP_SOURCEMAP);
-        std::string finalStr = ToPrettyString();
-        sm.Submit();
+//        benchmark::BenchMarker sm(benchmark::BENCH_DUMP_SOURCEMAP);
+//        std::string finalStr = ToPrettyString();
+//        sm.Submit();
 
         benchmark::BenchMarker writeMark(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(path, finalStr.c_str(), finalStr.size());
+        io::IOError err = io::WriteBufferToPath(path, content_.c_str(), content_.size());
         writeMark.Submit();
         return err == io::IOError::Ok;
     }

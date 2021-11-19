@@ -42,7 +42,7 @@ namespace jetpack {
          */
         void Finalize(Slice<const MappingItem> mapping_items);
 
-        std::string ToPrettyString();
+        std::string_view ToPrettyString();
 
         bool DumpFile(const std::string& path, bool pretty = false);
 
@@ -51,7 +51,7 @@ namespace jetpack {
         }
 
     private:
-        std::stringstream ss;
+        std::string content_;
         std::string mappings;
         int32_t src_counter_ = 0;
         int32_t line_counter_ = 1;
