@@ -188,6 +188,7 @@ namespace jetpack {
 
         if (escape_file_) {
             mf->escaped_content = EscapeJSONString(mf->src_content->View());
+            mf->escaped_path = EscapeJSONString(mf->Path());
         }
     }
 

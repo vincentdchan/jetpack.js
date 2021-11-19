@@ -174,7 +174,7 @@ namespace jetpack {
         uint32_t counter = 0;
         for (auto& module : sources_) {
             writer_.Write("    \"");
-            writer_.WriteS(EscapeJSONString(module->Path()));
+            writer_.WriteS(module->escaped_path);
             writer_.Write("\"");
             if (counter++ < sources_.size() - 1) {
                 writer_.Write(",");
