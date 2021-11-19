@@ -22,7 +22,6 @@ set(SOURCE_FILES
         src/utils/JetJSON.h
         src/utils/JetJSON.cpp
         src/utils/JetNumeric.h
-        src/utils/Path.h
         src/utils/Common.h
         src/utils/Common.cpp
         src/utils/JetFlags.h
