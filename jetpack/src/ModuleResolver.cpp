@@ -13,6 +13,7 @@
 
 #include "utils/JetJSON.h"
 #include "utils/Path.h"
+#include "utils/Dir.h"
 #include "utils/io/FileIO.h"
 #include "parser/ParserCommon.h"
 #include "parser/NodesMaker.h"
@@ -474,6 +475,9 @@ namespace jetpack {
             const CodeGenConfig& config,
             Slice<const ExportVariable> final_export_vars,
             const std::string& out_path) {
+        if (!Dir::EnsureParent(out_path)) {
+            return;
+        }
 
         std::string sourcemap_path = out_path + ".map";
         io::FileWriter map_writer(sourcemap_path);

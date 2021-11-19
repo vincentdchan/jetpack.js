@@ -29,6 +29,8 @@ set(SOURCE_FILES
         src/utils/MemoryViewOwner.h
         src/utils/Alloc.h
         src/utils/Alloc.cpp
+        src/utils/Dir.h
+        src/utils/Dir.cpp
         src/tokenizer/Token.h
         src/tokenizer/Token.cpp
         src/tokenizer/Location.h
@@ -107,6 +109,7 @@ include_directories(PUBLIC
         "../third_party/boost/"
         "../third_party/js-parser/src"
         "../third_party/cxxopts/include"
+        "../third_party/filesystem"
         "../third_party/robin-hood-hashing/src/include")
 link_libraries(fmt)
 
