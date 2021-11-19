@@ -159,15 +159,16 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::FinalizeSources() {
-        if (module_resolver_->modules_table_.id_to_module.empty()) {
+        if (module_resolver_->modules_table_.Empty()) {
             writer_.Write("  \"sources\": [],\n");
             return;
         }
 
         writer_.Write("  \"sources\": [\n");
         uint32_t counter = 0;
-        const auto total_size = module_resolver_->modules_table_.id_to_module.size();
-        for (const auto& module : module_resolver_->modules_table_.id_to_module) {
+        const auto total_size = module_resolver_->modules_table_.ModCount();
+        auto modules = module_resolver_->modules_table_.Modules();
+        for (const auto& module : modules) {
             writer_.Write("    \"");
             writer_.WriteS(module->escaped_path);
             writer_.Write("\"");
@@ -180,15 +181,16 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::FinalizeSourcesContent() {
-        if (module_resolver_->modules_table_.id_to_module.empty()) {
+        auto modules = module_resolver_->modules_table_.Modules();
+        if (modules.empty()) {
             writer_.Write("  \"sourcesContent\": [],\n");
             return;
         }
         writer_.Write("  \"sourcesContent\": [\n");
 
         uint32_t counter = 0;
-        const auto total_size = module_resolver_->modules_table_.id_to_module.size();
-        for (const auto& module : module_resolver_->modules_table_.id_to_module) {
+        const auto total_size = module_resolver_->modules_table_.ModCount();
+        for (const auto& module : modules) {
             writer_.Write("    \"");
             writer_.WriteS(module->escaped_content);
             writer_.Write("\"");
