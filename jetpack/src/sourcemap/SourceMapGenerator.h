@@ -23,8 +23,14 @@ namespace jetpack {
      */
     class SourceMapGenerator {
     public:
-        static void GenerateVLQStr(std::string& ss, int transformed_column, int file_index, int before_line, int before_column, int var_index);
-        static void IntToVLQ(std::string& ss, int code);
+        enum class LastWriteType {
+            None,
+            Item,
+            LineBreak,
+        };
+
+        static void GenerateVLQStr(io::Writer& writer, int transformed_column, int file_index, int before_line, int before_column, int var_index);
+        static void IntToVLQ(io::Writer& writer, int code);
         static int VLQToInt(const char* str, const char*& next);
 
         SourceMapGenerator() = delete;
@@ -33,25 +39,18 @@ namespace jetpack {
                            io::Writer& writer,
                            const std::string& filename);
 
-        void AddSource(const Sp<ModuleFile>& src);
-
-        inline void EndLine() {
-            mappings_.push_back(';');
-        }
+        void EndLine();
 
         /**
          * Unify all collectors together
          */
         void Finalize(Slice<const MappingItem> mapping_items);
 
-        inline void AddCollector(const Sp<MappingCollector>& collector) {
-            collectors_.push_back(collector);
-        }
-
     private:
+        LastWriteType last_write_ = LastWriteType::None;
         io::Writer& writer_;
-        std::string mappings_;
-        int32_t src_counter_ = 0;
+//        std::string mappings_;
+//        int32_t src_counter_ = 0;
         int32_t line_counter_ = 1;
 
         int32_t l_after_col_ = 0;
@@ -69,14 +68,9 @@ namespace jetpack {
 
         bool AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col);
 
-        int32_t GetFilenameIndexByModuleId(int32_t module_id);
-
-        HashMap<int32_t, int32_t>   module_id_to_index_;
-        std::vector<Sp<ModuleFile>> sources_;
+//        int32_t GetFilenameIndexByModuleId(int32_t module_id);
 
         std::shared_ptr<ModuleResolver> module_resolver_;
-
-        Vec<Sp<MappingCollector>> collectors_;
 
     };
 

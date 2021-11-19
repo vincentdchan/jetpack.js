@@ -123,6 +123,8 @@ namespace jetpack::io {
 
         IOError Write(const char* bytes, size_t len);
 
+        IOError WriteByte(unsigned char ch);
+
         ~FileWriterInternal();
 
     private:
@@ -143,7 +145,7 @@ namespace jetpack::io {
     };
 
     // 8k buffer
-    constexpr uint64_t FILE_SIZE_INCR = 8 * 1024;
+    constexpr uint64_t FILE_SIZE_INCR = 512 * 1024;
 
     IOError FileWriterInternal::Open() {
 #ifdef _WIN32
@@ -200,11 +202,20 @@ namespace jetpack::io {
     }
 
     IOError FileWriterInternal::Resize(uint64_t size) {
+        ::munmap(mapped_mem_, current_size_);
+
         if (::ftruncate(fd, size) != 0) {
             std::cerr << fmt::format("resize file {} failed: {}", path_, strerror(errno)) << std::endl;
             return IOError::ResizeFailed;
         }
-        current_size_ = FILE_SIZE_INCR;
+        current_size_ = size;
+
+        mapped_mem_ = reinterpret_cast<unsigned char*>(::mmap(nullptr, current_size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+        if (mapped_mem_ == MAP_FAILED) {
+            std::cerr << fmt::format("map file {} failed: {}", path_, strerror(errno)) << std::endl;
+            return IOError::ReadFailed;
+        }
+
         return IOError::Ok;
     }
 
@@ -228,6 +239,15 @@ namespace jetpack::io {
         }
         memcpy(mapped_mem_ + offset_, bytes, len);
         offset_ += len;
+        return IOError::Ok;
+    }
+
+    IOError FileWriterInternal::WriteByte(unsigned char ch) {
+        IOError err = EnsureSize(offset_ + 1);
+        if (err != IOError::Ok) {
+            return err;
+        }
+        mapped_mem_[offset_++] = ch;
         return IOError::Ok;
     }
 
@@ -268,6 +288,10 @@ namespace jetpack::io {
 
     IOError FileWriter::Write(const char *bytes, size_t len) {
         return d_->Write(bytes, len);
+    }
+
+    IOError FileWriter::WriteByte(unsigned char ch) {
+        return d_->WriteByte(ch);
     }
 
     IOError ReadFileToStdString(const std::string& filename, std::string& result) {

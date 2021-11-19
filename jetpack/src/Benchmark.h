@@ -19,6 +19,7 @@ namespace jetpack::benchmark {
         BENCH_MODULE_COMPOSITION,
         BENCH_FINALIZE_SOURCEMAP,
         BENCH_FINALIZE_SOURCEMAP_2,
+        BENCH_CODEGEN_STAGE,
         BENCH_END,
     };
 

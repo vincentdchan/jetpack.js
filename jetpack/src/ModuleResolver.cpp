@@ -447,6 +447,7 @@ namespace jetpack {
      * 4. generate final export declaration
      */
     void ModuleResolver::CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path) {
+        benchmark::BenchMarker codegen_mark(benchmark::BENCH_CODEGEN_STAGE);
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
@@ -465,6 +466,7 @@ namespace jetpack {
         TraverseRenameAllImports(entry_module, visited_marks.data());
 
         DumpAllResult(config, make_slice(final_export_vars), out_path);
+        codegen_mark.Submit();
     }
 
     // final stage
@@ -506,8 +508,7 @@ namespace jetpack {
         std::vector<std::future<void>> fragments;
         fragments.reserve(modules_table_.id_to_module.size());
 
-        for (const auto& item : modules_table_.id_to_module) {
-            auto module = item.second;
+        for (auto module : modules_table_.id_to_module) {
             auto fut = thread_pool_->enqueue([&config, module] {
                 CodeGen codegen(config, module->codegen_fragment);
                 codegen.Traverse(*module->ast);
@@ -519,6 +520,8 @@ namespace jetpack {
             f.wait();
         }
         codegen_marker.Submit();
+
+        thread_pool_ = nullptr;
 
         benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
         ConcatModules(entry_module, module_compositor);

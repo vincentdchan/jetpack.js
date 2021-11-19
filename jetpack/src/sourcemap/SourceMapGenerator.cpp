@@ -33,7 +33,7 @@ namespace jetpack {
         return Base64EncodingTable[code];
     }
 
-    void SourceMapGenerator::IntToVLQ(std::string& ss, int code) {
+    void SourceMapGenerator::IntToVLQ(io::Writer& writer, int code) {
         int buffer[IntToVLQBufferSize];
 
         int s1 = code < 0 ? (-code << 1) | 1 : code << 1;
@@ -51,11 +51,11 @@ namespace jetpack {
                     buffer[i] |= 0b100000;
                 }
                 char ch = IntToBase64(buffer[i]);
-                ss.push_back(ch);
+                writer.WriteByte(ch);
             }
         } else {
             char ch = IntToBase64(s1);
-            ss.push_back(ch);
+            writer.WriteByte(ch);
         }
     }
 
@@ -97,14 +97,14 @@ namespace jetpack {
         return (result >> 1) * factor;
     }
 
-    void SourceMapGenerator::GenerateVLQStr(std::string& ss, int transformed_column,
+    void SourceMapGenerator::GenerateVLQStr(io::Writer& writer, int transformed_column,
                                             int file_index, int before_line, int before_column, int var_index) {
-        IntToVLQ(ss, transformed_column);
-        IntToVLQ(ss, file_index);
-        IntToVLQ(ss, before_line);
-        IntToVLQ(ss, before_column);
+        IntToVLQ(writer, transformed_column);
+        IntToVLQ(writer, file_index);
+        IntToVLQ(writer, before_line);
+        IntToVLQ(writer, before_column);
         if (var_index >= 0) {
-            IntToVLQ(ss, var_index);
+            IntToVLQ(writer, var_index);
         }
     }
 
@@ -121,62 +121,56 @@ namespace jetpack {
         writer_.WriteS(fmt::format("  \"file\": \"{}\",\n", EscapeJSONString(filename)));
         writer_.Write("  \"sourceRoot\": \"\",\n");
         writer_.Write("  \"names\": [],\n");
-        mappings_.reserve(8 * 1024);
+//        mappings_.reserve(8 * 1024);
     }
 
-    void SourceMapGenerator::AddSource(const Sp<ModuleFile>& moduleFile) {
-        sources_.push_back(moduleFile);
-//        result["sources"].push_back(moduleFile.Path());
-//        result["sourcesContent"].push_back(moduleFile.src_content.toStdString());
-    }
-
-    int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t module_id) {
-        auto iter = module_id_to_index_.find(module_id);
-        if (iter != module_id_to_index_.end()) {
-            // found;
-            return iter->second;
-        }
-        auto mod = module_resolver_->findModuleById(module_id);
-        if (unlikely(mod == nullptr)) {
-            // error;
-            std::cerr << fmt::format("sourcemap: get module by id failed: {}", module_id) << std::endl;
-            return -1;
-        }
-
-        AddSource(mod);
-
-        int32_t index = src_counter_++;
-        module_id_to_index_[mod->id()] = index;
-        return index;
-    }
+//    int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t module_id) {
+//        auto iter = module_id_to_index_.find(module_id);
+//        if (iter != module_id_to_index_.end()) {
+//            // found;
+//            return iter->second;
+//        }
+//        auto mod = module_resolver_->findModuleById(module_id);
+//        if (unlikely(mod == nullptr)) {
+//            // error;
+//            std::cerr << fmt::format("sourcemap: get module by id failed: {}", module_id) << std::endl;
+//            return -1;
+//        }
+//
+//        AddSource(mod);
+//
+//        int32_t index = src_counter_++;
+//        module_id_to_index_[mod->id()] = index;
+//        return index;
+//    }
 
     void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
-        benchmark::BenchMarker mapping_barker(benchmark::BENCH_FINALIZE_SOURCEMAP_2);
-        FinalizeMapping(mapping_items);
-        mapping_barker.Submit();
 
         FinalizeSources();
         FinalizeSourcesContent();
 
         writer_.Write("  \"mappings\": \"");
-        writer_.WriteS(mappings_);
+        benchmark::BenchMarker mapping_barker(benchmark::BENCH_FINALIZE_SOURCEMAP_2);
+        FinalizeMapping(mapping_items);
+        mapping_barker.Submit();
         writer_.Write("\"\n");
         writer_.Write("}");
     }
 
     void SourceMapGenerator::FinalizeSources() {
-        if (sources_.empty()) {
+        if (module_resolver_->modules_table_.id_to_module.empty()) {
             writer_.Write("  \"sources\": [],\n");
             return;
         }
 
         writer_.Write("  \"sources\": [\n");
         uint32_t counter = 0;
-        for (auto& module : sources_) {
+        const auto total_size = module_resolver_->modules_table_.id_to_module.size();
+        for (const auto& module : module_resolver_->modules_table_.id_to_module) {
             writer_.Write("    \"");
             writer_.WriteS(module->escaped_path);
             writer_.Write("\"");
-            if (counter++ < sources_.size() - 1) {
+            if (counter++ < total_size - 1) {
                 writer_.Write(",");
             }
             writer_.Write("\n");
@@ -185,18 +179,19 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::FinalizeSourcesContent() {
-        if (sources_.empty()) {
+        if (module_resolver_->modules_table_.id_to_module.empty()) {
             writer_.Write("  \"sourcesContent\": [],\n");
             return;
         }
         writer_.Write("  \"sourcesContent\": [\n");
 
         uint32_t counter = 0;
-        for (auto& module : sources_) {
+        const auto total_size = module_resolver_->modules_table_.id_to_module.size();
+        for (const auto& module : module_resolver_->modules_table_.id_to_module) {
             writer_.Write("    \"");
             writer_.WriteS(module->escaped_content);
             writer_.Write("\"");
-            if (counter++ < sources_.size() - 1) {
+            if (counter++ < total_size - 1) {
                 writer_.Write(",");
             }
             writer_.Write("\n");
@@ -208,10 +203,16 @@ namespace jetpack {
     void SourceMapGenerator::FinalizeMapping(Slice<const MappingItem> items) {
         for (const auto& item : items) {
             AddEnoughLines(item.dist_line);
+            if (last_write_ == LastWriteType::Item) {
+                writer_.WriteByte(',');
+                last_write_ = LastWriteType::None;
+            }
             bool ec = AddLocation(item.name, item.dist_column,
                                   item.origin.fileId, item.origin.start.line, item.origin.start.column
                                   );
-            J_ASSERT(ec);
+            if (ec) {
+                last_write_ = LastWriteType::Item;
+            }
         }
     }
 
@@ -224,29 +225,31 @@ namespace jetpack {
         }
     }
 
+    void SourceMapGenerator::EndLine() {
+        writer_.WriteByte(';');
+        last_write_ = LastWriteType::LineBreak;
+    }
+
 #define SW(NEW, OLD) ((NEW) - (OLD))
 
     bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col) {
         if (unlikely(file_id < 0)) {
 //            J_ASSERT(fileId != -1);
-            return true;
-        }
-        if (mappings_.length() > 0 && mappings_[mappings_.length() - 1] != ';' && mappings_[mappings_.length() - 1] != ',') {
-            mappings_.push_back(',');
-        }
-//        int32_t var_index = GetIdOfName(name);
-        int32_t filename_index = GetFilenameIndexByModuleId(file_id);
-        if (unlikely(filename_index < 0)) {
             return false;
         }
-        GenerateVLQStr(mappings_,
+//        int32_t var_index = GetIdOfName(name);
+//        int32_t filename_index = GetFilenameIndexByModuleId(file_id);
+//        if (unlikely(filename_index < 0)) {
+//            return false;
+//        }
+        GenerateVLQStr(writer_,
                        SW(after_col, l_after_col_),
-                       SW(filename_index, l_file_index_),
+                       SW(file_id, l_file_index_),
                        SW(before_line, l_before_line_),
                        SW(before_col, l_before_col_),
                        -1);
         l_after_col_ = after_col;
-        l_file_index_ = filename_index;
+        l_file_index_ = file_id;
         l_before_line_ = before_line;
         l_before_col_ = before_col;
         return true;

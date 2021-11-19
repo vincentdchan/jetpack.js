@@ -35,6 +35,8 @@ namespace jetpack::io {
             return Write(str.c_str(), str.size());
         }
 
+        virtual IOError WriteByte(unsigned char) = 0;
+
         virtual IOError Write(const char* bytes, size_t len) = 0;
 
         virtual ~Writer() = default;
@@ -56,6 +58,8 @@ namespace jetpack::io {
         IOError Open();
 
         IOError Write(const char* bytes, size_t len) override;
+
+        IOError WriteByte(unsigned char ch) override;
 
         ~FileWriter() override = default;
 

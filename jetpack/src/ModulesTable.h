@@ -5,6 +5,7 @@
 #pragma once
 #include <mutex>
 #include <atomic>
+#include <vector>
 #include "utils/Common.h"
 #include "ModuleFile.h"
 
@@ -19,14 +20,14 @@ namespace jetpack {
          */
         HashMap<std::string, Sp<ModuleFile>> path_to_module;
 
-        HashMap<int32_t, Sp<ModuleFile>>     id_to_module;
+        std::vector<Sp<ModuleFile>> id_to_module;
 
         inline void Insert(const Sp<ModuleFile>& mf) {
             std::lock_guard guard(m);
             InsertWithoutLock(mf);
         }
 
-        Sp<ModuleFile> CreateNewIfNotExists(const std::string& path, bool& isNew);
+        Sp<ModuleFile> CreateNewIfNotExists(const std::string& path, bool& is_new);
 
         // nullable!
         Sp<ModuleFile> FindModuleById(int32_t id);
