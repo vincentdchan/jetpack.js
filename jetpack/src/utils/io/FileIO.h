@@ -68,6 +68,21 @@ namespace jetpack::io {
 
     };
 
+    class StringWriter : public Writer {
+    public:
+        StringWriter(std::string& s): d_(s) {}
+
+        IOError Write(const char* bytes, size_t len) override;
+
+        IOError WriteByte(unsigned char ch) override;
+
+        ~StringWriter() override = default;
+
+    private:
+        std::string& d_;
+
+    };
+
     const char* IOErrorToString(IOError);
     IOError ReadFileToStdString(const std::string& filename, std::string& result);
 

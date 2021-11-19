@@ -293,6 +293,16 @@ namespace jetpack::io {
         return d_->WriteByte(ch);
     }
 
+    IOError StringWriter::Write(const char* bytes, size_t len) {
+        d_.append(bytes, len);
+        return IOError::Ok;
+    }
+
+    IOError StringWriter::WriteByte(unsigned char ch) {
+        d_.push_back(ch);
+        return IOError::Ok;
+    }
+
     IOError ReadFileToStdString(const std::string& filename, std::string& result) {
         MappedFileReader reader;
         IOError error = reader.Open(filename);

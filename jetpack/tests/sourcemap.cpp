@@ -22,12 +22,16 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
     Config config = Config::Default();
     resolver->BeginFromEntryString(config, content);
 
-    SourceMapGenerator sourcemap_generator(resolver, "memory0");
+    std::string sourcemap;
+    io::StringWriter sourcemap_writer(sourcemap);
+    auto sourcemap_generator = std::make_shared<SourceMapGenerator>(resolver, sourcemap_writer, "memory0");
 
     CodeGenConfig codegen_config;
     codegen_config.sourcemap = true;
-    CodeGenFragment final_fragment;
-    ModuleCompositor module_compositor(final_fragment, codegen_config);
+    std::string bundle;
+    io::StringWriter bundle_writer(bundle);
+    ModuleCompositor module_compositor(bundle_writer, codegen_config);
+    module_compositor.DumpSources(sourcemap_generator);
 
     {
         CodeGenFragment fragment;
@@ -37,21 +41,23 @@ inline std::string ParseAndGenSourceMap(const std::string& content, bool print) 
         module_compositor.Append(fragment);
     }
 
-    ThreadPool pool(1);
-    sourcemap_generator.Finalize(make_slice(final_fragment.mapping_items), pool);
+    auto fut = module_compositor.DumpSourcemap(sourcemap_generator);
 
     if (print) {
-        std::cout << "gen: " << std::endl << sourcemap_generator.ToPrettyString() << std::endl;
+        std::cout << "gen: " << std::endl << sourcemap << std::endl;
     }
 
-    return sourcemap_generator.ToPrettyString();
+    fut.wait();
+
+    return sourcemap;
 }
 
 static std::string encoding_vlq(const std::vector<int>& array) {
     std::string str;
+    io::StringWriter writer(str);
 
     for (const auto& value : array) {
-        SourceMapGenerator::IntToVLQ(str, value);
+        SourceMapGenerator::IntToVLQ(writer, value);
     }
 
     return str;
@@ -70,7 +76,8 @@ static std::vector<int> decoding_vlq(const std::string& str) {
 
 TEST(SourceMap, VLQEncoding) {
     std::string str;
-    SourceMapGenerator::IntToVLQ(str, 16);
+    io::StringWriter writer(str);
+    SourceMapGenerator::IntToVLQ(writer, 16);
     EXPECT_STREQ(str.c_str(), "gB");
 
     EXPECT_EQ(encoding_vlq({ 0, 0, 0, 0 }), "AAAA");
@@ -87,7 +94,8 @@ TEST(SourceMap, Decode) {
     std::vector<int> testCases { 10, 1000, 1234, 100000 };
     for (auto i : testCases) {
         std::string vlq;
-        SourceMapGenerator::IntToVLQ(vlq, i);
+        io::StringWriter writer(vlq);
+        SourceMapGenerator::IntToVLQ(writer, i);
 
         EXPECT_TRUE(!vlq.empty());
         int back = SourceMapGenerator::VLQToInt(vlq.c_str(), next);
@@ -168,10 +176,10 @@ TEST(SourceMap, Complex) {
     }
 
     std::vector<SourceMapDecoder::ResultMapping> expect_mappings {
-            { 0, 3, 4, 2, 2 },
-            { 0, 3, 12, 2, 10 },
-            { 0, 3, 16, 2, 14 },
-            { 1, 3, 0, 4, 0},
+            { 1, 3, 4, 2, 2 },
+            { 1, 3, 12, 2, 10 },
+            { 1, 3, 16, 2, 14 },
+            { 0, 3, 0, 4, 0},
     };
 
     EXPECT_EQ(expect_mappings.size(), result.content.size());
