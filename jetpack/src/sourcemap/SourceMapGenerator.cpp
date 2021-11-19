@@ -144,11 +144,12 @@ namespace jetpack {
 //        return index;
 //    }
 
-    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
-
+    void SourceMapGenerator::WriteSources() {
         FinalizeSources();
         FinalizeSourcesContent();
+    }
 
+    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
         writer_.Write("  \"mappings\": \"");
         benchmark::BenchMarker mapping_barker(benchmark::BENCH_FINALIZE_SOURCEMAP_2);
         FinalizeMapping(mapping_items);

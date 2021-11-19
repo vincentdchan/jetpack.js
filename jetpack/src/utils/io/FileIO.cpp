@@ -252,8 +252,6 @@ namespace jetpack::io {
     }
 
     FileWriterInternal::~FileWriterInternal() {
-        Resize(offset_);    // trim the tail
-
 #ifdef _WIN32
         ::CloseHandle(hMapping);
             ::UnmapViewOfFile(hFile);
@@ -264,6 +262,7 @@ namespace jetpack::io {
             mapped_mem_ = nullptr;
         }
         if (likely(fd >= 0)) {
+            ::ftruncate(fd, offset_);
             ::close(fd);
             fd = -1;
         }

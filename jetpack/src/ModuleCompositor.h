@@ -31,7 +31,9 @@ namespace jetpack {
 
         void WriteLineEnd();
 
-        std::future<void> DumpSourcemap(Sp<SourceMapGenerator> sg, std::string path);
+        void DumpSources(Sp<SourceMapGenerator> sg);
+
+        std::future<void> DumpSourcemap(Sp<SourceMapGenerator> sg);
 
         inline const CodeGenConfig& Config() const {
             return config_;

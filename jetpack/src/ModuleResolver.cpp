@@ -495,6 +495,7 @@ namespace jetpack {
             return;
         }
         ModuleCompositor module_compositor(js_writer, config);
+        module_compositor.DumpSources(sourcemap_generator);
 
         // codegen all result begin
 //        sourcemap_generator->AddCollector(mapping_collector);
@@ -531,21 +532,8 @@ namespace jetpack {
 
         std::future<void> src_fut;
         if (config.sourcemap) {
-            std::string map_path = out_path + ".map";
-            src_fut = module_compositor.DumpSourcemap(sourcemap_generator, map_path);
-//            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
-//            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items));
-//            src_fut = DumpSourceMap(out_path, sourcemap_generator);
-//            sourcemap_marker.Submit();
+            src_fut = module_compositor.DumpSourcemap(sourcemap_generator);
         }
-
-//        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
-//        io::IOError err = io::WriteBufferToPath(
-//                out_path,
-//                final_fragment.content.c_str(),
-//                final_fragment.content.size());
-//        J_ASSERT(err == io::IOError::Ok);
-//        write_marker.Submit();
 
         if (config.sourcemap) {
             src_fut.get();

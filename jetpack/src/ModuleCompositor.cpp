@@ -31,6 +31,12 @@ namespace jetpack {
         }
     }
 
+    void ModuleCompositor::DumpSources(Sp<SourceMapGenerator> sg) {
+        thread_pool_.enqueue([sg] {
+            sg->WriteSources();
+        });
+    }
+
     ModuleCompositor& ModuleCompositor::Append(const CodeGenFragment& fragment) {
         const auto copy_column = column_;
         const auto copy_line = line_;
@@ -57,8 +63,8 @@ namespace jetpack {
         return *this;
     }
 
-    std::future<void> ModuleCompositor::DumpSourcemap(Sp<SourceMapGenerator> sg, std::string path) {
-        return thread_pool_.enqueue([this, sg, path] {
+    std::future<void> ModuleCompositor::DumpSourcemap(Sp<SourceMapGenerator> sg) {
+        return thread_pool_.enqueue([this, sg] {
             benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
             sg->Finalize(make_slice(mapping_items_));
             sourcemap_marker.Submit();

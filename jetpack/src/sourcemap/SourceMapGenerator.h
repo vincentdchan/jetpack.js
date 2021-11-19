@@ -39,7 +39,7 @@ namespace jetpack {
                            io::Writer& writer,
                            const std::string& filename);
 
-        void EndLine();
+        void WriteSources();
 
         /**
          * Unify all collectors together
@@ -47,6 +47,8 @@ namespace jetpack {
         void Finalize(Slice<const MappingItem> mapping_items);
 
     private:
+        void EndLine();
+
         LastWriteType last_write_ = LastWriteType::None;
         io::Writer& writer_;
 //        std::string mappings_;
