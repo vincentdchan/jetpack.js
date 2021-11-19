@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include "utils/string/UString.h"
 #include "utils/MemoryViewOwner.h"
 
@@ -17,30 +18,49 @@
 
 namespace jetpack::io {
     enum class IOError {
+        ResizeFailed= -4,
         WriteFailed = -3,
         ReadFailed = -2,
         OpenFailed = -1,
         Ok = 0,
     };
 
-    class MappedFileMemoryInternal;
-
-    struct MappedFileMemoryInternalDeleter {
+    class Writer {
     public:
-        void operator()(MappedFileMemoryInternal*);
+        inline IOError Write(std::string_view view) {
+            return Write(view.data(), view.size());
+        }
+
+        inline IOError WriteS(const std::string& str) {
+            return Write(str.c_str(), str.size());
+        }
+
+        virtual IOError Write(const char* bytes, size_t len) = 0;
+
+        virtual ~Writer() = default;
 
     };
 
-    class MappedFileMemory : public MemoryViewOwner {
+    class FileWriterInternal;
+
+    struct FileWriterInternalDeleter {
+
+        void operator()(FileWriterInternal* d);
+
+    };
+
+    class FileWriter : public Writer {
     public:
-        explicit MappedFileMemory();
+        FileWriter(const std::string& path);
 
-        IOError Open(const std::string& filename);
+        IOError Open();
 
-        std::string_view View() override;
+        IOError Write(const char* bytes, size_t len) override;
+
+        ~FileWriter() override = default;
 
     private:
-        std::unique_ptr<MappedFileMemoryInternal, MappedFileMemoryInternalDeleter> data_;
+        std::unique_ptr<FileWriterInternal, FileWriterInternalDeleter> d_;
 
     };
 

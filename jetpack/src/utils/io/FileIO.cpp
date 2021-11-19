@@ -2,8 +2,9 @@
 // Created by Duzhong Chen on 2021/3/28.
 //
 
-#include "FileIO.h"
 #include <iostream>
+#include <fmt/format.h>
+#include "FileIO.h"
 #if defined(_WIN32)
 #include <fstream>
 #else
@@ -51,7 +52,7 @@ namespace jetpack::io {
 #else
             fd = ::open(filename.c_str(), O_RDONLY);
             if (fd < 0) {
-                std::cerr << "open file failed: " << strerror(errno) << std::endl;
+                std::cerr << fmt::format("open file {} failed: {}", filename, strerror(errno)) << std::endl;
                 return IOError::OpenFailed;
             }
 
@@ -63,7 +64,7 @@ namespace jetpack::io {
 
             mapped_mem = (uintptr_t)::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
             if (reinterpret_cast<void*>(mapped_mem) == MAP_FAILED) {
-                std::cerr << "map file failed: " << strerror(errno) << std::endl;
+                std::cerr << fmt::format("map file {} failed: {}", filename, strerror(errno)) << std::endl;
                 return IOError::ReadFailed;
             }
 
@@ -108,28 +109,165 @@ namespace jetpack::io {
 
     };
 
-    class MappedFileMemoryInternal {
+    class FileWriterInternal {
     public:
+        FileWriterInternal(const std::string& path);
 
-        MappedFileReader reader;
+        inline IOError Error() const {
+            return error_;
+        }
+
+        IOError Open();
+
+        IOError Resize(uint64_t size);
+
+        IOError Write(const char* bytes, size_t len);
+
+        ~FileWriterInternal();
+
+    private:
+        IOError EnsureSize(uint64_t);
+
+        std::string path_;
+        uint64_t offset_ = 0;
+        uint64_t current_size_ = 0;
+        unsigned char* mapped_mem_ = nullptr;
+#ifdef _WIN32
+        HANDLE hMapping = INVALID_HANDLE_VALUE;
+        HANDLE hFile = INVALID_HANDLE_VALUE;
+#else
+        int      fd = -1;
+#endif
+        IOError error_ = IOError::Ok;
 
     };
 
-    MappedFileMemory::MappedFileMemory() {
-        auto intern = new MappedFileMemoryInternal();
-        data_ = std::unique_ptr<MappedFileMemoryInternal, MappedFileMemoryInternalDeleter>(intern);
+    // 8k buffer
+    constexpr uint64_t FILE_SIZE_INCR = 8 * 1024;
+
+    IOError FileWriterInternal::Open() {
+#ifdef _WIN32
+            hFile = ::CreateFileA(path_.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                std::cerr << "open file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::OpenFailed;
+            }
+
+            DWORD file_size;
+            ::GetFileSize(hFile, &file_size);
+            size = int64_t(file_size);
+
+            hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, size, NULL);
+            if (hMapping == NULL) {
+                ::CloseHandle(hFile);
+                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::ReadFailed;
+            }
+
+            void* p = MapViewOfFile(hMapping, FILE_MAP_WRITE, 0, 0, 0);
+            if (p == NULL) {
+                ::CloseHandle(hMapping);
+                ::CloseHandle(hFile);
+                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                return IOError::ReadFailed;
+            }
+            mapped_mem = reinterpret_cast<uintptr_t>(p);
+            return IOError::Ok;
+#else
+        fd = ::open(path_.c_str(), O_RDWR | O_CREAT, 0644);
+        if (fd < 0) {
+            std::cerr << fmt::format("open file {} failed: {}", path_, strerror(errno)) << std::endl;
+            return IOError::OpenFailed;
+        }
+
+        struct stat st;
+        int ec = ::fstat(fd, &st);
+        J_ASSERT(ec == 0);
+
+        current_size_ = st.st_size;
+        if (auto ret = EnsureSize(FILE_SIZE_INCR); ret != IOError::Ok) {
+            return ret;
+        }
+
+        mapped_mem_ = reinterpret_cast<unsigned char*>(::mmap(nullptr, current_size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+        if (mapped_mem_ == MAP_FAILED) {
+            std::cerr << fmt::format("map file {} failed: {}", path_, strerror(errno)) << std::endl;
+            return IOError::ReadFailed;
+        }
+
+        return IOError::Ok;
+#endif
     }
 
-    IOError MappedFileMemory::Open(const std::string &filename) {
-        return data_->reader.Open(filename);
+    IOError FileWriterInternal::Resize(uint64_t size) {
+        if (::ftruncate(fd, size) != 0) {
+            std::cerr << fmt::format("resize file {} failed: {}", path_, strerror(errno)) << std::endl;
+            return IOError::ResizeFailed;
+        }
+        current_size_ = FILE_SIZE_INCR;
+        return IOError::Ok;
     }
 
-    std::string_view MappedFileMemory::View() {
-        return std::string_view(data_->reader.Data(), data_->reader.FileSize());
+    IOError FileWriterInternal::EnsureSize(uint64_t size) {
+        if (current_size_ >= size) {
+            return IOError::Ok;
+        }
+
+        uint64_t need_size = current_size_;
+        while (need_size < size) {
+            need_size += FILE_SIZE_INCR;
+        }
+
+        return Resize(need_size);
     }
 
-    void MappedFileMemoryInternalDeleter::operator()(MappedFileMemoryInternal* intern) {
-        delete intern;
+    IOError FileWriterInternal::Write(const char *bytes, size_t len) {
+        IOError err = EnsureSize(offset_ + len);
+        if (err != IOError::Ok) {
+            return err;
+        }
+        memcpy(mapped_mem_ + offset_, bytes, len);
+        offset_ += len;
+        return IOError::Ok;
+    }
+
+    FileWriterInternal::~FileWriterInternal() {
+        Resize(offset_);    // trim the tail
+
+#ifdef _WIN32
+        ::CloseHandle(hMapping);
+            ::UnmapViewOfFile(hFile);
+            ::CloseHandle(hFile);
+#else
+        if (likely(mapped_mem_ != nullptr)) {
+            ::munmap(mapped_mem_, current_size_);
+            mapped_mem_ = nullptr;
+        }
+        if (likely(fd >= 0)) {
+            ::close(fd);
+            fd = -1;
+        }
+#endif
+    }
+
+    FileWriterInternal::FileWriterInternal(const std::string& path): path_(path) {
+    }
+
+    void FileWriterInternalDeleter::operator()(FileWriterInternal *d) {
+        delete d;
+    }
+
+    FileWriter::FileWriter(const std::string& path) {
+        auto ptr = new FileWriterInternal(path);
+        d_ = std::unique_ptr<FileWriterInternal, FileWriterInternalDeleter>(ptr);
+    }
+
+    IOError FileWriter::Open() {
+        return d_->Open();
+    }
+
+    IOError FileWriter::Write(const char *bytes, size_t len) {
+        return d_->Write(bytes, len);
     }
 
     IOError ReadFileToStdString(const std::string& filename, std::string& result) {
@@ -146,6 +284,9 @@ namespace jetpack::io {
 
     const char* IOErrorToString(IOError err) {
         switch (err) {
+            case IOError::ResizeFailed:
+                return "ResizeFailed";
+
             case IOError::WriteFailed:
                 return "WriteFailed";
 
@@ -162,59 +303,12 @@ namespace jetpack::io {
     }
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size) {
-#if defined(_WIN32)
-        HANDLE hFile = ::CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (hFile == INVALID_HANDLE_VALUE) {
-            std::cerr << "open file failed: " << filename << ", " << ::GetLastError() << std::endl;
-            return IOError::OpenFailed;
+        FileWriter writer(filename);
+        IOError err = writer.Open();
+        if (err != IOError::Ok) {
+            return err;
         }
-
-        HANDLE hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, size, NULL);
-        if (hMapping == NULL) {
-            ::CloseHandle(hFile);
-            std::cerr << "write file failed: " << filename << ", " << ::GetLastError() << std::endl;
-            return IOError::WriteFailed;
-        }
-
-        void* p = MapViewOfFile(hMapping, FILE_MAP_WRITE, 0, 0, 0);
-        if (p == NULL) {
-            ::CloseHandle(hMapping);
-            ::CloseHandle(hFile);
-            std::cerr << "write file failed: " << filename << ", " << ::GetLastError() << std::endl;
-            return IOError::WriteFailed;
-        }
-
-        ::memcpy(p, buffer, size);
-
-        ::UnmapViewOfFile(p);
-        ::CloseHandle(hMapping);
-        ::CloseHandle(hFile);
-
-        return IOError::Ok;
-#else
-        int fd = ::open(filename.c_str(), O_RDWR | O_CREAT, 0644);
-        if (fd < 0) {
-            std::cerr << "open file failed: " << strerror(errno) << std::endl;
-            return IOError::OpenFailed;
-        }
-
-        int ec = ::ftruncate(fd, size);
-        J_ASSERT(ec >= 0);
-
-        char* mappedData = (char*)::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (mappedData == MAP_FAILED) {
-            ::close(fd);
-            std::cerr << "map file failed: " << strerror(errno) << std::endl;
-            return IOError::WriteFailed;
-        }
-
-        ::memcpy(mappedData, buffer, size);
-
-        ::munmap(mappedData, size);
-        ::close(fd);
-
-        return IOError::Ok;
-#endif
+        return writer.Write(buffer, size);
     }
 
 }

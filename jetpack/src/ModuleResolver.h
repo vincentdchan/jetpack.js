@@ -161,8 +161,6 @@ namespace jetpack {
 
         void ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc);
 
-        std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
-
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
 

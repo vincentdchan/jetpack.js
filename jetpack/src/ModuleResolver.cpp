@@ -472,11 +472,26 @@ namespace jetpack {
             Slice<const ExportVariable> final_export_vars,
             const std::string& out_path) {
 
-        benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
-        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
+        std::string sourcemap_path = out_path + ".map";
+        io::FileWriter map_writer(sourcemap_path);
 
-        CodeGenFragment final_fragment;
-        ModuleCompositor module_compositor(final_fragment, config);
+        if (auto err = map_writer.Open(); err != io::IOError::Ok) {
+            std::cerr << fmt::format("open sourcemap {} failed", sourcemap_path) << std::endl;
+            return;
+        }
+
+        benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
+        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(
+                shared_from_this(),
+                map_writer,
+                out_path);
+
+        io::FileWriter js_writer(out_path);
+        if (auto err = js_writer.Open(); err != io::IOError::Ok) {
+            std::cerr << fmt::format("open js {} failed", out_path) << std::endl;
+            return;
+        }
+        ModuleCompositor module_compositor(js_writer, config);
 
         // codegen all result begin
 //        sourcemap_generator->AddCollector(mapping_collector);
@@ -520,13 +535,13 @@ namespace jetpack {
 //            sourcemap_marker.Submit();
         }
 
-        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(
-                out_path,
-                final_fragment.content.c_str(),
-                final_fragment.content.size());
-        J_ASSERT(err == io::IOError::Ok);
-        write_marker.Submit();
+//        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
+//        io::IOError err = io::WriteBufferToPath(
+//                out_path,
+//                final_fragment.content.c_str(),
+//                final_fragment.content.size());
+//        J_ASSERT(err == io::IOError::Ok);
+//        write_marker.Submit();
 
         if (config.sourcemap) {
             src_fut.get();
@@ -594,14 +609,6 @@ namespace jetpack {
 
             spare_stack.pop();
         }
-    }
-
-    // dump parallel
-    std::future<bool> ModuleResolver::DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen) {
-        return thread_pool_->enqueue([outPath, gen]() -> bool {
-            std::string pathStr = outPath + ".map";
-            return gen->DumpFile(pathStr);
-        });
     }
 
     void ModuleResolver::RenameAllInnerScopes() {

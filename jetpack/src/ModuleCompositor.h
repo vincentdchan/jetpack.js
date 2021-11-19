@@ -6,6 +6,7 @@
 
 #include <cinttypes>
 #include <ThreadPool.h>
+#include "utils/io/FileIO.h"
 #include "utils/string/UString.h"
 #include "codegen/CodeGenConfig.h"
 #include "CodeGenFragment.h"
@@ -19,8 +20,8 @@ namespace jetpack {
      */
     class ModuleCompositor {
     public:
-        explicit ModuleCompositor(CodeGenFragment& d, const CodeGenConfig& config):
-        thread_pool_(1), d_(d), config_(config) {}
+        explicit ModuleCompositor(io::Writer& writer, const CodeGenConfig& config):
+        thread_pool_(1), writer_(writer), config_(config) {}
 
         ModuleCompositor& Append(const CodeGenFragment& fragment);
 
@@ -38,7 +39,10 @@ namespace jetpack {
 
     private:
         ThreadPool thread_pool_;
-        CodeGenFragment& d_;
+        io::Writer& writer_;
+        int32_t     line_ = 1;
+        int32_t     column_ = 0;
+        std::vector<MappingItem> mapping_items_;
         const CodeGenConfig& config_;
 
     };

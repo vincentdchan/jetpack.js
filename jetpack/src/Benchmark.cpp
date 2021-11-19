@@ -38,6 +38,9 @@ namespace jetpack::benchmark {
             case BENCH_FINALIZE_SOURCEMAP:
                 return "Finalize sourcemap";
 
+            case BENCH_FINALIZE_SOURCEMAP_2:
+                return "Finalize sourcemap 2";
+
             default:
                 return "Unknown";
 

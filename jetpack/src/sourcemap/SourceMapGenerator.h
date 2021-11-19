@@ -11,6 +11,7 @@
 #include <ThreadPool.h>
 #include "Slice.h"
 #include "utils/string/UString.h"
+#include "utils/io/FileIO.h"
 #include "MappingCollector.h"
 #include "ModuleFile.h"
 
@@ -29,12 +30,13 @@ namespace jetpack {
         SourceMapGenerator() = delete;
 
         SourceMapGenerator(const std::shared_ptr<ModuleResolver>& resolver, // nullable
+                           io::Writer& writer,
                            const std::string& filename);
 
         void AddSource(const Sp<ModuleFile>& src);
 
         inline void EndLine() {
-            mappings.push_back(';');
+            mappings_.push_back(';');
         }
 
         /**
@@ -42,17 +44,13 @@ namespace jetpack {
          */
         void Finalize(Slice<const MappingItem> mapping_items);
 
-        std::string_view ToPrettyString();
-
-        bool DumpFile(const std::string& path, bool pretty = false);
-
         inline void AddCollector(const Sp<MappingCollector>& collector) {
             collectors_.push_back(collector);
         }
 
     private:
-        std::string content_;
-        std::string mappings;
+        io::Writer& writer_;
+        std::string mappings_;
         int32_t src_counter_ = 0;
         int32_t line_counter_ = 1;
 
@@ -69,9 +67,9 @@ namespace jetpack {
 
         void FinalizeSourcesContent();
 
-        bool AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col);
+        bool AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col);
 
-        int32_t GetFilenameIndexByModuleId(int32_t moduleId);
+        int32_t GetFilenameIndexByModuleId(int32_t module_id);
 
         HashMap<int32_t, int32_t>   module_id_to_index_;
         std::vector<Sp<ModuleFile>> sources_;

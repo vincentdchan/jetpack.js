@@ -3,7 +3,6 @@
 //
 
 #include <cstring>
-#include <iostream>
 #include <fmt/format.h>
 #include "utils/JetJSON.h"
 #include "utils/io/FileIO.h"
@@ -14,7 +13,6 @@
 #define IntToVLQBufferSize 8
 
 namespace jetpack {
-    using std::stringstream;
     using std::memset;
 
     static char Base64EncodingTable[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
@@ -115,13 +113,15 @@ namespace jetpack {
 
     SourceMapGenerator::SourceMapGenerator(
             const std::shared_ptr<ModuleResolver>& resolver,
+            io::Writer& writer,
             const std::string& filename
-    ): module_resolver_(resolver) {
-        content_ += "{\n";
-        content_ += R"(  "version": 3,\n)";
-        content_ += fmt::format(R"(  "file": "{}",\n)", EscapeJSONString(filename));
-        content_ += R"(  "sourceRoot": "",\n)";
-        content_ += R"(  "names": [],\n)";
+    ): writer_(writer), module_resolver_(resolver) {
+        writer_.Write("{\n");
+        writer_.Write("  \"version\": 3,\n");
+        writer_.WriteS(fmt::format("  \"file\": \"{}\",\n", EscapeJSONString(filename)));
+        writer_.Write("  \"sourceRoot\": \"\",\n");
+        writer_.Write("  \"names\": [],\n");
+        mappings_.reserve(8 * 1024);
     }
 
     void SourceMapGenerator::AddSource(const Sp<ModuleFile>& moduleFile) {
@@ -130,16 +130,16 @@ namespace jetpack {
 //        result["sourcesContent"].push_back(moduleFile.src_content.toStdString());
     }
 
-    int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t moduleId) {
-        auto iter = module_id_to_index_.find(moduleId);
+    int32_t SourceMapGenerator::GetFilenameIndexByModuleId(int32_t module_id) {
+        auto iter = module_id_to_index_.find(module_id);
         if (iter != module_id_to_index_.end()) {
             // found;
             return iter->second;
         }
-        auto mod = module_resolver_->findModuleById(moduleId);
+        auto mod = module_resolver_->findModuleById(module_id);
         if (unlikely(mod == nullptr)) {
             // error;
-            std::cerr << "sourcemap: get module by id failed: " << moduleId << std::endl;
+            std::cerr << fmt::format("sourcemap: get module by id failed: {}", module_id) << std::endl;
             return -1;
         }
 
@@ -151,50 +151,58 @@ namespace jetpack {
     }
 
     void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
+        benchmark::BenchMarker mapping_barker(benchmark::BENCH_FINALIZE_SOURCEMAP_2);
         FinalizeMapping(mapping_items);
+        mapping_barker.Submit();
 
         FinalizeSources();
         FinalizeSourcesContent();
 
-        content_ += fmt::format(R"(  "mappings": "{}"\n)", EscapeJSONString(mappings));
-        content_ += "}";
+        writer_.Write("  \"mappings\": \"");
+        writer_.WriteS(mappings_);
+        writer_.Write("\"\n");
+        writer_.Write("}");
     }
 
     void SourceMapGenerator::FinalizeSources() {
         if (sources_.empty()) {
-            content_ += R"(  "sources": [],\n)";
+            writer_.Write("  \"sources\": [],\n");
             return;
         }
 
-        content_ += R"(  "sources": [\n)";
+        writer_.Write("  \"sources\": [\n");
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            content_ += fmt::format("    \"{}\"", EscapeJSONString(module->Path()));
+            writer_.Write("    \"");
+            writer_.WriteS(EscapeJSONString(module->Path()));
+            writer_.Write("\"");
             if (counter++ < sources_.size() - 1) {
-                content_ += ",";
+                writer_.Write(",");
             }
-            content_ += "\n";
+            writer_.Write("\n");
         }
-        content_ += "  ],\n";
+        writer_.Write("  ],\n");
     }
 
     void SourceMapGenerator::FinalizeSourcesContent() {
         if (sources_.empty()) {
-            content_ += R"(  "sourcesContent": [],\n)";
+            writer_.Write("  \"sourcesContent\": [],\n");
             return;
         }
-        content_ += R"(  "sourcesContent": [\n)";
+        writer_.Write("  \"sourcesContent\": [\n");
 
         uint32_t counter = 0;
         for (auto& module : sources_) {
-            content_ += fmt::format("    \"{}\"", module->escaped_content);
+            writer_.Write("    \"");
+            writer_.WriteS(module->escaped_content);
+            writer_.Write("\"");
             if (counter++ < sources_.size() - 1) {
-                content_ += ",";
+                writer_.Write(",");
             }
-            content_ += "\n";
+            writer_.Write("\n");
         }
 
-        content_ += "  ],\n";
+        writer_.Write("  ],\n");
     }
 
     void SourceMapGenerator::FinalizeMapping(Slice<const MappingItem> items) {
@@ -218,45 +226,30 @@ namespace jetpack {
 
 #define SW(NEW, OLD) ((NEW) - (OLD))
 
-    bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int fileId, int before_line, int before_col) {
-        if (unlikely(fileId < 0)) {
+    bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col) {
+        if (unlikely(file_id < 0)) {
 //            J_ASSERT(fileId != -1);
             return true;
         }
-        if (mappings.length() > 0 && mappings[mappings.length() - 1] != ';' && mappings[mappings.length() - 1] != ',') {
-            mappings.push_back(',');
+        if (mappings_.length() > 0 && mappings_[mappings_.length() - 1] != ';' && mappings_[mappings_.length() - 1] != ',') {
+            mappings_.push_back(',');
         }
 //        int32_t var_index = GetIdOfName(name);
-        int32_t filenameIndex = GetFilenameIndexByModuleId(fileId);
-        if (unlikely(filenameIndex < 0)) {
+        int32_t filename_index = GetFilenameIndexByModuleId(file_id);
+        if (unlikely(filename_index < 0)) {
             return false;
         }
-        GenerateVLQStr(mappings,
+        GenerateVLQStr(mappings_,
                        SW(after_col, l_after_col_),
-                       SW(filenameIndex, l_file_index_),
+                       SW(filename_index, l_file_index_),
                        SW(before_line, l_before_line_),
                        SW(before_col, l_before_col_),
                        -1);
         l_after_col_ = after_col;
-        l_file_index_ = filenameIndex;
+        l_file_index_ = filename_index;
         l_before_line_ = before_line;
         l_before_col_ = before_col;
         return true;
-    }
-
-    std::string_view SourceMapGenerator::ToPrettyString() {
-        return content_;
-    }
-
-    bool SourceMapGenerator::DumpFile(const std::string &path, bool pretty) {
-//        benchmark::BenchMarker sm(benchmark::BENCH_DUMP_SOURCEMAP);
-//        std::string finalStr = ToPrettyString();
-//        sm.Submit();
-
-        benchmark::BenchMarker writeMark(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(path, content_.c_str(), content_.size());
-        writeMark.Submit();
-        return err == io::IOError::Ok;
     }
 
 }
