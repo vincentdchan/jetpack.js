@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
+#include <filesystem.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <condition_variable>
 #include <vector>
@@ -114,7 +115,7 @@ namespace jetpack {
             return modules_table_.FindModuleById(id);
         }
 
-        std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
+        std::optional<ghc::filesystem::path> FindPathOfPackageJson(const std::string& entry_path);
 
         ModulesTable modules_table_;
 
@@ -190,7 +191,7 @@ namespace jetpack {
         Sp<ExportNamedDeclaration> GenFinalExportDecl(Slice<const ExportVariable> export_names);
 
         // return nullable
-        std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
+        std::pair<Sp<ModuleProvider>, ghc::filesystem::path> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
 
         GlobalImportHandler global_import_handler_;
 

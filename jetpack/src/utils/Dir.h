@@ -5,7 +5,6 @@
 #pragma once
 
 #include <filesystem.hpp>
-#include "Path.h"
 
 namespace jetpack {
 

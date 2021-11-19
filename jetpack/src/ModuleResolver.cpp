@@ -5,6 +5,7 @@
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
+#include <filesystem.hpp>
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -12,7 +13,6 @@
 #include <set>
 
 #include "utils/JetJSON.h"
-#include "utils/Path.h"
 #include "utils/Dir.h"
 #include "utils/io/FileIO.h"
 #include "parser/ParserCommon.h"
@@ -63,29 +63,29 @@ namespace jetpack {
     }
 
     void ModuleResolver::BeginFromEntry(const parser::Config& config, const std::string& target_path, const std::string& base_path_override) {
-        std::string absolute_path;
-        if (target_path.empty()) {
+        ghc::filesystem::path target_p(target_path);
+        if (target_p.empty()) {
             return;
-        } else if (target_path[0] == Path::PATH_DIV) {
-            absolute_path = target_path;
-        } else {
-            Path p(utils::GetRunningDir());
-            p.Join(target_path);
-            absolute_path = p.ToString();
+        } else if (!target_p.is_absolute()) {
+            std::error_code ec;
+            target_p = ghc::filesystem::absolute(target_p, ec);
+            if (ec) {
+                std::cerr << fmt::format("can not get absolute path {}, {}", target_path, ec.message()) << std::endl;
+                abort();
+            }
         }
 
-        auto base_path = base_path_override.empty() ? FindPathOfPackageJson(absolute_path) : base_path_override;
+        std::optional<ghc::filesystem::path> base_path = base_path_override.empty() ? FindPathOfPackageJson(target_p) : ghc::filesystem::path(base_path_override);
         if (unlikely(!base_path.has_value())) {
-            Path p(absolute_path);
-            p.Pop();
-            base_path = { p.ToString() };
+            ghc::filesystem::path p = target_p.parent_path();
+            base_path = { p.string() };
         }
 
         // push file provider
         auto fileProvider = std::make_shared<FileModuleProvider>(*base_path);
         providers_.push_back(fileProvider);
 
-        pBeginFromEntry(fileProvider, config, absolute_path.substr(base_path->size() + 1));
+        pBeginFromEntry(fileProvider, config, target_p.lexically_relative(*base_path));
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::Config& config,
@@ -198,23 +198,23 @@ namespace jetpack {
                                                 const std::string &path) {
         if (unlikely(!trace_file)) return nullptr;
 
-        auto matchResult = FindProviderByPath(mf, path);
-        if (matchResult.first == nullptr) {
+        auto match_result = FindProviderByPath(mf, path);
+        if (match_result.first == nullptr) {
             auto errors = worker_errors_.synchronize();
             WorkerError err {mf->Path(), std::string("module can't be resolved: ") + path };
             errors->push_back(std::move(err));
             return nullptr;
         }
 
-        mf->resolved_map[path] = matchResult.second;
+        mf->resolved_map[path] = match_result.second;
 
         bool isNew = false;
-        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(matchResult.second, isNew);
+        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(match_result.second, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
             return childMod;
         }
-        childMod->provider = matchResult.first;
+        childMod->provider = match_result.first;
         if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
             childMod->SetIsCommonJS(true);
             auto name = name_generator->Next("jp_require");
@@ -1187,31 +1187,29 @@ namespace jetpack {
         return result;
     }
 
-    std::pair<Sp<ModuleProvider>, std::string> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
+    std::pair<Sp<ModuleProvider>, ghc::filesystem::path> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
         for (auto iter = providers_.rbegin(); iter != providers_.rend(); iter++) {
-            auto matchResult = (*iter)->Match(*parent, path);
-            if (matchResult.has_value()) {
-                return { *iter, *matchResult };
+            auto match_result = (*iter)->Match(*parent, path);
+            if (match_result.has_value()) {
+                return { *iter, *match_result };
             }
         }
         return { nullptr, "" };
     }
 
-    std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entryPath) {
-        Path path(entryPath);
-        path.slices.pop_back();
+    std::optional<ghc::filesystem::path> ModuleResolver::FindPathOfPackageJson(const std::string &entry_path) {
+        ghc::filesystem::path path(entry_path);
+        auto root = path.root_directory();
+        path = path.parent_path();
 
-        while (likely(!path.slices.empty())) {
-            path.slices.emplace_back(PackageJsonName);
+        while (path != root) {
+            auto pkg_path = path / PackageJsonName;
 
-            auto full_path = path.ToString();
-            if (likely(io::IsFileExist(full_path))) {
-                path.slices.pop_back();
-                return { path.ToString() };
+            if (likely(ghc::filesystem::exists(pkg_path))) {
+                return { path };
             }
 
-            path.slices.pop_back();
-            path.slices.pop_back();
+            path = path.parent_path();
         }
 
         return std::nullopt;
