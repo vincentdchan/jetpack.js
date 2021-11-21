@@ -34,7 +34,7 @@ namespace jetpack {
 
         std::string source_path = module_path.string();
 
-        if (unlikely(source_path.rfind(base_path_, 0) != 0)) {  // is not under working dir
+        if (unlikely(source_path.rfind(base_path_.string(), 0) != 0)) {  // is not under working dir
             std::cerr << fmt::format("path {} is not under working dir: {}", source_path, base_path_.string()) << std::endl;
             return std::nullopt;
         }

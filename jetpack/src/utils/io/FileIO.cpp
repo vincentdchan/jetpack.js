@@ -151,18 +151,18 @@ namespace jetpack::io {
 #ifdef _WIN32
             hFile = ::CreateFileA(path_.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE) {
-                std::cerr << "open file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                std::cerr << fmt::format("open file {} failed: {}", path_, ::GetLastError()) << std::endl;
                 return IOError::OpenFailed;
             }
 
             DWORD file_size;
             ::GetFileSize(hFile, &file_size);
-            size = int64_t(file_size);
+            current_size_ = int64_t(file_size);
 
-            hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, size, NULL);
+            hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, current_size_, NULL);
             if (hMapping == NULL) {
                 ::CloseHandle(hFile);
-                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                std::cerr << fmt::format("read file {} failed: {}", path_, ::GetLastError()) << std::endl;
                 return IOError::ReadFailed;
             }
 
@@ -170,10 +170,10 @@ namespace jetpack::io {
             if (p == NULL) {
                 ::CloseHandle(hMapping);
                 ::CloseHandle(hFile);
-                std::cerr << "read file failed: " << filename << ", " << ::GetLastError() << std::endl;
+                std::cerr << fmt::format("read file {} failed: {}", path_, ::GetLastError()) << std::endl;
                 return IOError::ReadFailed;
             }
-            mapped_mem = reinterpret_cast<uintptr_t>(p);
+            mapped_mem_ = reinterpret_cast<unsigned char*>(p);
             return IOError::Ok;
 #else
         fd = ::open(path_.c_str(), O_RDWR | O_CREAT, 0644);
@@ -202,6 +202,46 @@ namespace jetpack::io {
     }
 
     IOError FileWriterInternal::Resize(uint64_t size) {
+#ifdef _WIN32
+		::UnmapViewOfFile(mapped_mem_);
+        ::CloseHandle(hMapping);
+
+        bool ok = false;
+
+        LARGE_INTEGER large_size;
+        large_size.QuadPart = size;
+        ok = ::SetFilePointerEx(hFile, large_size, NULL, FILE_BEGIN);
+        if (!ok) {
+            std::cerr << fmt::format("can not set file pointer of {}", path_) << std::endl;
+            return IOError::ResizeFailed;
+        }
+
+        ok = ::SetEndOfFile(hFile);
+        if (!ok) {
+            std::cerr << fmt::format("can not set end of {}", path_) << std::endl;
+            return IOError::ResizeFailed;
+        }
+
+        current_size_ = size;
+
+		hMapping = ::CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, current_size_, NULL);
+		if (hMapping == NULL) {
+			::CloseHandle(hFile);
+			std::cerr << fmt::format("create file mapping {} failed: {}", path_, ::GetLastError()) << std::endl;
+			return IOError::ResizeFailed;
+		}
+
+		void* p = MapViewOfFile(hMapping, FILE_MAP_WRITE, 0, 0, 0);
+		if (p == NULL) {
+			::CloseHandle(hMapping);
+			::CloseHandle(hFile);
+			std::cerr << fmt::format("map file {} failed: {}", path_, ::GetLastError()) << std::endl;
+			return IOError::ResizeFailed;
+		}
+		mapped_mem_ = reinterpret_cast<unsigned char*>(p);
+
+        return IOError::Ok;
+#else
         ::munmap(mapped_mem_, current_size_);
 
         if (::ftruncate(fd, size) != 0) {
@@ -217,6 +257,7 @@ namespace jetpack::io {
         }
 
         return IOError::Ok;
+#endif
     }
 
     IOError FileWriterInternal::EnsureSize(uint64_t size) {
@@ -253,9 +294,9 @@ namespace jetpack::io {
 
     FileWriterInternal::~FileWriterInternal() {
 #ifdef _WIN32
+		::UnmapViewOfFile(mapped_mem_);
         ::CloseHandle(hMapping);
-            ::UnmapViewOfFile(hFile);
-            ::CloseHandle(hFile);
+		::CloseHandle(hFile);
 #else
         if (likely(mapped_mem_ != nullptr)) {
             ::munmap(mapped_mem_, current_size_);

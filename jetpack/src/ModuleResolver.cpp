@@ -98,7 +98,7 @@ namespace jetpack {
             }
         }
 
-        std::optional<ghc::filesystem::path> base_path = base_path_override.empty() ? FindPathOfPackageJson(target_p) : ghc::filesystem::path(base_path_override);
+        std::optional<ghc::filesystem::path> base_path = base_path_override.empty() ? FindPathOfPackageJson(target_p.string()) : ghc::filesystem::path(base_path_override);
         if (unlikely(!base_path.has_value())) {
             ghc::filesystem::path p = target_p.parent_path();
             base_path = { p.string() };
@@ -108,7 +108,7 @@ namespace jetpack {
         auto fileProvider = std::make_shared<FileModuleProvider>(*base_path);
         providers_.push_back(fileProvider);
 
-        pBeginFromEntry(fileProvider, config, target_p.lexically_relative(*base_path));
+        pBeginFromEntry(fileProvider, config, target_p.lexically_relative(*base_path).string());
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::Config& config,
@@ -227,10 +227,11 @@ namespace jetpack {
             return nullptr;
         }
 
-        mf->resolved_map[path] = match_result.second;
+        std::string match_path_str = match_result.second.string();
+        mf->resolved_map[path] = match_path_str;
 
         bool isNew = false;
-        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(match_result.second, isNew);
+        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(match_path_str, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
             return childMod;
