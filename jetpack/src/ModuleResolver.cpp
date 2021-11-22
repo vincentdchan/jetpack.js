@@ -5,15 +5,15 @@
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
+#include <filesystem.hpp>
 #include <algorithm>
-#include <boost/lockfree/spsc_queue.hpp>
 #include <iostream>
 #include <memory>
 #include <stack>
 #include <set>
 
 #include "utils/JetJSON.h"
-#include "utils/Path.h"
+#include "utils/Dir.h"
 #include "utils/io/FileIO.h"
 #include "parser/ParserCommon.h"
 #include "parser/NodesMaker.h"
@@ -45,6 +45,29 @@ namespace jetpack {
 
     static const char* PackageJsonName = "package.json";
 
+    bool WorkerErrors::print() {
+        std::lock_guard<std::mutex> guard(m_);
+        for (auto& error : errors_) {
+            std::cerr << fmt::format("File: {}", error.file_path) << std::endl;
+            std::cerr << fmt::format("Error: {}", error.error_content) << std::endl;
+        }
+        return !errors_.empty();
+    }
+
+    void WorkerErrors::clear() {
+        std::lock_guard<std::mutex> guard(m_);
+        errors_.clear();
+    }
+
+    void WorkerErrors::throw_collection_if_not_empty() {
+        std::lock_guard<std::mutex> guard(m_);
+        if (!errors_.empty()) {
+            WorkerErrorCollection col;
+            col.errors = errors_;
+            throw std::move(col);
+        }
+    }
+
     ModuleResolveException::ModuleResolveException(const std::string& path, const std::string& content)
     : file_path(path), error_content(content) {
 
@@ -63,29 +86,29 @@ namespace jetpack {
     }
 
     void ModuleResolver::BeginFromEntry(const parser::Config& config, const std::string& target_path, const std::string& base_path_override) {
-        std::string absolute_path;
-        if (target_path.empty()) {
+        ghc::filesystem::path target_p(target_path);
+        if (target_p.empty()) {
             return;
-        } else if (target_path[0] == Path::PATH_DIV) {
-            absolute_path = target_path;
-        } else {
-            Path p(utils::GetRunningDir());
-            p.Join(target_path);
-            absolute_path = p.ToString();
+        } else if (!target_p.is_absolute()) {
+            std::error_code ec;
+            target_p = ghc::filesystem::absolute(target_p, ec);
+            if (ec) {
+                std::cerr << fmt::format("can not get absolute path {}, {}", target_path, ec.message()) << std::endl;
+                abort();
+            }
         }
 
-        auto base_path = base_path_override.empty() ? FindPathOfPackageJson(absolute_path) : base_path_override;
+        std::optional<ghc::filesystem::path> base_path = base_path_override.empty() ? FindPathOfPackageJson(target_p) : ghc::filesystem::path(base_path_override);
         if (unlikely(!base_path.has_value())) {
-            Path p(absolute_path);
-            p.Pop();
-            base_path = { p.ToString() };
+            ghc::filesystem::path p = target_p.parent_path();
+            base_path = { p.string() };
         }
 
         // push file provider
         auto fileProvider = std::make_shared<FileModuleProvider>(*base_path);
         providers_.push_back(fileProvider);
 
-        pBeginFromEntry(fileProvider, config, absolute_path.substr(base_path->size() + 1));
+        pBeginFromEntry(fileProvider, config, target_p.lexically_relative(*base_path));
     }
 
     void ModuleResolver::BeginFromEntryString(const parser::Config& config,
@@ -128,8 +151,7 @@ namespace jetpack {
                                    Sp<ModuleFile> mf) {
         WorkerError error;
         if (!mf->GetSource(error)) {
-            auto errors = worker_errors_.synchronize();
-            errors->push_back(error);
+            worker_errors_.add(error);
             return;
         }
 
@@ -186,6 +208,11 @@ namespace jetpack {
         mf->ast->scope->ResolveAllSymbols(&unresolved_ids);
 
         id_logger_->InsertByList(unresolved_ids);
+
+        if (escape_file_) {
+            mf->escaped_content = EscapeJSONString(mf->src_content->View());
+            mf->escaped_path = EscapeJSONString(mf->Path());
+        }
     }
 
     Sp<ModuleFile> ModuleResolver::HandleNewLocationAdded(const jetpack::parser::Config &config,
@@ -193,23 +220,22 @@ namespace jetpack {
                                                 const std::string &path) {
         if (unlikely(!trace_file)) return nullptr;
 
-        auto matchResult = FindProviderByPath(mf, path);
-        if (matchResult.first == nullptr) {
-            auto errors = worker_errors_.synchronize();
+        auto match_result = FindProviderByPath(mf, path);
+        if (match_result.first == nullptr) {
             WorkerError err {mf->Path(), std::string("module can't be resolved: ") + path };
-            errors->push_back(std::move(err));
+            worker_errors_.add(err);
             return nullptr;
         }
 
-        mf->resolved_map[path] = matchResult.second;
+        mf->resolved_map[path] = match_result.second;
 
         bool isNew = false;
-        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(matchResult.second, isNew);
+        Sp<ModuleFile> childMod = modules_table_.CreateNewIfNotExists(match_result.second, isNew);
         if (!isNew) {
             mf->ref_mods.push_back(childMod);
             return childMod;
         }
-        childMod->provider = matchResult.first;
+        childMod->provider = match_result.first;
         if (!!(flags & LocationAddOption::LocationIsCommonJS)) {
             childMod->SetIsCommonJS(true);
             auto name = name_generator->Next("jp_require");
@@ -225,32 +251,29 @@ namespace jetpack {
 
         mf->ref_mods.push_back(childMod);
 
-        EnqueueOne([this, &config, childMod] {
+        parsing_group_.Add();
+        total_files_++;
+        thread_pool_->enqueue([this, &config, childMod] {
             try {
                 ParseFile(config, childMod);
             } catch (parser::ParseError& ex) {
-                auto errors = worker_errors_.synchronize();
-                errors->push_back({childMod->Path(), ex.ErrorMessage() });
+                worker_errors_.add({ childMod->Path(), ex.ErrorMessage() });
             } catch (VariableExistsError& err) {
-                auto errors = worker_errors_.synchronize();
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name,
                                              err.exist_var->location.start.line + 1,
                                              err.exist_var->location.start.column);
-                errors->push_back({childMod->Path(), std::move(message) });
+                worker_errors_.add({childMod->Path(), std::move(message) });
             } catch (std::exception& ex) {
-                auto errors = worker_errors_.synchronize();
-                errors->push_back({childMod->Path(), ex.what() });
+                worker_errors_.add({childMod->Path(), ex.what() });
             }
-            FinishOne();
+            parsing_group_.Done();
         });
         return childMod;
     }
 
     void ModuleResolver::PrintStatistic() {
-        auto errors = worker_errors_.synchronize();
-        if (!worker_errors_->empty()) {
-            PrintErrors(*errors);
+        if (worker_errors_.print()) {
             return;
         }
 
@@ -264,11 +287,10 @@ namespace jetpack {
         json result = json::object();
         result["entry"] = entry_module->Path();
         result["importStat"] = GetImportStat();
-        result["totalFiles"] = finished_files_count_;
+        result["totalFiles"] = total_files_.load();
         result["exports"] = std::move(exports);
 
-        if (!errors->empty()) {
-            PrintErrors(*errors);
+        if (worker_errors_.print()) {
             return;
         }
 
@@ -292,40 +314,29 @@ namespace jetpack {
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
 
         benchmark::BenchMarker ps(benchmark::BENCH_PARSING_STAGE);
-        EnqueueOne([this, &config, &resolvedPath, &rootProvider] {
+        total_files_++;
+        parsing_group_.Add();
+        thread_pool_->enqueue([this, &config, &resolvedPath, &rootProvider] {
             try {
                 ParseFileFromPath(rootProvider, config, resolvedPath);
             } catch (parser::ParseError& ex) {
-                auto errors = worker_errors_.synchronize();
-                errors->push_back({ resolvedPath, ex.ErrorMessage() });
+                worker_errors_.add({ resolvedPath, ex.ErrorMessage() });
             } catch (VariableExistsError& err) {
-                auto errors = worker_errors_.synchronize();
                 std::string message = format("variable '{}' has been defined, location: {}:{}",
                                              err.name,
                                              err.exist_var->location.start.line,
                                              err.exist_var->location.start.column);
-                errors->push_back({ resolvedPath, std::move(message) });
+                worker_errors_.add({ resolvedPath, std::move(message) });
             } catch (std::exception& ex) {
-                auto errors = worker_errors_.synchronize();
-                errors->push_back({ resolvedPath, ex.what() });
+                worker_errors_.add({ resolvedPath, ex.what() });
             }
-            FinishOne();
+            parsing_group_.Done();
         });
 
-        std::unique_lock<std::mutex> lk(main_lock_);
-        main_cv_.wait(lk, [this] {
-            return finished_files_count_ >= enqueued_files_count_;
-        });
+        parsing_group_.Wait();
         ps.Submit();
 
-        {
-            auto errors = worker_errors_.synchronize();
-            if (!errors->empty()) {
-                WorkerErrorCollection col;
-                col.errors = *errors;
-                throw std::move(col);
-            }
-        }
+        worker_errors_.throw_collection_if_not_empty();
     }
 
     /**
@@ -361,33 +372,31 @@ namespace jetpack {
             const auto& u8relative_path = info.relative_path;
             auto resolved_path = mod->resolved_map.find(u8relative_path);
             if (resolved_path == mod->resolved_map.end()) {
-                auto errors = worker_errors_.synchronize();
                 WorkerError err {
                         mod->Path(),
                     format("resolve path failed: {}", u8relative_path)
                 };
-                errors->emplace_back(std::move(err));
+                worker_errors_.add(err);
                 return;
             }
 
-            auto iter = modules_table_.path_to_module.find(resolved_path->second);
-            if (iter == modules_table_.path_to_module.end()) {
-                auto errors = worker_errors_.synchronize();
+            auto iter = modules_table_.FindModuleByPath(resolved_path->second);
+            if (iter == nullptr) {
                 WorkerError err {
                         mod->Path(),
                     format("module not found: {}", resolved_path->second)
                 };
-                errors->emplace_back(std::move(err));
+                worker_errors_.add(err);
                 return;
             }
             if (info.is_export_all) {
-                TraverseModulePushExportVars(arr, iter->second, visited_marks, nullptr);
+                TraverseModulePushExportVars(arr, iter, visited_marks, nullptr);
             } else {
                 HashSet<std::string> new_white_list;
                 for (auto& item : info.names) {
                     new_white_list.insert(item.source_name);
                 }
-                TraverseModulePushExportVars(arr, iter->second, visited_marks, &new_white_list);
+                TraverseModulePushExportVars(arr, iter, visited_marks, &new_white_list);
             }
         }
     }
@@ -397,27 +406,6 @@ namespace jetpack {
             std::cerr << "File: " << error.file_path << std::endl;
             std::cerr << "Error: " << error.error_content << std::endl;
         }
-    }
-
-    void ModuleResolver::EnqueueOne(std::function<void()> unit) {
-        {
-            std::lock_guard<std::mutex> lk(main_lock_);
-            enqueued_files_count_++;
-        }
-
-#ifdef JETPACK_SINGLE_THREAD
-        unit();
-#else
-        thread_pool_->enqueue(std::move(unit));
-#endif
-    }
-
-    void ModuleResolver::FinishOne() {
-        {
-            std::lock_guard<std::mutex> lk(main_lock_);
-            finished_files_count_++;
-        }
-        main_cv_.notify_one();
     }
 
     json ModuleResolver::GetImportStat() {
@@ -443,6 +431,7 @@ namespace jetpack {
      * 4. generate final export declaration
      */
     void ModuleResolver::CodeGenAllModules(const CodeGenConfig& config, const std::string& out_path) {
+        benchmark::BenchMarker codegen_mark(benchmark::BENCH_CODEGEN_STAGE);
         auto final_export_vars = GetAllExportVars();
 
         // distribute root level var name
@@ -461,6 +450,7 @@ namespace jetpack {
         TraverseRenameAllImports(entry_module, visited_marks.data());
 
         DumpAllResult(config, make_slice(final_export_vars), out_path);
+        codegen_mark.Submit();
     }
 
     // final stage
@@ -468,12 +458,31 @@ namespace jetpack {
             const CodeGenConfig& config,
             Slice<const ExportVariable> final_export_vars,
             const std::string& out_path) {
+        if (!Dir::EnsureParent(out_path)) {
+            return;
+        }
+
+        std::string sourcemap_path = out_path + ".map";
+        io::FileWriter map_writer(sourcemap_path);
+
+        if (auto err = map_writer.Open(); err != io::IOError::Ok) {
+            std::cerr << fmt::format("open sourcemap {} failed", sourcemap_path) << std::endl;
+            return;
+        }
 
         benchmark::BenchMarker codegen_marker(benchmark::BENCH_CODEGEN);
-        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(shared_from_this(), out_path);
+        auto sourcemap_generator = std::make_shared<SourceMapGenerator>(
+                shared_from_this(),
+                map_writer,
+                out_path);
 
-        CodeGenFragment final_fragment;
-        ModuleCompositor module_compositor(final_fragment, config);
+        io::FileWriter js_writer(out_path);
+        if (auto err = js_writer.Open(); err != io::IOError::Ok) {
+            std::cerr << fmt::format("open js {} failed", out_path) << std::endl;
+            return;
+        }
+        ModuleCompositor module_compositor(js_writer, config);
+        module_compositor.DumpSources(sourcemap_generator);
 
         // codegen all result begin
 //        sourcemap_generator->AddCollector(mapping_collector);
@@ -484,50 +493,35 @@ namespace jetpack {
             module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
-        std::vector<std::future<void>> fragments;
-        fragments.reserve(modules_table_.id_to_module.size());
+        auto modules = modules_table_.Modules();
 
-        for (const auto& item : modules_table_.id_to_module) {
-            auto module = item.second;
-            auto fut = thread_pool_->enqueue([&config, module] {
+        WaitGroup group;
+        group.Add(modules.size());
+        for (auto module : modules) {
+            thread_pool_->enqueue([&config, &group, module] {
                 CodeGen codegen(config, module->codegen_fragment);
                 codegen.Traverse(*module->ast);
+                group.Done();
             });
-            fragments.push_back(std::move(fut));
         }
 
-        for (auto& f : fragments) {
-            f.wait();
-        }
-        codegen_marker.Submit();
+        thread_pool_ = nullptr;
+
+        group.Wait();
 
         benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
         ConcatModules(entry_module, module_compositor);
 
-
         CodeGenFinalExport(module_compositor, final_export_vars);
         concat_marker.Submit();
 
-        std::future<bool> src_fut;
+        std::future<void> src_fut;
         if (config.sourcemap) {
-            benchmark::BenchMarker sourcemap_marker(benchmark::BENCH_FINALIZE_SOURCEMAP);
-            sourcemap_generator->Finalize(make_slice(final_fragment.mapping_items), *thread_pool_);
-            src_fut = DumpSourceMap(out_path, sourcemap_generator);
-            sourcemap_marker.Submit();
+            src_fut = module_compositor.DumpSourcemap(sourcemap_generator);
         }
 
-        benchmark::BenchMarker write_marker(benchmark::BENCH_WRITING_IO);
-        io::IOError err = io::WriteBufferToPath(
-                out_path,
-                final_fragment.content.c_str(),
-                final_fragment.content.size());
-        J_ASSERT(err == io::IOError::Ok);
-        write_marker.Submit();
-
         if (config.sourcemap) {
-            if (unlikely(!src_fut.get())) {   // wait to finished
-                std::cerr << "dump source map failed: " << out_path << std::endl;
-            }
+            src_fut.get();
         }
     }
 
@@ -594,38 +588,24 @@ namespace jetpack {
         }
     }
 
-    // dump parallel
-    std::future<bool> ModuleResolver::DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen) {
-        return thread_pool_->enqueue([outPath, gen]() -> bool {
-            std::string pathStr = outPath + ".map";
-            return gen->DumpFile(pathStr);
-        });
-    }
-
     void ModuleResolver::RenameAllInnerScopes() {
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
-        std::vector<std::future<void>> futures;
-        for (auto& tuple : modules_table_.path_to_module) {
-            futures.push_back(thread_pool_->enqueue([this, mod = tuple.second, &collection] {
+        auto modules = modules_table_.Modules();
+        WaitGroup group;
+
+        group.Add(modules.size());
+        for (auto mod : modules) {
+            thread_pool_->enqueue([mod, &collection, &group] {
                 mod->RenameInnerScopes(collection);
-                FinishOne();
-            }));
+                group.Done();
+            });
         }
 
-        for (auto& fut : futures) {
-            fut.get();
-        }
+        group.Wait();
 
-        {
-            auto errors = worker_errors_.synchronize();
-            if (!errors->empty()) {
-                WorkerErrorCollection col;
-                col.errors = *errors;
-                throw std::move(col);
-            }
-        }
+        worker_errors_.throw_collection_if_not_empty();
         name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
     }
 
@@ -978,7 +958,7 @@ namespace jetpack {
                     format("can not resolver path: {}", import_decl->source->str_));
         }
 
-        auto target_module = modules_table_.path_to_module[full_path_iter->second];
+        auto target_module = modules_table_.FindModuleByPath(full_path_iter->second);
 
         if (target_module == nullptr) {
             throw ModuleResolveException(mf->Path(), format("can not find module: {}", full_path_iter->second));
@@ -1026,11 +1006,10 @@ namespace jetpack {
                 const auto& relative_path = import_decl->source->str_;
                 std::string absolute_path = mf->resolved_map[relative_path];
 
-                auto ref_mod_iter = modules_table_.path_to_module.find(absolute_path);
-                if (ref_mod_iter == modules_table_.path_to_module.end()) {
+                auto ref_mod = modules_table_.FindModuleByPath(absolute_path);
+                if (ref_mod == nullptr) {
                     throw ModuleResolveException(mf->Path(), format("can not resolve path: {}", absolute_path));
                 }
-                auto& ref_mod = ref_mod_iter->second;
 
                 auto& export_manager = ref_mod->GetExportManager();
 
@@ -1085,11 +1064,10 @@ namespace jetpack {
 
                 }
 
-                auto ref_mod_iter = modules_table_.path_to_module.find(absolute_path);
-                if (ref_mod_iter == modules_table_.path_to_module.end()) {
+                auto ref_mod = modules_table_.FindModuleByPath(absolute_path);
+                if (ref_mod == nullptr) {
                     throw ModuleResolveException(mf->Path(), format("can not resolve path: {}", absolute_path));
                 }
-                auto& ref_mod = ref_mod_iter->second;
 
                 std::set<int32_t> visited_mods;
                 auto local_export_opt = FindLocalExportByPath(absolute_path, target_export_name, visited_mods);
@@ -1117,11 +1095,10 @@ namespace jetpack {
     ModuleResolver::FindLocalExportByPath(const std::string &path,
                                           const std::string& export_name,
                                           std::set<int32_t>& visited) {
-        auto modIter = modules_table_.path_to_module.find(path);
-        if (modIter == modules_table_.path_to_module.end()) {
+        auto mod = modules_table_.FindModuleByPath(path);
+        if (mod == nullptr) {
             return std::nullopt;
         }
-        auto& mod = modIter->second;
 
         if (visited.find(mod->id()) != visited.end()) {
             return std::nullopt;
@@ -1164,12 +1141,11 @@ namespace jetpack {
 
             auto iter = mf->GetExportManager().local_exports_name.find(export_name);
             if (iter == mf->GetExportManager().local_exports_name.end()) {
-                auto errors = worker_errors_.synchronize();
                 WorkerError err {
                         mf->Path(),
                         format("symbol not found failed: {}", export_name)
                 };
-                errors->emplace_back(std::move(err));
+                worker_errors_.add(err);
                 break;
             }
             auto info = iter->second;
@@ -1183,31 +1159,29 @@ namespace jetpack {
         return result;
     }
 
-    std::pair<Sp<ModuleProvider>, std::string> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
+    std::pair<Sp<ModuleProvider>, ghc::filesystem::path> ModuleResolver::FindProviderByPath(const Sp<ModuleFile>& parent, const std::string &path) {
         for (auto iter = providers_.rbegin(); iter != providers_.rend(); iter++) {
-            auto matchResult = (*iter)->Match(*parent, path);
-            if (matchResult.has_value()) {
-                return { *iter, *matchResult };
+            auto match_result = (*iter)->Match(*parent, path);
+            if (match_result.has_value()) {
+                return { *iter, *match_result };
             }
         }
         return { nullptr, "" };
     }
 
-    std::optional<std::string> ModuleResolver::FindPathOfPackageJson(const std::string &entryPath) {
-        Path path(entryPath);
-        path.slices.pop_back();
+    std::optional<ghc::filesystem::path> ModuleResolver::FindPathOfPackageJson(const std::string &entry_path) {
+        ghc::filesystem::path path(entry_path);
+        auto root = path.root_directory();
+        path = path.parent_path();
 
-        while (likely(!path.slices.empty())) {
-            path.slices.emplace_back(PackageJsonName);
+        while (path != root) {
+            auto pkg_path = path / PackageJsonName;
 
-            auto full_path = path.ToString();
-            if (likely(io::IsFileExist(full_path))) {
-                path.slices.pop_back();
-                return { path.ToString() };
+            if (likely(ghc::filesystem::exists(pkg_path))) {
+                return { path };
             }
 
-            path.slices.pop_back();
-            path.slices.pop_back();
+            path = path.parent_path();
         }
 
         return std::nullopt;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <optional>
+#include <filesystem.hpp>
 #include "ResolveResult.h"
 #include "ModuleFile.h"
 #include "WorkerError.h"
@@ -25,9 +26,9 @@ namespace jetpack {
     // should be implemented thread-safe
     class ModuleProvider {
     public:
-        virtual std::optional<std::string> Match(const ModuleFile &mf, const std::string& path) = 0;
+        virtual std::optional<ghc::filesystem::path> Match(const ModuleFile &mf, const std::string& path) = 0;
 
-        virtual Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) = 0;
+        virtual Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolved_path) = 0;
 
         ~ModuleProvider() noexcept = default;
 
@@ -35,22 +36,23 @@ namespace jetpack {
 
     class FileModuleProvider : public ModuleProvider {
     public:
-        explicit FileModuleProvider(const std::string& base_path): base_path_(base_path) {}
+        explicit FileModuleProvider(ghc::filesystem::path base_path):
+        base_path_(std::move(base_path)) {}
 
-        std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
+        std::optional<ghc::filesystem::path> Match(const ModuleFile &mf, const std::string &path) override;
 
-        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolvedPath) override;
+        Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string& resolved_path) override;
 
     private:
-        std::string base_path_;
+        ghc::filesystem::path base_path_;
 
         // const version, not allowed to modify members
         // because this will run in parallel
         [[nodiscard]]
-        std::optional<std::string> pMatch(const ModuleFile &mf, const std::string &path) const;
+        std::optional<ghc::filesystem::path> pMatch(const ModuleFile &mf, const std::string &path) const;
 
         [[nodiscard]]
-        std::optional<std::string> TryWithSuffix(const ModuleFile &mf, const std::string &path, const std::string& suffix) const;
+        std::optional<ghc::filesystem::path> TryWithSuffix(const ModuleFile &mf, const std::string &path, const std::string& suffix) const;
 
     };
 
@@ -59,7 +61,7 @@ namespace jetpack {
         explicit inline MemoryModuleProvider(const std::string& token, const std::string& content):
         token_(token), content_(content) {}
 
-        std::optional<std::string> Match(const ModuleFile &mf, const std::string &path) override;
+        std::optional<ghc::filesystem::path> Match(const ModuleFile &mf, const std::string &path) override;
 
         Sp<MemoryViewOwner> ResolveWillThrow(const ModuleFile &mf, const std::string &path) override;
 

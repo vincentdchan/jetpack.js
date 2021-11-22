@@ -6,41 +6,74 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include "utils/string/UString.h"
 #include "utils/MemoryViewOwner.h"
 
-#if defined(_WIN32)
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
-
 namespace jetpack::io {
     enum class IOError {
+        ResizeFailed= -4,
         WriteFailed = -3,
         ReadFailed = -2,
         OpenFailed = -1,
         Ok = 0,
     };
 
-    class MappedFileMemoryInternal;
-
-    struct MappedFileMemoryInternalDeleter {
+    class Writer {
     public:
-        void operator()(MappedFileMemoryInternal*);
+        inline IOError Write(std::string_view view) {
+            return Write(view.data(), view.size());
+        }
+
+        inline IOError WriteS(const std::string& str) {
+            return Write(str.c_str(), str.size());
+        }
+
+        virtual IOError WriteByte(unsigned char) = 0;
+
+        virtual IOError Write(const char* bytes, size_t len) = 0;
+
+        virtual ~Writer() = default;
 
     };
 
-    class MappedFileMemory : public MemoryViewOwner {
+    class FileWriterInternal;
+
+    struct FileWriterInternalDeleter {
+
+        void operator()(FileWriterInternal* d);
+
+    };
+
+    class FileWriter : public Writer {
     public:
-        explicit MappedFileMemory();
+        FileWriter(const std::string& path);
 
-        IOError Open(const std::string& filename);
+        IOError Open();
 
-        std::string_view View() override;
+        IOError Write(const char* bytes, size_t len) override;
+
+        IOError WriteByte(unsigned char ch) override;
+
+        ~FileWriter() override = default;
 
     private:
-        std::unique_ptr<MappedFileMemoryInternal, MappedFileMemoryInternalDeleter> data_;
+        std::unique_ptr<FileWriterInternal, FileWriterInternalDeleter> d_;
+
+    };
+
+    class StringWriter : public Writer {
+    public:
+        StringWriter(std::string& s): d_(s) {}
+
+        IOError Write(const char* bytes, size_t len) override;
+
+        IOError WriteByte(unsigned char ch) override;
+
+        ~StringWriter() override = default;
+
+    private:
+        std::string& d_;
 
     };
 
@@ -48,16 +81,5 @@ namespace jetpack::io {
     IOError ReadFileToStdString(const std::string& filename, std::string& result);
 
     IOError WriteBufferToPath(const std::string& filename, const char* buffer, int64_t size);
-
-    inline bool IsFileExist(const std::string& path) {
-#ifndef _WIN32
-        return access(path.c_str(), F_OK) == 0;
-#else
-        DWORD dwAttrib = GetFileAttributesA(path.c_str());
-
-        return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-            !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-#endif
-    }
 
 }

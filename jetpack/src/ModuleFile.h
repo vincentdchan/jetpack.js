@@ -69,6 +69,10 @@ namespace jetpack {
 
         Sp<MemoryViewOwner> src_content;
 
+        std::string escaped_content;
+
+        std::string escaped_path;
+
         CodeGenFragment codegen_fragment;
 
         /**

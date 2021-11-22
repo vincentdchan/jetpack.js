@@ -7,7 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
-#include <boost/thread/synchronized_value.hpp>
+#include <filesystem.hpp>
 #include <condition_variable>
 #include <vector>
 #include <memory>
@@ -24,8 +24,30 @@
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"
 #include "utils/JetFlags.h"
+#include "utils/WaitGroup.h"
 
 namespace jetpack {
+
+    struct WorkerErrors {
+    public:
+        WorkerErrors() = default;
+
+        inline void add(const WorkerError& err) {
+            std::lock_guard<std::mutex> guard(m_);
+            errors_.push_back(err);
+        }
+
+        bool print();
+
+        void clear();
+
+        void throw_collection_if_not_empty();
+
+    private:
+        Vec<WorkerError> errors_;
+        std::mutex m_;
+
+    };
 
     class ModuleCompositor;
 
@@ -114,7 +136,7 @@ namespace jetpack {
             return modules_table_.FindModuleById(id);
         }
 
-        std::optional<std::string> FindPathOfPackageJson(const std::string& entry_path);
+        std::optional<ghc::filesystem::path> FindPathOfPackageJson(const std::string& entry_path);
 
         ModulesTable modules_table_;
 
@@ -161,15 +183,14 @@ namespace jetpack {
 
         void ConcatModules(const Sp<ModuleFile>& root, ModuleCompositor& mc);
 
-        std::future<bool> DumpSourceMap(std::string outPath, Sp<SourceMapGenerator> gen);
-
     public:
         void ReplaceExports(const Sp<ModuleFile>& mf);
 
-    private:
-        void EnqueueOne(std::function<void()> unit);
-        void FinishOne();
+        inline void SetEscapeFile(bool v) {
+            escape_file_ = v;
+        }
 
+    private:
         void TraverseRenameAllImports(const Sp<ModuleFile>& mf, uint8_t* visited_marks);
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
@@ -188,7 +209,7 @@ namespace jetpack {
         Sp<ExportNamedDeclaration> GenFinalExportDecl(Slice<const ExportVariable> export_names);
 
         // return nullable
-        std::pair<Sp<ModuleProvider>, std::string> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
+        std::pair<Sp<ModuleProvider>, ghc::filesystem::path> FindProviderByPath(const Sp<ModuleFile>& parent, const std::string& path);
 
         GlobalImportHandler global_import_handler_;
 
@@ -204,17 +225,15 @@ namespace jetpack {
 
         Vec<Sp<ModuleProvider>> providers_;
 
-        boost::synchronized_value<Vec<WorkerError>> worker_errors_;
-
-        int32_t enqueued_files_count_ = 0;
-        int32_t finished_files_count_ = 0;
+        WorkerErrors worker_errors_;
 
         std::atomic<bool> has_common_js_{ false };
 
-        std::mutex main_lock_;
-        std::condition_variable main_cv_;
+        WaitGroup parsing_group_;
+        std::atomic<uint32_t> total_files_{0};
 
         bool trace_file = true;
+        bool escape_file_ = false;
 
     };
 

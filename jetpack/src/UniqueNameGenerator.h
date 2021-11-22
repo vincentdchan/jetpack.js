@@ -11,7 +11,6 @@
 #include <mutex>
 #include <robin_hood.h>
 #include <parser/SyntaxNodes.h>
-#include <boost/thread/synchronized_value.hpp>
 
 namespace jetpack {
 
