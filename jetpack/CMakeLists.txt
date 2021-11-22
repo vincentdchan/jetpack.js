@@ -30,6 +30,7 @@ set(SOURCE_FILES
         src/utils/Alloc.cpp
         src/utils/Dir.h
         src/utils/Dir.cpp
+        src/utils/WaitGroup.h
         src/tokenizer/Token.h
         src/tokenizer/Token.cpp
         src/tokenizer/Location.h

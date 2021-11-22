@@ -24,6 +24,7 @@
 #include "WorkerError.h"
 #include "sourcemap/SourceMapGenerator.h"
 #include "utils/JetFlags.h"
+#include "utils/WaitGroup.h"
 
 namespace jetpack {
 
@@ -190,9 +191,6 @@ namespace jetpack {
         }
 
     private:
-        void EnqueueOne(std::function<void()> unit);
-        void FinishOne();
-
         void TraverseRenameAllImports(const Sp<ModuleFile>& mf, uint8_t* visited_marks);
 
         void ReplaceImports(const Sp<ModuleFile>& mf);
@@ -229,13 +227,10 @@ namespace jetpack {
 
         WorkerErrors worker_errors_;
 
-        int32_t enqueued_files_count_ = 0;
-        int32_t finished_files_count_ = 0;
-
         std::atomic<bool> has_common_js_{ false };
 
-        std::mutex main_lock_;
-        std::condition_variable main_cv_;
+        WaitGroup parsing_group_;
+        std::atomic<uint32_t> total_files_{0};
 
         bool trace_file = true;
         bool escape_file_ = false;

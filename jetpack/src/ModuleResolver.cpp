@@ -251,7 +251,9 @@ namespace jetpack {
 
         mf->ref_mods.push_back(childMod);
 
-        EnqueueOne([this, &config, childMod] {
+        parsing_group_.Add();
+        total_files_++;
+        thread_pool_->enqueue([this, &config, childMod] {
             try {
                 ParseFile(config, childMod);
             } catch (parser::ParseError& ex) {
@@ -265,7 +267,7 @@ namespace jetpack {
             } catch (std::exception& ex) {
                 worker_errors_.add({childMod->Path(), ex.what() });
             }
-            FinishOne();
+            parsing_group_.Done();
         });
         return childMod;
     }
@@ -285,7 +287,7 @@ namespace jetpack {
         json result = json::object();
         result["entry"] = entry_module->Path();
         result["importStat"] = GetImportStat();
-        result["totalFiles"] = finished_files_count_;
+        result["totalFiles"] = total_files_.load();
         result["exports"] = std::move(exports);
 
         if (worker_errors_.print()) {
@@ -312,7 +314,9 @@ namespace jetpack {
         thread_pool_ = std::make_unique<ThreadPool>(thread_pool_size);
 
         benchmark::BenchMarker ps(benchmark::BENCH_PARSING_STAGE);
-        EnqueueOne([this, &config, &resolvedPath, &rootProvider] {
+        total_files_++;
+        parsing_group_.Add();
+        thread_pool_->enqueue([this, &config, &resolvedPath, &rootProvider] {
             try {
                 ParseFileFromPath(rootProvider, config, resolvedPath);
             } catch (parser::ParseError& ex) {
@@ -326,13 +330,10 @@ namespace jetpack {
             } catch (std::exception& ex) {
                 worker_errors_.add({ resolvedPath, ex.what() });
             }
-            FinishOne();
+            parsing_group_.Done();
         });
 
-        std::unique_lock<std::mutex> lk(main_lock_);
-        main_cv_.wait(lk, [this] {
-            return finished_files_count_ >= enqueued_files_count_;
-        });
+        parsing_group_.Wait();
         ps.Submit();
 
         worker_errors_.throw_collection_if_not_empty();
@@ -405,27 +406,6 @@ namespace jetpack {
             std::cerr << "File: " << error.file_path << std::endl;
             std::cerr << "Error: " << error.error_content << std::endl;
         }
-    }
-
-    void ModuleResolver::EnqueueOne(std::function<void()> unit) {
-        {
-            std::lock_guard<std::mutex> lk(main_lock_);
-            enqueued_files_count_++;
-        }
-
-#ifdef JETPACK_SINGLE_THREAD
-        unit();
-#else
-        thread_pool_->enqueue(std::move(unit));
-#endif
-    }
-
-    void ModuleResolver::FinishOne() {
-        {
-            std::lock_guard<std::mutex> lk(main_lock_);
-            finished_files_count_++;
-        }
-        main_cv_.notify_one();
     }
 
     json ModuleResolver::GetImportStat() {
@@ -513,24 +493,21 @@ namespace jetpack {
             module_compositor.AddSnippet(COMMON_JS_CODE);
         }
 
-        std::vector<std::future<void>> fragments;
-        fragments.reserve(modules_table_.ModCount());
-
         auto modules = modules_table_.Modules();
+
+        WaitGroup group;
+        group.Add(modules.size());
         for (auto module : modules) {
-            auto fut = thread_pool_->enqueue([&config, module] {
+            thread_pool_->enqueue([&config, &group, module] {
                 CodeGen codegen(config, module->codegen_fragment);
                 codegen.Traverse(*module->ast);
+                group.Done();
             });
-            fragments.push_back(std::move(fut));
         }
-
-        for (auto& f : fragments) {
-            f.wait();
-        }
-        codegen_marker.Submit();
 
         thread_pool_ = nullptr;
+
+        group.Wait();
 
         benchmark::BenchMarker concat_marker(benchmark::BENCH_MODULE_COMPOSITION);
         ConcatModules(entry_module, module_compositor);
@@ -615,18 +592,18 @@ namespace jetpack {
         RenamerCollection collection;
         collection.idLogger = id_logger_;
 
-        std::vector<std::future<void>> futures;
         auto modules = modules_table_.Modules();
+        WaitGroup group;
+
+        group.Add(modules.size());
         for (auto mod : modules) {
-            futures.push_back(thread_pool_->enqueue([this, mod, &collection] {
+            thread_pool_->enqueue([mod, &collection, &group] {
                 mod->RenameInnerScopes(collection);
-                FinishOne();
-            }));
+                group.Done();
+            });
         }
 
-        for (auto& fut : futures) {
-            fut.get();
-        }
+        group.Wait();
 
         worker_errors_.throw_collection_if_not_empty();
         name_generator = MinifyNameGenerator::Merge(collection.content, id_logger_);
