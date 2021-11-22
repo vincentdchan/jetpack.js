@@ -8,7 +8,6 @@
 #include <tsl/ordered_map.h>
 #include <ThreadPool.h>
 #include <filesystem.hpp>
-#include <boost/thread/synchronized_value.hpp>
 #include <condition_variable>
 #include <vector>
 #include <memory>
@@ -27,6 +26,27 @@
 #include "utils/JetFlags.h"
 
 namespace jetpack {
+
+    struct WorkerErrors {
+    public:
+        WorkerErrors() = default;
+
+        inline void add(const WorkerError& err) {
+            std::lock_guard<std::mutex> guard(m_);
+            errors_.push_back(err);
+        }
+
+        bool print();
+
+        void clear();
+
+        void throw_collection_if_not_empty();
+
+    private:
+        Vec<WorkerError> errors_;
+        std::mutex m_;
+
+    };
 
     class ModuleCompositor;
 
@@ -207,7 +227,7 @@ namespace jetpack {
 
         Vec<Sp<ModuleProvider>> providers_;
 
-        boost::synchronized_value<Vec<WorkerError>> worker_errors_;
+        WorkerErrors worker_errors_;
 
         int32_t enqueued_files_count_ = 0;
         int32_t finished_files_count_ = 0;

@@ -4,13 +4,13 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
+#include <filesystem.hpp>
 #include "parser/Parser.hpp"
 #include "parser/ParserContext.h"
 #include "parser/NodesMaker.h"
 #include "codegen/CodeGen.h"
 #include "CodeGenFragment.h"
 #include "SimpleAPI.h"
-#include "utils/Path.h"
 
 #include "ModuleResolver.h"
 
@@ -110,20 +110,20 @@ TEST(CommonJS, CodeGen) {
 }
 
 TEST(CommonJS, Complex) {
-    Path path(JETPACK_TEST_RUNNING_DIR);
-    path.Join("tests/fixtures/cjs/index.js");
+    ghc::filesystem::path path(JETPACK_TEST_RUNNING_DIR);
+    path.append("tests/fixtures/cjs/index.js");
 
-    auto entryPath = path.ToString();
+    auto entryPath = path.string();
     std::cout << "dir: " << entryPath << std::endl;
 
-    Path outputPath(JETPACK_BUILD_DIR);
-    outputPath.Join("cjs_bundle_test.js");
+    ghc::filesystem::path outputPath(JETPACK_BUILD_DIR);
+    outputPath.append("cjs_bundle_test.js");
 
-    std::cout << "output dir: " << outputPath.ToString() << std::endl;
+    std::cout << "output dir: " << outputPath.string() << std::endl;
 
     JetpackFlags flags;
     flags |= JETPACK_JSX;
     flags |= JETPACK_SOURCEMAP;
     flags |= JETPACK_TRACE_FILE;
-    EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), outputPath.ToString().c_str(), static_cast<int>(flags), nullptr), 0);
+    EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), outputPath.string().c_str(), static_cast<int>(flags), nullptr), 0);
 }

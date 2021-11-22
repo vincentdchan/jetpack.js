@@ -5,13 +5,13 @@
 #include <gtest/gtest.h>
 #include <parser/ParserContext.h>
 #include <ThreadPool.h>
+#include <filesystem.hpp>
 #include "sourcemap/SourceMapGenerator.h"
 #include "sourcemap/SourceMapDecoder.h"
 #include "codegen/CodeGen.h"
 #include "ModuleResolver.h"
 #include "ModuleCompositor.h"
 #include "SimpleAPI.h"
-#include "utils/Path.h"
 #include "utils/io/FileIO.h"
 
 using namespace jetpack;
@@ -134,28 +134,28 @@ TEST(SourceMap, Simple) {
 }
 
 TEST(SourceMap, Complex) {
-    Path path(JETPACK_TEST_RUNNING_DIR);
-    path.Join("tests/fixtures/sourcemap/index.js");
+    ghc::filesystem::path path(JETPACK_TEST_RUNNING_DIR);
+    path.append("tests/fixtures/sourcemap/index.js");
 
-    auto entryPath = path.ToString();
+    auto entryPath = path.string();
     std::cout << "dir: " << entryPath << std::endl;
 
-    EXPECT_TRUE(io::IsFileExist(entryPath));
+    EXPECT_TRUE(ghc::filesystem::exists(entryPath));
 
-    Path outputPath(JETPACK_BUILD_DIR);
-    outputPath.Join("sourcemap_bundle_test.js");
+    ghc::filesystem::path outputPath(JETPACK_BUILD_DIR);
+    outputPath.append("sourcemap_bundle_test.js");
 
-    std::cout << "output dir: " << outputPath.ToString() << std::endl;
+    std::cout << "output dir: " << outputPath.string() << std::endl;
 
     JetpackFlags flags;
     flags |= JETPACK_JSX;
     flags |= JETPACK_SOURCEMAP;
     flags |= JETPACK_TRACE_FILE;
-    std::string output_str = outputPath.ToString();
+    std::string output_str = outputPath.string();
     EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), output_str.c_str(), static_cast<int>(flags), nullptr), 0);
 
     std::string sourcemapContent;
-    EXPECT_EQ(io::ReadFileToStdString(outputPath.ToString() + ".map", sourcemapContent), io::IOError::Ok);
+    EXPECT_EQ(io::ReadFileToStdString(outputPath.string() + ".map", sourcemapContent), io::IOError::Ok);
 
     auto sourcemapJson = nlohmann::json::parse(sourcemapContent);
     std::string mapping = sourcemapJson["mappings"];
