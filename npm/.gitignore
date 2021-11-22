@@ -6,3 +6,5 @@
 /*.dylib
 
 /README.md
+
+*.log

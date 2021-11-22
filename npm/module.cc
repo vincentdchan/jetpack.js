@@ -3,7 +3,6 @@
 #include <cassert>
 
 #include "./node_helper.hpp"
-#include "parser/ParseErrorHandler.h"
 #include "SimpleAPI.h"
 
 #define ENTRY_PATH_MAX 512
@@ -51,27 +50,27 @@ static napi_value bundle_file(napi_env env, napi_callback_info info) {
   if (argv.size() >= 2) {
     bool jsx = get_object_prop_or<bool>(env, argv[1], "jsx", true);
     if (jsx) {
-      flags |= JetpackFlag::Jsx;
+      flags |= JETPACK_JSX;
     }
     bool minify = get_object_prop_or<bool>(env, argv[1], "minify", false);
     if (minify) {
-      flags |= JetpackFlag::Minify;
+      flags |= JETPACK_MINIFY;
     }
     bool sourcemap = get_object_prop_or<bool>(env, argv[1], "sourcemap", false);
     if (sourcemap) {
-      flags |= JetpackFlag::Sourcemap;
+      flags |= JETPACK_SOURCEMAP;
     }
     bool trace_file = get_object_prop_or<bool>(env, argv[1], "traceFile", true);
     if (trace_file) {
-      flags |= JetpackFlag::TraceFile;
+      flags |= JETPACK_TRACE_FILE;
     }
   } else {
     // default
-    flags |= JetpackFlag::Jsx;
-    flags |= JetpackFlag::TraceFile;
+    flags |= JETPACK_JSX;
+    flags |= JETPACK_TRACE_FILE;
   }
 
-  jetpack::simple_api::BundleModule(path, "bundle.js", flags);
+  jetpack_bundle_module(path.c_str(), "bundle.js", flags, nullptr);
 
   return 0;
 }
@@ -107,7 +106,7 @@ static napi_value handle_command_line(napi_env env, napi_callback_info info) {
     cmd_argv[i] = str_buffer;
   }
 
-  rt = jetpack::simple_api::HandleCommandLine(arr_len, cmd_argv);
+  rt = jetpack_handle_command_line(arr_len, cmd_argv);
 
 failed:
   for (uint32_t i = 0; i < arr_len; i++) {
@@ -134,25 +133,20 @@ static napi_value minify_code(napi_env env, napi_callback_info info) {
   status = argv.load(env, info);
   assert(status = napi_ok);
 
-  std::string result;
-  try {
-      std::string content = node_cast<std::string>(env, argv[0]);
-      jetpack::parser::Config parser_config = jetpack::parser::Config::Default();
-      jetpack::CodeGenConfig code_gen_config;
-      parser_config.jsx = true;
-      parser_config.constant_folding = true;
-      code_gen_config.minify = true;
-      result = jetpack::simple_api::ParseAndCodeGen(content, parser_config, code_gen_config);
-  } catch (jetpack::parser::ParseError& err) {
-      std::string errMsg = err.ErrorMessage();
-      napi_throw_type_error(env, nullptr, errMsg.c_str());
-      return 0;
-  } catch (...) {
-      napi_throw_type_error(env, nullptr, "unknown error");
-      return 0;
+  std::string content = node_cast<std::string>(env, argv[0]);
+  const char* result = jetpack_parse_and_codegen(content.c_str(), JETPACK_MINIFY | JETPACK_JSX);
+  if (result == nullptr) {
+    const char* error_msg = jetpack_error_message();
+    napi_throw_type_error(env, nullptr, error_msg);
+    return 0;
   }
 
-  return to_node_value(env, result);
+  napi_value value;
+  status = napi_create_string_utf8(env, result, NAPI_AUTO_LENGTH, &value);
+
+  assert(status == napi_ok);
+                                
+  return value;
 }
 
 static napi_value Init(napi_env env, napi_value exports) {
