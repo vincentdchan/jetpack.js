@@ -137,37 +137,37 @@ TEST(SourceMap, Complex) {
     ghc::filesystem::path path(JETPACK_TEST_RUNNING_DIR);
     path.append("tests/fixtures/sourcemap/index.js");
 
-    auto entryPath = path.string();
-    std::cout << "dir: " << entryPath << std::endl;
+    auto entry_path = path.string();
+    std::cout << "dir: " << entry_path << std::endl;
 
-    EXPECT_TRUE(ghc::filesystem::exists(entryPath));
+    EXPECT_TRUE(ghc::filesystem::exists(entry_path));
 
-    ghc::filesystem::path outputPath(JETPACK_BUILD_DIR);
-    outputPath.append("sourcemap_bundle_test.js");
+    ghc::filesystem::path output_path(JETPACK_BUILD_DIR);
+    output_path.append("sourcemap_bundle_test.js");
 
-    std::cout << "output dir: " << outputPath.string() << std::endl;
+    std::cout << "output dir: " << output_path.string() << std::endl;
 
     JetpackFlags flags;
     flags |= JETPACK_JSX;
     flags |= JETPACK_SOURCEMAP;
     flags |= JETPACK_TRACE_FILE;
-    std::string output_str = outputPath.string();
-    EXPECT_EQ(jetpack_bundle_module(entryPath.c_str(), output_str.c_str(), static_cast<int>(flags), nullptr), 0);
+    std::string output_str = output_path.string();
+    EXPECT_EQ(jetpack_bundle_module(entry_path.c_str(), output_str.c_str(), static_cast<int>(flags), nullptr), 0);
 
-    std::string sourcemapContent;
-    EXPECT_EQ(io::ReadFileToStdString(outputPath.string() + ".map", sourcemapContent), io::IOError::Ok);
+    std::string sourcemap_content;
+    EXPECT_EQ(io::ReadFileToStdString(output_path.string() + ".map", sourcemap_content), io::IOError::Ok);
 
-    auto sourcemapJson = nlohmann::json::parse(sourcemapContent);
-    std::string mapping = sourcemapJson["mappings"];
+    auto sourcemap_json = nlohmann::json::parse(sourcemap_content);
+    std::string mapping = sourcemap_json["mappings"];
     std::cout << "mapping: " << mapping << std::endl;
 
-    SourceMapDecoder decoder(sourcemapJson);
+    SourceMapDecoder decoder(sourcemap_json);
     auto result = decoder.Decode();
 
-    EXPECT_EQ(sourcemapJson["sources"].size(), 2);
-    EXPECT_EQ(sourcemapJson["sourcesContent"].size(), 2);
+    EXPECT_EQ(sourcemap_json["sources"].size(), 2);
+    EXPECT_EQ(sourcemap_json["sourcesContent"].size(), 2);
 
-    for (const auto& item : sourcemapJson["sources"]) {
+    for (const auto& item : sourcemap_json["sources"]) {
         std::cout << "source: " << item.get<std::string>() << std::endl;
     }
 

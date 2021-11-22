@@ -3,6 +3,7 @@
 //
 
 #include <filesystem.hpp>
+#include <fmt/format.h>
 #include "utils/io/FileIO.h"
 #include "ModuleProvider.h"
 
@@ -16,6 +17,14 @@ namespace jetpack {
         return pMatch(mf, path);
     }
 
+    bool ends_with(std::string const &fullString, std::string const &ending) {
+        if (fullString.length() >= ending.length()) {
+            return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+        } else {
+            return false;
+        }
+    }
+
     std::optional<ghc::filesystem::path> FileModuleProvider::pMatch(const ModuleFile &mf, const std::string &path) const {
         ghc::filesystem::path module_path(base_path_);
         module_path.append(mf.Path());
@@ -26,23 +35,23 @@ namespace jetpack {
         std::string source_path = module_path.string();
 
         if (unlikely(source_path.rfind(base_path_, 0) != 0)) {  // is not under working dir
-            std::cerr << "path: " << source_path << " is not under working dir: " << base_path_ << std::endl;
+            std::cerr << fmt::format("path {} is not under working dir: {}", source_path, base_path_.string()) << std::endl;
             return std::nullopt;
         }
 
-        if (!exists(module_path) && module_path.has_extension()) {
+        if (!exists(module_path)) {
             auto ext = module_path.extension().string();
-            if (ext != ".js") {
-                auto tryResult = TryWithSuffix(mf, source_path, ".js");
-                if (tryResult.has_value()) {
-                    return tryResult;
+            if (!ends_with(source_path, ".js")) {
+                auto try_result = TryWithSuffix(mf, source_path, ".js");
+                if (try_result.has_value()) {
+                    return try_result;
                 }
             }
 
-            if (ext != ".jsx") {
-                auto tryResult = TryWithSuffix(mf, source_path, ".jsx");
-                if (tryResult.has_value()) {
-                    return tryResult;
+            if (!ends_with(source_path, ".jsx")) {
+                auto try_result = TryWithSuffix(mf, source_path, ".jsx");
+                if (try_result.has_value()) {
+                    return try_result;
                 }
             }
 
