@@ -1174,7 +1174,7 @@ namespace jetpack::parser {
                 node->computed = false;
                 expr = Finalize(StartNode(start_token), node);
             } else if (Match(JsTokenType::LeftParen)) {
-                bool async_arrow = maybe_async && (start_token.lineNumber == ctx->lookahead_.lineNumber);
+                bool async_arrow = maybe_async && (start_token.line_number == ctx->lookahead_.line_number);
                 ctx->is_binding_element_ = false;
                 ctx->is_assignment_target_ = false;
                 auto node = Alloc<CallExpression>();
@@ -2509,7 +2509,7 @@ namespace jetpack::parser {
 
             if (
                     token.type == JsTokenType::Identifier &&
-                    (token.lineNumber == ctx->lookahead_.lineNumber) &&
+                    (token.line_number == ctx->lookahead_.line_number) &&
                             token.value == "async"
             ) {
                 if (ctx->lookahead_.type == JsTokenType::Identifier || Match(JsTokenType::K_Yield)) {

@@ -307,7 +307,7 @@ namespace jetpack::parser {
             Token next = ctx->scanner_->Lex();
             ctx->scanner_->RestoreState(state);
 
-            match = (state.line_number_ == next.lineNumber) && IsKeywordToken(next.type) && (next.value == "function");
+            match = (state.line_number_ == next.line_number) && IsKeywordToken(next.type) && (next.value == "function");
         }
 
         return match;

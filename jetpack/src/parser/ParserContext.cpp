@@ -20,8 +20,8 @@ namespace jetpack::parser {
         has_line_terminator_ = false;
 
         lookahead_.type = JsTokenType::EOF_;
-        lookahead_.lineNumber = scanner_->LineNumber();
-        lookahead_.lineStart = 0;
+        lookahead_.line_number = scanner_->LineNumber();
+        lookahead_.line_start = 0;
         lookahead_.range = make_pair(0, 0);
 
         is_module_ = false;

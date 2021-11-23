@@ -562,8 +562,8 @@ namespace jetpack::parser {
 
         Token token;
         token.value = move(text);
-        token.lineNumber = scanner.LineNumber();
-        token.lineStart = scanner.LineStart();
+        token.line_number = scanner.LineNumber();
+        token.line_start = scanner.LineStart();
         token.range = {
             start.u8,
             scanner.Index().u8,
@@ -649,8 +649,8 @@ namespace jetpack::parser {
 
                 token.type = JsTokenType::StringLiteral;
                 token.value = move(str);
-                token.lineNumber = scanner.LineNumber();
-                token.lineStart = scanner.LineStart();
+                token.line_number = scanner.LineNumber();
+                token.line_start = scanner.LineStart();
                 token.range = {
                     start.u8,
                     scanner.Index().u8,
@@ -678,8 +678,8 @@ namespace jetpack::parser {
                 tmp.u16 += value.size();
                 scanner.SetIndex(tmp);
 
-                token.lineNumber = scanner.LineNumber();
-                token.lineStart = scanner.LineStart();
+                token.line_number = scanner.LineNumber();
+                token.line_start = scanner.LineStart();
                 token.value = std::move(value);
                 token.range = {
                     index.u8,
@@ -691,8 +691,8 @@ namespace jetpack::parser {
 
             case '`': {
                 token.type = JsTokenType::Template;
-                token.lineNumber = scanner.LineNumber();
-                token.lineStart = scanner.LineStart(),
+                token.line_number = scanner.LineNumber();
+                token.line_start = scanner.LineStart(),
                 token.range = {
                     scanner.Index().u8,
                     scanner.Index().u8,
@@ -706,8 +706,8 @@ namespace jetpack::parser {
         }
 
         if (token.type != JsTokenType::Invalid) {
-            token.lineNumber = scanner.LineNumber();
-            token.lineStart = scanner.LineStart();
+            token.line_number = scanner.LineNumber();
+            token.line_start = scanner.LineStart();
             token.range = {
                 scanner.Index().u8 - 1,
                 scanner.Index().u8,
@@ -733,8 +733,8 @@ namespace jetpack::parser {
 
             token.type = JsTokenType::Identifier;
             token.value = std::string(id);
-            token.lineStart = scanner.LineStart();
-            token.lineNumber = scanner.LineNumber();
+            token.line_start = scanner.LineStart();
+            token.line_number = scanner.LineNumber();
             token.range = {
                 start.u8,
                 scanner.Index().u8,

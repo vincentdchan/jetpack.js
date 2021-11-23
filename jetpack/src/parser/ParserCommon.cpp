@@ -67,15 +67,15 @@ namespace jetpack::parser {
     }
 
     ParseError ParserCommon::UnexpectedToken(const Token &token, const std::string& message) {
-        if (token.lineNumber > 0) {
+        if (token.line_number > 0) {
             uint32_t index = token.range.first;
-            uint32_t line = token.lineNumber;
+            uint32_t line = token.line_number;
             uint32_t lastMarkerLineStart = ctx->last_marker_.cursor.u16 - ctx->last_marker_.column;
             uint32_t column = token.range.first - lastMarkerLineStart + 1;
             return ctx->error_handler_->CreateError(message, index, line, column);
         } else {
             uint32_t index = token.range.first;
-            uint32_t line = token.lineNumber;
+            uint32_t line = token.line_number;
             uint32_t column = ctx->last_marker_.column + 1;
             return ctx->error_handler_->CreateError(message, index, line, column);
         }
@@ -134,7 +134,7 @@ namespace jetpack::parser {
 
         Token next = scanner.Lex();
 
-        ctx->has_line_terminator_ = token.lineNumber != next.lineNumber;
+        ctx->has_line_terminator_ = token.line_number != next.line_number;
 
         if (ctx->strict_ && next.type == JsTokenType::Identifier) {
             if (JsTokenType t = Scanner::IsStrictModeReservedWord(next.value); t != JsTokenType::Invalid) {
@@ -167,8 +167,8 @@ namespace jetpack::parser {
     }
 
     ParserContext::Marker ParserCommon::StartNode(Token &tok, std::uint32_t last_line_start) {
-        auto column = tok.range.first - tok.lineStart;
-        auto line = tok.lineNumber;
+        auto column = tok.range.first - tok.line_start;
+        auto line = tok.line_number;
         if (column < 0) {
             column += last_line_start;
             line--;

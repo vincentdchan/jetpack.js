@@ -548,8 +548,8 @@ namespace jetpack {
 
         tok.value = move(id);
         tok.range = make_pair(start.u8, cursor_.u8);
-        tok.lineNumber = line_number_;
-        tok.lineStart = line_start_;
+        tok.line_number = line_number_;
+        tok.line_start = line_start_;
 
         return tok;
     }
@@ -842,8 +842,8 @@ namespace jetpack {
 
         tok.type = JsTokenType::NumericLiteral;
         tok.value = "0x" + num;
-        tok.lineStart = line_start_;
-        tok.lineNumber = line_number_;
+        tok.line_start = line_start_;
+        tok.line_number = line_number_;
         tok.range = make_pair(start, cursor_.u8);
 
         return tok;
@@ -1123,8 +1123,8 @@ namespace jetpack {
         tok.type = JsTokenType::StringLiteral;
         tok.value = str;
         tok.octal = octal;
-        tok.lineNumber = line_number_;
-        tok.lineStart = line_start_;
+        tok.line_number = line_number_;
+        tok.line_start = line_start_;
         tok.range = make_pair(start.u8, cursor_.u8);
 
         return tok;
@@ -1247,8 +1247,8 @@ namespace jetpack {
         Token tok;
         tok.type = JsTokenType::Template;
         tok.value = source_->View().substr(start.u8 + 1, cursor_.u8 - rawOffset);
-        tok.lineNumber = line_number_;
-        tok.lineStart = line_start_;
+        tok.line_number = line_number_;
+        tok.line_start = line_start_;
         tok.range = make_pair(start.u8, cursor_.u8);
         tok.cooked = std::move(cooked);
         tok.head = head;
@@ -1350,8 +1350,8 @@ namespace jetpack {
 
         Token token;
         token.type = JsTokenType::RegularExpression;
-        token.lineNumber = line_number_;
-        token.lineStart = line_start_;
+        token.line_number = line_number_;
+        token.line_start = line_start_;
         token.value = "/" + pattern + "/" + flags;
 
         return token;
@@ -1361,8 +1361,8 @@ namespace jetpack {
         if (IsEnd()) {
             Token tok;
             tok.type = JsTokenType::EOF_;
-            tok.lineNumber = line_number_;
-            tok.lineStart = line_start_;
+            tok.line_number = line_number_;
+            tok.line_start = line_start_;
             tok.range = make_pair(cursor_.u8, cursor_.u8);
             return tok;
         }
