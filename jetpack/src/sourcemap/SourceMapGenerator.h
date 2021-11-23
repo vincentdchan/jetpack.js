@@ -44,7 +44,7 @@ namespace jetpack {
         /**
          * Unify all collectors together
          */
-        void Finalize(Slice<const MappingItem> mapping_items);
+        void Finalize(Slice<const MappingItemView> mapping_items);
 
     private:
         void EndLine();
@@ -62,13 +62,13 @@ namespace jetpack {
 
         void AddEnoughLines(int32_t target_line);
 
-        void FinalizeMapping(Slice<const MappingItem> items);
+        void FinalizeMapping(Slice<const MappingItemView> items);
 
         void FinalizeSources();
 
         void FinalizeSourcesContent();
 
-        bool AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col);
+        bool AddLocation(std::string_view name, int after_col, int file_id, int before_line, int before_col);
 
 //        int32_t GetFilenameIndexByModuleId(int32_t module_id);
 

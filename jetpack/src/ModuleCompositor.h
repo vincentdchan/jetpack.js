@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cinttypes>
+#include <string_view>
 #include <ThreadPool.h>
 #include "utils/io/FileIO.h"
 #include "utils/string/UString.h"
@@ -44,7 +45,7 @@ namespace jetpack {
         io::Writer& writer_;
         int32_t     line_ = 1;
         int32_t     column_ = 0;
-        std::vector<MappingItem> mapping_items_;
+        std::vector<MappingItemView> mapping_items_;
         const CodeGenConfig& config_;
 
     };

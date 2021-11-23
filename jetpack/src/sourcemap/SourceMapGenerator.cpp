@@ -149,7 +149,7 @@ namespace jetpack {
         FinalizeSourcesContent();
     }
 
-    void SourceMapGenerator::Finalize(Slice<const MappingItem> mapping_items) {
+    void SourceMapGenerator::Finalize(Slice<const MappingItemView> mapping_items) {
         writer_.Write("  \"mappings\": \"");
         benchmark::BenchMarker mapping_barker(benchmark::BENCH_FINALIZE_SOURCEMAP_2);
         FinalizeMapping(mapping_items);
@@ -203,7 +203,7 @@ namespace jetpack {
         writer_.Write("  ],\n");
     }
 
-    void SourceMapGenerator::FinalizeMapping(Slice<const MappingItem> items) {
+    void SourceMapGenerator::FinalizeMapping(Slice<const MappingItemView> items) {
         for (const auto& item : items) {
             AddEnoughLines(item.dist_line);
             if (last_write_ == LastWriteType::Item) {
@@ -235,7 +235,7 @@ namespace jetpack {
 
 #define SW(NEW, OLD) ((NEW) - (OLD))
 
-    bool SourceMapGenerator::AddLocation(const std::string& name, int after_col, int file_id, int before_line, int before_col) {
+    bool SourceMapGenerator::AddLocation(std::string_view name, int after_col, int file_id, int before_line, int before_col) {
         if (unlikely(file_id < 0)) {
 //            J_ASSERT(fileId != -1);
             return false;
