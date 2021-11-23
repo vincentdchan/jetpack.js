@@ -16,7 +16,7 @@ namespace jetpack::parser {
         error_handler_ = std::make_shared<ParseErrorHandler>();
 
         source_ = std::move(src);
-        scanner_ = make_unique<Scanner>(source_, error_handler_);
+        scanner_ = make_unique<Scanner>(*source_, *error_handler_);
         has_line_terminator_ = false;
 
         lookahead_.type = JsTokenType::EOF_;

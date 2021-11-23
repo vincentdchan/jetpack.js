@@ -16,7 +16,7 @@ namespace jetpack {
 
     class Scanner {
     public:
-        Scanner(const Sp<MemoryViewOwner>& source, Sp<parser::ParseErrorHandler> error_handler);
+        Scanner(MemoryViewOwner& source, parser::ParseErrorHandler& error_handler);
         Scanner(const Scanner&) = delete;
         Scanner(Scanner&&) = delete;
 
@@ -43,7 +43,7 @@ namespace jetpack {
 
         [[nodiscard]]
         inline int32_t Length() const {
-            return source_->View().size();
+            return source_.View().size();
         }
 
         ScannerState SaveState();
@@ -87,7 +87,7 @@ namespace jetpack {
         }
 
         inline std::string_view View(uint32_t start, uint32_t end) {
-            return source_->View().substr(start, end - start);
+            return source_.View().substr(start, end - start);
         }
 
         std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
@@ -121,11 +121,11 @@ namespace jetpack {
         [[nodiscard]]
         inline char CharAt(uint32_t index) const {
             if (unlikely(index >= u16_mapping_.size())) return u'\0';
-            return source_->View().at(index);
+            return source_.View().at(index);
         }
 
         [[nodiscard]]
-        Sp<MemoryViewOwner> Source() const {
+        inline MemoryViewOwner& Source() const {
             return source_;
         }
 
@@ -159,8 +159,8 @@ namespace jetpack {
         // utf8 index -> u16 index
         std::vector<uint32_t> u16_mapping_;
 
-        Sp<parser::ParseErrorHandler> error_handler_;
-        Sp<MemoryViewOwner> source_;
+        parser::ParseErrorHandler& error_handler_;
+        MemoryViewOwner& source_;
         bool is_module_ = false;
 
         void PlusCursor(uint32_t n);

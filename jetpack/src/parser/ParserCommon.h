@@ -82,7 +82,7 @@ namespace jetpack::parser {
         Token NextRegexToken();
 
         inline std::string_view GetTokenRaw(const Token& token) {
-            return ctx->scanner_->Source()->View().substr
+            return ctx->scanner_->Source().View().substr
             (token.range.first, token.range.second - token.range.first);
         }
 

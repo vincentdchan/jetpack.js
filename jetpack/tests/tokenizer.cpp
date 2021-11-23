@@ -12,8 +12,8 @@ using namespace jetpack;
 static std::vector<Token> tokenize(const std::string& content) {
     std::vector<Token> result;
 
-    auto mem = std::make_shared<RawMemoryViewOwner>(std::string_view(content));
-    auto error_handler = std::make_shared<parser::ParseErrorHandler>();
+    RawMemoryViewOwner mem((std::string_view(content)));
+    parser::ParseErrorHandler error_handler;
 
     std::vector<Sp<Comment>> comments;
 

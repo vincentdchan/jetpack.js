@@ -15,10 +15,10 @@ namespace jetpack {
 #define DO(EXPR) \
     if (!(EXPR)) return false;
 
-    Scanner::Scanner(const Sp<MemoryViewOwner>& source, std::shared_ptr<parser::ParseErrorHandler> error_handler):
-            source_(source), error_handler_(std::move(error_handler)) {
+    Scanner::Scanner(MemoryViewOwner& source, parser::ParseErrorHandler& error_handler):
+            source_(source), error_handler_(error_handler) {
 
-        u16_mapping_.resize(source_->View().size(), 0);
+        u16_mapping_.resize(source_.View().size(), 0);
     }
 
     Scanner::ScannerState Scanner::SaveState() {
@@ -39,7 +39,7 @@ namespace jetpack {
     }
 
     void Scanner::ThrowUnexpectedToken(const std::string &message) {
-        throw error_handler_->CreateError(
+        throw error_handler_.CreateError(
                 message,
                 cursor_.u16,
                 line_number_,
@@ -51,11 +51,11 @@ namespace jetpack {
     }
 
     void Scanner::TolerateUnexpectedToken(const std::string &message) {
-        auto error = error_handler_->CreateError(
+        auto error = error_handler_.CreateError(
                 message,
                 cursor_.u16,
                 line_number_, cursor_.u16 - line_start_ + 1);
-        error_handler_->TolerateError(error);
+        error_handler_.TolerateError(error);
     }
 
     std::vector<Sp<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
@@ -81,7 +81,7 @@ namespace jetpack {
                 };
                 auto comment = new Comment {
                         false,
-                        std::string(source_->View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
+                        std::string(source_.View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                         make_pair(start, cursor_.u8 - 1),
                         loc
                 };
@@ -104,7 +104,7 @@ namespace jetpack {
         loc.end = Position {line_number_, cursor_.u16 - line_start_ };
         auto comment = new Comment {
                 false,
-                std::string(source_->View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
+                std::string(source_.View().substr(start + u8_offset, cursor_.u8 - start - u8_offset)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -143,7 +143,7 @@ namespace jetpack {
                     };
                     auto comment = new Comment {
                             true,
-                            std::string(source_->View().substr(start + 2, cursor_.u8 - start - 4)),
+                            std::string(source_.View().substr(start + 2, cursor_.u8 - start - 4)),
                             make_pair(start, cursor_.u8),
                             loc,
                     };
@@ -163,7 +163,7 @@ namespace jetpack {
         };
         auto comment = new Comment {
                 true,
-                std::string(source_->View().substr(start + 2, cursor_.u8 - start - 2)),
+                std::string(source_.View().substr(start + 2, cursor_.u8 - start - 2)),
                 make_pair(start, cursor_.u8),
                 loc,
         };
@@ -210,7 +210,7 @@ namespace jetpack {
                         break;
                     }
                 } else if (ch == '<' && !is_module_) { // U+003C is '<'
-                    if (source_->View().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
+                    if (source_.View().substr(cursor_.u8 + 1, cursor_.u8 + 4) == "!--") {
                         PlusCursor(4); // `<!--`
                         auto comments = SkipSingleLineComment(4);
                         result.insert(result.end(), comments.begin(), comments.end());
@@ -243,9 +243,9 @@ namespace jetpack {
     char32_t Scanner::PeekUtf32(uint32_t* len) {
         uint32_t pre_saved_index = cursor_.u8;
         char32_t code = ReadCodepointFromUtf8(
-                reinterpret_cast<const uint8_t *>(source_->View().data()),
+                reinterpret_cast<const uint8_t *>(source_.View().data()),
                 &pre_saved_index,
-                source_->View().size());
+                source_.View().size());
         if (len != nullptr) {
             *len = pre_saved_index - cursor_.u8;
         }
@@ -429,7 +429,7 @@ namespace jetpack {
             }
         }
 
-        result.append(source_->View().substr(start.u8, cursor_.u8 - start.u8));
+        result.append(source_.View().substr(start.u8, cursor_.u8 - start.u8));
         return result;
     }
 
@@ -519,7 +519,7 @@ namespace jetpack {
         Token tok;
 
         std::string id;
-        if (source_->View().at(start.u8) == '\\') {
+        if (source_.View().at(start.u8) == '\\') {
             id = GetComplexIdentifier();
         } else {
             id = GetIdentifier(start_char_len);
@@ -922,7 +922,7 @@ namespace jetpack {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
         for (uint32_t i = cursor_.u8 + 1; i < Length(); ++i) {
-            char ch = source_->View().at(i);
+            char ch = source_.View().at(i);
             if (ch == '8' || ch == '9') {
                 return false;
             }
@@ -938,8 +938,8 @@ namespace jetpack {
         auto start = cursor_;
         char ch = CharAt(start.u8);
         if (!(UChar::IsDecimalDigit(ch) || (ch == '.'))) {
-            auto err = error_handler_->CreateError("Numeric literal must start with a decimal digit or a decimal point", cursor_.u8, line_number_, cursor_.u16 - line_start_);
-            throw err;
+            auto err = error_handler_.CreateError("Numeric literal must start with a decimal digit or a decimal point", cursor_.u8, line_number_, cursor_.u16 - line_start_);
+            throw std::move(err);
         }
 
         std::string num;
@@ -1019,7 +1019,7 @@ namespace jetpack {
         char quote = CharAt(start.u8);
 
         if (!(quote == '\'' || quote == '"')) {
-            throw error_handler_->CreateError(
+            throw error_handler_.CreateError(
                     "String literal must starts with a quote",
                     cursor_.u8, line_number_, cursor_.u16 - line_start_);
         }
