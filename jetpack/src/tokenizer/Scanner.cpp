@@ -1133,14 +1133,18 @@ namespace jetpack {
 
         bool head = (CharAt(start.u8) == '`');
         bool tail = false;
-        uint32_t rawOffset = 2;
+
+        // represent the truly offset of ending
+        // if template endswith '${', offset is 2
+        // if template endswith '`', offset is 1
+        uint32_t raw_offset = 2;
 
         NextChar();
 
         while (!IsEnd()) {
             char32_t ch = NextUtf32();
             if (ch == '`') {
-                rawOffset = 1;
+                raw_offset = 1;
                 tail = true;
                 terminated = true;
                 break;
@@ -1242,11 +1246,10 @@ namespace jetpack {
 
         Token tok;
         tok.type = JsTokenType::Template;
-        tok.value = source_->View().substr(start.u8 + 1, cursor_.u8 - rawOffset);
+        tok.value = std::move(cooked);
         tok.line_number = line_number_;
         tok.line_start = line_start_;
         tok.range = make_pair(start.u8, cursor_.u8);
-        tok.cooked = std::move(cooked);
         tok.head = head;
         tok.tail = tail;
 

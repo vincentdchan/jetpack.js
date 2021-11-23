@@ -36,6 +36,6 @@ TEST(Tokenizer, Token) {
     auto tokens = tokenize(src);
 
     for (const auto& tok : tokens) {
-        std::cout << TokenTypeToCString(tok.type) << std::endl;
+        std::cout << tok.ToString() << std::endl;
     }
 }

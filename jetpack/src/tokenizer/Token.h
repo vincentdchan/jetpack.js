@@ -150,9 +150,8 @@ namespace jetpack {
         bool octal = false;
         bool head = false;
         bool tail = false;
-        std::string cooked;
 
-        std::string to_string();
+        std::string ToString() const;
 
     };
 

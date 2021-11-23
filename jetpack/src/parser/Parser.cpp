@@ -2907,7 +2907,7 @@ namespace jetpack::parser {
             } else if (ctx->lookahead_.type == JsTokenType::Template && ctx->lookahead_.head) {
                 auto node = Alloc<TaggedTemplateExpression>();
                 node->quasi = ParseTemplateLiteral(scope);
-                node->tag = move(expr);
+                node->tag = expr;
                 expr = Finalize(start_marker, node);
             } else {
                 break;
@@ -3468,15 +3468,34 @@ namespace jetpack::parser {
         return expr;
     }
 
+    static void handle_template_element(Scanner& scanner, TemplateElement* node, Token& token) {
+        std::string_view original = scanner.View(token.range.first, token.range.second);
+        if (original.size() == 0) {
+            std::cerr << "internal error, tokenize template range is empty" << std::endl;
+            abort();
+        } else if (original[original.size() - 1] == '`') {
+            node->raw = original.substr(1, original.size() - 2);
+        } else if (original[original.size() - 1] == '{') {
+            node->raw = original.substr(1, original.size() - 3);
+        } else {
+            std::cerr << fmt::format("internal error, tokenize template ends with: {}", original) << std::endl;
+            abort();
+        }
+        node->cooked = token.value;
+        node->tail = token.tail;
+    }
+
     TemplateElement* Parser::ParseTemplateHead() {
         Assert(ctx->lookahead_.head, "Template literal must start with a template head");
         auto start_marker = CreateStartMarker();
         Token token = NextToken();
 
+        Scanner& scanner = *ctx->scanner_.get();
+
+        std::string_view original = scanner.View(token.range.first, token.range.second);
+
         auto node = Alloc<TemplateElement>();
-        node->raw = token.value;
-        node->cooked = token.cooked;
-        node->tail = token.tail;
+        handle_template_element(scanner, node, token);
 
         return Finalize(start_marker, node);
     }
@@ -3486,13 +3505,11 @@ namespace jetpack::parser {
             ThrowUnexpectedToken(ctx->lookahead_);
         }
 
+        Scanner& scanner = *ctx->scanner_.get();
         auto start_marker = CreateStartMarker();
         Token token = NextToken();
-
         auto node = Alloc<TemplateElement>();
-        node->raw = token.value;
-        node->cooked = token.cooked;
-        node->tail = token.tail;
+        handle_template_element(scanner, node, token);
 
         return Finalize(start_marker, node);
     }
