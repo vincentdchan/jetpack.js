@@ -132,7 +132,8 @@ if(JETPACK_BUILD_TESTS)
             tests/jsx.cpp
             tests/simple_api.cpp
             tests/common_js.cpp
-            tests/constant_folding.cpp)
+            tests/constant_folding.cpp
+            tests/tokenizer.cpp)
 
     target_include_directories(jetpack-test PUBLIC
             "../third_party/googletest/googletest/include"

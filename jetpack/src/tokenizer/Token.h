@@ -153,6 +153,8 @@ namespace jetpack {
         bool tail = false;
         std::string cooked;
 
+        std::string to_string();
+
     };
 
 }

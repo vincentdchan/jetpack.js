@@ -302,4 +302,8 @@ namespace jetpack {
 
     }
 
+    std::string Token::to_string() {
+        return "";
+    }
+
 }
