@@ -5,6 +5,7 @@
 #include <optional>
 #include <unordered_set>
 #include <vector>
+#include <stack>
 #include "utils/Common.h"
 #include "tokenizer/Scanner.h"
 #include "parser/Config.h"
@@ -16,7 +17,7 @@ namespace jetpack::parser {
     class ParserContext {
     public:
         struct Marker {
-            Scanner::Cursor cursor;
+            Cursor cursor;
             uint32_t line = 0;
             uint32_t column = 0;
         };

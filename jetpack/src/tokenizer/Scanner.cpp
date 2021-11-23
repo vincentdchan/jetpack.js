@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <stack>
 #include "Scanner.h"
 #include "utils/Common.h"
 #include "utils/string/UChar.h"
@@ -14,31 +15,163 @@ namespace jetpack {
 
 #define DO(EXPR) \
     if (!(EXPR)) return false;
+    
+    class ScannerImpl {
+    public:
+        ScannerImpl(MemoryViewOwner& source, parser::ParseErrorHandler& error_handler);
+        ScannerImpl(const ScannerImpl&) = delete;
+        ScannerImpl(ScannerImpl&&) = delete;
 
-    Scanner::Scanner(MemoryViewOwner& source, parser::ParseErrorHandler& error_handler):
+        ScannerImpl& operator=(const ScannerImpl&) = delete;
+        ScannerImpl& operator=(ScannerImpl&&) = delete;
+
+        [[nodiscard]]
+        inline int32_t Length() const {
+            return source_.View().size();
+        }
+
+        Scanner::ScannerState SaveState();
+        void RestoreState(const Scanner::ScannerState& state);
+
+        [[nodiscard]]
+        inline bool IsEnd() const {
+            return cursor_.u8 >= Length();
+        }
+
+        [[nodiscard]]
+        inline uint32_t LineNumber() const {
+            return line_number_;
+        }
+
+        inline void SetLineNumber(uint32_t ln) {
+            line_number_ = ln;
+        }
+
+        [[nodiscard]]
+        inline Cursor Index() const {
+            return cursor_;
+        }
+
+        inline void SetIndex(Cursor index) {
+            cursor_ = index;
+        }
+
+        [[nodiscard]]
+        inline uint32_t Column() const {
+            return cursor_.u16 - line_start_;
+        }
+
+        [[nodiscard]]
+        inline uint32_t LineStart() const {
+            return line_start_;
+        }
+
+        inline void SetLineStart(uint32_t ls) {
+            line_start_ = ls;
+        }
+
+        inline std::string_view View(uint32_t start, uint32_t end) {
+            return source_.View().substr(start, end - start);
+        }
+
+        std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
+        std::vector<Sp<Comment>> SkipMultiLineComment();
+        void ScanComments(std::vector<Sp<Comment>>& result);
+        bool ScanHexEscape(char32_t ch, char32_t& result);
+        char32_t ScanUnicodeCodePointEscape();
+        std::string GetIdentifier(int32_t start_char_len);
+        std::string GetComplexIdentifier();
+        bool OctalToDecimal(char16_t ch, uint32_t& result);
+
+        Token ScanIdentifier(int32_t start_char_len);
+        Token ScanPunctuator();
+        Token ScanHexLiteral(uint32_t index);
+        Token ScanBinaryLiteral(uint32_t index);
+        Token ScanOctalLiteral(char16_t prefix, uint32_t index);
+        bool IsImplicitOctalLiteral();
+        Token ScanNumericLiteral();
+        Token ScanStringLiteral();
+        Token ScanTemplate();
+
+        std::string ScanRegExpBody();
+        std::string ScanRegExpFlags();
+        Token ScanRegExp();
+        Token Lex();
+
+        [[nodiscard]]
+        inline char CharAt(uint32_t index) const {
+            if (unlikely(index >= u16_mapping_.size())) return u'\0';
+            return source_.View().at(index);
+        }
+
+        [[nodiscard]]
+        inline MemoryViewOwner& Source() const {
+            return source_;
+        }
+
+        [[nodiscard]]
+        inline char Peek() const {
+            return CharAt(cursor_.u8);
+        }
+
+        [[nodiscard]]
+        inline char Peek(uint32_t offset) const {
+            return CharAt(cursor_.u8 + offset);
+        }
+
+        char32_t PeekUtf32(uint32_t* len = nullptr);
+        char32_t NextUtf32();
+
+        char NextChar();
+    private:
+        void ThrowUnexpectedToken();
+        void ThrowUnexpectedToken(const std::string& message);
+
+        void TolerateUnexpectedToken();
+        void TolerateUnexpectedToken(const std::string& message);
+
+        std::stack<std::string_view> curly_stack_;
+
+        Cursor cursor_;
+        uint32_t line_number_ = 1u;
+        uint32_t line_start_ = 0u;  // u16 index
+
+        // utf8 index -> u16 index
+        std::vector<uint32_t> u16_mapping_;
+
+        parser::ParseErrorHandler& error_handler_;
+        MemoryViewOwner& source_;
+        bool is_module_ = false;
+
+        void PlusCursor(uint32_t n);
+
+    };
+
+
+    ScannerImpl::ScannerImpl(MemoryViewOwner& source, parser::ParseErrorHandler& error_handler):
             source_(source), error_handler_(error_handler) {
 
         u16_mapping_.resize(source_.View().size(), 0);
     }
 
-    Scanner::ScannerState Scanner::SaveState() {
-        ScannerState state {
+    Scanner::ScannerState ScannerImpl::SaveState() {
+        Scanner::ScannerState state {
                 cursor_, line_number_, line_start_,
         };
         return state;
     }
 
-    void Scanner::RestoreState(const Scanner::ScannerState &state) {
+    void ScannerImpl::RestoreState(const Scanner::ScannerState &state) {
         cursor_ = state.cursor_;
         line_number_ = state.line_number_;
         line_start_ = state.line_start_;
     }
 
-    void Scanner::ThrowUnexpectedToken() {
+    void ScannerImpl::ThrowUnexpectedToken() {
         ThrowUnexpectedToken(ParseMessages::UnexpectedTokenIllegal);
     }
 
-    void Scanner::ThrowUnexpectedToken(const std::string &message) {
+    void ScannerImpl::ThrowUnexpectedToken(const std::string &message) {
         throw error_handler_.CreateError(
                 message,
                 cursor_.u16,
@@ -46,11 +179,11 @@ namespace jetpack {
                 cursor_.u16 - line_start_ + 1);
     }
 
-    void Scanner::TolerateUnexpectedToken() {
+    void ScannerImpl::TolerateUnexpectedToken() {
         TolerateUnexpectedToken(ParseMessages::UnexpectedTokenIllegal);
     }
 
-    void Scanner::TolerateUnexpectedToken(const std::string &message) {
+    void ScannerImpl::TolerateUnexpectedToken(const std::string &message) {
         auto error = error_handler_.CreateError(
                 message,
                 cursor_.u16,
@@ -58,7 +191,7 @@ namespace jetpack {
         error_handler_.TolerateError(error);
     }
 
-    std::vector<Sp<Comment>> Scanner::SkipSingleLineComment(uint32_t u8_offset) {
+    std::vector<Sp<Comment>> ScannerImpl::SkipSingleLineComment(uint32_t u8_offset) {
         std::vector<Sp<Comment>> result;
         SourceLocation loc;
 
@@ -113,7 +246,7 @@ namespace jetpack {
         return result;
     }
 
-    std::vector<Sp<Comment>> Scanner::SkipMultiLineComment() {
+    std::vector<Sp<Comment>> ScannerImpl::SkipMultiLineComment() {
         std::vector<Sp<Comment>> result;
         uint32_t start = 0;
         SourceLocation loc;
@@ -173,7 +306,7 @@ namespace jetpack {
         return result;
     }
 
-    void Scanner::ScanComments(std::vector<Sp<Comment>> &result) {
+    void ScannerImpl::ScanComments(std::vector<Sp<Comment>> &result) {
         bool start = cursor_.u8 == 0;
 
         while (!IsEnd()) {
@@ -227,7 +360,7 @@ namespace jetpack {
         }
     }
 
-    char32_t Scanner::NextUtf32() {
+    char32_t ScannerImpl::NextUtf32() {
         uint32_t len = 0;
         char32_t result = PeekUtf32(&len);
         if (result != 0) {
@@ -240,7 +373,7 @@ namespace jetpack {
         return result;
     }
 
-    char32_t Scanner::PeekUtf32(uint32_t* len) {
+    char32_t ScannerImpl::PeekUtf32(uint32_t* len) {
         uint32_t pre_saved_index = cursor_.u8;
         char32_t code = ReadCodepointFromUtf8(
                 reinterpret_cast<const uint8_t *>(source_.View().data()),
@@ -252,7 +385,7 @@ namespace jetpack {
         return code;
     }
 
-    char Scanner::NextChar() {
+    char ScannerImpl::NextChar() {
         char ch = Peek();
         J_ASSERT((ch & 0x80) == 0);
         u16_mapping_[cursor_.u8] = cursor_.u16;
@@ -365,7 +498,7 @@ namespace jetpack {
         return string("0123456789abcdef").find(ch);
     }
 
-    bool Scanner::ScanHexEscape(char32_t ch, char32_t& code) {
+    bool ScannerImpl::ScanHexEscape(char32_t ch, char32_t& code) {
         uint32_t len = (ch == 'u') ? 4 : 2;
 
         for (uint32_t i = 0; i < len; ++i) {
@@ -380,7 +513,7 @@ namespace jetpack {
         return true;
     }
 
-    char32_t Scanner::ScanUnicodeCodePointEscape() {
+    char32_t ScannerImpl::ScanUnicodeCodePointEscape() {
         char ch = Peek();
         char32_t code = 0;
 
@@ -403,7 +536,7 @@ namespace jetpack {
         return code;
     }
 
-    std::string Scanner::GetIdentifier(int32_t start_char_len) {
+    std::string ScannerImpl::GetIdentifier(int32_t start_char_len) {
         Cursor start = cursor_;
         PlusCursor(start_char_len);
         std::string result;
@@ -433,7 +566,7 @@ namespace jetpack {
         return result;
     }
 
-    std::string Scanner::GetComplexIdentifier() {
+    std::string ScannerImpl::GetComplexIdentifier() {
         std::string result;
 
         // '\u' (U+005C, U+0075) denotes an escaped character.
@@ -496,7 +629,7 @@ namespace jetpack {
         return result;
     }
 
-    bool Scanner::OctalToDecimal(char16_t ch, uint32_t &result) {
+    bool ScannerImpl::OctalToDecimal(char16_t ch, uint32_t &result) {
         bool octal = (ch != '0');
         result = ch - '0';
 
@@ -514,7 +647,7 @@ namespace jetpack {
         return octal;
     }
 
-    Token Scanner::ScanIdentifier(int32_t start_char_len) {
+    Token ScannerImpl::ScanIdentifier(int32_t start_char_len) {
         auto start = cursor_;
         Token tok;
 
@@ -527,7 +660,7 @@ namespace jetpack {
 
         if (id.size() == 1) {
             tok.type = JsTokenType::Identifier;
-        } else if ((tok.type = ToKeyword(id)) != JsTokenType::Invalid) {
+        } else if ((tok.type = Scanner::ToKeyword(id)) != JsTokenType::Invalid) {
             // nothing
         } else if (id == "null") {
             tok.type = JsTokenType::NullLiteral;
@@ -554,7 +687,7 @@ namespace jetpack {
         return tok;
     }
 
-    Token Scanner::ScanPunctuator() {
+    Token ScannerImpl::ScanPunctuator() {
         auto start = cursor_;
 
         char ch = Peek();
@@ -819,7 +952,7 @@ namespace jetpack {
         };
     }
 
-    Token Scanner::ScanHexLiteral(uint32_t start) {
+    Token ScannerImpl::ScanHexLiteral(uint32_t start) {
         std::string num;
         Token tok;
 
@@ -848,7 +981,7 @@ namespace jetpack {
         return tok;
     }
 
-    Token Scanner::ScanBinaryLiteral(uint32_t start) {
+    Token ScannerImpl::ScanBinaryLiteral(uint32_t start) {
         std::string num;
         char16_t ch;
 
@@ -882,7 +1015,7 @@ namespace jetpack {
         };
     }
 
-    Token Scanner::ScanOctalLiteral(char16_t prefix, uint32_t start) {
+    Token ScannerImpl::ScanOctalLiteral(char16_t prefix, uint32_t start) {
         std::string num;
         bool octal = false;
 
@@ -918,7 +1051,7 @@ namespace jetpack {
         };
     }
 
-    bool Scanner::IsImplicitOctalLiteral() {
+    bool ScannerImpl::IsImplicitOctalLiteral() {
         // Implicit octal, unless there is a non-octal digit.
         // (Annex B.1.1 on Numeric Literals)
         for (uint32_t i = cursor_.u8 + 1; i < Length(); ++i) {
@@ -934,7 +1067,7 @@ namespace jetpack {
         return true;
     }
 
-    Token Scanner::ScanNumericLiteral() {
+    Token ScannerImpl::ScanNumericLiteral() {
         auto start = cursor_;
         char ch = CharAt(start.u8);
         if (!(UChar::IsDecimalDigit(ch) || (ch == '.'))) {
@@ -1014,7 +1147,7 @@ namespace jetpack {
         };
     }
 
-    Token Scanner::ScanStringLiteral() {
+    Token ScannerImpl::ScanStringLiteral() {
         auto start = cursor_;
         char quote = CharAt(start.u8);
 
@@ -1126,7 +1259,7 @@ namespace jetpack {
         return tok;
     }
 
-    Token Scanner::ScanTemplate() {
+    Token ScannerImpl::ScanTemplate() {
         std::string cooked;
         bool terminated = false;
         auto start = cursor_;
@@ -1256,7 +1389,7 @@ namespace jetpack {
         return tok;
     }
 
-    std::string Scanner::ScanRegExpBody() {
+    std::string ScannerImpl::ScanRegExpBody() {
         char16_t ch = Peek();
         if (ch != u'/') {
             ThrowUnexpectedToken("Regular expression literal must start with a slash");
@@ -1299,7 +1432,7 @@ namespace jetpack {
         return str.substr(1, str.size() - 2);
     }
 
-    std::string Scanner::ScanRegExpFlags() {
+    std::string ScannerImpl::ScanRegExpFlags() {
         std::string str;
         std::string flags;
         while (!IsEnd()) {
@@ -1341,7 +1474,7 @@ namespace jetpack {
         return flags;
     }
 
-    Token Scanner::ScanRegExp() {
+    Token ScannerImpl::ScanRegExp() {
 //        auto start = index_;
 
         auto pattern = ScanRegExpBody();
@@ -1356,7 +1489,7 @@ namespace jetpack {
         return token;
     }
 
-    Token Scanner::Lex() {
+    Token ScannerImpl::Lex() {
         if (IsEnd()) {
             Token tok;
             tok.type = JsTokenType::EOF_;
@@ -1407,10 +1540,100 @@ namespace jetpack {
         return ScanPunctuator();
     }
 
-    void Scanner::PlusCursor(uint32_t n) {
+    void ScannerImpl::PlusCursor(uint32_t n) {
         for (uint32_t i = 0; i < n; i++) {
             NextUtf32();
         }
+    }
+
+    void ScannerImplDeleter::operator()(ScannerImpl *d) {
+        delete d;
+    }
+
+    Scanner::Scanner(MemoryViewOwner &source, parser::ParseErrorHandler &error_handler) {
+        auto ptr = new ScannerImpl(source, error_handler);
+        d_ = std::unique_ptr<ScannerImpl, ScannerImplDeleter>(ptr);
+    }
+
+    [[nodiscard]]
+    inline int32_t Scanner::Length() const {
+        return d_->Length();
+    }
+
+    Scanner::ScannerState Scanner::SaveState() {
+        return d_->SaveState();
+    }
+
+    void Scanner::RestoreState(const ScannerState &state) {
+        d_->RestoreState(state);
+    }
+
+    bool Scanner::IsEnd() const {
+        return d_->IsEnd();
+    }
+
+    uint32_t Scanner::LineNumber() const {
+        return d_->LineNumber();
+    }
+
+    void Scanner::SetLineNumber(uint32_t ln) {
+        d_->SetLineNumber(ln);
+    }
+
+    Cursor Scanner::Index() const {
+        return d_->Index();
+    }
+
+    void Scanner::SetIndex(Cursor index) {
+        d_->SetIndex(index);
+    }
+
+    uint32_t Scanner::Column() const {
+        return d_->Column();
+    }
+
+    uint32_t Scanner::LineStart() const {
+        return d_->LineStart();
+    }
+
+    void Scanner::SetLineStart(uint32_t ls) {
+        return d_->SetLineStart(ls);
+    }
+
+    std::string_view Scanner::View(uint32_t start, uint32_t end) {
+        return d_->View(start, end);
+    }
+
+    void Scanner::ScanComments(std::vector<Sp<Comment>> &result) {
+        return d_->ScanComments(result);
+    }
+
+    Token Scanner::Lex() {
+        return d_->Lex();
+    }
+
+    char Scanner::CharAt(uint32_t index) const {
+        return d_->CharAt(index);
+    }
+
+    MemoryViewOwner& Scanner::Source() const {
+        return d_->Source();
+    }
+
+    char Scanner::Peek() const {
+        return d_->Peek();
+    }
+
+    char Scanner::Peek(uint32_t offset) const {
+        return d_->Peek(offset);
+    }
+
+    char Scanner::NextChar() {
+        return d_->NextChar();
+    }
+
+    Token Scanner::ScanRegExp() {
+        return d_->ScanRegExp();
     }
 
 }

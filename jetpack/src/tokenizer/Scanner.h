@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <vector>
-#include <stack>
 #include "parser/ParseErrorHandler.h"
 #include "utils/Common.h"
 #include "utils/MemoryViewOwner.h"
@@ -13,6 +12,25 @@
 #include "Comment.h"
 
 namespace jetpack {
+
+    struct Cursor {
+    public:
+        uint32_t u8 = 0;
+        uint32_t u16 = 0;
+
+        bool operator==(const Cursor& that) const {
+            return u8 == that.u8;
+        }
+
+    };
+
+    class ScannerImpl;
+
+    struct ScannerImplDeleter {
+
+        void operator()(ScannerImpl* d);
+
+    };
 
     class Scanner {
     public:
@@ -23,17 +41,6 @@ namespace jetpack {
         Scanner& operator=(const Scanner&) = delete;
         Scanner& operator=(Scanner&&) = delete;
 
-        struct Cursor {
-        public:
-            uint32_t u8 = 0;
-            uint32_t u16 = 0;
-
-            bool operator==(const Cursor& that) const {
-                return u8 == that.u8;
-            }
-
-        };
-
         struct ScannerState {
         public:
             Cursor cursor_;
@@ -42,128 +49,59 @@ namespace jetpack {
         };
 
         [[nodiscard]]
-        inline int32_t Length() const {
-            return source_.View().size();
-        }
+        int32_t Length() const;
 
         ScannerState SaveState();
         void RestoreState(const ScannerState& state);
 
         [[nodiscard]]
-        inline bool IsEnd() const {
-            return cursor_.u8 >= Length();
-        }
+        bool IsEnd() const;
 
         [[nodiscard]]
-        inline uint32_t LineNumber() const {
-            return line_number_;
-        }
+        uint32_t LineNumber() const;
 
-        inline void SetLineNumber(uint32_t ln) {
-            line_number_ = ln;
-        }
+        void SetLineNumber(uint32_t ln);
 
-        [[nodiscard]]
-        inline Cursor Index() const {
-            return cursor_;
-        }
+        Cursor Index() const;
 
-        inline void SetIndex(Cursor index) {
-            cursor_ = index;
-        }
+        void SetIndex(Cursor index);
 
         [[nodiscard]]
-        inline uint32_t Column() const {
-            return cursor_.u16 - line_start_;
-        }
+        uint32_t Column() const;
 
         [[nodiscard]]
-        inline uint32_t LineStart() const {
-            return line_start_;
-        }
+        uint32_t LineStart() const;
 
-        inline void SetLineStart(uint32_t ls) {
-            line_start_ = ls;
-        }
+        void SetLineStart(uint32_t ls);
 
-        inline std::string_view View(uint32_t start, uint32_t end) {
-            return source_.View().substr(start, end - start);
-        }
+        std::string_view View(uint32_t start, uint32_t end);
 
-        std::vector<Sp<Comment>> SkipSingleLineComment(uint32_t offset);
-        std::vector<Sp<Comment>> SkipMultiLineComment();
         void ScanComments(std::vector<Sp<Comment>>& result);
         static bool IsFutureReservedWord(JsTokenType t);
         static JsTokenType IsStrictModeReservedWord(std::string_view str);
         static bool IsRestrictedWord(std::string_view str_);
         static JsTokenType ToKeyword(const std::string& str_);
-        bool ScanHexEscape(char32_t ch, char32_t& result);
-        char32_t ScanUnicodeCodePointEscape();
-        std::string GetIdentifier(int32_t start_char_len);
-        std::string GetComplexIdentifier();
-        bool OctalToDecimal(char16_t ch, uint32_t& result);
 
-        Token ScanIdentifier(int32_t start_char_len);
-        Token ScanPunctuator();
-        Token ScanHexLiteral(uint32_t index);
-        Token ScanBinaryLiteral(uint32_t index);
-        Token ScanOctalLiteral(char16_t prefix, uint32_t index);
-        bool IsImplicitOctalLiteral();
-        Token ScanNumericLiteral();
-        Token ScanStringLiteral();
-        Token ScanTemplate();
-
-        std::string ScanRegExpBody();
-        std::string ScanRegExpFlags();
-        Token ScanRegExp();
         Token Lex();
 
         [[nodiscard]]
-        inline char CharAt(uint32_t index) const {
-            if (unlikely(index >= u16_mapping_.size())) return u'\0';
-            return source_.View().at(index);
-        }
+        char CharAt(uint32_t index) const;
 
         [[nodiscard]]
-        inline MemoryViewOwner& Source() const {
-            return source_;
-        }
+        MemoryViewOwner& Source() const;
 
         [[nodiscard]]
-        inline char Peek() const {
-            return CharAt(cursor_.u8);
-        }
+        char Peek() const;
 
         [[nodiscard]]
-        inline char Peek(uint32_t offset) const {
-            return CharAt(cursor_.u8 + offset);
-        }
-
-        char32_t PeekUtf32(uint32_t* len = nullptr);
-        char32_t NextUtf32();
+        char Peek(uint32_t offset) const;
 
         char NextChar();
+
+        [[nodiscard]]
+        Token ScanRegExp();
     private:
-        void ThrowUnexpectedToken();
-        void ThrowUnexpectedToken(const std::string& message);
-
-        void TolerateUnexpectedToken();
-        void TolerateUnexpectedToken(const std::string& message);
-
-        std::stack<std::string_view> curly_stack_;
-
-        Cursor cursor_;
-        uint32_t line_number_ = 1u;
-        uint32_t line_start_ = 0u;  // u16 index
-
-        // utf8 index -> u16 index
-        std::vector<uint32_t> u16_mapping_;
-
-        parser::ParseErrorHandler& error_handler_;
-        MemoryViewOwner& source_;
-        bool is_module_ = false;
-
-        void PlusCursor(uint32_t n);
+        std::unique_ptr<ScannerImpl, ScannerImplDeleter> d_;
 
     };
 
