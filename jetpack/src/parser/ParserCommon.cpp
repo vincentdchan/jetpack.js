@@ -100,18 +100,6 @@ namespace jetpack::parser {
         throw UnexpectedToken(tok, message);
     }
 
-    void ParserCommon::DecorateToken(Token& token) {
-        token.loc.start = Position {
-            ctx->start_marker_.line,
-            ctx->start_marker_.column,
-        };
-
-        token.loc.end = Position {
-            ctx->scanner_->LineNumber(),
-            ctx->scanner_->Column(),
-        };
-    }
-
     Token ParserCommon::NextToken() {
         Token token = ctx->lookahead_;
         Scanner& scanner = *ctx->scanner_.get();
@@ -144,7 +132,6 @@ namespace jetpack::parser {
         ctx->lookahead_ = next;
 
         if (ctx->config_.tokens && next.type != JsTokenType::EOF_) {
-            DecorateToken(next);
             ctx->tokens_.push(next);
         }
 

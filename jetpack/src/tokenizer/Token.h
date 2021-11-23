@@ -144,7 +144,6 @@ namespace jetpack {
     public:
         JsTokenType type = JsTokenType::Invalid;
         std::string value;
-        SourceLocation loc;
         uint32_t line_number = 0;
         uint32_t line_start = 0;
         std::pair<int32_t, int32_t> range;

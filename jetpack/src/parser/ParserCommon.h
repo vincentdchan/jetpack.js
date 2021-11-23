@@ -77,8 +77,6 @@ namespace jetpack::parser {
         ParserCommon& operator=(const ParserCommon&) = delete;
         ParserCommon& operator=(ParserCommon&&) = delete;
 
-        void DecorateToken(Token& );
-
         Token NextToken();
 
         Token NextRegexToken();

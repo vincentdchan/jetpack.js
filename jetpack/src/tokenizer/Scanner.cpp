@@ -813,7 +813,6 @@ namespace jetpack {
         return {
                 t,
                 string(),
-                SourceLocation(),
                 line_number_,
                 line_start_,
                 make_pair(start.u8, cursor_.u8)
@@ -877,7 +876,6 @@ namespace jetpack {
         return {
                 JsTokenType::NumericLiteral,
                 num,
-                SourceLocation(),
                 line_number_,
                 line_start_,
                 make_pair(start, cursor_.u8),
@@ -914,7 +912,6 @@ namespace jetpack {
         return {
             JsTokenType::NumericLiteral,
             num,
-            SourceLocation(),
             line_number_,
             line_start_,
             make_pair(start, cursor_.u8),
@@ -1011,7 +1008,6 @@ namespace jetpack {
         return {
             JsTokenType::NumericLiteral,
             num,
-            SourceLocation(),
             line_number_,
             line_start_,
             make_pair(start.u8, cursor_.u8),
