@@ -305,8 +305,11 @@ namespace jetpack {
     std::string Token::ToString() const {
         std::string result;
         result += TokenTypeToCString(type);
-        result += ": ";
-        result += value;
+        if (!value.empty()) {
+            result += " { ";
+            result += value;
+            result += " }";
+        }
         return result;
     }
 

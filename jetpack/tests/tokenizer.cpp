@@ -30,12 +30,59 @@ static std::vector<Token> tokenize(const std::string& content) {
     return result;
 }
 
-TEST(Tokenizer, Token) {
+TEST(Tokenizer, Simple) {
     std::string src = "const a = 'aaa\\nbbb';\n";
 
     auto tokens = tokenize(src);
 
+    std::vector<std::string> got;
+    got.reserve(tokens.size());
     for (const auto& tok : tokens) {
-        std::cout << tok.ToString() << std::endl;
+        got.push_back(tok.ToString());
     }
+
+    std::vector<std::string> expect {
+        "K_Const { const }",
+        "Identifier { a }",
+        "Assign",
+        "StringLiteral { aaa\nbbb }",
+        "Semicolon",
+    };
+    EXPECT_EQ(got, expect);
+}
+
+TEST(Tokenizer, Template) {
+    std::string src = "`hello ${tmp} world`";
+
+    auto tokens = tokenize(src);
+
+    std::vector<std::string> got;
+    got.reserve(tokens.size());
+    for (const auto& tok : tokens) {
+        got.push_back(tok.ToString());
+    }
+
+    std::vector<std::string> expect {
+            "Template { hello  }",
+            "Identifier { tmp }",
+            "Template {  world }",
+    };
+    EXPECT_EQ(got, expect);
+}
+
+TEST(Tokenizer, Template2) {
+    std::string src = "`hello world`";
+
+    auto tokens = tokenize(src);
+
+    std::vector<std::string> got;
+    got.reserve(tokens.size());
+    for (const auto& tok : tokens) {
+        got.push_back(tok.ToString());
+    }
+
+    std::vector<std::string> expect {
+            "Template { hello world }",
+    };
+    EXPECT_EQ(got, expect);
 }
